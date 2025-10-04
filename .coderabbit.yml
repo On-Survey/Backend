@@ -1,0 +1,72 @@
+# CodeRabbit 설정 파일
+language: "ko-KR"
+early_access: false
+
+reviews:
+  profile: assertive # assertive, chill
+  poem: false
+
+  # Placeholder in the PR/MR description that gets replaced with the high level summary.
+  # Default: "@coderabbitai summary"
+  high_level_summary_placeholder: "@coderabbit summary"
+
+  # Suggest reviewers based on the changes in the pull request in the walkthrough.
+  # Default: true
+  suggested_reviewers: false
+
+  # Configuration for auto review
+  # Default: {}
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+
+    # Ignore reviewing if the title of the pull request contains any of these keywords (case-insensitive).
+    # Default: []
+    ignore_title_keywords: [
+      "WIP",
+      "Work in Progress",
+      "Do Not Merge",
+      "Draft",
+      "Bump",
+      "Dependency",
+      "Dependencies",
+      "Chore",
+      "Docs",
+      "Documentation",
+      "Style",
+      "Refactor",
+      "Test",
+      "Tests",
+      "Typo",
+      "Merge branch",
+      "Revert",
+      "의존성",
+      "D2R",
+      "R2D",
+      "R2M",
+      "M2R"
+    ]
+
+tools:
+  # Backend
+  pmd: # Java
+    enabled: true
+  sqlfluff: # SQL
+    enabled: true
+
+  # Security
+  gitleaks:
+    enabled: true
+  semgrep:
+    enabled: true
+
+  # Infrastructure
+  actionlint: # GitHub Actions
+    enabled: true
+  hadolint: # Dockerfile
+    enabled: true
+  yamllint: # YAML
+    enabled: true
+
+chat:
+  auto_reply: true
