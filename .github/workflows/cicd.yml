@@ -93,7 +93,15 @@ jobs:
             echo "[DEBUG] list /deploy before deploy"
             ls -al $DEPLOY_DIR || true
             ls -al $DEPLOY_DIR/config || true
-
+            
+            # .env 생성/갱신
+            cat > "$DEPLOY_DIR/.env" <<'ENV'
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            SPRING_IMAGE_TAG=latest
+            ENV
+            
+            sed -i "s/^SPRING_IMAGE_TAG=.*/SPRING_IMAGE_TAG=${{ needs.build-and-push.outputs.tag }}/" "$DEPLOY_DIR/.env"
+            
             test -f "$DEPLOY_DIR/docker-compose.yml"
             test -f "$DEPLOY_DIR/config/application-prod.yml"
 

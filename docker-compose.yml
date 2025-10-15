@@ -7,7 +7,7 @@ services:
       - onsurvey-green
     ports:
       - "80:80"
-      - "443:443"
+      #- "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/upstreams:/etc/nginx/upstreams:ro
@@ -22,9 +22,6 @@ services:
       TZ: Asia/Seoul
       SPRING_PROFILES_ACTIVE: prod
       SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
-      DB_URL: ${DB_URL}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./config:/etc/onsurvey/config:ro
     ports:
@@ -44,9 +41,6 @@ services:
       TZ: Asia/Seoul
       SPRING_PROFILES_ACTIVE: prod
       SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
-      DB_URL: ${DB_URL}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./config:/etc/onsurvey/config:ro
     ports:
