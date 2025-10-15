@@ -1,0 +1,64 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    depends_on:
+      - onsurvey-blue
+      - onsurvey-green
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/upstreams:/etc/nginx/upstreams:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks: [web]
+    restart: unless-stopped
+
+  onsurvey-blue:
+    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-latest}
+    container_name: onsurvey-blue
+    environment:
+      TZ: Asia/Seoul
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./config:/etc/onsurvey/config:ro
+    ports:
+      - "8080:8080"
+    networks: [web]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  onsurvey-green:
+    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-latest}
+    container_name: onsurvey-green
+    environment:
+      TZ: Asia/Seoul
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./config:/etc/onsurvey/config:ro
+    ports:
+      - "8081:8080"
+    networks: [web]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+networks:
+  web:
+    driver: bridge
