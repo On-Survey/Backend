@@ -74,7 +74,9 @@ jobs:
           host: ${{ secrets.NCP_HOST }}
           username: ${{ secrets.NCP_USER }}
           key: ${{ secrets.NCP_SSH_KEY }}
-          source: "docker-compose.yml,config/application-prod.yml"
+          source: |
+            docker-compose.yml
+            config/application-prod.yml
           target: "/home/ubuntu/deploy/"
 
       - name: Deploy on NCP (blue-green)
@@ -88,21 +90,26 @@ jobs:
             DEPLOY_DIR=/deploy
             export TZ=Asia/Seoul
 
-            # 디렉토리 준비
-            mkdir -p "$DEPLOY_DIR/config"
+            echo "[DEBUG] list /deploy before deploy"
+            ls -al $DEPLOY_DIR || true
+            ls -al $DEPLOY_DIR/config || true
+
+            test -f "$DEPLOY_DIR/docker-compose.yml"
+            test -f "$DEPLOY_DIR/config/application-prod.yml"
+
             chmod 600 "$DEPLOY_DIR/config/application-prod.yml" || true
 
-            # 최초 1회 기동(네트워크 등 구성) 필요시
+            # 최초 1회 부트스트랩 (네트워크/볼륨 등)
             if [ ! -f "$DEPLOY_DIR/.bootstrapped" ]; then
               docker compose -f "$DEPLOY_DIR/docker-compose.yml" up -d || true
               touch "$DEPLOY_DIR/.bootstrapped"
             fi
 
-            # 새 이미지 풀
+            # 새 이미지 pull (커밋 SHA)
             IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ needs.build-and-push.outputs.tag }}"
             docker pull "$IMAGE" || true
 
-            # 블루/그린 배포 스크립트 실행
+            # 무중단 배포 스크립트 실행
             bash "$DEPLOY_DIR/blue-green.sh" \
               "${{ secrets.DB_URL }}" \
               "${{ secrets.DB_USERNAME }}" \
