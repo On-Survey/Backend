@@ -7,11 +7,12 @@ services:
       - onsurvey-green
     ports:
       - "80:80"
-      #- "443:443"
+      - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/upstreams:/etc/nginx/upstreams:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
+      - /deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /deploy/nginx/upstreams:/etc/nginx/upstreams
+      - /deploy/nginx/www:/usr/share/nginx/html
+      - /deploy/nginx/cert:/etc/letsencrypt
     networks: [web]
     restart: unless-stopped
 
