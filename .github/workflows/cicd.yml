@@ -77,7 +77,7 @@ jobs:
           source: |
             docker-compose.yml
             config/application-prod.yml
-          target: "/home/ubuntu/deploy/"
+          target: "/deploy/"
 
       - name: Deploy on NCP (blue-green)
         uses: appleboy/ssh-action@master
