@@ -116,9 +116,4 @@ jobs:
             docker pull "$IMAGE" || true
 
             # 무중단 배포 스크립트 실행
-            bash "$DEPLOY_DIR/blue-green.sh" \
-              "${{ secrets.DB_URL }}" \
-              "${{ secrets.DB_USERNAME }}" \
-              "${{ secrets.DB_PASSWORD }}" \
-              "${{ secrets.DOCKERHUB_USERNAME }}" \
-              "$IMAGE"
+            bash "$DEPLOY_DIR/blue-green.sh" "${{ needs.build-and-push.outputs.tag }}"
