@@ -56,29 +56,12 @@ public class TossAuthService {
     private final BlackListService blacklistService;
 
     public Boolean createAccessAndRefreshToken(TossLoginRequest tossLoginRequest, HttpServletResponse response) {
-
         // 토스 액세스 토큰 발급
-        LoginMeResponse.Success loginMeResponse;
-        try {
-            SSLContext context = tossApiClient.createSSLContext(publicCrt, privateKey);
-            String tossAccessToken = tossApiClient.getAccessToken(context, tossLoginRequest);
-            loginMeResponse = tossApiClient.getLoginMe(context, tossAccessToken);
-        } catch (Exception e) {
-            log.error("[TossAuthService Error] : Toss Access Token 발급 중 오류가 발생했습니다.", e);
-            throw new CustomException(TOSS_API_CONNECTION_ERROR);
-        }
+        LoginMeResponse.Success loginMeResponse = getTossUserInfo(tossLoginRequest);
 
         memberService.upsertMember(loginMeResponse);
 
-        String accessToken = jwtUtil.createJWT(accessTokenCategory, loginMeResponse.userKey(),
-                Role.ROLE_MEMBER.name());
-        String refreshToken = jwtUtil.createJWT(refreshTokenCategory, loginMeResponse.userKey(),
-                Role.ROLE_MEMBER.name());
-
-        tokenStore.saveRefreshToken(loginMeResponse.userKey(), refreshToken, Duration.ofMillis(refreshTokenExpireMs));
-
-        response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
-        response.setHeader("X-Refresh-Token", "Bearer " + refreshToken);
+        issueTokensToResponse(loginMeResponse.userKey(), response);
 
         return true;
     }
@@ -86,60 +69,111 @@ public class TossAuthService {
     public Boolean reissueToken(ReissueRequest reissueRequest, HttpServletResponse response) {
         String presentedRt = reissueRequest.refreshToken();
 
-        if (presentedRt == null || presentedRt.isBlank()) {
+        if (isInvalidRefreshToken(presentedRt)) {
             return false;
         }
 
         try {
-            jwtUtil.isExpired(presentedRt);
-            jwtUtil.validateIssuer(presentedRt, tokenIss);
-
-            // 토큰이 refresh 인지 확인 (발급시 페이로드에 명시)
-            String category = jwtUtil.getClaimFromToken(presentedRt, "category", String.class);
-            if (category == null || !category.equals(refreshTokenCategory)) {
-                throw new BadCredentialsException(INVALID_REFRESH_TOKEN.getMessage());
-            }
-
+            validateRefreshToken(presentedRt);
             Long userKey = jwtUtil.getUserKeyFromSubject(presentedRt);
+            verifyStoredRefreshToken(userKey, presentedRt);
 
-            // 서버 저장 해시와 대조 (재사용/탈취 감지)
-            String savedRefresh = tokenStore.getRefreshToken(userKey)
-                    .orElseThrow(() -> new BadCredentialsException(INVALID_REFRESH_TOKEN.getMessage()));
+            issueNewTokens(userKey, response);
 
-            if (!presentedRt.equals(savedRefresh)) {
-                tokenStore.deleteRefresh(userKey);
-                throw new BadCredentialsException(INVALID_REFRESH_TOKEN.getMessage());
-            }
-
-            String newAt = jwtUtil.createJWT(accessTokenCategory, userKey,
-                    Role.ROLE_MEMBER.name());
-            String newRt = jwtUtil.createJWT(refreshTokenCategory, userKey,
-                    Role.ROLE_MEMBER.name());
-
-            tokenStore.saveRefreshToken(userKey, newRt, Duration.ofMillis(refreshTokenExpireMs));
-
-            response.setHeader("X-Refresh-Token", "Bearer " + newRt);
-            response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + newAt);
             return true;
-
         } catch (JwtException | IllegalArgumentException | BadCredentialsException e) {
             throw new CustomException(INVALID_REFRESH_TOKEN);
         }
     }
 
     public Boolean logout(HttpServletRequest request) {
+        String accessToken = extractAndValidateAccessToken(request);
+        Long userKey = jwtUtil.getUserKeyFromSubject(accessToken);
+
+        blacklistAccessToken(accessToken);
+        tokenStore.deleteRefresh(userKey);
+
+        return true;
+    }
+
+
+
+    private LoginMeResponse.Success getTossUserInfo(TossLoginRequest tossLoginRequest) {
+        try {
+            SSLContext context = tossApiClient.createSSLContext(publicCrt, privateKey);
+            String tossAccessToken = tossApiClient.getAccessToken(context, tossLoginRequest);
+            return tossApiClient.getLoginMe(context, tossAccessToken);
+        } catch (Exception e) {
+            log.error("[TossAuthService Error] : Toss Access Token 발급 중 오류가 발생했습니다.", e);
+            throw new CustomException(TOSS_API_CONNECTION_ERROR);
+        }
+    }
+
+    private void issueTokensToResponse(Long userKey, HttpServletResponse response) {
+        String accessToken = jwtUtil.createJWT(accessTokenCategory, userKey, Role.ROLE_MEMBER.name());
+        String refreshToken = jwtUtil.createJWT(refreshTokenCategory, userKey, Role.ROLE_MEMBER.name());
+
+        tokenStore.saveRefreshToken(userKey, refreshToken, Duration.ofMillis(refreshTokenExpireMs));
+        setTokenHeaders(response, accessToken, refreshToken);
+    }
+
+    private boolean isInvalidRefreshToken(String refreshToken) {
+        return refreshToken == null || refreshToken.isBlank();
+    }
+
+    private void validateRefreshToken(String refreshToken) {
+        jwtUtil.isExpired(refreshToken);
+        jwtUtil.validateIssuer(refreshToken, tokenIss);
+
+        // 토큰이 refresh 인지 확인 (발급시 페이로드에 명시)
+        String category = jwtUtil.getClaimFromToken(refreshToken, "category", String.class);
+        if (!refreshTokenCategory.equals(category)) {
+            throw new BadCredentialsException(INVALID_REFRESH_TOKEN.getMessage());
+        }
+    }
+
+    private void verifyStoredRefreshToken(Long userKey, String presentedToken) {
+        // 서버 저장 해시와 대조 (재사용/탈취 감지)
+        String savedRefresh = tokenStore.getRefreshToken(userKey)
+                .orElseThrow(() -> new BadCredentialsException(INVALID_REFRESH_TOKEN.getMessage()));
+
+        if (!presentedToken.equals(savedRefresh)) {
+            tokenStore.deleteRefresh(userKey);
+            throw new BadCredentialsException(INVALID_REFRESH_TOKEN.getMessage());
+        }
+    }
+
+    private void issueNewTokens(Long userKey, HttpServletResponse response) {
+        String newAccessToken = jwtUtil.createJWT(accessTokenCategory, userKey, Role.ROLE_MEMBER.name());
+        String newRefreshToken = jwtUtil.createJWT(refreshTokenCategory, userKey, Role.ROLE_MEMBER.name());
+
+        tokenStore.saveRefreshToken(userKey, newRefreshToken, Duration.ofMillis(refreshTokenExpireMs));
+        setTokenHeaders(response, newAccessToken, newRefreshToken);
+    }
+
+    private void setTokenHeaders(HttpServletResponse response, String accessToken, String refreshToken) {
+        response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+        response.setHeader("X-Refresh-Token", "Bearer " + refreshToken);
+    }
+
+    private String extractAndValidateAccessToken(HttpServletRequest request) {
         String accessToken = jwtUtil.resolveToken(request);
         jwtUtil.isExpired(accessToken);
         jwtUtil.validateIssuer(accessToken, tokenIss);
-        Long userKey = jwtUtil.getUserKeyFromSubject(accessToken);
+        return accessToken;
+    }
 
-        long ttlSeconds = Math.max(0,
-                (jwtUtil.getExpiration(accessToken).getTime() - System.currentTimeMillis()) / 1000L);
+    private void blacklistAccessToken(String accessToken) {
+        long ttlSeconds = calculateTtlSeconds(accessToken);
         if (ttlSeconds > 0) {
             String key = jwtUtil.getJti(accessToken);
             blacklistService.blacklist(key, ttlSeconds);
         }
-        tokenStore.deleteRefresh(userKey);
-        return true;
+    }
+
+    private long calculateTtlSeconds(String accessToken) {
+        long expirationTime = jwtUtil.getExpiration(accessToken).getTime();
+        long currentTime = System.currentTimeMillis();
+        return Math.max(0, (expirationTime - currentTime) / 1000L);
     }
 }
