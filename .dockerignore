@@ -1,0 +1,28 @@
+# VCS/IDE
+.git
+.idea
+.gradle
+*.iml
+.DS_Store
+
+# 빌드 산출물
+build
+out
+target
+.gradle/
+
+# 런타임 데이터(이미지 빌드에 불필요)
+mysql_data
+redis_data
+**/*.sock
+**/*.pid
+**/*.log
+
+# 환경파일
+.env
+.env.*
+!.env.sample
+
+# 기타
+node_modules
+__pycache__
