@@ -1,27 +1,40 @@
 package OneQ.OnSurvey.global.handler;
 
-import jakarta.servlet.ServletException;
+import OneQ.OnSurvey.global.exception.ErrorCode;
+import OneQ.OnSurvey.global.response.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Component
+@RequiredArgsConstructor
 public class JWTAuthenticationEntryPoint implements AuthenticationEntryPoint {
-    private final HandlerExceptionResolver resolver;
 
-    public JWTAuthenticationEntryPoint(@Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
-        this.resolver = resolver;
-    }
+    private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException authException) throws IOException, ServletException {
-        resolver.resolveException(request, response, null, authException);
+    public void commence(HttpServletRequest request,
+                         HttpServletResponse response,
+                         AuthenticationException ex) throws IOException {
+
+        if (response.isCommitted()) return;
+
+        ErrorResponse<Object> body = ErrorResponse.of(
+                ErrorCode.UNAUTHORIZED.getErrorCode(),
+                ErrorCode.UNAUTHORIZED.getMessage()
+        );
+
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType("application/json;charset=UTF-8");
+
+        objectMapper.writeValue(response.getWriter(), body);
     }
 }
