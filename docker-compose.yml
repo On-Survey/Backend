@@ -25,6 +25,7 @@ services:
       SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
     volumes:
       - ./config:/etc/onsurvey/config:ro
+      - /etc/onsurvey/certs:/etc/onsurvey/certs:ro
     ports:
       - "8080:8080"
     networks: [web]
@@ -44,6 +45,7 @@ services:
       SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
     volumes:
       - ./config:/etc/onsurvey/config:ro
+      - /etc/onsurvey/certs:/etc/onsurvey/certs:ro
     ports:
       - "8081:8080"
     networks: [web]
@@ -53,6 +55,21 @@ services:
       interval: 10s
       timeout: 3s
       retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: onsurvey-redis
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - '6379:6379'
+    command: [ "redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    networks: [web]
+
+volumes:
+  redis_data:
 
 networks:
   web:

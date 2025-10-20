@@ -87,6 +87,8 @@ jobs:
             set -e
             DEPLOY_DIR=/deploy
             export TZ=Asia/Seoul
+            export SPRING_PROFILE=prod
+            export REDIS_PASSWORD='${{ secrets.PROD_REDIS_PASSWORD }}'
 
             echo "[DEBUG] list /deploy before deploy"
             ls -al $DEPLOY_DIR || true
