@@ -3,6 +3,7 @@ package OneQ.OnSurvey.global.infra.toss.controller;
 import OneQ.OnSurvey.global.infra.toss.dto.ReissueRequest;
 import OneQ.OnSurvey.global.infra.toss.dto.TossLoginRequest;
 import OneQ.OnSurvey.global.infra.toss.service.TossAuthService;
+import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,30 +21,31 @@ public class AuthController {
 
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/toss/login")
-    @Operation(summary = "토스 로그인", description = "login")
-    public ResponseEntity<Boolean> tossLogin(
+    @Operation(summary = "토스 로그인", description = "인가코드와 referrer을 받아 토큰을 헤더(Authorization, X-Refresh-Token)로 전달합니다.")
+    public ResponseEntity<SuccessResponse<Boolean>> tossLogin(
             HttpServletResponse httpServletResponse,
             @RequestBody TossLoginRequest tossLoginRequest
     ) {
-        return ResponseEntity.ok(tossAuthService.createAccessAndRefreshToken(tossLoginRequest, httpServletResponse));
+        Boolean result = tossAuthService.createAccessAndRefreshToken(tossLoginRequest, httpServletResponse);
+        return ResponseEntity.ok(SuccessResponse.ok(result));
     }
 
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/reissue")
-    @Operation(summary = "토큰 재발급", description = "reissue")
-    public ResponseEntity<Boolean> reissue(
+    @Operation(summary = "토큰 재발급", description = "Refresh Token을 받아 유효한 경우 Access Token을 재발급합니다.")
+    public ResponseEntity<SuccessResponse<Boolean>> reissue(
             ReissueRequest reissueRequest,
             HttpServletResponse response
     ) {
-        return ResponseEntity.ok(tossAuthService.reissueToken(reissueRequest, response));
+        return ResponseEntity.ok(SuccessResponse.ok(tossAuthService.reissueToken(reissueRequest, response)));
     }
 
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/logout")
-    @Operation(summary = "로그아웃", description = "logout")
-    public ResponseEntity<Boolean> logout(
+    @Operation(summary = "로그아웃", description = "로그아웃 처리 및 RT 삭제 및 AT를 블랙리스트에 등록합니다.")
+    public ResponseEntity<SuccessResponse<Boolean>> logout(
             HttpServletRequest request
     ) {
-        return ResponseEntity.ok(tossAuthService.logout(request));
+        return ResponseEntity.ok(SuccessResponse.ok(tossAuthService.logout(request)));
     }
 }

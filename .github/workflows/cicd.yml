@@ -108,14 +108,8 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ needs.build-and-push.outputs.tag }} || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:latest || true
 
-            # 스크립트 정규화: CRLF 제거 + 비-ASCII(이모지 포함) 제거
-            sed -i 's/\r$//' blue-green.sh || true
-            LC_ALL=C tr -cd '\11\12\15\40-\176' < blue-green.sh > .bg.tmp && mv .bg.tmp blue-green.sh
-            chmod +x blue-green.sh || true
             bash ./blue-green.sh "${{ needs.build-and-push.outputs.tag }}" deploy docker-compose.yml
             
-          
             docker network inspect deploy_web | grep -q '"Name": "onsurvey-redis"' || { echo "ERROR: redis not on deploy_web"; exit 1; }
 
             echo "✅ PROD deploy done (tag=${{ needs.build-and-push.outputs.tag }})"
-          
