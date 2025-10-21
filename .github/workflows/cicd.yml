@@ -85,7 +85,7 @@ jobs:
           key: ${{ secrets.NCP_SSH_KEY }}
           script: |
             set -euo pipefail
-            DEPLOY_DIR=/home/ubuntu/deploy
+            DEPLOY_DIR=/deploy
             cd "$DEPLOY_DIR"
 
             cat > .env <<EOF
