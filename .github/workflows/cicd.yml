@@ -88,7 +88,7 @@ jobs:
             DEPLOY_DIR=/deploy
             export TZ=Asia/Seoul
             export SPRING_PROFILE=prod
-            export REDIS_PASSWORD='${{ secrets.PROD_REDIS_PASSWORD }}'
+            export REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}'
 
             echo "[DEBUG] list /deploy before deploy"
             ls -al $DEPLOY_DIR || true
@@ -98,6 +98,7 @@ jobs:
             cat > "$DEPLOY_DIR/.env" <<'ENV'
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
             SPRING_IMAGE_TAG=latest
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
             ENV
             
             sed -i "s/^SPRING_IMAGE_TAG=.*/SPRING_IMAGE_TAG=${{ needs.build-and-push.outputs.tag }}/" "$DEPLOY_DIR/.env"
