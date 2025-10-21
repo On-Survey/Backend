@@ -84,39 +84,33 @@ jobs:
           username: ${{ secrets.NCP_USER }}
           key: ${{ secrets.NCP_SSH_KEY }}
           script: |
-            set -e
-            DEPLOY_DIR=/deploy
-            export TZ=Asia/Seoul
-            export SPRING_PROFILE=prod
-            export REDIS_PASSWORD='${{ secrets.REDIS_PASSWORD }}'
+            set -euo pipefail
+            DEPLOY_DIR=/home/ubuntu/deploy
+            cd "$DEPLOY_DIR"
 
-            echo "[DEBUG] list /deploy before deploy"
-            ls -al $DEPLOY_DIR || true
-            ls -al $DEPLOY_DIR/config || true
-            
-            # .env 생성/갱신
-            cat > "$DEPLOY_DIR/.env" <<'ENV'
+            cat > .env <<EOF
+            COMPOSE_PROJECT_NAME=deploy
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            SPRING_IMAGE_TAG=latest
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            ENV
+            SPRING_IMAGE_TAG=${{ needs.build-and-push.outputs.tag }}
+            REDIS_PASSWORD=${{ secrets.PROD_REDIS_PASSWORD }}
+            TZ=Asia/Seoul
+            EOF
             
-            sed -i "s/^SPRING_IMAGE_TAG=.*/SPRING_IMAGE_TAG=${{ needs.build-and-push.outputs.tag }}/" "$DEPLOY_DIR/.env"
+            chmod 600 config/application-prod.yml || true
+            chmod +x scripts/blue-green.sh || true
             
-            test -f "$DEPLOY_DIR/docker-compose.yml"
-            test -f "$DEPLOY_DIR/config/application-prod.yml"
-
-            chmod 600 "$DEPLOY_DIR/config/application-prod.yml" || true
-
-            # 최초 1회 부트스트랩 (네트워크/볼륨 등)
-            if [ ! -f "$DEPLOY_DIR/.bootstrapped" ]; then
-              docker compose -f "$DEPLOY_DIR/docker-compose.yml" up -d || true
-              touch "$DEPLOY_DIR/.bootstrapped"
+            if [ ! -L nginx/upstreams/spring-upstream.conf ]; then
+              ( cd nginx/upstreams && ln -s spring-blue.conf spring-upstream.conf )
             fi
 
-            # 새 이미지 pull (커밋 SHA)
-            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ needs.build-and-push.outputs.tag }}"
-            docker pull "$IMAGE" || true
+            docker compose -p deploy -f docker-compose.yml up -d nginx redis
 
-            # 무중단 배포 스크립트 실행
-            bash "$DEPLOY_DIR/blue-green.sh" "${{ needs.build-and-push.outputs.tag }}"
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ needs.build-and-push.outputs.tag }} || true
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:latest || true
+
+            scripts/blue-green.sh "${{ needs.build-and-push.outputs.tag }}" deploy docker-compose.yml
+
+            docker network inspect deploy_web | grep -q '"Name": "onsurvey-redis"' || { echo "ERROR: redis not on deploy_web"; exit 1; }
+
+            echo "✅ PROD deploy done (tag=${{ needs.build-and-push.outputs.tag }})"
+          
