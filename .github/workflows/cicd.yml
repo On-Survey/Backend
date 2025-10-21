@@ -108,7 +108,7 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ needs.build-and-push.outputs.tag }} || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:latest || true
 
-            scripts/blue-green.sh "${{ needs.build-and-push.outputs.tag }}" deploy docker-compose.yml
+            blue-green.sh "${{ needs.build-and-push.outputs.tag }}" deploy docker-compose.yml
 
             docker network inspect deploy_web | grep -q '"Name": "onsurvey-redis"' || { echo "ERROR: redis not on deploy_web"; exit 1; }
 
