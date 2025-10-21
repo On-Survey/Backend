@@ -5,6 +5,7 @@ import OneQ.OnSurvey.global.infra.toss.dto.LoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.dto.TossLoginRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,7 @@ import static OneQ.OnSurvey.global.infra.toss.TossErrorCode.TOSS_GET_USER_INFO_E
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class TossApiClient {
 
     @Value("${toss.api.get-access-token}")
@@ -40,7 +42,8 @@ public class TossApiClient {
     @Value("${toss.api.get-user-info}")
     private String getUserInfoUrl;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
     public SSLContext createSSLContext(String certPath, String keyPath) throws Exception {
         X509Certificate cert = loadCertificate(certPath);
         PrivateKey key = loadPrivateKey(keyPath);
