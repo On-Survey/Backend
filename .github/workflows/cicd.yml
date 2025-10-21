@@ -97,7 +97,7 @@ jobs:
             EOF
             
             chmod 600 config/application-prod.yml || true
-            chmod +x scripts/blue-green.sh || true
+            chmod +x blue-green.sh || true
             
             if [ ! -L nginx/upstreams/spring-upstream.conf ]; then
               ( cd nginx/upstreams && ln -s spring-blue.conf spring-upstream.conf )
