@@ -1,7 +1,8 @@
 package OneQ.OnSurvey.global.infra.toss.service;
 
 import OneQ.OnSurvey.domain.member.Member;
-import OneQ.OnSurvey.domain.member.service.MemberService;
+import OneQ.OnSurvey.domain.member.service.MemberModifyService;
+import OneQ.OnSurvey.domain.member.service.MemberQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,12 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class WithdrawalService {
 
-    private final MemberService memberService;
+    private final MemberQueryService memberQueryService;
+    private final MemberModifyService memberModifyService;
 
     @Transactional
     public void deleteAllInfo(Long userKey) {
-        Member member = memberService.getMemberByUserKey(userKey);
+        Member member = memberQueryService.getMemberByUserKey(userKey);
         Long memberId = member.getId();
-        memberService.deleteById(memberId);
+        memberModifyService.deleteById(memberId);
     }
 }

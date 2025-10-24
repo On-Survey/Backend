@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.infra.toss.service;
 
-import OneQ.OnSurvey.domain.member.service.MemberService;
+import OneQ.OnSurvey.domain.member.service.MemberModifyService;
 import OneQ.OnSurvey.domain.member.value.Role;
 import OneQ.OnSurvey.global.auth.token.TokenStore;
 import OneQ.OnSurvey.global.auth.token.service.BlackListService;
@@ -50,7 +50,7 @@ public class TossAuthService {
     private Long refreshTokenExpireMs;
 
     private final TossApiClient tossApiClient;
-    private final MemberService memberService;
+    private final MemberModifyService memberModifyService;
     private final JWTUtil jwtUtil;
     private final TokenStore tokenStore;
     private final BlackListService blacklistService;
@@ -59,7 +59,7 @@ public class TossAuthService {
         // 토스 액세스 토큰 발급
         LoginMeResponse.Success loginMeResponse = getTossUserInfo(tossLoginRequest);
 
-        memberService.upsertMember(loginMeResponse);
+        memberModifyService.upsertMember(loginMeResponse);
 
         issueTokensToResponse(loginMeResponse.userKey(), response);
 

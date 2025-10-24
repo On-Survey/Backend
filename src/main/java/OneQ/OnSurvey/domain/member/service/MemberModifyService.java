@@ -4,23 +4,19 @@ import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
-import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.dto.LoginMeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
-import static OneQ.OnSurvey.domain.member.MemberErrorCode.MEMBER_NOT_FOUND;
-
 @Service
+@Transactional
 @RequiredArgsConstructor
-public class MemberService {
+public class MemberModifyService implements MemberUpdater, MemberDeleter {
 
     private final MemberRepository memberRepository;
 
-    @Transactional
+    @Override
     public Member upsertMember(LoginMeResponse.Success loginMe) {
         return memberRepository.findMemberByUserKey(loginMe.userKey())
                 .map(existing -> {
@@ -51,29 +47,15 @@ public class MemberService {
                 });
     }
 
-    private Optional<Member> findMemberByUserKey(Long userKey) {
-        return memberRepository.findMemberByUserKey(userKey);
+    @Override
+    public void changeMemberStatusTossConnectOut(Member member) {
+        member.memberConnectOut();
+        memberRepository.save(member);
     }
 
-    @Transactional(readOnly = true)
-    public Member getMemberByUserKey(Long userKey) {
-        return findMemberByUserKey(userKey).orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND));
-    }
-
-    @Transactional
-    public Member save(Member member) {
-        return memberRepository.save(member);
-    }
-
-    @Transactional
+    @Override
     public Boolean deleteById(Long memberId) {
         memberRepository.deleteById(memberId);
         return true;
-    }
-
-    @Transactional
-    public void changeMemberStatusTossConnectOut(Member member) {
-        member.memberConnectOut();
-        save(member);
     }
 }
