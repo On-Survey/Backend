@@ -1,7 +1,7 @@
 package OneQ.OnSurvey.domain.survey.entity;
 
-import OneQ.OnSurvey.common.entity.BaseEntity;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,11 +11,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
-@Getter @Setter @Entity
-@Table(name = "survey")
+@Getter @Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Entity @Table(name = "survey")
 public class Survey extends BaseEntity {
     @Id @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "survey_id")
@@ -25,11 +30,38 @@ public class Survey extends BaseEntity {
     @Column(name = "member_id")
     private Long memberId;
 
-    @Column(length = 64)
+    @Column(length = 32)
     private String title;
 
-    private Boolean isTemporary;
+    @Column(length = 50)
+    private String description;
 
+    @Column(name = "is_temporary")
+    @Builder.Default
+    private Boolean isTemporary = true;
+
+    @Builder.Default
     @Enumerated(EnumType.STRING)
-    private SurveyStatus status;
+    private SurveyStatus status = SurveyStatus.WRITING;
+
+    public static Survey createSurvey(
+        Long memberId,
+        String title,
+        String description
+    ) {
+        return Survey.builder()
+            .memberId(memberId)
+            .title(title)
+            .description(description)
+            .build();
+    }
+
+    public void saveSurvey() {
+        this.isTemporary = false;
+        this.status = SurveyStatus.REVIEW;
+    }
+
+    public void updateSurveyStatus(SurveyStatus status) {
+        this.status = status;
+    }
 }
