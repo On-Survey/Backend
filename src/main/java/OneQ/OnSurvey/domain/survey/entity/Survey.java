@@ -44,7 +44,7 @@ public class Survey extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SurveyStatus status = SurveyStatus.WRITING;
 
-    public static Survey createSurvey(
+    public static Survey of(
         Long memberId,
         String title,
         String description
@@ -63,5 +63,13 @@ public class Survey extends BaseEntity {
 
     public void updateSurveyStatus(SurveyStatus status) {
         this.status = status;
+    }
+
+    public void updateSurveyTitleAndDescription(
+        String title,
+        String description
+    ) {
+        this.title = title;
+        this.description = description;
     }
 }
