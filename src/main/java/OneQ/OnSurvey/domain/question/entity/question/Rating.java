@@ -4,6 +4,7 @@ import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,12 +13,11 @@ import lombok.experimental.SuperBuilder;
 
 @Getter @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @DiscriminatorValue(value = QuestionType.Values.RATING)
 public class Rating extends Question {
 
-    public Rating createRatingQuestion(
+    public static Rating of(
         Long surveyId,
         Integer order,
         String title

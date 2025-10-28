@@ -32,7 +32,7 @@ public class ChoiceOption {
     @Column(name = "next_question_id")
     private Long nextQuestionId;
 
-    public ChoiceOption createChoiceOption(
+    public static ChoiceOption of(
         Long questionId,
         String content
     ) {

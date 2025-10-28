@@ -29,7 +29,7 @@ public class Choice extends Question {
     @Column(name = "has_custom_input")
     private Boolean hasCustomInput;
 
-    public Choice createChoiceQuestion(
+    public static Choice of(
         Long surveyId,
         Integer order,
         String title

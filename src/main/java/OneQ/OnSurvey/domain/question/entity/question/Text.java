@@ -34,7 +34,7 @@ public class Text extends Question {
     @Column(name = "min_value")
     private Integer minValue;
 
-    public Text createTextQuestion(
+    public static Text of(
         Long surveyId,
         Integer order,
         TextType textType,
