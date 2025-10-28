@@ -10,7 +10,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -26,8 +25,7 @@ import java.time.LocalDateTime;
 @Entity @Table(name = "survey_info")
 public class SurveyInfo {
     @Id @Column(name = "info_id")
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "info_id")
-    @SequenceGenerator(name = "info_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long info_id;
 
     @Column(name = "survey_id")

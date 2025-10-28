@@ -10,7 +10,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -27,8 +26,7 @@ import lombok.experimental.SuperBuilder;
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING)
 public abstract class Question extends BaseEntity {
     @Id @Column(name = "question_id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "question_seq")
-    @SequenceGenerator(name = "question_seq")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long questionId;
 
     @Column(name = "survey_id")

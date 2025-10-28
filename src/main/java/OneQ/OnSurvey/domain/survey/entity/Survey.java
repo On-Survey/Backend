@@ -9,7 +9,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -23,8 +22,7 @@ import lombok.NoArgsConstructor;
 @Entity @Table(name = "survey")
 public class Survey extends BaseEntity {
     @Id @Column(name = "id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "survey_id")
-    @SequenceGenerator(name = "survey_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "member_id")

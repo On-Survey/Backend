@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,8 +18,7 @@ import lombok.NoArgsConstructor;
 @Entity @Table(name = "choice_option")
 public class ChoiceOption {
     @Id @Column(name = "choice_option_id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "choice_option_seq")
-    @SequenceGenerator(name = "choice_option_seq")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long choiceOptionId;
 
     @Column(name = "question_id")
