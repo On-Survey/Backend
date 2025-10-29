@@ -7,6 +7,7 @@ import OneQ.OnSurvey.global.auth.token.service.BlackListService;
 import OneQ.OnSurvey.global.auth.utils.JWTUtil;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.adapter.TossApiClient;
+import OneQ.OnSurvey.global.infra.toss.dto.DecryptedLoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.dto.LoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.dto.ReissueRequest;
 import OneQ.OnSurvey.global.infra.toss.dto.TossLoginRequest;
@@ -25,6 +26,7 @@ import java.time.Duration;
 
 import static OneQ.OnSurvey.global.auth.AuthErrorCode.INVALID_REFRESH_TOKEN;
 import static OneQ.OnSurvey.global.infra.toss.TossErrorCode.TOSS_API_CONNECTION_ERROR;
+import static OneQ.OnSurvey.global.infra.toss.TossErrorCode.TOSS_DECRYPT_ERROR;
 
 @Service
 @RequiredArgsConstructor
@@ -54,14 +56,17 @@ public class TossAuthService {
     private final JWTUtil jwtUtil;
     private final TokenStore tokenStore;
     private final BlackListService blacklistService;
+    private final TossMemberInfoDecryptService tossMemberInfoDecryptService;
 
     public Boolean createAccessAndRefreshToken(TossLoginRequest tossLoginRequest, HttpServletResponse response) {
-        // 토스 액세스 토큰 발급
+
         LoginMeResponse.Success loginMeResponse = getTossUserInfo(tossLoginRequest);
 
-        memberModifyService.upsertMember(loginMeResponse);
+        DecryptedLoginMeResponse decryptedLoginResponse = decryptLoginMeOrThrow(loginMeResponse);
 
-        issueTokensToResponse(loginMeResponse.userKey(), response);
+        memberModifyService.upsertMember(decryptedLoginResponse);
+
+        issueTokensToResponse(decryptedLoginResponse.userKey(), response);
 
         return true;
     }
@@ -106,6 +111,15 @@ public class TossAuthService {
         } catch (Exception e) {
             log.error("[TossAuthService Error] : Toss Access Token 발급 중 오류가 발생했습니다.", e);
             throw new CustomException(TOSS_API_CONNECTION_ERROR);
+        }
+    }
+
+    private DecryptedLoginMeResponse decryptLoginMeOrThrow(LoginMeResponse.Success loginMeResponse) {
+        try {
+            return tossMemberInfoDecryptService.decryptResponse(loginMeResponse);
+        } catch (Exception e) {
+            log.error("[TossAuthService Error] 유저 정보 복호화 실패", e);
+            throw new CustomException(TOSS_DECRYPT_ERROR);
         }
     }
 
