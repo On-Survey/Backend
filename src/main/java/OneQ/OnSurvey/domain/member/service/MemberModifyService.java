@@ -4,7 +4,7 @@ import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
-import OneQ.OnSurvey.global.infra.toss.dto.LoginMeResponse;
+import OneQ.OnSurvey.global.infra.toss.dto.DecryptedLoginMeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,32 +17,32 @@ public class MemberModifyService implements MemberUpdater, MemberDeleter {
     private final MemberRepository memberRepository;
 
     @Override
-    public Member upsertMember(LoginMeResponse.Success loginMe) {
-        return memberRepository.findMemberByUserKey(loginMe.userKey())
+    public void upsertMember(DecryptedLoginMeResponse decryptedLoginMeResponse) {
+        memberRepository.findMemberByUserKey(decryptedLoginMeResponse.userKey())
                 .map(existing -> {
                     existing.update(
-                            loginMe.name(),
-                            loginMe.phone(),
-                            loginMe.birthday(),
-                            loginMe.email(),
+                            decryptedLoginMeResponse.name(),
+                            decryptedLoginMeResponse.phone(),
+                            decryptedLoginMeResponse.birthday(),
+                            decryptedLoginMeResponse.email(),
                             MemberStatus.ACTIVE
                     );
 
-                    existing.updateAgreePolicy(loginMe.agreedTerms());
+                    existing.updateAgreePolicy(decryptedLoginMeResponse.agreedTerms());
                     return existing;
                 })
                 .orElseGet(() -> {
                     Member newMember = Member.createMember(
-                            loginMe.userKey(),
-                            loginMe.name(),
-                            loginMe.phone(),
-                            loginMe.birthday(),
-                            loginMe.email(),
+                            decryptedLoginMeResponse.userKey(),
+                            decryptedLoginMeResponse.name(),
+                            decryptedLoginMeResponse.phone(),
+                            decryptedLoginMeResponse.birthday(),
+                            decryptedLoginMeResponse.email(),
                             Role.ROLE_MEMBER,
                             MemberStatus.ACTIVE
                     );
 
-                    newMember.updateAgreePolicy(loginMe.agreedTerms());
+                    newMember.updateAgreePolicy(decryptedLoginMeResponse.agreedTerms());
                     return memberRepository.save(newMember);
                 });
     }
