@@ -4,9 +4,7 @@ import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Transient;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -14,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @Getter @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@DiscriminatorValue(value = QuestionType.Values.RATING)
+@DiscriminatorValue(value = QuestionType.Values.NPS)
 public class NPS extends Question {
 
     public static NPS of(
