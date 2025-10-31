@@ -2,11 +2,10 @@ package OneQ.OnSurvey.domain.question.entity.question;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Transient;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -17,23 +16,42 @@ import lombok.experimental.SuperBuilder;
 @DiscriminatorValue(value = QuestionType.Values.RATING)
 public class Rating extends Question {
 
+    @Column(name = "max_value")
+    private String maxValue;
+
+    @Column(name = "min_value")
+    private String minValue;
+
     public static Rating of(
         Long surveyId,
         Integer order,
-        String title
+        String title,
+        String description,
+        Boolean isRequired,
+        String maxValue,
+        String minValue
     ) {
         return Rating.builder()
             .surveyId(surveyId)
             .order(order)
             .title(title)
+            .description(description)
+            .isRequired(isRequired)
+            .maxValue(maxValue)
+            .minValue(minValue)
             .build();
     }
 
-    public void updateRatingQuestion(
+    public void updateQuestion(
         String title,
         String description,
-        Boolean isRequired
+        Boolean isRequired,
+        Integer order,
+        String maxValue,
+        String minValue
     ) {
-        super.updateQuestion(title, description, isRequired);
+        super.updateQuestion(title, description, isRequired, order);
+        this.maxValue = maxValue;
+        this.minValue = minValue;
     }
 }

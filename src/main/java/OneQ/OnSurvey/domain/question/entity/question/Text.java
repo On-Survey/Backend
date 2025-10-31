@@ -22,37 +22,35 @@ public class Text extends Question {
     @Column(name = "text_type")
     private TextType textType;
 
-    @Column(name = "max_length")
-    private Integer maxLength;
-
-    @Column(name = "min_length")
-    private Integer minLength;
-
-    @Column(name = "max_value")
-    private Integer maxValue;
-
-    @Column(name = "min_value")
-    private Integer minValue;
+    @Column(name = "default_value")
+    private String defaultValue;
 
     public static Text of(
         Long surveyId,
         Integer order,
-        TextType textType,
-        String title
+        String title,
+        String description,
+        Boolean isRequired,
+        TextType textType
     ) {
         return Text.builder()
             .surveyId(surveyId)
             .order(order)
-            .textType(textType)
             .title(title)
+            .description(description)
+            .isRequired(isRequired)
+            .textType(textType)
             .build();
     }
 
-    public void updateTextQuestion(
+    public void updateQuestion(
         String title,
         String description,
-        Boolean isRequired
+        Boolean isRequired,
+        Integer order,
+        String defaultValue
     ) {
-        super.updateQuestion(title, description, isRequired);
+        super.updateQuestion(title, description, isRequired, order);
+        this.defaultValue = defaultValue;
     }
 }

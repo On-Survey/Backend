@@ -18,20 +18,25 @@ public class NPS extends Question {
     public static NPS of(
         Long surveyId,
         Integer order,
-        String title
+        String title,
+        String description,
+        Boolean isRequired
     ) {
         return NPS.builder()
             .surveyId(surveyId)
             .order(order)
             .title(title)
+            .description(description)
+            .isRequired(isRequired)
             .build();
     }
 
-    public void updateNPSQuestion(
+    public void updateQuestion(
         String title,
         String description,
-        Boolean isRequired
+        Boolean isRequired,
+        Integer order
     ) {
-        super.updateQuestion(title, description, isRequired);
+        super.updateQuestion(title, description, isRequired, order);
     }
 }

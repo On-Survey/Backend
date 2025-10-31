@@ -47,11 +47,13 @@ public abstract class Question extends BaseEntity {
     public void updateQuestion(
         String title,
         String description,
-        Boolean isRequired
+        Boolean isRequired,
+        Integer order
     ) {
         this.title = title;
         this.description = description;
         this.isRequired = isRequired;
+        this.order = order;
     }
 
     public void updateOrder(Integer order) {
