@@ -1,12 +1,15 @@
 package OneQ.OnSurvey.domain.question.service;
 
+import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
 import OneQ.OnSurvey.domain.question.entity.question.NPS;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
 import OneQ.OnSurvey.domain.question.entity.question.Text;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertVO;
+import OneQ.OnSurvey.domain.question.repository.choiceOption.ChoiceOptionRepository;
 import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
@@ -23,7 +26,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class QuestionCommandService implements QuestionCommand {
-    private QuestionRepository questionRepository;
+    private final QuestionRepository questionRepository;
+    private final ChoiceOptionRepository choiceOptionRepository;
 
     @Override
     public Question createQuestion(Question question) {
@@ -165,5 +169,37 @@ public class QuestionCommandService implements QuestionCommand {
         }
     }
 
+    @Override
+    public List<ChoiceOption> upsertChoiceOptionList(OptionUpsertDto upsertVO) {
+        Long questionId = upsertVO.getQuestionId();
 
+        Map<Boolean, List<OptionUpsertDto.UpsertInfo>> partitionUpsertInfoList
+            = upsertVO.getUpsertInfoList().stream().collect(Collectors.partitioningBy(info -> info.getOptionId() != null));
+
+        Map<Long, OptionUpsertDto.UpsertInfo> idInfoMap = partitionUpsertInfoList.get(true).stream().collect(Collectors.toMap(
+            OptionUpsertDto.UpsertInfo::getOptionId,
+            Function.identity(),
+            (existing, replace) -> existing
+        ));
+        List<ChoiceOption> saveList = choiceOptionRepository.getOptionsByIds(idInfoMap.keySet());
+
+        saveList.forEach(option -> {
+            Long id = option.getChoiceOptionId();
+            OptionUpsertDto.UpsertInfo upsertInfo = idInfoMap.get(id);
+            option.updateOption(
+                upsertInfo.getContent(),
+                upsertInfo.getNextQuestionId()
+            );
+        });
+
+        List<ChoiceOption> createdList = partitionUpsertInfoList.get(false).stream()
+            .map(upsertInfo -> ChoiceOption.of(
+                questionId,
+                upsertInfo.getContent(),
+                upsertInfo.getNextQuestionId()
+            )).toList();
+        saveList.addAll(createdList);
+
+        return choiceOptionRepository.saveAll(saveList);
+    }
 }

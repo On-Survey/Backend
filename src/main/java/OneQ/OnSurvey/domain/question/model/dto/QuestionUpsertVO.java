@@ -9,8 +9,8 @@ import java.util.List;
 
 @Getter @Builder
 public class QuestionUpsertVO {
-    Long surveyId;
-    List<UpsertInfo> upsertInfoList;
+    private final Long surveyId;
+    private final List<UpsertInfo> upsertInfoList;
 
     @Getter @Builder
     public static class UpsertInfo {
