@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface QuestionCommand {
-    Question createQuestion(Question question); // 문항 ID 생성
-    Question updateQuestion(Question question); // 문항 ID 기반 기본 정보 입력
-
     Boolean deleteQuestionById(Long questionId);
 
     void changeQuestionOrder(Map<Long, Integer> idOrderMap);

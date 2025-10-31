@@ -11,7 +11,5 @@ public interface QuestionJpaRepository extends JpaRepository<Question, Long> {
 
     Question getQuestionByQuestionId(Long questionId);
 
-    List<Question> getQuestionsByQuestionIdContains(Long questionId);
-
     List<Question> getQuestionsByQuestionIdIn(Collection<Long> questionIds);
 }

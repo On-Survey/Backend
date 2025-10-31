@@ -30,16 +30,6 @@ public class QuestionCommandService implements QuestionCommand {
     private final ChoiceOptionRepository choiceOptionRepository;
 
     @Override
-    public Question createQuestion(Question question) {
-        return null;
-    }
-
-    @Override
-    public Question updateQuestion(Question question) {
-        return null;
-    }
-
-    @Override
     public Boolean deleteQuestionById(Long questionId) {
         Question question = questionRepository.getQuestionById(questionId);
         question.setDeleted(true);
