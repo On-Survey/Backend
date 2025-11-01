@@ -54,7 +54,7 @@ public class Survey extends BaseEntity {
             .build();
     }
 
-    public void saveSurvey() {
+    public void submitSurvey() {
         this.isTemporary = false;
         this.status = SurveyStatus.REVIEW;
     }
