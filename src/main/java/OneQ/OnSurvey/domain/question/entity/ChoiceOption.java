@@ -32,12 +32,22 @@ public class ChoiceOption {
 
     public static ChoiceOption of(
         Long questionId,
-        String content
+        String content,
+        Long nextQuestionId
     ) {
         return ChoiceOption.builder()
             .questionId(questionId)
             .content(content)
+            .nextQuestionId(nextQuestionId)
             .build();
+    }
+
+    public void updateOption(
+        String content,
+        Long nextQuestionId
+    ) {
+        this.content = content;
+        this.nextQuestionId = nextQuestionId;
     }
 
     public void updateChoiceOption(String content) {

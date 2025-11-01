@@ -32,22 +32,37 @@ public class Choice extends Question {
     public static Choice of(
         Long surveyId,
         Integer order,
-        String title
+        String title,
+        String description,
+        Boolean isRequired,
+        Integer maxChoice,
+        Boolean hasNoneOption,
+        Boolean hasCustomInput
     ) {
         return Choice.builder()
             .surveyId(surveyId)
             .order(order)
             .title(title)
+            .description(description)
+            .isRequired(isRequired)
+            .maxChoice(maxChoice)
+            .hasNoneOption(hasNoneOption)
+            .hasCustomInput(hasCustomInput)
             .build();
     }
 
-    public void updateChoiceQuestion(
+    public void updateQuestion(
         String title,
         String description,
         Boolean isRequired,
-        Integer maxChoice
+        Integer order,
+        Integer maxChoice,
+        Boolean hasNoneOption,
+        Boolean hasCustomInput
     ) {
-        super.updateQuestion(title, description, isRequired);
+        super.updateQuestion(title, description, isRequired, order);
         this.maxChoice = maxChoice;
+        this.hasNoneOption = hasNoneOption;
+        this.hasCustomInput = hasCustomInput;
     }
 }
