@@ -8,7 +8,7 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter @Builder
-public class QuestionUpsertVO {
+public class QuestionUpsertDto {
     private final Long surveyId;
     private final List<UpsertInfo> upsertInfoList;
 

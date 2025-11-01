@@ -8,7 +8,7 @@ import OneQ.OnSurvey.domain.question.entity.question.Rating;
 import OneQ.OnSurvey.domain.question.entity.question.Text;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
-import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertVO;
+import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.repository.choiceOption.ChoiceOptionRepository;
 import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
@@ -51,13 +51,13 @@ public class QuestionCommandService implements QuestionCommand {
     }
 
     @Override
-    public List<Question> upsertQuestionList(QuestionUpsertVO upsertVO) {
+    public List<Question> upsertQuestionList(QuestionUpsertDto upsertVO) {
         Long surveyId = upsertVO.getSurveyId();
 
-        Map<Boolean, List<QuestionUpsertVO.UpsertInfo>> partitionUpsertInfoList
+        Map<Boolean, List<QuestionUpsertDto.UpsertInfo>> partitionUpsertInfoList
             = upsertVO.getUpsertInfoList().stream().collect(Collectors.partitioningBy(info -> info.getQuestionId() != null));
-        Map<Long, QuestionUpsertVO.UpsertInfo> idInfoMap = partitionUpsertInfoList.get(true).stream().collect(Collectors.toMap(
-            QuestionUpsertVO.UpsertInfo::getQuestionId,
+        Map<Long, QuestionUpsertDto.UpsertInfo> idInfoMap = partitionUpsertInfoList.get(true).stream().collect(Collectors.toMap(
+            QuestionUpsertDto.UpsertInfo::getQuestionId,
             Function.identity(),
             (existing, replace) -> existing
         ));
@@ -65,7 +65,7 @@ public class QuestionCommandService implements QuestionCommand {
 
         saveList.forEach(question -> {
             Long id = question.getQuestionId();
-            QuestionUpsertVO.UpsertInfo upsertInfo = idInfoMap.get(id);
+            QuestionUpsertDto.UpsertInfo upsertInfo = idInfoMap.get(id);
             updateQuestion(upsertInfo, question);
         });
 
@@ -75,7 +75,7 @@ public class QuestionCommandService implements QuestionCommand {
         return questionRepository.saveAll(saveList);
     }
 
-    private void updateQuestion(QuestionUpsertVO.UpsertInfo upsertInfo, Question question) {
+    private void updateQuestion(QuestionUpsertDto.UpsertInfo upsertInfo, Question question) {
         if (question instanceof Choice choice) {
             choice.updateQuestion(
                 upsertInfo.getTitle(),
@@ -113,7 +113,7 @@ public class QuestionCommandService implements QuestionCommand {
         }
     }
 
-    private Question createQuestion(Long surveyId, QuestionUpsertVO.UpsertInfo upsertInfo) {
+    private Question createQuestion(Long surveyId, QuestionUpsertDto.UpsertInfo upsertInfo) {
         QuestionType type = upsertInfo.getQuestionType();
 
         if (type.equals(QuestionType.TEXT)) {
