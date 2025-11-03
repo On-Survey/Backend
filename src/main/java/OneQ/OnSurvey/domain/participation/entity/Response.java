@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.participation.entity;
 
 import OneQ.OnSurvey.domain.participation.entity.id.ResponseId;
+import OneQ.OnSurvey.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @IdClass(ResponseId.class)
 @Entity @Table(name = "response")
-public class Response extends AbstractAnswer {
+public class Response extends BaseEntity {
     @Id @Column(name = "survey_id")
     private Long surveyId;
 
