@@ -20,7 +20,7 @@ import lombok.experimental.SuperBuilder;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class AbstractAnswer extends BaseEntity {
     @Id @Column(name = "answer_id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.TABLE)
     private Long answerId;
 
     @Column(name = "member_id")
