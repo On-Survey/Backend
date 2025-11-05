@@ -25,4 +25,13 @@ public class TokenStore {
     public void deleteRefresh(Long userId) {
         redis.delete(rtKey(userId));
     }
+
+    // TODO 추후 RT 제거 필요
+    public void saveValue(String key, String value, Duration ttl) {
+        redis.opsForValue().set(key, value, ttl);
+    }
+    public Optional<String> getValue(String key) {
+        return Optional.ofNullable(redis.opsForValue().get(key));
+    }
+    public void deleteKey(String key) { redis.delete(key); }
 }
