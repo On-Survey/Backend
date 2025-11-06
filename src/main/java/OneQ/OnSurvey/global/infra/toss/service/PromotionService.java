@@ -56,35 +56,34 @@ public class PromotionService {
      */
     public ExecutionResultResponse issueAndConfirm(long userKey) {
         String baseKey = buildIdKey(promotionCode, userKey);
-
-        String step = "GET_KEY";
         long started = System.currentTimeMillis();
+
         try {
-            log.info("[PROMO] start userKey={} code={} amount={}", userKey, promotionCode, promotionAmount);
-
             PromotionKeyResponse keyResp = tossApiClient.getPromotionKey(userKey, tossSslContext);
-            log.info("[PROMO] get-key ok key={}", maskKey(keyResp.key()));
 
-            step = "EXECUTE";
             ExecutePromotionResponse execResp =
                     tossApiClient.executePromotionWithRetry(userKey, promotionCode, keyResp.key(), promotionAmount, 2, tossSslContext);
-            String execKey = execResp.key();
-            log.info("[PROMO] execute ok execKey={}", maskKey(execKey));
 
-            tokenStore.saveValue(baseKey + ":lastKey", execKey, KEY_TTL);
+            String txId = execResp.key();
+            tokenStore.saveValue(baseKey + ":lastKey", txId, KEY_TTL);
 
-            step = "POLL";
             ExecutionResultResponse finalRes =
-                    waitResultUntilFinal(userKey, promotionCode, execKey, confirmWaitMs);
+                    waitResultUntilFinal(userKey, promotionCode, txId, confirmWaitMs);
 
-            log.info("[PROMO] end status={} elapsedMs={}", finalRes.status(), System.currentTimeMillis() - started);
+            log.info("[PROMO] userKey={} promotionCode={} amount={} txId={} status={} elapsedMs={}",
+                    userKey, maskKey(promotionCode), promotionAmount, txId, finalRes.status(),
+                    System.currentTimeMillis() - started);
+
             return finalRes;
 
         } catch (CustomException ce) {
-            log.warn("[PROMO] fail step={} userKey={} code={} msg={}", step, userKey, ce.getErrorCode(), ce.getMessage());
+            log.warn("[PROMO] userKey={} promotionCode={} amount={} msg={}",
+                    userKey, maskKey(promotionCode), promotionAmount, ce.getMessage());
             throw ce;
+
         } catch (Exception e) {
-            log.error("[PromotionService] issueAndConfirm failed", e);
+            log.error("[PROMO] userKey={} promotionCode={} amount={} err={}",
+                    userKey, maskKey(promotionCode), promotionAmount, e.toString());
             throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
         }
     }
@@ -130,8 +129,18 @@ public class PromotionService {
         return "promo:" + promotionCode + ":" + userKey;
     }
 
+    /** 민감 정보 마스킹 */
     private static String maskKey(String key) {
-        if (key == null) return null;
-        return (key.length() <= 8) ? "****" : key.substring(0, 4) + "****" + key.substring(key.length() - 4);
+        if (key == null || key.length() <= 4) {
+            return "****";
+        }
+
+        int prefixLen = Math.min(3, key.length() / 4);
+        int suffixLen = Math.min(3, key.length() / 4);
+
+        String prefix = key.substring(0, prefixLen);
+        String suffix = key.substring(key.length() - suffixLen);
+
+        return prefix + "****" + suffix;
     }
 }
