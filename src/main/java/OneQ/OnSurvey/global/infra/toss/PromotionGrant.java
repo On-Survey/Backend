@@ -1,12 +1,10 @@
 package OneQ.OnSurvey.global.infra.toss;
 
+import OneQ.OnSurvey.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -17,7 +15,7 @@ import java.time.LocalDateTime;
         )
 )
 @Getter
-public class PromotionGrant {
+public class PromotionGrant extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,14 +39,6 @@ public class PromotionGrant {
 
     @Column(name = "exec_key_issued_at")
     private Instant execKeyIssuedAt;
-
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false, nullable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
     public static PromotionGrant of(Long userKey, Long surveyId, String promotionCode) {
         PromotionGrant promotionGrant = new PromotionGrant();
