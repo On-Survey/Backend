@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.global.infra.toss.adapter;
 
 import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.infra.toss.TossApiException;
 import OneQ.OnSurvey.global.infra.toss.TossErrorCode;
 import OneQ.OnSurvey.global.infra.toss.dto.*;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -208,11 +209,11 @@ public class TossApiClient {
 
             String resp = readAll(conn);
             JsonNode root = objectMapper.readTree(resp);
+
             if ("SUCCESS".equals(root.path("resultType").asText())) {
                 String returnedKey = root.path("success").path("key").asText();
                 return new ExecutePromotionResponse(returnedKey);
             }
-
             int code = root.path("error").path("code").asInt(-1);
 
             // 4110: 일시 오류는 짧게 재시도
@@ -226,8 +227,8 @@ public class TossApiClient {
             }
 
             String msg = root.path("error").path("message").asText("unknown");
-            log.error("[PromotionAPI:executePromotion] code={}, message={}, raw={}", code, msg, resp);
-            throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+            log.error("[PromotionAPI:executePromotion] code={}, msg={}, raw={}", code, msg, resp);
+            throw new TossApiException(code, msg, resp);
         }
     }
 
@@ -249,8 +250,8 @@ public class TossApiClient {
         if (!"SUCCESS".equals(root.path("resultType").asText())) {
             int code = root.path("error").path("code").asInt(-1);
             String msg = root.path("error").path("message").asText("unknown");
-            log.error("[PromotionAPI:getPromotionResult] code={}, message={}, raw={}", code, msg, resp);
-            throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+            log.error("[PromotionAPI:getPromotionResult] code={}, msg={}, raw={}", code, msg, resp);
+            throw new TossApiException(code, msg, resp);
         }
         String status = root.path("success").asText();
         return new ExecutionResultResponse(status);

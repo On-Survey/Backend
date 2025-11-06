@@ -27,8 +27,9 @@ public class PromotionController {
     )
     public SuccessResponse<ExecutionResultResponse> issue(
             @AuthenticationPrincipal CustomUserDetails principal
+            // TODO: 설문 연결 후 실제 surveyId 입력받아야 함
     ) {
-        ExecutionResultResponse res = promotionService.issueAndConfirm(principal.getUserKey());
+        ExecutionResultResponse res = promotionService.issueAndConfirm(principal.getUserKey(), 1L);
         return SuccessResponse.ok(res);
     }
 }
