@@ -2,16 +2,19 @@ package OneQ.OnSurvey.global.infra.toss.service;
 
 import OneQ.OnSurvey.global.auth.token.TokenStore;
 import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.infra.toss.PromotionGrant;
 import OneQ.OnSurvey.global.infra.toss.TossErrorCode;
 import OneQ.OnSurvey.global.infra.toss.adapter.TossApiClient;
 import OneQ.OnSurvey.global.infra.toss.dto.ExecutePromotionResponse;
 import OneQ.OnSurvey.global.infra.toss.dto.ExecutionResultResponse;
 import OneQ.OnSurvey.global.infra.toss.dto.PromotionKeyResponse;
+import OneQ.OnSurvey.global.infra.toss.repository.PromotionGrantRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.net.ssl.SSLContext;
 import java.time.Duration;
@@ -21,6 +24,7 @@ import java.time.Duration;
 @Slf4j
 public class PromotionService {
 
+    private static final Duration LOCK_TTL = Duration.ofMinutes(5);
     private static final Duration KEY_TTL = Duration.ofHours(1);
 
     @Value("${toss.secret.private-key}")
@@ -40,6 +44,7 @@ public class PromotionService {
 
     private final TossApiClient tossApiClient;
     private final TokenStore tokenStore;
+    private final PromotionGrantRepository promotionGrantRepository;
 
     private SSLContext tossSslContext;
 
@@ -54,37 +59,100 @@ public class PromotionService {
      * - FAILED  : CustomException throw
      * - PENDING : confirmWaitMs 타임아웃 내 최종 상태가 안 나오면 그대로 PENDING 반환
      */
-    public ExecutionResultResponse issueAndConfirm(long userKey) {
-        String baseKey = buildIdKey(promotionCode, userKey);
-        long started = System.currentTimeMillis();
+    @Transactional
+    public ExecutionResultResponse issueAndConfirm(long userKey, long surveyId) {
+        PromotionGrant grant = promotionGrantRepository
+                .findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
+                .orElseGet(() -> promotionGrantRepository.save(
+                        PromotionGrant.of(userKey, surveyId, promotionCode)
+                ));
 
+        if (grant.isSuccess()) {
+            return ExecutionResultResponse.success();
+        }
+
+        if (grant.isPending() && grant.getExecKey() != null) {
+            try {
+                ExecutionResultResponse res =
+                        waitResultUntilFinal(userKey, promotionCode, grant.getExecKey(), confirmWaitMs);
+
+                switch (res.status()) {
+                    case "SUCCESS" -> grant.success();
+                    case "PENDING" -> grant.pending();
+                    default        -> grant.fail();
+                }
+                promotionGrantRepository.save(grant);
+
+                if ("FAILED".equals(res.status())) {
+                    throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+                }
+                return res;
+            } catch (CustomException ce) {
+                throw ce;
+            } catch (Exception e) {
+                log.error("[PROMO] poll-only path failed userKey={} surveyId={} err={}", userKey, surveyId, e.toString());
+                grant.fail();
+                promotionGrantRepository.save(grant);
+                throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+            }
+        }
+
+        // 최초 실행 / 재시도 실행 경로
+        String lockKey = buildLockKey(userKey, surveyId);
+        if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
+            return ExecutionResultResponse.pending();
+        }
+
+        long started = System.currentTimeMillis();
         try {
-            PromotionKeyResponse keyResp = tossApiClient.getPromotionKey(userKey, tossSslContext);
+            if (grant.getExecKey() == null) {
+                PromotionKeyResponse keyResp = tossApiClient.getPromotionKey(userKey, tossSslContext);
+                grant.withExecKey(keyResp.key());
+                grant.pending();
+                promotionGrantRepository.save(grant);
+            }
 
             ExecutePromotionResponse execResp =
-                    tossApiClient.executePromotionWithRetry(userKey, promotionCode, keyResp.key(), promotionAmount, 2, tossSslContext);
+                    tossApiClient.executePromotionWithRetry(
+                            userKey, promotionCode, grant.getExecKey(), promotionAmount, 2, tossSslContext);
 
-            String txId = execResp.key();
-            tokenStore.saveValue(baseKey + ":lastKey", txId, KEY_TTL);
+            String execKey = execResp.key();
+            grant.withExecKey(execKey);
+            promotionGrantRepository.save(grant);
 
             ExecutionResultResponse finalRes =
-                    waitResultUntilFinal(userKey, promotionCode, txId, confirmWaitMs);
+                    waitResultUntilFinal(userKey, promotionCode, execKey, confirmWaitMs);
 
-            log.info("[PROMO] userKey={} promotionCode={} amount={} txId={} status={} elapsedMs={}",
-                    userKey, maskKey(promotionCode), promotionAmount, txId, finalRes.status(),
+            switch (finalRes.status()) {
+                case "SUCCESS" -> grant.success();
+                case "PENDING" -> grant.pending();
+                default        -> grant.fail();
+            }
+            promotionGrantRepository.save(grant);
+
+            log.info("[PROMO] userKey={} surveyId={} code={} amount={} execKey={} status={} elapsedMs={}",
+                    userKey, surveyId, maskKey(promotionCode), promotionAmount, maskKey(execKey), finalRes.status(),
                     System.currentTimeMillis() - started);
 
+            if ("FAILED".equals(finalRes.status())) {
+                throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+            }
             return finalRes;
 
         } catch (CustomException ce) {
-            log.warn("[PROMO] userKey={} promotionCode={} amount={} msg={}",
-                    userKey, maskKey(promotionCode), promotionAmount, ce.getMessage());
+            log.warn("[PROMO] userKey={} surveyId={} code={} amount={} msg={}",
+                    userKey, surveyId, maskKey(promotionCode), promotionAmount, ce.getMessage());
             throw ce;
 
         } catch (Exception e) {
-            log.error("[PROMO] userKey={} promotionCode={} amount={} err={}",
-                    userKey, maskKey(promotionCode), promotionAmount, e.toString());
+            log.error("[PROMO] userKey={} surveyId={} code={} amount={} err={}",
+                    userKey, surveyId, maskKey(promotionCode), promotionAmount, e.toString());
+            grant.fail();
+            promotionGrantRepository.save(grant);
             throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+
+        } finally {
+            tokenStore.releaseLock(lockKey);
         }
     }
 
@@ -124,9 +192,8 @@ public class PromotionService {
         }
     }
 
-    /** 키: promo:{promotionCode}:{userKey} */
-    private String buildIdKey(String promotionCode, long userKey) {
-        return "promo:" + promotionCode + ":" + userKey;
+    private String buildLockKey(long userKey, long surveyId) {
+        return "promo:lock:" + promotionCode + ":user:" + userKey + ":survey:" + surveyId;
     }
 
     /** 민감 정보 마스킹 */
