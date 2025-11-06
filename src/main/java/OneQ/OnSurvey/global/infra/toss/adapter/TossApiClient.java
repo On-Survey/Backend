@@ -1,10 +1,11 @@
 package OneQ.OnSurvey.global.infra.toss.adapter;
 
 import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.infra.toss.dto.LoginMeResponse;
-import OneQ.OnSurvey.global.infra.toss.dto.TossLoginRequest;
+import OneQ.OnSurvey.global.infra.toss.TossErrorCode;
+import OneQ.OnSurvey.global.infra.toss.dto.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,9 +29,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-import static OneQ.OnSurvey.global.infra.toss.TossErrorCode.TOSS_ACCESS_TOKEN_ERROR;
-import static OneQ.OnSurvey.global.infra.toss.TossErrorCode.TOSS_GET_USER_INFO_ERROR;
-
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -41,6 +39,15 @@ public class TossApiClient {
 
     @Value("${toss.api.get-user-info}")
     private String getUserInfoUrl;
+
+    @Value("${toss.api.promotion.get-key}")
+    private String promotionGetKeyPath;
+
+    @Value("${toss.api.promotion.execute}")
+    private String promotionExecutePath;
+
+    @Value("${toss.api.promotion.result}")
+    private String promotionResultPath;
 
     private final ObjectMapper objectMapper;
 
@@ -90,52 +97,19 @@ public class TossApiClient {
         return kf.generatePrivate(spec);
     }
 
-    public String makeRequest(String url, SSLContext context) throws IOException {
-        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
-        conn.setSSLSocketFactory(context.getSocketFactory());
-        conn.setRequestMethod("GET");
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(5000);
-
-        try {
-            InputStream in = conn.getResponseCode() >= 400 ? conn.getErrorStream() : conn.getInputStream();
-            return readAll(in);
-        } finally {
-            conn.disconnect();
-        }
-    }
-
     public String getAccessToken(SSLContext context, TossLoginRequest tossLoginRequest) throws IOException {
-        String body = objectMapper.writeValueAsString(tossLoginRequest);
-        HttpsURLConnection conn = (HttpsURLConnection) new URL(getAccessTokenUrl).openConnection();
-        conn.setSSLSocketFactory(context.getSocketFactory());
-        conn.setRequestMethod("POST");
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(5000);
+        HttpsURLConnection conn = openJsonPostUrl(getAccessTokenUrl, context);
 
-        conn.setDoOutput(true); // 바디 전송 허용
-        conn.setRequestProperty("Content-Type", "application/json");
-
-        try {
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(body.getBytes(StandardCharsets.UTF_8));
-            }
-
-            int code = conn.getResponseCode();
-            InputStream in = (code >= 200 && code < 300)
-                    ? conn.getInputStream()
-                    : conn.getErrorStream();
-
-            String resp = readAll(in);
-
-            JsonNode root = objectMapper.readTree(resp);
-            if (!"SUCCESS".equals(root.path("resultType").asText())) {
-                throw new CustomException(TOSS_ACCESS_TOKEN_ERROR);
-            }
-            return root.path("success").path("accessToken").asText();
-        } finally {
-            conn.disconnect();
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(objectMapper.writeValueAsBytes(tossLoginRequest));
         }
+
+        String resp = readAll(conn);
+        JsonNode root = objectMapper.readTree(resp);
+        if (!"SUCCESS".equals(root.path("resultType").asText())) {
+            throw new CustomException(TossErrorCode.TOSS_ACCESS_TOKEN_ERROR);
+        }
+        return root.path("success").path("accessToken").asText();
     }
 
     public LoginMeResponse.Success getLoginMe(SSLContext sslContext, String accessToken) throws IOException {
@@ -144,52 +118,141 @@ public class TossApiClient {
         conn.setRequestMethod("GET");
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(5000);
-
-        // 헤더
         conn.setRequestProperty("Authorization", "Bearer " + accessToken);
 
-        try {
-            int code = conn.getResponseCode();
-            InputStream in = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
-            String resp = readAll(in);
-
-            JsonNode root = objectMapper.readTree(resp);
-            if (!"SUCCESS".equals(root.path("resultType").asText())) {
-                throw new CustomException(TOSS_GET_USER_INFO_ERROR);
-            }
-            JsonNode successRoot = root.path("success");
-            List<String> agreedTerms = new ArrayList<>();
-            for (JsonNode termNode : successRoot.path("agreedTerms")) {
-                agreedTerms.add(termNode.asText());
-            }
-            return new LoginMeResponse.Success(
-                    successRoot.path("userKey").asLong(),
-                    successRoot.path("scope").asText(),
-                    agreedTerms,
-                    successRoot.path("policy").asText(),
-                    successRoot.path("certTxId").asText(),
-                    successRoot.path("name").asText(),
-                    successRoot.path("phone").asText(),
-                    successRoot.path("birthday").asText(),
-                    successRoot.path("ci").asText(),
-                    successRoot.path("di").asText(),
-                    successRoot.path("gender").asText(),
-                    successRoot.path("nationality").asText(),
-                    successRoot.path("email").asText()
-            );
-        } finally {
-            conn.disconnect();
+        String resp = readAll(conn);
+        JsonNode root = objectMapper.readTree(resp);
+        if (!"SUCCESS".equals(root.path("resultType").asText())) {
+            throw new CustomException(TossErrorCode.TOSS_GET_USER_INFO_ERROR);
         }
+        JsonNode successRoot = root.path("success");
+        List<String> agreedTerms = new ArrayList<>();
+        for (JsonNode termNode : successRoot.path("agreedTerms")) agreedTerms.add(termNode.asText());
+
+        return new LoginMeResponse.Success(
+                successRoot.path("userKey").asLong(),
+                successRoot.path("scope").asText(),
+                agreedTerms,
+                successRoot.path("policy").asText(),
+                successRoot.path("certTxId").asText(),
+                successRoot.path("name").asText(),
+                successRoot.path("phone").asText(),
+                successRoot.path("birthday").asText(),
+                successRoot.path("ci").asText(),
+                successRoot.path("di").asText(),
+                successRoot.path("gender").asText(),
+                successRoot.path("nationality").asText(),
+                successRoot.path("email").asText()
+        );
     }
 
-    private String readAll(InputStream in) throws IOException {
+    private String readAll(HttpsURLConnection conn) throws IOException {
+        InputStream in = (conn.getResponseCode() >= 400) ? conn.getErrorStream() : conn.getInputStream();
         if (in == null) return "";
         try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) sb.append(line).append('\n');
+            for (String line; (line = br.readLine()) != null; ) sb.append(line).append('\n');
             return sb.toString();
         }
     }
 
+    private HttpsURLConnection openJsonPostUrl(String url, SSLContext ctx) throws IOException {
+        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+        conn.setSSLSocketFactory(ctx.getSocketFactory());
+        conn.setRequestMethod("POST");
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(5000);
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/json");
+        return conn;
+    }
+
+    /** 지급 Key 발급 */
+    public PromotionKeyResponse getPromotionKey(long userKey, SSLContext ctx) throws IOException {
+        HttpsURLConnection conn = openJsonPostUrl(promotionGetKeyPath, ctx);
+        conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write("{}".getBytes(StandardCharsets.UTF_8));
+        }
+
+        String resp = readAll(conn);
+        JsonNode root = objectMapper.readTree(resp);
+        if (!"SUCCESS".equals(root.path("resultType").asText())) {
+            int code = root.path("error").path("code").asInt(-1);
+            String msg = root.path("error").path("message").asText("unknown");
+            log.error("[PromotionAPI:getPromotionKey] code={}, message={}, raw={}", code, msg, resp);
+            throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+        }
+        String key = root.path("success").path("key").asText();
+        return new PromotionKeyResponse(key);
+    }
+
+    /** 지급 실행 (4110 재시도, 4113 멱등 성공 처리) */
+    public ExecutePromotionResponse executePromotionWithRetry(
+            long userKey, String promotionCode, String key, int amount, int retries, SSLContext ctx
+    ) throws Exception {
+        int attempt = 0;
+        while (true) {
+            HttpsURLConnection conn = openJsonPostUrl(promotionExecutePath, ctx);
+            conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
+
+            ObjectNode body = objectMapper.createObjectNode()
+                    .put("promotionCode", promotionCode)
+                    .put("key", key)
+                    .put("amount", amount);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(objectMapper.writeValueAsBytes(body));
+            }
+
+            String resp = readAll(conn);
+            JsonNode root = objectMapper.readTree(resp);
+            if ("SUCCESS".equals(root.path("resultType").asText())) {
+                String returnedKey = root.path("success").path("key").asText();
+                return new ExecutePromotionResponse(returnedKey);
+            }
+
+            int code = root.path("error").path("code").asInt(-1);
+
+            // 4110: 일시 오류는 짧게 재시도
+            if (code == 4110 && attempt++ < retries) {
+                Thread.sleep(200L * attempt);
+                continue;
+            }
+            // 4113: 동일 key 중복은 멱등 성공 간주
+            if (code == 4113) {
+                return new ExecutePromotionResponse(key);
+            }
+
+            String msg = root.path("error").path("message").asText("unknown");
+            log.error("[PromotionAPI:executePromotion] code={}, message={}, raw={}", code, msg, resp);
+            throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+        }
+    }
+
+    /** 지급 결과 조회 */
+    public ExecutionResultResponse getPromotionResult(long userKey, String promotionCode, String key, SSLContext ctx) throws IOException {
+        HttpsURLConnection conn = openJsonPostUrl(promotionResultPath, ctx);
+        conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
+
+        ObjectNode body = objectMapper.createObjectNode()
+                .put("promotionCode", promotionCode)
+                .put("key", key);
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(objectMapper.writeValueAsBytes(body));
+        }
+
+        String resp = readAll(conn);
+        JsonNode root = objectMapper.readTree(resp);
+        if (!"SUCCESS".equals(root.path("resultType").asText())) {
+            int code = root.path("error").path("code").asInt(-1);
+            String msg = root.path("error").path("message").asText("unknown");
+            log.error("[PromotionAPI:getPromotionResult] code={}, message={}, raw={}", code, msg, resp);
+            throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+        }
+        String status = root.path("success").asText();
+        return new ExecutionResultResponse(status);
+    }
 }
