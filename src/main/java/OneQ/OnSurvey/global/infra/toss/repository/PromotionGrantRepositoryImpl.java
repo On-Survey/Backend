@@ -21,4 +21,14 @@ public class PromotionGrantRepositoryImpl implements PromotionGrantRepository {
     public Optional<PromotionGrant> findByUserKeyAndSurveyIdAndPromotionCode(Long userKey, Long surveyId, String promotionCode) {
         return promotionGrantJpaRepository.findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode);
     }
+
+    @Override
+    public Optional<PromotionGrant> findById(Long grantId) {
+        return promotionGrantJpaRepository.findById(grantId);
+    }
+
+    @Override
+    public void saveAndFlush(PromotionGrant g) {
+        promotionGrantJpaRepository.saveAndFlush(g);
+    }
 }

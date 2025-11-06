@@ -76,7 +76,15 @@ public class PromotionService {
         }
 
         if (grant.isPending() && grant.getExecKey() != null) {
-            return pollWithRecoveryAndPersist(grant, userKey, grant.getExecKey());
+            String lockKey = buildLockKey(userKey, surveyId);
+            if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
+                return ExecutionResultResponse.pending();
+            }
+            try {
+                return pollWithRecoveryAndPersist(grant, userKey, grant.getExecKey());
+            } finally {
+                tokenStore.releaseLock(lockKey);
+            }
         }
 
         // 최초 실행 / 재시도 실행 경로
@@ -88,20 +96,20 @@ public class PromotionService {
         try {
             if (grant.getExecKey() == null || isKeyExpired(grant)) {
                 PromotionKeyResponse keyResp = tossApiClient.getPromotionKey(userKey, tossSslContext);
-                grantTx.markPending(grant, keyResp.key());
+                grantTx.markPending(grant.getId(), keyResp.key());
             }
 
             ExecutePromotionResponse execResp = tossApiClient.executePromotionWithRetry(
                     userKey, promotionCode, grant.getExecKey(), promotionAmount, 2, tossSslContext);
-            grantTx.saveExecKey(grant, execResp.key());
+            grantTx.saveExecKey(grant.getId(), execResp.key());
 
             ExecutionResultResponse finalRes = waitResultUntilFinalWithRecovery(
                     grant, userKey, promotionCode, execResp.key(), confirmWaitMs);
 
             switch (finalRes.status()) {
-                case "SUCCESS" -> grantTx.markSuccess(grant);
-                case "PENDING" -> grantTx.markPending(grant, execResp.key());
-                default        -> grantTx.markFail(grant);
+                case "SUCCESS" -> grantTx.markSuccess(grant.getId());
+                case "PENDING" -> grantTx.markPending(grant.getId(), execResp.key());
+                default        -> grantTx.markFail(grant.getId());
             }
 
             log.info("[PROMO] userKey={} surveyId={} code={} amount={} execKey={} status={}",
@@ -113,13 +121,13 @@ public class PromotionService {
 
         } catch (TossApiException te) {
             log.warn("[PROMO] tossCode={} msg={}", te.getCode(), te.getMessage());
-            grantTx.markFail(grant);
+            grantTx.markFail(grant.getId());
             throw new CustomException(TossErrorMapper.map(te.getCode()));
         } catch (CustomException ce) {
             throw ce;
         } catch (Exception e) {
             log.error("[PROMO] err={}", e.toString());
-            grantTx.markFail(grant);
+            grantTx.markFail(grant.getId());
             throw new CustomException(TossErrorCode.TOSS_API_CONNECTION_ERROR);
         } finally {
             tokenStore.releaseLock(lockKey);
@@ -131,18 +139,18 @@ public class PromotionService {
             ExecutionResultResponse res = waitResultUntilFinalWithRecovery(
                     grant, userKey, promotionCode, execKey, confirmWaitMs);
             switch (res.status()) {
-                case "SUCCESS" -> grantTx.markSuccess(grant);
-                case "PENDING" -> grantTx.markPending(grant, execKey);
-                default        -> grantTx.markFail(grant);
+                case "SUCCESS" -> grantTx.markSuccess(grant.getId());
+                case "PENDING" -> grantTx.markPending(grant.getId(), execKey);
+                default        -> grantTx.markFail(grant.getId());
             }
             if ("FAILED".equals(res.status()))
                 throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
             return res;
         } catch (TossApiException te) {
-            grantTx.markFail(grant);
+            grantTx.markFail(grant.getId());
             throw new CustomException(TossErrorMapper.map(te.getCode()));
         } catch (Exception e) {
-            grantTx.markFail(grant);
+            grantTx.markFail(grant.getId());
             throw new CustomException(TossErrorCode.TOSS_API_CONNECTION_ERROR);
         }
     }
@@ -169,7 +177,7 @@ public class PromotionService {
                     ExecutePromotionResponse execResp =
                             tossApiClient.executePromotionWithRetry(userKey, promoCode, execKey, promotionAmount, 1, tossSslContext);
                     execKey = execResp.key();
-                    grantTx.saveExecKey(grant, execKey);
+                    grantTx.saveExecKey(grant.getId(), execKey);
                     // 다음 루프에서 다시 조회
                 } else {
                     return new ExecutionResultResponse("FAILED");
@@ -191,7 +199,7 @@ public class PromotionService {
             if (te.getCode() == 4111) {
                 ExecutePromotionResponse execResp =
                         tossApiClient.executePromotionWithRetry(userKey, promoCode, execKey, promotionAmount, 1, tossSslContext);
-                grantTx.saveExecKey(grant, execResp.key());
+                grantTx.saveExecKey(grant.getId(), execResp.key());
                 return tossApiClient.getPromotionResult(userKey, promoCode, execResp.key(), tossSslContext);
             }
             throw te;
