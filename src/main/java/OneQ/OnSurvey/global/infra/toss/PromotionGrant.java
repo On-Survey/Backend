@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -38,6 +39,9 @@ public class PromotionGrant {
     @Column(name = "exec_key", length = 128)
     private String execKey;
 
+    @Column(name = "exec_key_issued_at")
+    private Instant execKeyIssuedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
@@ -55,7 +59,11 @@ public class PromotionGrant {
         return promotionGrant;
     }
 
-    public void withExecKey(String execKey) {this.execKey = execKey;}
+    public PromotionGrant withExecKey(String key) {
+        this.execKey = key;
+        this.execKeyIssuedAt = Instant.now();
+        return this;
+    }
 
     public void pending() { this.status = GrantStatus.PENDING; }
     public void success() { this.status = GrantStatus.SUCCESS; }

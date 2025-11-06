@@ -3,7 +3,9 @@ package OneQ.OnSurvey.global.infra.toss.service;
 import OneQ.OnSurvey.global.auth.token.TokenStore;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.PromotionGrant;
+import OneQ.OnSurvey.global.infra.toss.TossApiException;
 import OneQ.OnSurvey.global.infra.toss.TossErrorCode;
+import OneQ.OnSurvey.global.infra.toss.TossErrorMapper;
 import OneQ.OnSurvey.global.infra.toss.adapter.TossApiClient;
 import OneQ.OnSurvey.global.infra.toss.dto.ExecutePromotionResponse;
 import OneQ.OnSurvey.global.infra.toss.dto.ExecutionResultResponse;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.net.ssl.SSLContext;
 import java.time.Duration;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +48,7 @@ public class PromotionService {
     private final TossApiClient tossApiClient;
     private final TokenStore tokenStore;
     private final PromotionGrantRepository promotionGrantRepository;
+    private final PromotionGrantTxService grantTx;
 
     private SSLContext tossSslContext;
 
@@ -72,29 +76,7 @@ public class PromotionService {
         }
 
         if (grant.isPending() && grant.getExecKey() != null) {
-            try {
-                ExecutionResultResponse res =
-                        waitResultUntilFinal(userKey, promotionCode, grant.getExecKey(), confirmWaitMs);
-
-                switch (res.status()) {
-                    case "SUCCESS" -> grant.success();
-                    case "PENDING" -> grant.pending();
-                    default        -> grant.fail();
-                }
-                promotionGrantRepository.save(grant);
-
-                if ("FAILED".equals(res.status())) {
-                    throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
-                }
-                return res;
-            } catch (CustomException ce) {
-                throw ce;
-            } catch (Exception e) {
-                log.error("[PROMO] poll-only path failed userKey={} surveyId={} err={}", userKey, surveyId, e.toString());
-                grant.fail();
-                promotionGrantRepository.save(grant);
-                throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
-            }
+            return pollWithRecoveryAndPersist(grant, userKey, grant.getExecKey());
         }
 
         // 최초 실행 / 재시도 실행 경로
@@ -103,93 +85,122 @@ public class PromotionService {
             return ExecutionResultResponse.pending();
         }
 
-        long started = System.currentTimeMillis();
         try {
-            if (grant.getExecKey() == null) {
+            if (grant.getExecKey() == null || isKeyExpired(grant)) {
                 PromotionKeyResponse keyResp = tossApiClient.getPromotionKey(userKey, tossSslContext);
-                grant.withExecKey(keyResp.key());
-                grant.pending();
-                promotionGrantRepository.save(grant);
+                grantTx.markPending(grant, keyResp.key());
             }
 
-            ExecutePromotionResponse execResp =
-                    tossApiClient.executePromotionWithRetry(
-                            userKey, promotionCode, grant.getExecKey(), promotionAmount, 2, tossSslContext);
+            ExecutePromotionResponse execResp = tossApiClient.executePromotionWithRetry(
+                    userKey, promotionCode, grant.getExecKey(), promotionAmount, 2, tossSslContext);
+            grantTx.saveExecKey(grant, execResp.key());
 
-            String execKey = execResp.key();
-            grant.withExecKey(execKey);
-            promotionGrantRepository.save(grant);
-
-            ExecutionResultResponse finalRes =
-                    waitResultUntilFinal(userKey, promotionCode, execKey, confirmWaitMs);
+            ExecutionResultResponse finalRes = waitResultUntilFinalWithRecovery(
+                    grant, userKey, promotionCode, execResp.key(), confirmWaitMs);
 
             switch (finalRes.status()) {
-                case "SUCCESS" -> grant.success();
-                case "PENDING" -> grant.pending();
-                default        -> grant.fail();
+                case "SUCCESS" -> grantTx.markSuccess(grant);
+                case "PENDING" -> grantTx.markPending(grant, execResp.key());
+                default        -> grantTx.markFail(grant);
             }
-            promotionGrantRepository.save(grant);
 
-            log.info("[PROMO] userKey={} surveyId={} code={} amount={} execKey={} status={} elapsedMs={}",
-                    userKey, surveyId, maskKey(promotionCode), promotionAmount, maskKey(execKey), finalRes.status(),
-                    System.currentTimeMillis() - started);
+            log.info("[PROMO] userKey={} surveyId={} code={} amount={} execKey={} status={}",
+                    userKey, surveyId, maskKey(promotionCode), promotionAmount, maskKey(execResp.key()), finalRes.status());
 
-            if ("FAILED".equals(finalRes.status())) {
+            if ("FAILED".equals(finalRes.status()))
                 throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
-            }
             return finalRes;
 
+        } catch (TossApiException te) {
+            log.warn("[PROMO] tossCode={} msg={}", te.getCode(), te.getMessage());
+            grantTx.markFail(grant);
+            throw new CustomException(TossErrorMapper.map(te.getCode()));
         } catch (CustomException ce) {
-            log.warn("[PROMO] userKey={} surveyId={} code={} amount={} msg={}",
-                    userKey, surveyId, maskKey(promotionCode), promotionAmount, ce.getMessage());
             throw ce;
-
         } catch (Exception e) {
-            log.error("[PROMO] userKey={} surveyId={} code={} amount={} err={}",
-                    userKey, surveyId, maskKey(promotionCode), promotionAmount, e.toString());
-            grant.fail();
-            promotionGrantRepository.save(grant);
-            throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
-
+            log.error("[PROMO] err={}", e.toString());
+            grantTx.markFail(grant);
+            throw new CustomException(TossErrorCode.TOSS_API_CONNECTION_ERROR);
         } finally {
             tokenStore.releaseLock(lockKey);
         }
     }
 
+    private ExecutionResultResponse pollWithRecoveryAndPersist(PromotionGrant grant, long userKey, String execKey) {
+        try {
+            ExecutionResultResponse res = waitResultUntilFinalWithRecovery(
+                    grant, userKey, promotionCode, execKey, confirmWaitMs);
+            switch (res.status()) {
+                case "SUCCESS" -> grantTx.markSuccess(grant);
+                case "PENDING" -> grantTx.markPending(grant, execKey);
+                default        -> grantTx.markFail(grant);
+            }
+            if ("FAILED".equals(res.status()))
+                throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+            return res;
+        } catch (TossApiException te) {
+            grantTx.markFail(grant);
+            throw new CustomException(TossErrorMapper.map(te.getCode()));
+        } catch (Exception e) {
+            grantTx.markFail(grant);
+            throw new CustomException(TossErrorCode.TOSS_API_CONNECTION_ERROR);
+        }
+    }
+
     /** execution-result를 성공/실패가 나오거나 타임아웃될 때까지 백오프 폴링 */
-    private ExecutionResultResponse waitResultUntilFinal(long userKey, String promoCode, String execKey, long waitMs)
-            throws Exception {
+    private ExecutionResultResponse waitResultUntilFinalWithRecovery(
+            PromotionGrant grant, long userKey, String promoCode, String execKey, long waitMs) throws Exception {
 
         if (waitMs <= 0) {
-            ExecutionResultResponse res = tossApiClient.getPromotionResult(userKey, promoCode, execKey, tossSslContext);
-            if ("FAILED".equals(res.status())) {
-                log.warn("[PROMO] poll failed immediately execKey={}", maskKey(execKey));
-                throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
-            }
-            return res;
+            return getResultOrRecoverOnce(grant, userKey, promoCode, execKey);
         }
 
         long deadline = System.currentTimeMillis() + waitMs;
-        long[] sleeps = {200, 400, 800, 1600, 1600, 1600}; // 최대 6.8초 백오프
-        int i = 0, attempt = 1;
+        long[] sleeps = {200, 400, 800, 1600, 1600, 1600};
+        int i = 0;
 
         while (true) {
-            ExecutionResultResponse res = tossApiClient.getPromotionResult(userKey, promoCode, execKey, tossSslContext);
-
-            if (res.isSuccess()) return res;
-            if ("FAILED".equals(res.status())) {
-                log.warn("[PROMO] poll failed attempt={} execKey={}", attempt, maskKey(execKey));
-                throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+            try {
+                ExecutionResultResponse res = tossApiClient.getPromotionResult(userKey, promoCode, execKey, tossSslContext);
+                if (res.isSuccess() || "FAILED".equals(res.status())) return res;
+            } catch (TossApiException te) {
+                if (te.getCode() == 4111) {
+                    // 아직 execute가 반영 안 됐다고 판단 → 1회 보강
+                    ExecutePromotionResponse execResp =
+                            tossApiClient.executePromotionWithRetry(userKey, promoCode, execKey, promotionAmount, 1, tossSslContext);
+                    execKey = execResp.key();
+                    grantTx.saveExecKey(grant, execKey);
+                    // 다음 루프에서 다시 조회
+                } else {
+                    return new ExecutionResultResponse("FAILED");
+                }
             }
 
             if (System.currentTimeMillis() >= deadline) {
-                log.warn("[PROMO] poll timeout attempt={} lastStatus=PENDING execKey={}", attempt, maskKey(execKey));
-                return res;
+                return new ExecutionResultResponse("PENDING");
             }
-
             Thread.sleep(sleeps[Math.min(i++, sleeps.length - 1)]);
-            attempt++;
         }
+    }
+
+    private ExecutionResultResponse getResultOrRecoverOnce(
+            PromotionGrant grant, long userKey, String promoCode, String execKey) throws Exception {
+        try {
+            return tossApiClient.getPromotionResult(userKey, promoCode, execKey, tossSslContext);
+        } catch (TossApiException te) {
+            if (te.getCode() == 4111) {
+                ExecutePromotionResponse execResp =
+                        tossApiClient.executePromotionWithRetry(userKey, promoCode, execKey, promotionAmount, 1, tossSslContext);
+                grantTx.saveExecKey(grant, execResp.key());
+                return tossApiClient.getPromotionResult(userKey, promoCode, execResp.key(), tossSslContext);
+            }
+            throw te;
+        }
+    }
+
+    private boolean isKeyExpired(PromotionGrant g) {
+        return g.getExecKeyIssuedAt() != null &&
+                Duration.between(g.getExecKeyIssuedAt(), Instant.now()).compareTo(KEY_TTL) > 0;
     }
 
     private String buildLockKey(long userKey, long surveyId) {
