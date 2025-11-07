@@ -28,7 +28,8 @@ public class PromotionGrantRepositoryImpl implements PromotionGrantRepository {
     }
 
     @Override
-    public void saveAndFlush(PromotionGrant g) {
+    public PromotionGrant saveAndFlush(PromotionGrant g) {
         promotionGrantJpaRepository.saveAndFlush(g);
+        return g;
     }
 }

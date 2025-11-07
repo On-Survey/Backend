@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.global.infra.toss.service;
 
+import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.PromotionGrant;
+import OneQ.OnSurvey.global.infra.toss.TossErrorCode;
 import OneQ.OnSurvey.global.infra.toss.repository.PromotionGrantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,7 +34,8 @@ public class PromotionGrantTxService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markPending(Long grantId, String execKey) {
         retryOptimistic(() -> {
-            PromotionGrant g = repo.findById(grantId).orElseThrow();
+            PromotionGrant g = repo.findById(grantId).orElseThrow(
+                    () -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
             if (execKey != null) g.withExecKey(execKey);
             g.pending();
             repo.saveAndFlush(g);
@@ -43,7 +46,8 @@ public class PromotionGrantTxService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markSuccess(Long grantId) {
         retryOptimistic(() -> {
-            PromotionGrant g = repo.findById(grantId).orElseThrow();
+            PromotionGrant g = repo.findById(grantId).orElseThrow(
+                    () -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
             g.success();
             repo.saveAndFlush(g);
             return null;
@@ -53,7 +57,8 @@ public class PromotionGrantTxService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFail(Long grantId) {
         retryOptimistic(() -> {
-            PromotionGrant g = repo.findById(grantId).orElseThrow();
+            PromotionGrant g = repo.findById(grantId).orElseThrow(
+                    () -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
             g.fail();
             repo.saveAndFlush(g);
             return null;
@@ -63,7 +68,8 @@ public class PromotionGrantTxService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveExecKey(Long grantId, String execKey) {
         retryOptimistic(() -> {
-            PromotionGrant g = repo.findById(grantId).orElseThrow();
+            PromotionGrant g = repo.findById(grantId).orElseThrow(
+                    () -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
             g.withExecKey(execKey);
             repo.saveAndFlush(g);
             return null;

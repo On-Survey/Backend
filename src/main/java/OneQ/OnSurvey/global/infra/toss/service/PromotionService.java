@@ -67,7 +67,7 @@ public class PromotionService {
     public ExecutionResultResponse issueAndConfirm(long userKey, long surveyId) {
         PromotionGrant grant = promotionGrantRepository
                 .findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
-                .orElseGet(() -> promotionGrantRepository.save(
+                .orElseGet(() -> promotionGrantRepository.saveAndFlush(
                         PromotionGrant.of(userKey, surveyId, promotionCode)
                 ));
 
