@@ -92,13 +92,15 @@ public class PromotionService {
         }
 
         try {
-            if (grant.getExecKey() == null || isKeyExpired(grant)) {
+            String execKey = grant.getExecKey();
+            if (execKey == null || isKeyExpired(grant)) {
                 PromotionKeyResponse keyResp = tossApiClient.getPromotionKey(userKey, tossSslContext);
-                grantTx.markPending(grant.getId(), keyResp.key());
+                execKey = keyResp.key();
+                grantTx.markPending(grant.getId(), execKey);
             }
 
             ExecutePromotionResponse execResp = tossApiClient.executePromotionWithRetry(
-                    userKey, promotionCode, grant.getExecKey(), promotionAmount, 2, tossSslContext);
+                    userKey, promotionCode, execKey, promotionAmount, 2, tossSslContext);
             grantTx.saveExecKey(grant.getId(), execResp.key());
 
             ExecutionResultResponse finalRes = waitResultUntilFinalWithRecovery(
