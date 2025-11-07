@@ -32,6 +32,18 @@ public class PromotionGrantTxService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Long getOrCreate(long userKey, long surveyId, String promotionCode) {
+        return retryOptimistic(() -> repo.findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
+                .map(PromotionGrant::getId)
+                .orElseGet(() -> {
+                    PromotionGrant created = repo.saveAndFlush(
+                            PromotionGrant.of(userKey, surveyId, promotionCode)
+                    );
+                    return created.getId();
+                }));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markPending(Long grantId, String execKey) {
         retryOptimistic(() -> {
             PromotionGrant g = repo.findById(grantId).orElseThrow(

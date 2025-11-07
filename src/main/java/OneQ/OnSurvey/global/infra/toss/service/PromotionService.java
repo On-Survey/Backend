@@ -65,11 +65,9 @@ public class PromotionService {
      */
     @Transactional
     public ExecutionResultResponse issueAndConfirm(long userKey, long surveyId) {
-        PromotionGrant grant = promotionGrantRepository
-                .findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
-                .orElseGet(() -> promotionGrantRepository.saveAndFlush(
-                        PromotionGrant.of(userKey, surveyId, promotionCode)
-                ));
+        Long grantId = grantTx.getOrCreate(userKey, surveyId, promotionCode);
+        PromotionGrant grant = promotionGrantRepository.findById(grantId)
+                .orElseThrow(() -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
 
         if (grant.isSuccess()) {
             return ExecutionResultResponse.success();
