@@ -31,14 +31,6 @@ public class SurveyInfo {
     @Column(name = "survey_id")
     private Long surveyId;
 
-    private LocalDateTime deadline;
-
-    @Column(name = "due_count")
-    private Integer dueCount;
-
-    @Column(name = "question_count")
-    private Integer questionCount;
-
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
@@ -50,18 +42,12 @@ public class SurveyInfo {
 
     public SurveyInfo createSurveyInfo(
         Long surveyId,
-        LocalDateTime deadLine,
-        Integer dueCount,
-        Integer questionCount,
         Gender gender,
         AgeRange age,
         Residence residence
     ) {
         return SurveyInfo.builder()
             .surveyId(surveyId)
-            .deadline(deadLine)
-            .dueCount(dueCount)
-            .questionCount(questionCount)
             .gender(gender)
             .age(age)
             .residence(residence)

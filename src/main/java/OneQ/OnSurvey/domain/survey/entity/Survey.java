@@ -16,6 +16,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -33,6 +35,11 @@ public class Survey extends BaseEntity {
 
     @Column(length = 50)
     private String description;
+
+    private LocalDateTime deadline;
+
+    @Column(name = "due_count")
+    private Integer dueCount;
 
     @Column(name = "is_temporary")
     @Builder.Default

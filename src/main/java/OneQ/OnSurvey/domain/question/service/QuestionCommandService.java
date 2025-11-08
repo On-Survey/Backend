@@ -108,7 +108,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getOrder(),
-                upsertInfo.getDefaultValue()
+                upsertInfo.getDefaultDate()
             );
         }
     }

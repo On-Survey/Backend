@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
+
 @Getter @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -22,8 +24,8 @@ public class Text extends Question {
     @Column(name = "text_type")
     private TextType textType;
 
-    @Column(name = "default_value")
-    private String defaultValue;
+    @Column(name = "default_date")
+    private LocalDateTime defaultDate;
 
     public static Text of(
         Long surveyId,
@@ -48,9 +50,9 @@ public class Text extends Question {
         String description,
         Boolean isRequired,
         Integer order,
-        String defaultValue
+        LocalDateTime defaultDate
     ) {
         super.updateQuestion(title, description, isRequired, order);
-        this.defaultValue = defaultValue;
+        this.defaultDate = defaultDate;
     }
 }

@@ -14,7 +14,7 @@ public class QuestionRepositoryImpl implements QuestionRepository {
 
     @Override
     public List<Question> getQuestionListBySurveyId(Long surveyId) {
-        return questionJpaRepository.getQuestionsBySurveyId(surveyId);
+        return questionJpaRepository.getQuestionsBySurveyIdOrderByOrder(surveyId);
     }
 
     @Override

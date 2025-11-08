@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.question.model.TextType;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter @Builder
@@ -26,6 +27,6 @@ public class QuestionUpsertDto {
         String minValue;
         String maxValue;
         TextType textType;
-        String defaultValue;
+        LocalDateTime defaultDate;
     }
 }
