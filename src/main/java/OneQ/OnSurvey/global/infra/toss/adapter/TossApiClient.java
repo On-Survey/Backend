@@ -50,6 +50,9 @@ public class TossApiClient {
     @Value("${toss.api.promotion.result}")
     private String promotionResultPath;
 
+    @Value("${toss.api.iap.get-order-status}")
+    private String getIapOrderStatusUrl;
+
     private final ObjectMapper objectMapper;
 
     public SSLContext createSSLContext(String certPath, String keyPath) throws Exception {
@@ -255,5 +258,30 @@ public class TossApiClient {
         }
         String status = root.path("success").asText();
         return new ExecutionResultResponse(status);
+    }
+
+    /** 인앱 결제 상태 조회 */
+    public OrderStatusResponse getIapOrderStatus(SSLContext ctx, long userKey, String orderId) throws IOException {
+        HttpsURLConnection conn = openJsonPostUrl(getIapOrderStatusUrl, ctx);
+        conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(objectMapper.writeValueAsBytes(new GetOrderStatusRequest(orderId)));
+        }
+        String resp = readAll(conn);
+        JsonNode root = objectMapper.readTree(resp);
+        if (!"SUCCESS".equals(root.path("resultType").asText())) {
+            int code = root.path("error").path("code").asInt(-1);
+            String msg  = root.path("error").path("message").asText("unknown");
+            log.error("[IAP:getOrderStatus] code={}, message={}, raw={}", code, msg, resp);
+            throw new CustomException(TossErrorCode.TOSS_IAP_GET_STATUS_ERROR);
+        }
+        JsonNode s = root.path("success");
+        return OrderStatusResponse.of(
+                s.path("orderId").asText(null),
+                s.path("sku").asText(null),
+                s.path("status").asText(null),
+                s.path("reason").asText(null),
+                s.path("statusDeterminedAt").asText(null)
+        );
     }
 }
