@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.member;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
 import OneQ.OnSurvey.global.entity.BaseEntity;
+import OneQ.OnSurvey.global.exception.CustomException;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -49,6 +50,10 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private MemberStatus status;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Long coin = 0L;
+
     public static Member createMember(
             Long userKey,
             String name,
@@ -66,6 +71,7 @@ public class Member extends BaseEntity {
                 .email(email)
                 .role(role)
                 .status(status)
+                .coin(0L)
                 .build();
     }
 
@@ -103,4 +109,14 @@ public class Member extends BaseEntity {
         this.status = TOSS_CONNECT_OUT;
     }
 
+    public void increaseCoin(long amount) {
+        if (amount <= 0) throw new CustomException(CoinErrorCode.COIN_NOT_POSITIVE);
+        this.coin += amount;
+    }
+
+    public void decreaseCoin(long amount) {
+        if (amount <= 0) throw new CustomException(CoinErrorCode.COIN_NOT_POSITIVE);
+        if (this.coin < amount) throw new CustomException(CoinErrorCode.COIN_LACK);
+        this.coin -= amount;
+    }
 }

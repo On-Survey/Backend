@@ -4,7 +4,7 @@ import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
-import OneQ.OnSurvey.global.infra.toss.dto.DecryptedLoginMeResponse;
+import OneQ.OnSurvey.global.infra.toss.auth.dto.DecryptedLoginMeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

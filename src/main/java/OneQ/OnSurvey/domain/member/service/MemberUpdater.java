@@ -1,7 +1,7 @@
 package OneQ.OnSurvey.domain.member.service;
 
 import OneQ.OnSurvey.domain.member.Member;
-import OneQ.OnSurvey.global.infra.toss.dto.DecryptedLoginMeResponse;
+import OneQ.OnSurvey.global.infra.toss.auth.dto.DecryptedLoginMeResponse;
 
 public interface MemberUpdater {
     void upsertMember(DecryptedLoginMeResponse decryptedLoginMeResponse);
