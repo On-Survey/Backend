@@ -37,6 +37,8 @@ public class TossAuthFilter extends OncePerRequestFilter {
         String uri = req.getRequestURI();
 
         return uri.startsWith("/auth/")
+                || uri.equals("/swagger-ui/**")
+                || uri.equals("/v3/api-docs/**")
                 || uri.equals("/connect-out")
                 || uri.startsWith("/public/")
                 || uri.equals("/actuator/health")
