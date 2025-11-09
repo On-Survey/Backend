@@ -122,13 +122,29 @@ public class TossApiClient {
     }
 
     /* ===================== OAuth ===================== */
-    public String getAccessToken(SSLContext ctx, TossLoginRequest req) throws IOException {
+    public TossTokenResponse getAccessToken(SSLContext ctx, TossLoginRequest req) throws IOException {
         HttpsURLConnection conn = open(getAccessTokenUrl, ctx, "POST", true);
         try {
             writeJson(conn, req);
+            int status = conn.getResponseCode();
             JsonNode root = readJson(conn);
-            if (!isSuccess(root)) throw new CustomException(TossErrorCode.TOSS_ACCESS_TOKEN_ERROR);
-            return root.path("success").path("accessToken").asText();
+
+            if (!isSuccess(root)) {
+                int errCode = root.path("error").path("code").asInt(-1);
+                String errMsg = root.path("error").path("message").asText("unknown");
+                log.error("[TOSS_OAUTH_TOKEN_FAILED] httpStatus={} code={} msg={} resp={}",
+                        status, errCode, errMsg, root);
+                throw new CustomException(TossErrorCode.TOSS_ACCESS_TOKEN_ERROR);
+            }
+
+            JsonNode s = root.path("success");
+            return new TossTokenResponse(
+                    s.path("accessToken").asText(),
+                    s.path("refreshToken").asText(null),
+                    s.path("expiresIn").isNumber() ? s.path("expiresIn").asLong() : null,
+                    s.path("tokenType").asText(null),
+                    s.path("scope").asText(null)
+            );
         } finally {
             conn.disconnect();
         }

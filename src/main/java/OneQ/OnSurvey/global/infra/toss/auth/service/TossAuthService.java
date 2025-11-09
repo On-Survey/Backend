@@ -38,12 +38,15 @@ public class TossAuthService {
     public boolean createAccessAndRefreshToken(TossLoginRequest tossLoginRequest, HttpServletResponse response) {
         try {
             SSLContext ctx = tossApiClient.createSSLContext(publicCrt, privateKey);
-            String accessToken = tossApiClient.getAccessToken(ctx, tossLoginRequest);
+            TossTokenResponse token = tossApiClient.getAccessToken(ctx, tossLoginRequest);
 
-            LoginMeResponse.Success me = tossApiClient.getLoginMe(ctx, accessToken);
+            LoginMeResponse.Success me = tossApiClient.getLoginMe(ctx, token.accessToken());
             DecryptedLoginMeResponse decrypted = decryptLoginMeOrThrow(me);
             memberModifyService.upsertMember(decrypted);
-            response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+            response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token.accessToken());
+            if (token.refreshToken() != null) {
+                response.setHeader("X-Refresh-Token", "Bearer " + token.refreshToken());
+            }
 
             return true;
         } catch (Exception e) {
