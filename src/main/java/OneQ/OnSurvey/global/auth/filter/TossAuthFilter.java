@@ -34,18 +34,21 @@ public class TossAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest req) {
-        String uri = req.getRequestURI();
+        String path = req.getRequestURI();
+        String ctx  = req.getContextPath();
+        if (ctx != null && !ctx.isEmpty() && path.startsWith(ctx)) {
+            path = path.substring(ctx.length());
+        }
 
-        return uri.startsWith("/auth/")
-                || uri.equals("/swagger-ui/**")
-                || uri.equals("/swagger-ui.html")
-                || uri.equals("/v3/api-docs")
-                || uri.equals("/v3/api-docs/**")
-                || uri.equals("/connect-out")
-                || uri.startsWith("/public/")
-                || uri.equals("/actuator/health")
-                || uri.startsWith("/actuator/health/")
-                || "OPTIONS".equalsIgnoreCase(req.getMethod());
+        return "OPTIONS".equalsIgnoreCase(req.getMethod())
+                || path.startsWith("/auth/")
+                || path.equals("/connect-out")
+                || path.startsWith("/public/")
+                || path.equals("/actuator/health")
+                || path.startsWith("/actuator/health/")
+                || path.equals("/swagger-ui.html")
+                || path.startsWith("/swagger-ui/")
+                || path.startsWith("/v3/api-docs");
     }
 
     @Override
