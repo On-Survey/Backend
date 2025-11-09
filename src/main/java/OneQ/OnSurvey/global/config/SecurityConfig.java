@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.global.config;
 
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
+import OneQ.OnSurvey.global.auth.filter.ExactBasicHeaderFilter;
 import OneQ.OnSurvey.global.auth.filter.TossAuthFilter;
 import OneQ.OnSurvey.global.handler.CustomAccessDeniedHandler;
 import OneQ.OnSurvey.global.handler.JWTAuthenticationEntryPoint;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -54,7 +56,7 @@ public class SecurityConfig {
         return new TossAuthFilter(tossAuthService, memberRepository, jwtAuthenticationEntryPoint);
     }
 
-    @Bean
+    @Bean @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http, TossAuthFilter tossAuthFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -65,6 +67,23 @@ public class SecurityConfig {
                         .anyRequest().hasRole("MEMBER")
                 )
                 .addFilterBefore(tossAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler));
+        return http.build();
+    }
+
+    @Bean @Order(1)
+    public SecurityFilterChain tossUnlinkChain(HttpSecurity http)
+            throws Exception {
+        http
+                .securityMatcher("/connect-out")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .anyRequest().permitAll())
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .addFilterBefore(new ExactBasicHeaderFilter(expectedHeader), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler));
