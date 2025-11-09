@@ -8,8 +8,10 @@ import java.util.List;
 
 public interface QuestionJpaRepository extends JpaRepository<Question, Long> {
     List<Question> getQuestionsBySurveyId(Long surveyId);
+    List<Question> getQuestionsBySurveyIdOrderByOrder(Long surveyId);
 
     Question getQuestionByQuestionId(Long questionId);
 
     List<Question> getQuestionsByQuestionIdIn(Collection<Long> questionIds);
+
 }

@@ -1,8 +1,14 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.global.util.QuerydslUtils;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+
+import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
 import java.util.List;
 
@@ -10,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SurveyRepositoryImpl implements SurveyRepository {
     private final SurveyJpaRepository surveyJpaRepository;
+    private final JPAQueryFactory jpaQueryFactory;
 
     @Override
     public Survey getSurveyById(Long surveyId) {
@@ -21,10 +28,16 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         return surveyJpaRepository.getSurveysByMemberId(memberId);
     }
 
-    // TODO Page<Survey> 반환하도록
     @Override
-    public List<Survey> getSurveyList() {
-        return surveyJpaRepository.findAll();
+    public List<Survey> getSurveyList(SurveyStatus status, Long lastSurveyId, Pageable pageable) {
+        return jpaQueryFactory.selectFrom(survey)
+            .where(
+                survey.status.eq(status),
+                survey.id.gt(lastSurveyId)
+            )
+            .orderBy(QuerydslUtils.getSort(pageable, survey))
+            .limit(pageable.getPageSize())
+            .fetch();
     }
 
     @Override

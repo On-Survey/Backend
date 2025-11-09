@@ -2,8 +2,10 @@ package OneQ.OnSurvey.domain.question.service;
 
 import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.Question;
+import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.repository.choiceOption.ChoiceOptionRepository;
 import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
+import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +18,11 @@ public class QuestionQueryService implements QuestionQuery {
     private final ChoiceOptionRepository choiceOptionRepository;
 
     @Override
-    public List<Question> getQuestionListBySurveyId(Long surveyId) {
-        return questionRepository.getQuestionListBySurveyId(surveyId);
+    public ParticipationQuestionResponse getQuestionListBySurveyId(Long surveyId) {
+        List<Question> questionList = questionRepository.getQuestionListBySurveyId(surveyId);
+        List<DefaultQuestionDto> infoList = questionList.stream().map(DefaultQuestionDto::fromEntity).toList();
+
+        return new ParticipationQuestionResponse(infoList);
     }
 
     @Override
