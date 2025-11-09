@@ -3,6 +3,7 @@ package OneQ.OnSurvey.global.infra.toss.adapter;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
+import OneQ.OnSurvey.global.infra.toss.auth.dto.TossTokenResponse;
 import OneQ.OnSurvey.global.infra.toss.common.TossApiException;
 import OneQ.OnSurvey.global.infra.toss.common.TossErrorCode;
 import OneQ.OnSurvey.global.infra.toss.iap.dto.GetOrderStatusRequest;
@@ -41,26 +42,43 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TossApiClient {
 
+    private static final int CONNECT_TIMEOUT_MS = 5_000;
+    private static final int READ_TIMEOUT_MS = 5_000;
+    private static final String HDR_AUTH = "Authorization";
+    private static final String HDR_CONTENT_TYPE = "Content-Type";
+    private static final String CT_JSON = "application/json";
+    private static final String RESULT_SUCCESS = "SUCCESS";
+
     @Value("${toss.api.get-access-token}")
     private String getAccessTokenUrl;
+
+    @Value("${toss.api.refresh-token-url}")
+    private String refreshTokenUrl;
+
+    @Value("${toss.api.remove-by-user-key-url}")
+    private String removeByUserKeyUrl;
+
+    @Value("${toss.api.remove-by-access-token-url}")
+    private String removeByAccessTokenUrl;
 
     @Value("${toss.api.get-user-info}")
     private String getUserInfoUrl;
 
     @Value("${toss.api.promotion.get-key}")
-    private String promotionGetKeyPath;
+    private String promotionGetKeyUrl;
 
     @Value("${toss.api.promotion.execute}")
-    private String promotionExecutePath;
+    private String promotionExecuteUrl;
 
     @Value("${toss.api.promotion.result}")
-    private String promotionResultPath;
+    private String promotionResultUrl;
 
     @Value("${toss.api.iap.get-order-status}")
     private String getIapOrderStatusUrl;
 
     private final ObjectMapper objectMapper;
 
+    /* ===================== SSL ===================== */
     public SSLContext createSSLContext(String certPath, String keyPath) throws Exception {
         X509Certificate cert = loadCertificate(certPath);
         PrivateKey key = loadPrivateKey(keyPath);
@@ -85,117 +103,137 @@ public class TossApiClient {
                 .replaceAll("\\s", "");
         byte[] bytes = Base64.getDecoder().decode(content);
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        try (InputStream in = new java.io.ByteArrayInputStream(bytes)) {
+        try (InputStream in = new ByteArrayInputStream(bytes)) {
             return (X509Certificate) cf.generateCertificate(in);
         }
     }
 
     private PrivateKey loadPrivateKey(String path) throws Exception {
         String pem = Files.readString(Path.of(path), StandardCharsets.UTF_8).trim();
-
-        // PKCS#8 ("-----BEGIN PRIVATE KEY-----") 가정
         String content = pem
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replaceAll("\\s", "");
-
         byte[] keyBytes = Base64.getDecoder().decode(content);
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
 
-        // 필요에 따라 "EC"로 변경 (EC 키인 경우)
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePrivate(spec);
     }
 
-    public String getAccessToken(SSLContext context, TossLoginRequest tossLoginRequest) throws IOException {
-        HttpsURLConnection conn = openJsonPostUrl(getAccessTokenUrl, context);
-
-        try (OutputStream os = conn.getOutputStream()) {
-            os.write(objectMapper.writeValueAsBytes(tossLoginRequest));
-        }
-
-        String resp = readAll(conn);
-        JsonNode root = objectMapper.readTree(resp);
-        if (!"SUCCESS".equals(root.path("resultType").asText())) {
-            throw new CustomException(TossErrorCode.TOSS_ACCESS_TOKEN_ERROR);
-        }
-        return root.path("success").path("accessToken").asText();
-    }
-
-    public LoginMeResponse.Success getLoginMe(SSLContext sslContext, String accessToken) throws IOException {
-        HttpsURLConnection conn = (HttpsURLConnection) new URL(getUserInfoUrl).openConnection();
-        conn.setSSLSocketFactory(sslContext.getSocketFactory());
-        conn.setRequestMethod("GET");
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(5000);
-        conn.setRequestProperty("Authorization", "Bearer " + accessToken);
-
-        String resp = readAll(conn);
-        JsonNode root = objectMapper.readTree(resp);
-        if (!"SUCCESS".equals(root.path("resultType").asText())) {
-            throw new CustomException(TossErrorCode.TOSS_GET_USER_INFO_ERROR);
-        }
-        JsonNode successRoot = root.path("success");
-        List<String> agreedTerms = new ArrayList<>();
-        for (JsonNode termNode : successRoot.path("agreedTerms")) agreedTerms.add(termNode.asText());
-
-        return new LoginMeResponse.Success(
-                successRoot.path("userKey").asLong(),
-                successRoot.path("scope").asText(),
-                agreedTerms,
-                successRoot.path("policy").asText(),
-                successRoot.path("certTxId").asText(),
-                successRoot.path("name").asText(),
-                successRoot.path("phone").asText(),
-                successRoot.path("birthday").asText(),
-                successRoot.path("ci").asText(),
-                successRoot.path("di").asText(),
-                successRoot.path("gender").asText(),
-                successRoot.path("nationality").asText(),
-                successRoot.path("email").asText()
-        );
-    }
-
-    private String readAll(HttpsURLConnection conn) throws IOException {
-        InputStream in = (conn.getResponseCode() >= 400) ? conn.getErrorStream() : conn.getInputStream();
-        if (in == null) return "";
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-            StringBuilder sb = new StringBuilder();
-            for (String line; (line = br.readLine()) != null; ) sb.append(line).append('\n');
-            return sb.toString();
+    /* ===================== OAuth ===================== */
+    public String getAccessToken(SSLContext ctx, TossLoginRequest req) throws IOException {
+        HttpsURLConnection conn = open(getAccessTokenUrl, ctx, "POST", true);
+        try {
+            writeJson(conn, req);
+            JsonNode root = readJson(conn);
+            if (!isSuccess(root)) throw new CustomException(TossErrorCode.TOSS_ACCESS_TOKEN_ERROR);
+            return root.path("success").path("accessToken").asText();
+        } finally {
+            conn.disconnect();
         }
     }
 
-    private HttpsURLConnection openJsonPostUrl(String url, SSLContext ctx) throws IOException {
-        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
-        conn.setSSLSocketFactory(ctx.getSocketFactory());
-        conn.setRequestMethod("POST");
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(5000);
-        conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "application/json");
-        return conn;
+
+    public TossTokenResponse refreshOauth2Token(SSLContext ctx, String refreshToken) throws IOException {
+        HttpsURLConnection conn = open(refreshTokenUrl, ctx, "POST", true);
+        try {
+            ObjectNode body = objectMapper.createObjectNode().put("refreshToken", refreshToken);
+            writeJson(conn, body);
+            JsonNode root = readJson(conn);
+            if (!isSuccess(root)) throw new CustomException(TossErrorCode.TOSS_ACCESS_TOKEN_ERROR);
+            JsonNode s = root.path("success");
+            return new TossTokenResponse(
+                    s.path("accessToken").asText(),
+                    s.path("refreshToken").asText(null),
+                    s.path("expiresIn").isNumber() ? s.path("expiresIn").asLong() : null,
+                    s.path("tokenType").asText(null),
+                    s.path("scope").asText(null)
+            );
+        } finally {
+            conn.disconnect();
+        }
     }
 
-    /** 지급 Key 발급 */
+
+    /* ===================== 연결 끊기 ===================== */
+    public boolean removeByAccessToken(SSLContext ctx, String accessToken) throws IOException {
+        HttpsURLConnection conn = open(removeByAccessTokenUrl, ctx, "POST", true);
+        conn.setRequestProperty(HDR_AUTH, "Bearer " + accessToken);
+        try {
+            JsonNode root = readJson(conn); // body 없이 헤더만으로 처리하는 구현 고려
+            return isSuccess(root);
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+
+    public boolean removeByUserKey(SSLContext ctx, long userKey) throws IOException {
+        HttpsURLConnection conn = open(removeByUserKeyUrl, ctx, "POST", true);
+        try {
+            ObjectNode body = objectMapper.createObjectNode().put("userKey", userKey);
+            writeJson(conn, body);
+            JsonNode root = readJson(conn);
+            return isSuccess(root);
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    public LoginMeResponse.Success getLoginMe(SSLContext ctx, String accessToken) throws IOException {
+        HttpsURLConnection conn = open(getUserInfoUrl, ctx, "GET", false);
+        conn.setRequestProperty(HDR_AUTH, "Bearer " + accessToken);
+        try {
+            JsonNode root = readJson(conn);
+            if (!isSuccess(root)) throw new CustomException(TossErrorCode.TOSS_GET_USER_INFO_ERROR);
+            JsonNode successRoot = root.path("success");
+
+
+            List<String> agreedTerms = new ArrayList<>();
+            for (JsonNode termNode : successRoot.path("agreedTerms")) {
+                agreedTerms.add(termNode.asText());
+            }
+
+
+            return new LoginMeResponse.Success(
+                    successRoot.path("userKey").asLong(),
+                    successRoot.path("scope").asText(),
+                    agreedTerms,
+                    successRoot.path("policy").asText(),
+                    successRoot.path("certTxId").asText(),
+                    successRoot.path("name").asText(),
+                    successRoot.path("phone").asText(),
+                    successRoot.path("birthday").asText(),
+                    successRoot.path("ci").asText(),
+                    successRoot.path("di").asText(),
+                    successRoot.path("gender").asText(),
+                    successRoot.path("nationality").asText(),
+                    successRoot.path("email").asText()
+            );
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    /* ===================== 프로모션 ===================== */
     public PromotionKeyResponse getPromotionKey(long userKey, SSLContext ctx) throws IOException {
-        HttpsURLConnection conn = openJsonPostUrl(promotionGetKeyPath, ctx);
+        HttpsURLConnection conn = open(promotionGetKeyUrl, ctx, "POST", true);
         conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
-
-        try (OutputStream os = conn.getOutputStream()) {
-            os.write("{}".getBytes(StandardCharsets.UTF_8));
+        try {
+            writeRaw(conn, "{}");
+            JsonNode root = readJson(conn);
+            if (!isSuccess(root)) {
+                int code = root.path("error").path("code").asInt(-1);
+                String msg = root.path("error").path("message").asText("unknown");
+                log.error("[PromotionAPI:getPromotionKey] code={}, message={}, raw={}", code, msg, root);
+                throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+            }
+            String key = root.path("success").path("key").asText();
+            return new PromotionKeyResponse(key);
+        } finally {
+            conn.disconnect();
         }
-
-        String resp = readAll(conn);
-        JsonNode root = objectMapper.readTree(resp);
-        if (!"SUCCESS".equals(root.path("resultType").asText())) {
-            int code = root.path("error").path("code").asInt(-1);
-            String msg = root.path("error").path("message").asText("unknown");
-            log.error("[PromotionAPI:getPromotionKey] code={}, message={}, raw={}", code, msg, resp);
-            throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
-        }
-        String key = root.path("success").path("key").asText();
-        return new PromotionKeyResponse(key);
     }
 
     /** 지급 실행 (4110 재시도, 4113 멱등 성공 처리) */
@@ -204,90 +242,125 @@ public class TossApiClient {
     ) throws Exception {
         int attempt = 0;
         while (true) {
-            HttpsURLConnection conn = openJsonPostUrl(promotionExecutePath, ctx);
+            HttpsURLConnection conn = open(promotionExecuteUrl, ctx, "POST", true);
             conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
 
             ObjectNode body = objectMapper.createObjectNode()
                     .put("promotionCode", promotionCode)
                     .put("key", key)
                     .put("amount", amount);
-
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(objectMapper.writeValueAsBytes(body));
+            try {
+                writeJson(conn, body);
+                JsonNode root = readJson(conn);
+                if (isSuccess(root)) {
+                    String returnedKey = root.path("success").path("key").asText();
+                    return new ExecutePromotionResponse(returnedKey);
+                }
+                int code = root.path("error").path("code").asInt(-1);
+                if (code == 4110 && attempt++ < retries) {
+                    Thread.sleep(200L * attempt); // 지수 백오프
+                    continue;
+                }
+                if (code == 4113) {
+                    return new ExecutePromotionResponse(key); // 멱등 성공 간주
+                }
+                String msg = root.path("error").path("message").asText("unknown");
+                log.error("[PromotionAPI:executePromotion] code={}, msg={}, raw={}", code, msg, root);
+                throw new TossApiException(code, msg, root.toString());
+            } finally {
+                conn.disconnect();
             }
-
-            String resp = readAll(conn);
-            JsonNode root = objectMapper.readTree(resp);
-
-            if ("SUCCESS".equals(root.path("resultType").asText())) {
-                String returnedKey = root.path("success").path("key").asText();
-                return new ExecutePromotionResponse(returnedKey);
-            }
-            int code = root.path("error").path("code").asInt(-1);
-
-            // 4110: 일시 오류는 짧게 재시도
-            if (code == 4110 && attempt++ < retries) {
-                Thread.sleep(200L * attempt);
-                continue;
-            }
-            // 4113: 동일 key 중복은 멱등 성공 간주
-            if (code == 4113) {
-                return new ExecutePromotionResponse(key);
-            }
-
-            String msg = root.path("error").path("message").asText("unknown");
-            log.error("[PromotionAPI:executePromotion] code={}, msg={}, raw={}", code, msg, resp);
-            throw new TossApiException(code, msg, resp);
         }
     }
 
-    /** 지급 결과 조회 */
     public ExecutionResultResponse getPromotionResult(long userKey, String promotionCode, String key, SSLContext ctx) throws IOException {
-        HttpsURLConnection conn = openJsonPostUrl(promotionResultPath, ctx);
+        HttpsURLConnection conn = open(promotionResultUrl, ctx, "POST", true);
         conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
+        try {
+            ObjectNode body = objectMapper.createObjectNode()
+                    .put("promotionCode", promotionCode)
+                    .put("key", key);
+            writeJson(conn, body);
+            JsonNode root = readJson(conn);
+            if (!isSuccess(root)) {
+                int code = root.path("error").path("code").asInt(-1);
+                String msg = root.path("error").path("message").asText("unknown");
+                log.error("[PromotionAPI:getPromotionResult] code={}, msg={}, raw={}", code, msg, root);
+                throw new TossApiException(code, msg, root.toString());
+            }
+            String status = root.path("success").asText();
+            return new ExecutionResultResponse(status);
+        } finally {
+            conn.disconnect();
+        }
+    }
 
-        ObjectNode body = objectMapper.createObjectNode()
-                .put("promotionCode", promotionCode)
-                .put("key", key);
+    /* ===================== IAP ===================== */
+    public OrderStatusResponse getIapOrderStatus(SSLContext ctx, long userKey, String orderId) throws IOException {
+        HttpsURLConnection conn = open(getIapOrderStatusUrl, ctx, "POST", true);
+        conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
+        try {
+            writeJson(conn, new GetOrderStatusRequest(orderId));
+            JsonNode root = readJson(conn);
+            if (!isSuccess(root)) {
+                int code = root.path("error").path("code").asInt(-1);
+                String msg = root.path("error").path("message").asText("unknown");
+                log.error("[IAP:getOrderStatus] code={}, message={}, raw={}", code, msg, root);
+                throw new CustomException(TossErrorCode.TOSS_IAP_GET_STATUS_ERROR);
+            }
+            JsonNode successRoot = root.path("success");
+            return OrderStatusResponse.of(
+                    successRoot.path("orderId").asText(null),
+                    successRoot.path("sku").asText(null),
+                    successRoot.path("status").asText(null),
+                    successRoot.path("reason").asText(null),
+                    successRoot.path("statusDeterminedAt").asText(null)
+            );
+        } finally {
+            conn.disconnect();
+        }
+    }
 
+
+    private HttpsURLConnection open(String url, SSLContext ctx, String method, boolean doOutput) throws IOException {
+        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+        conn.setSSLSocketFactory(ctx.getSocketFactory());
+        conn.setRequestMethod(method);
+        conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        conn.setReadTimeout(READ_TIMEOUT_MS);
+        conn.setDoOutput(doOutput);
+        conn.setRequestProperty(HDR_CONTENT_TYPE, CT_JSON);
+        return conn;
+    }
+
+    private void writeJson(HttpsURLConnection conn, Object body) throws IOException {
         try (OutputStream os = conn.getOutputStream()) {
             os.write(objectMapper.writeValueAsBytes(body));
         }
-
-        String resp = readAll(conn);
-        JsonNode root = objectMapper.readTree(resp);
-        if (!"SUCCESS".equals(root.path("resultType").asText())) {
-            int code = root.path("error").path("code").asInt(-1);
-            String msg = root.path("error").path("message").asText("unknown");
-            log.error("[PromotionAPI:getPromotionResult] code={}, msg={}, raw={}", code, msg, resp);
-            throw new TossApiException(code, msg, resp);
-        }
-        String status = root.path("success").asText();
-        return new ExecutionResultResponse(status);
     }
 
-    /** 인앱 결제 상태 조회 */
-    public OrderStatusResponse getIapOrderStatus(SSLContext ctx, long userKey, String orderId) throws IOException {
-        HttpsURLConnection conn = openJsonPostUrl(getIapOrderStatusUrl, ctx);
-        conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
+    private void writeRaw(HttpsURLConnection conn, String body) throws IOException {
         try (OutputStream os = conn.getOutputStream()) {
-            os.write(objectMapper.writeValueAsBytes(new GetOrderStatusRequest(orderId)));
+            os.write(body.getBytes(StandardCharsets.UTF_8));
         }
-        String resp = readAll(conn);
-        JsonNode root = objectMapper.readTree(resp);
-        if (!"SUCCESS".equals(root.path("resultType").asText())) {
-            int code = root.path("error").path("code").asInt(-1);
-            String msg  = root.path("error").path("message").asText("unknown");
-            log.error("[IAP:getOrderStatus] code={}, message={}, raw={}", code, msg, resp);
-            throw new CustomException(TossErrorCode.TOSS_IAP_GET_STATUS_ERROR);
+    }
+
+    private JsonNode readJson(HttpsURLConnection conn) throws IOException {
+        int code = conn.getResponseCode();
+        InputStream in = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
+        if (in == null) return objectMapper.createObjectNode();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+            String payload = sb.toString();
+            return payload.isBlank() ? objectMapper.createObjectNode() : objectMapper.readTree(payload);
         }
-        JsonNode s = root.path("success");
-        return OrderStatusResponse.of(
-                s.path("orderId").asText(null),
-                s.path("sku").asText(null),
-                s.path("status").asText(null),
-                s.path("reason").asText(null),
-                s.path("statusDeterminedAt").asText(null)
-        );
+    }
+
+    private boolean isSuccess(JsonNode root) {
+        return RESULT_SUCCESS.equals(root.path("resultType").asText());
     }
 }

@@ -1,7 +1,7 @@
 package OneQ.OnSurvey.global.infra.toss.auth.controller;
 
-import OneQ.OnSurvey.global.infra.toss.auth.dto.ReissueRequest;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
+import OneQ.OnSurvey.global.infra.toss.auth.dto.TossReissueRequest;
 import OneQ.OnSurvey.global.infra.toss.auth.service.TossAuthService;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,8 +34,8 @@ public class AuthController {
     @PostMapping("/reissue")
     @Operation(summary = "토큰 재발급", description = "Refresh Token을 받아 유효한 경우 Access Token을 재발급합니다.")
     public ResponseEntity<SuccessResponse<Boolean>> reissue(
-            ReissueRequest reissueRequest,
-            HttpServletResponse response
+            HttpServletResponse response,
+            @RequestBody TossReissueRequest reissueRequest
     ) {
         return ResponseEntity.ok(SuccessResponse.ok(tossAuthService.reissueToken(reissueRequest, response)));
     }
@@ -46,6 +46,6 @@ public class AuthController {
     public ResponseEntity<SuccessResponse<Boolean>> logout(
             HttpServletRequest request
     ) {
-        return ResponseEntity.ok(SuccessResponse.ok(tossAuthService.logout(request)));
+        return ResponseEntity.ok(SuccessResponse.ok(tossAuthService.logoutByAccessToken(request)));
     }
 }
