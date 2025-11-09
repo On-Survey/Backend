@@ -147,7 +147,6 @@ public class TossApiClient {
                     s.path("accessToken").asText(),
                     s.path("refreshToken").asText(null),
                     s.path("expiresIn").isNumber() ? s.path("expiresIn").asLong() : null,
-                    s.path("refreshTokenExpiresIn").isNumber() ? s.path("refreshTokenExpiresIn").asLong() : null,
                     s.path("tokenType").asText(null),
                     s.path("scope").asText(null)
             );
