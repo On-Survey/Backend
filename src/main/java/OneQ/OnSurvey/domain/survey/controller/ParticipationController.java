@@ -1,17 +1,28 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
+import OneQ.OnSurvey.domain.member.service.MemberFinder;
+import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
+import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
+import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
+import OneQ.OnSurvey.domain.survey.model.response.InsertScreeningAnswerResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
+import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationScreeningResponse;
 import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
+import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,10 +35,14 @@ public class ParticipationController {
     private final SurveyQuery surveyQueryService;
     private final QuestionQuery questionQueryService;
 
+    private final AnswerCommand<ScreeningAnswer> answerCommand;
+
+    private final MemberFinder memberFinder;
+
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getSurveyListOnGoing(
-        @RequestParam(required = false) Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
         Pageable pageable = PageRequest.of(0, size, Sort.by("surveyId"));
@@ -44,5 +59,20 @@ public class ParticipationController {
         @RequestParam Long surveyId
     ) {
         return SuccessResponse.ok(questionQueryService.getQuestionListBySurveyId(surveyId));
+    }
+
+    /* TODO 사용자 id 기반 관심사 필터링 추가 */
+    @GetMapping("surveys/screenings")
+    @Operation(summary = "관심사에 일치하는 설문의 스크리닝 문항을 조회합니다.")
+    public SuccessResponse<SurveyParticipationScreeningResponse> getRecommendedScreenings(
+        @AuthenticationPrincipal CustomUserDetails details,
+        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
+        @RequestParam(defaultValue = "5") Integer size
+        ) {
+        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+        // memberId 기반 추천 설문id 조회
+
+        Pageable pageable = PageRequest.of(0, size);
+        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable));
     }
 }
