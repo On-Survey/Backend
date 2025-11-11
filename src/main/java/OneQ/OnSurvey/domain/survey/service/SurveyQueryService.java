@@ -6,7 +6,7 @@ import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationScreeningResponse;
+import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +52,7 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public SurveyParticipationScreeningResponse getScreeningList(
+    public ParticipationScreeningResponse getScreeningList(
         Long lastSurveyId, Pageable pageable
     ) {
         Slice<Survey> surveyList = surveyRepository.getSurveyList(lastSurveyId, pageable);
@@ -60,8 +60,8 @@ public class SurveyQueryService implements SurveyQuery {
 
         List<Screening> screeningLIst = screeningRepository.getScreeningListBySurveyIdList(idList);
 
-        return SurveyParticipationScreeningResponse.builder()
-            .data(screeningLIst.stream().map(SurveyParticipationScreeningResponse::fromEntity).toList())
+        return ParticipationScreeningResponse.builder()
+            .data(screeningLIst.stream().map(ParticipationScreeningResponse::fromEntity).toList())
             .hasNext(surveyList.hasNext())
             .build();
     }

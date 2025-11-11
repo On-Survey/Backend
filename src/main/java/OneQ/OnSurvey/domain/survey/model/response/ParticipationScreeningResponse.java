@@ -9,7 +9,7 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter @Builder
-public class SurveyParticipationScreeningResponse {
+public class ParticipationScreeningResponse {
     private List<ScreeningData> data;
 
     @Schema(description = "다음 문항 존재 여부")

@@ -11,7 +11,7 @@ import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationScreeningResponse;
+import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
 import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.response.SuccessResponse;
@@ -68,7 +68,7 @@ public class ParticipationController {
     /* TODO 사용자 id 기반 관심사 필터링 추가 */
     @GetMapping("surveys/screenings")
     @Operation(summary = "관심사에 일치하는 설문의 스크리닝 문항을 조회합니다.")
-    public SuccessResponse<SurveyParticipationScreeningResponse> getRecommendedScreenings(
+    public SuccessResponse<ParticipationScreeningResponse> getRecommendedScreenings(
         @AuthenticationPrincipal CustomUserDetails details,
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size
