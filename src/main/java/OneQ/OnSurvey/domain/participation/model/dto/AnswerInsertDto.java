@@ -12,6 +12,7 @@ public class AnswerInsertDto {
     @Getter @Builder
     public static class AnswerInfo {
         private Long id;
+        private Long memberId;
         private String content;
 
         public Boolean getBooleanContent() {
