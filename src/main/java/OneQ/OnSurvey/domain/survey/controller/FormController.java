@@ -49,12 +49,16 @@ public class FormController {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     ) {
-        String type = request.info().keySet().stream().findFirst().orElseThrow(() -> new CustomException(ErrorCode.INVALID_PARAMETER)).getName();
+        String type = request.info().getFirst().getQuestionType().getValue();
+        if (type == null) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST);
+        }
+
         CreateQuestionResponse mockResponse = new CreateQuestionResponse(
             surveyId,
             101L,
-            request.info().get(type).getFirst().getQuestionOrder(),
-            request.info().get(type).getFirst().getTitle(),
+            request.info().getFirst().getQuestions().getFirst().getQuestionOrder(),
+            request.info().getFirst().getQuestions().getFirst().getTitle(),
             QuestionType.fromKey(type)
         );
 

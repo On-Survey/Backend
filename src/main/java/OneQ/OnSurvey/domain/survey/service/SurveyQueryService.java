@@ -1,13 +1,17 @@
 package OneQ.OnSurvey.domain.survey.service;
 
+import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
+import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
+import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SurveyQueryService implements SurveyQuery {
     private final SurveyRepository surveyRepository;
+    private final ScreeningRepository screeningRepository;
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
@@ -37,11 +42,27 @@ public class SurveyQueryService implements SurveyQuery {
         Long lastSurveyId,
         Pageable pageable
     ) {
-        List<Survey> surveyList = surveyRepository.getSurveyList(status, lastSurveyId, pageable);
+        Slice<Survey> surveyList = surveyRepository.getSurveyListByStatus(status, lastSurveyId, pageable);
 
         return SurveyParticipationResponse.builder()
             .recommended(surveyList.stream().map(SurveyParticipationResponse::fromEntity).toList())
             .impending(surveyList.stream().map(SurveyParticipationResponse::fromEntity).toList())
+            .hasNext(surveyList.hasNext())
+            .build();
+    }
+
+    @Override
+    public ParticipationScreeningResponse getScreeningList(
+        Long lastSurveyId, Pageable pageable
+    ) {
+        Slice<Survey> surveyList = surveyRepository.getSurveyList(lastSurveyId, pageable);
+        List<Long> idList = surveyList.stream().map(Survey::getId).toList();
+
+        List<Screening> screeningLIst = screeningRepository.getScreeningListBySurveyIdList(idList);
+
+        return ParticipationScreeningResponse.builder()
+            .data(screeningLIst.stream().map(ParticipationScreeningResponse::fromEntity).toList())
+            .hasNext(surveyList.hasNext())
             .build();
     }
 }

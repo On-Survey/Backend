@@ -33,10 +33,10 @@ public class QuestionAnswer extends AbstractAnswer {
             .build();
     }
 
-    public static QuestionAnswer from(AnswerInsertDto.AnswerInfo answerInfo, Long memberId) {
+    public static QuestionAnswer from(AnswerInsertDto.AnswerInfo answerInfo) {
         return QuestionAnswer.of(
             answerInfo.getId(),
-            memberId,
+            answerInfo.getMemberId(),
             answerInfo.getContent()
         );
     }

@@ -14,6 +14,8 @@ public class SurveyParticipationResponse {
     private List<SurveyData> recommended;
     @Schema(description = "마감 임박 설문")
     private List<SurveyData> impending;
+    @Schema(description = "다음 문항 존재 여부")
+    private Boolean hasNext;
 
     @Getter @Builder
     @AllArgsConstructor

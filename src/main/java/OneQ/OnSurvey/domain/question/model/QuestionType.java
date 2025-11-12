@@ -1,12 +1,11 @@
 package OneQ.OnSurvey.domain.question.model;
 
-import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 @RequiredArgsConstructor
@@ -19,24 +18,33 @@ public enum QuestionType {
     NUMBER("숫자형", Values.NUMBER),
     DATE("날짜형", Values.DATE),
     TEXT("주관식", Values.TEXT);
-    private final String value;
     private final String name;
+    private final String value;
+
+    public static final Map<String, QuestionType> VALUE_MAP;
+
+    static {
+        Map<String, QuestionType> map = new HashMap<>();
+
+        for (QuestionType type : values()) {
+            map.put(type.getValue(), type);
+        }
+
+        VALUE_MAP = Collections.unmodifiableMap(map);
+    }
 
     public static class Values {
         public static final String CHOICE = "CHOICE";
         public static final String RATING = "RATING";
         public static final String NPS = "NPS";
-        public static final String SHORT = "SHORT_ANSWER";
-        public static final String LONG = "LONG_ANSWER";
+        public static final String SHORT = "SHORT";
+        public static final String LONG = "LONG";
         public static final String NUMBER = "NUMBER";
         public static final String DATE = "DATE";
         public static final String TEXT = "TEXT";
     }
 
     public static QuestionType fromKey(String key) {
-        return Arrays.stream(values())
-            .filter(type -> Objects.equals(type.name, key))
-            .findFirst()
-            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+        return VALUE_MAP.getOrDefault(key, null);
     }
 }
