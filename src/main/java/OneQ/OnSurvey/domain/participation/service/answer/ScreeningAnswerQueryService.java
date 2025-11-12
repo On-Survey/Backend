@@ -9,21 +9,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class ScreeningAnswerQueryService extends AnswerQueryService<ScreeningAnswer> {
     public ScreeningAnswerQueryService(
-        AnswerRepository<ScreeningAnswer> answerRepository,
-        MemberFinder memberFinder
+        AnswerRepository<ScreeningAnswer> answerRepository
     ) {
-        super(answerRepository, memberFinder);
+        super(answerRepository);
     }
 
     @Override
-    public ScreeningAnswer getAnswerById(Long id) {
-        Long memberId = super.getMemberIdFromUserKey();
-
+    public ScreeningAnswer getAnswerById(Long id, Long memberId) {
         return answerRepository.getAnswerByQuestionIdAndMemberId(id, memberId);
     }
 
     @Override
-    public ScreeningAnswer createAnswerFromDto(AnswerInsertDto.AnswerInfo answerInfo, Long memberId) {
-        return ScreeningAnswer.from(answerInfo, memberId);
+    public ScreeningAnswer createAnswerFromDto(AnswerInsertDto.AnswerInfo answerInfo) {
+        return ScreeningAnswer.from(answerInfo);
     }
 }

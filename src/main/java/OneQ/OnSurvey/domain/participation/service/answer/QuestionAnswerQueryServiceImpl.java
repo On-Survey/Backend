@@ -12,20 +12,19 @@ import java.util.List;
 @Service
 public class QuestionAnswerQueryServiceImpl extends AnswerQueryService<QuestionAnswer> {
     public QuestionAnswerQueryServiceImpl(
-        AnswerRepository<QuestionAnswer> answerRepository,
-        MemberFinder memberFinder
+        AnswerRepository<QuestionAnswer> answerRepository
     ) {
-        super(answerRepository, memberFinder);
+        super(answerRepository);
     }
 
     @Override
-    public QuestionAnswer getAnswerById(Long questionId) {
+    public QuestionAnswer getAnswerById(Long questionId, Long memberId) {
         return null;
     }
 
     @Override
-    public QuestionAnswer createAnswerFromDto(AnswerInsertDto.AnswerInfo answerInfo, Long memberId) {
-        return QuestionAnswer.from(answerInfo, memberId);
+    public QuestionAnswer createAnswerFromDto(AnswerInsertDto.AnswerInfo answerInfo) {
+        return QuestionAnswer.from(answerInfo);
     }
 
     public List<SurveyManagementDetailResponse.DetailInfo> getDetailInfo(

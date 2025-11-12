@@ -12,7 +12,7 @@ public interface AnswerQuery<E extends AbstractAnswer> {
         List<Long> questionIdList, Long memberId) {
         return null;
     }
-    default E getAnswerById(Long id) {
+    default E getAnswerById(Long id, Long memberId) {
         return null;
     }
 }

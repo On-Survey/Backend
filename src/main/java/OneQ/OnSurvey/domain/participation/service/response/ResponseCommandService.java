@@ -13,10 +13,11 @@ public class ResponseCommandService implements ResponseCommand {
     private final ResponseRepository responseRepository;
 
     @Override
-    public Response createResponse(Long surveyId, Long memberId) {
+    public Boolean createResponse(Long surveyId, Long memberId) {
         Response response = Response.of(surveyId, memberId);
 
-        return responseRepository.save(response);
+        responseRepository.save(response);
+        return true;
     }
 
     @Override

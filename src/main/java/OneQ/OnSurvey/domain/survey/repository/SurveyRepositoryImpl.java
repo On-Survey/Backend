@@ -6,6 +6,8 @@ import OneQ.OnSurvey.global.util.QuerydslUtils;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
 
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
@@ -29,15 +31,30 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     }
 
     @Override
-    public List<Survey> getSurveyList(SurveyStatus status, Long lastSurveyId, Pageable pageable) {
-        return jpaQueryFactory.selectFrom(survey)
+    public Slice<Survey> getSurveyListByStatus(SurveyStatus status, Long lastSurveyId, Pageable pageable) {
+        List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
             .where(
                 survey.status.eq(status),
                 survey.id.gt(lastSurveyId)
             )
             .orderBy(QuerydslUtils.getSort(pageable, survey))
-            .limit(pageable.getPageSize())
+            .limit(pageable.getPageSize() + 1)
             .fetch();
+
+        return createSlice(surveyList, pageable);
+    }
+
+    @Override
+    public Slice<Survey> getSurveyList(Long lastSurveyId, Pageable pageable) {
+        List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
+            .where(
+                survey.id.gt(lastSurveyId)
+            )
+            .orderBy(QuerydslUtils.getSort(pageable, survey))
+            .limit(pageable.getPageSize() + 1)
+            .fetch();
+
+        return createSlice(surveyList, pageable);
     }
 
     @Override
@@ -48,5 +65,17 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     @Override
     public void deleteById(Long surveyId) {
         surveyJpaRepository.deleteById(surveyId);
+    }
+
+    private Slice<Survey> createSlice(List<Survey> surveyList, Pageable pageable) {
+        boolean hasNext = false;
+        int size = pageable.getPageSize();
+
+        if (surveyList.size() > size) {
+            hasNext = true;
+            surveyList.remove(size);
+        }
+
+        return new SliceImpl<>(surveyList, pageable, hasNext);
     }
 }

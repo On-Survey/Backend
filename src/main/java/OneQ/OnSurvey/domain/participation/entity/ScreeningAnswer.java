@@ -32,10 +32,10 @@ public class ScreeningAnswer extends AbstractAnswer {
             .build();
     }
 
-    public static ScreeningAnswer from(AnswerInsertDto.AnswerInfo answerInfo, Long memberId) {
+    public static ScreeningAnswer from(AnswerInsertDto.AnswerInfo answerInfo) {
         return ScreeningAnswer.of(
             answerInfo.getId(),
-            memberId,
+            answerInfo.getMemberId(),
             answerInfo.getBooleanContent()
         );
     }
