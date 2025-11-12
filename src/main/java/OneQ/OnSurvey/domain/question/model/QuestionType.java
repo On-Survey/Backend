@@ -37,8 +37,8 @@ public enum QuestionType {
         public static final String CHOICE = "CHOICE";
         public static final String RATING = "RATING";
         public static final String NPS = "NPS";
-        public static final String SHORT = "SHORT_ANSWER";
-        public static final String LONG = "LONG_ANSWER";
+        public static final String SHORT = "SHORT";
+        public static final String LONG = "LONG";
         public static final String NUMBER = "NUMBER";
         public static final String DATE = "DATE";
         public static final String TEXT = "TEXT";
