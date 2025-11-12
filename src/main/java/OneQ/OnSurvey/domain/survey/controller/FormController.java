@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
+import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.service.QuestionCommand;
 import OneQ.OnSurvey.domain.survey.model.request.QuestionRequest;
@@ -10,11 +11,13 @@ import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.model.response.UpdateQuestionResponse;
 import OneQ.OnSurvey.domain.survey.service.SurveyCommand;
+import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,20 +30,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/survey-form")
 @RequiredArgsConstructor
 public class FormController {
-
     private final SurveyCommand surveyCommand;
     private final QuestionCommand questionCommand;
+
+    private final MemberFinder memberFinder;
 
     @PostMapping("surveys")
     @Operation(summary = "설문 폼을 생성합니다.")
     public SuccessResponse<SurveyFormResponse> createSurvey(
+        @AuthenticationPrincipal CustomUserDetails details,
         @RequestBody SurveyFormRequest request
     ) {
-        SurveyFormResponse mockResponse = new SurveyFormResponse(
-            39L, request.title(), request.description()
-        );
+        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
 
-        return SuccessResponse.ok(mockResponse);
+        SurveyFormResponse response = surveyCommand.upsertSurvey(
+            null, request.title(), request.description(), memberId);
+
+        return SuccessResponse.ok(response);
     }
 
     @PostMapping("surveys/{surveyId}/questions")
@@ -84,9 +90,7 @@ public class FormController {
     public SuccessResponse<Boolean> completeSurvey(
         @PathVariable Long surveyId
     ) {
-        Boolean mockResponse = true;
-
-        return SuccessResponse.ok(mockResponse);
+        return SuccessResponse.ok(surveyCommand.submitSurvey(surveyId));
     }
 
     @PostMapping("surveys/{surveyId}/screenings")
