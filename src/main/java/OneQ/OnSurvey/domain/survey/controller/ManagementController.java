@@ -27,12 +27,12 @@ import java.util.List;
 @RequestMapping("v1/survey-management")
 @RequiredArgsConstructor
 public class ManagementController {
-    private SurveyQuery surveyQuery;
-    private QuestionQuery questionQuery;
-    private ResponseQuery responseQuery;
-    private AnswerQuery<QuestionAnswer> answerQuery;
+    private final SurveyQuery surveyQuery;
+    private final QuestionQuery questionQuery;
+    private final ResponseQuery responseQuery;
+    private final AnswerQuery<QuestionAnswer> answerQuery;
 
-    private MemberFinder memberFinder;
+    private final MemberFinder memberFinder;
 
     @GetMapping("surveys")
     @Operation(summary = "사용자가 생성한 설문을 조회합니다.")
