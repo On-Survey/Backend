@@ -1,5 +1,8 @@
 package OneQ.OnSurvey.global.infra.toss.promotion.service;
 
+import OneQ.OnSurvey.domain.member.Member;
+import OneQ.OnSurvey.domain.member.MemberErrorCode;
+import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.global.auth.token.TokenStore;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.promotion.PromotionGrant;
@@ -49,6 +52,7 @@ public class PromotionService {
     private final TokenStore tokenStore;
     private final PromotionGrantRepository promotionGrantRepository;
     private final PromotionGrantTxService grantTx;
+    private final MemberRepository memberRepository;
 
     private SSLContext tossSslContext;
 
@@ -70,6 +74,7 @@ public class PromotionService {
                 .orElseThrow(() -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
 
         if (grant.isSuccess()) {
+            grantPromotionPointIfNeeded(grant, userKey);
             return ExecutionResultResponse.success();
         }
 
@@ -107,7 +112,10 @@ public class PromotionService {
                     grant, userKey, promotionCode, execResp.key(), confirmWaitMs);
 
             switch (finalRes.status()) {
-                case "SUCCESS" -> grantTx.markSuccess(grant.getId());
+                case "SUCCESS" -> {
+                    grantTx.markSuccess(grant.getId());
+                    grantPromotionPointIfNeeded(grant, userKey);
+                }
                 case "PENDING" -> grantTx.markPending(grant.getId(), execResp.key());
                 default        -> grantTx.markFail(grant.getId());
             }
@@ -134,12 +142,27 @@ public class PromotionService {
         }
     }
 
+    protected void grantPromotionPointIfNeeded(PromotionGrant grant, long userKey) {
+        if (grant.isPointGranted()) {
+            return;
+        }
+
+        Member member = memberRepository.findMemberByUserKey(userKey)
+                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        member.increasePromotionPoint(promotionAmount);
+        grant.markPointGranted();
+    }
+
     private ExecutionResultResponse pollWithRecoveryAndPersist(PromotionGrant grant, long userKey, String execKey) {
         try {
             ExecutionResultResponse res = waitResultUntilFinalWithRecovery(
                     grant, userKey, promotionCode, execKey, confirmWaitMs);
             switch (res.status()) {
-                case "SUCCESS" -> grantTx.markSuccess(grant.getId());
+                case "SUCCESS" -> {
+                    grantTx.markSuccess(grant.getId());
+                    grantPromotionPointIfNeeded(grant, userKey);
+                }
                 case "PENDING" -> grantTx.markPending(grant.getId(), execKey);
                 default        -> grantTx.markFail(grant.getId());
             }
