@@ -1,6 +1,5 @@
 package OneQ.OnSurvey.domain.survey.controller.swagger;
 
-import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.survey.model.request.QuestionRequest;
 import OneQ.OnSurvey.domain.survey.model.response.CreateQuestionResponse;
 import OneQ.OnSurvey.global.response.SuccessResponse;
@@ -68,10 +67,4 @@ public interface FormControllerDoc {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     );
-
-    public class CreateQuestionData {
-        QuestionType type;
-        String title;
-        Long questionOrder;
-    }
 }

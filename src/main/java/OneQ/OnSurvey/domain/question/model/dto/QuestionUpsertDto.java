@@ -2,7 +2,6 @@ package OneQ.OnSurvey.domain.question.model.dto;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
-import OneQ.OnSurvey.domain.question.entity.question.NPS;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
 import OneQ.OnSurvey.domain.question.entity.question.Text;
 import OneQ.OnSurvey.domain.question.model.QuestionType;

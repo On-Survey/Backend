@@ -73,4 +73,14 @@ public class QuestionConverter {
 
         return builder.build();
     }
+
+    public static DefaultQuestionDto toQuestionDto(Question question) {
+        return switch (question) {
+            case Choice choice -> ChoiceDto.fromEntity(choice);
+            case Rating rating -> RatingDto.fromEntity(rating);
+            case Text text ->
+                TextType.DATE.equals(text.getTextType()) ? DateDto.fromEntity(text) : DefaultQuestionDto.fromEntity(text);
+            default -> DefaultQuestionDto.fromEntity(question);
+        };
+    }
 }
