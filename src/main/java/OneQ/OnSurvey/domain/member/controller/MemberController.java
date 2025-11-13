@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.member.controller;
 
 import OneQ.OnSurvey.domain.member.dto.MemberInfoResponse;
+import OneQ.OnSurvey.domain.member.dto.OnboardingRequest;
 import OneQ.OnSurvey.domain.member.dto.ProfileImageUpdateRequest;
 import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.member.service.MemberUpdater;
@@ -35,5 +36,19 @@ public class MemberController {
     ) {
         memberUpdater.changeProfileImage(principal.getUserKey(), request.profileUrl());
         return SuccessResponse.ok("프로필 이미지가 변경되었습니다.");
+    }
+
+    @PatchMapping("/onboarding")
+    @Operation(summary = "온보딩 정보 설정", description = "거주지와 관심사를 등록하고 온보딩을 완료합니다.")
+    public SuccessResponse<String> completeOnboarding(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @RequestBody OnboardingRequest request
+    ) {
+        memberUpdater.completeOnboarding(
+                principal.getUserKey(),
+                request.residence(),
+                request.interests()
+        );
+        return SuccessResponse.ok("온보딩이 완료되었습니다.");
     }
 }

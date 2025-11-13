@@ -1,13 +1,17 @@
 package OneQ.OnSurvey.domain.member;
 
+import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
+import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.global.entity.BaseEntity;
 import OneQ.OnSurvey.global.exception.CustomException;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static OneQ.OnSurvey.domain.member.value.AgreeTerm.MARKETING_AGREED;
 import static OneQ.OnSurvey.domain.member.value.AgreeTerm.SERVICE_AGREED;
@@ -56,6 +60,25 @@ public class Member extends BaseEntity {
 
     private String profileUrl;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean onboardingCompleted = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Residence residence;
+
+    @ElementCollection(targetClass = Interest.class)
+    @CollectionTable(
+            name = "MEMBER_INTEREST",
+            joinColumns = @JoinColumn(name = "MEMBER_ID")
+    )
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "INTEREST", length = 30, nullable = false)
+    @Builder.Default
+    private Set<Interest> interests = new HashSet<>();
+
     public static Member createMember(
             Long userKey,
             String name,
@@ -73,7 +96,6 @@ public class Member extends BaseEntity {
                 .email(email)
                 .role(role)
                 .status(status)
-                .coin(0L)
                 .build();
     }
 
@@ -124,5 +146,14 @@ public class Member extends BaseEntity {
 
     public void changeProfileUrl(String profileUrl) {
         this.profileUrl = profileUrl;
+    }
+
+    public void completeOnboarding(Residence residence, Set<Interest> interests) {
+        this.residence = residence;
+        this.interests.clear();
+        if (interests != null) {
+            this.interests.addAll(interests);
+        }
+        this.onboardingCompleted = true;
     }
 }

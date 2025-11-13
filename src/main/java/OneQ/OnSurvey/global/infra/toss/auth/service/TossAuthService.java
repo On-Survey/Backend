@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.global.infra.toss.auth.service;
 
+import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.service.MemberModifyService;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.adapter.TossApiClient;
@@ -35,20 +36,20 @@ public class TossAuthService {
     private final MemberModifyService memberModifyService;
     private final TossMemberInfoDecryptService tossMemberInfoDecryptService;
 
-    public boolean createAccessAndRefreshToken(TossLoginRequest tossLoginRequest, HttpServletResponse response) {
+    public TossLoginResponse createAccessAndRefreshToken(TossLoginRequest tossLoginRequest, HttpServletResponse response) {
         try {
             SSLContext ctx = tossApiClient.createSSLContext(publicCrt, privateKey);
             TossTokenResponse token = tossApiClient.getAccessToken(ctx, tossLoginRequest);
 
             LoginMeResponse.Success me = tossApiClient.getLoginMe(ctx, token.accessToken());
             DecryptedLoginMeResponse decrypted = decryptLoginMeOrThrow(me);
-            memberModifyService.upsertMember(decrypted);
+            Member member = memberModifyService.upsertMember(decrypted);
             response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token.accessToken());
             if (token.refreshToken() != null) {
                 response.setHeader("X-Refresh-Token", "Bearer " + token.refreshToken());
             }
 
-            return true;
+            return TossLoginResponse.of(member.isOnboardingCompleted());
         } catch (Exception e) {
             log.error("[TossAuthService-login] {}", e.getMessage(), e);
             throw new CustomException(TOSS_API_CONNECTION_ERROR);
