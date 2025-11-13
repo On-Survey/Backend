@@ -54,6 +54,8 @@ public class Member extends BaseEntity {
     @Builder.Default
     private Long coin = 0L;
 
+    private String profileUrl;
+
     public static Member createMember(
             Long userKey,
             String name,
@@ -118,5 +120,9 @@ public class Member extends BaseEntity {
         if (amount <= 0) throw new CustomException(CoinErrorCode.COIN_NOT_POSITIVE);
         if (this.coin < amount) throw new CustomException(CoinErrorCode.COIN_LACK);
         this.coin -= amount;
+    }
+
+    public void changeProfileUrl(String profileUrl) {
+        this.profileUrl = profileUrl;
     }
 }

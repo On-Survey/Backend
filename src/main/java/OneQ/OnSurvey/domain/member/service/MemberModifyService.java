@@ -1,9 +1,11 @@
 package OneQ.OnSurvey.domain.member.service;
 
 import OneQ.OnSurvey.domain.member.Member;
+import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
+import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.DecryptedLoginMeResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -57,5 +59,12 @@ public class MemberModifyService implements MemberUpdater, MemberDeleter {
     public Boolean deleteById(Long memberId) {
         memberRepository.deleteById(memberId);
         return true;
+    }
+
+    @Override
+    public void changeProfileImage(Long userKey, String profileImageUrl) {
+        Member member = memberRepository.findMemberByUserKey(userKey)
+                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+        member.changeProfileUrl(profileImageUrl);
     }
 }
