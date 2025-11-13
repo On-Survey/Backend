@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.global.infra.toss.auth.controller;
 
 import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
+import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginResponse;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.TossReissueRequest;
 import OneQ.OnSurvey.global.infra.toss.auth.service.TossAuthService;
 import OneQ.OnSurvey.global.response.SuccessResponse;
@@ -22,11 +23,11 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/toss/login")
     @Operation(summary = "토스 로그인", description = "인가코드와 referrer을 받아 토큰을 헤더(Authorization, X-Refresh-Token)로 전달합니다.")
-    public ResponseEntity<SuccessResponse<Boolean>> tossLogin(
+    public ResponseEntity<SuccessResponse<TossLoginResponse>> tossLogin(
             HttpServletResponse httpServletResponse,
             @RequestBody TossLoginRequest tossLoginRequest
     ) {
-        Boolean result = tossAuthService.createAccessAndRefreshToken(tossLoginRequest, httpServletResponse);
+        TossLoginResponse result = tossAuthService.createAccessAndRefreshToken(tossLoginRequest, httpServletResponse);
         return ResponseEntity.ok(SuccessResponse.ok(result));
     }
 

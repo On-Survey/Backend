@@ -54,6 +54,9 @@ dependencies {
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
+	// Object Storage
+	implementation('com.amazonaws:aws-java-sdk-s3:1.12.761')
 }
 
 tasks.named('test') {
