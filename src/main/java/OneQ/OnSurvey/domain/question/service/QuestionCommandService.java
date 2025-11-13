@@ -17,8 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,7 +42,7 @@ public class QuestionCommandService implements QuestionCommand {
 
     @Override
     public void changeQuestionOrder(Map<Long, Integer> idOrderMap) {
-        // List<Map<Long, Integer>> idOrderMapList = questionList.stream().map(question -> Map.of(question.getQuestionId(), question.getOrder())).toList();
+        // List<Map<Long, Integer>> idOrderMapList = questionList.stream().map(question -> Map.of(question.getQuestionId(), question.getQuestionOrder())).toList();
         List<Question> questionList = questionRepository.getQuestionsByIds(idOrderMap.keySet());
 
         questionList.forEach(question -> {
@@ -51,28 +54,68 @@ public class QuestionCommandService implements QuestionCommand {
     }
 
     @Override
-    public List<Question> upsertQuestionList(QuestionUpsertDto upsertVO) {
-        Long surveyId = upsertVO.getSurveyId();
+    public QuestionUpsertDto upsertQuestionList(QuestionUpsertDto upsertDto) {
+        Long surveyId = upsertDto.getSurveyId();
+        List<QuestionUpsertDto.UpsertInfo> upsertInfoList = upsertDto.getUpsertInfoList();
 
-        Map<Boolean, List<QuestionUpsertDto.UpsertInfo>> partitionUpsertInfoList
-            = upsertVO.getUpsertInfoList().stream().collect(Collectors.partitioningBy(info -> info.getQuestionId() != null));
-        Map<Long, QuestionUpsertDto.UpsertInfo> idInfoMap = partitionUpsertInfoList.get(true).stream().collect(Collectors.toMap(
+        // 1. DB 저장 문항 전체 조회
+        List<Question> prevQuestionList = questionRepository.getQuestionListBySurveyId(surveyId);
+
+        // 2. Insert/Update 데이터 파티셔닝
+        Map<Boolean, List<QuestionUpsertDto.UpsertInfo>> partitionUpsertInfoList = upsertInfoList.stream()
+            .collect(Collectors.partitioningBy(info -> info.getQuestionId() != null));
+        List<QuestionUpsertDto.UpsertInfo> newInfoList = partitionUpsertInfoList.get(false);
+        List<QuestionUpsertDto.UpsertInfo> updateInfoList = partitionUpsertInfoList.get(true);
+
+        // 3. Update 대상 ID 추출
+        Set<Long> updateIdSet = updateInfoList.stream()
+            .map(QuestionUpsertDto.UpsertInfo::getQuestionId)
+            .collect(Collectors.toSet());
+
+        // 4. Delete 대상 ID 추출 및 삭제
+        Set<Long> deleteIdSet = prevQuestionList.stream()
+            .map(Question::getQuestionId)
+            .filter(questionId -> !updateIdSet.contains(questionId))
+            .collect(Collectors.toSet());
+        questionRepository.deleteAll(deleteIdSet);
+
+        // 5. Update 대상 수정
+        Map<Long, QuestionUpsertDto.UpsertInfo> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
             QuestionUpsertDto.UpsertInfo::getQuestionId,
             Function.identity(),
             (existing, replace) -> existing
         ));
-        List<Question> saveList = questionRepository.getQuestionsByIds(idInfoMap.keySet());
+        List<Question> updateList = prevQuestionList.stream()
+            .filter(question -> updateIdSet.contains(question.getQuestionId()))
+            .toList();
 
-        saveList.forEach(question -> {
+        updateList.forEach(question -> {
             Long id = question.getQuestionId();
-            QuestionUpsertDto.UpsertInfo upsertInfo = idInfoMap.get(id);
+            QuestionUpsertDto.UpsertInfo upsertInfo = updateInfoMap.get(id);
             updateQuestion(upsertInfo, question);
         });
 
-        List<Question> createdList = partitionUpsertInfoList.get(false).stream().map(upsertInfo -> createQuestion(surveyId, upsertInfo)).toList();
-        saveList.addAll(createdList);
+        // 6. Insert 대상 객체 생성
+        List<Question> insertList = newInfoList.stream()
+            .map(upsertInfo -> createQuestion(surveyId, upsertInfo))
+            .toList();
 
-        return questionRepository.saveAll(saveList);
+        List<Question> finalList = new ArrayList<>(updateList);
+        finalList.addAll(insertList);
+
+        // 7. Update/Insert 진행
+        updateList = questionRepository.saveAll(finalList);
+
+        // 8. 반환값 구성
+        upsertInfoList = updateList.stream()
+            .sorted(Comparator.comparingInt(Question::getOrder))
+            .map(QuestionUpsertDto::fromEntity)
+            .toList();
+
+        return QuestionUpsertDto.builder()
+            .surveyId(surveyId)
+            .upsertInfoList(upsertInfoList)
+            .build();
     }
 
     private void updateQuestion(QuestionUpsertDto.UpsertInfo upsertInfo, Question question) {
@@ -81,7 +124,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getOrder(),
+                upsertInfo.getQuestionOrder(),
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput()
@@ -91,7 +134,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getOrder(),
+                upsertInfo.getQuestionOrder(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue()
             );
@@ -100,14 +143,14 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getOrder()
+                upsertInfo.getQuestionOrder()
             );
         } else if (question instanceof Text text) {
             text.updateQuestion(
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getOrder(),
+                upsertInfo.getQuestionOrder(),
                 upsertInfo.getDefaultDate()
             );
         }
@@ -119,7 +162,7 @@ public class QuestionCommandService implements QuestionCommand {
         if (type.equals(QuestionType.TEXT)) {
             return Text.of(
                 surveyId,
-                upsertInfo.getOrder(),
+                upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
@@ -128,7 +171,7 @@ public class QuestionCommandService implements QuestionCommand {
         } else if (type.equals(QuestionType.NPS)) {
             return NPS.of(
                 surveyId,
-                upsertInfo.getOrder(),
+                upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired()
@@ -136,7 +179,7 @@ public class QuestionCommandService implements QuestionCommand {
         } else if (type.equals(QuestionType.RATING)) {
             return Rating.of(
                 surveyId,
-                upsertInfo.getOrder(),
+                upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
@@ -146,7 +189,7 @@ public class QuestionCommandService implements QuestionCommand {
         } else if (type.equals(QuestionType.CHOICE)) {
             return Choice.of(
                 surveyId,
-                upsertInfo.getOrder(),
+                upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
@@ -160,36 +203,80 @@ public class QuestionCommandService implements QuestionCommand {
     }
 
     @Override
-    public List<ChoiceOption> upsertChoiceOptionList(OptionUpsertDto upsertVO) {
-        Long questionId = upsertVO.getQuestionId();
+    public List<OptionUpsertDto> upsertChoiceOptionList(List<OptionUpsertDto> upsertDtoList) {
+        List<ChoiceOption> finalList = new ArrayList<>();
 
-        Map<Boolean, List<OptionUpsertDto.UpsertInfo>> partitionUpsertInfoList
-            = upsertVO.getUpsertInfoList().stream().collect(Collectors.partitioningBy(info -> info.getOptionId() != null));
+        for (OptionUpsertDto upsertDto : upsertDtoList) {
+            Long questionId = upsertDto.getQuestionId();
+            List<OptionUpsertDto.OptionInfo> requestInfos = upsertDto.getOptionInfoList();
 
-        Map<Long, OptionUpsertDto.UpsertInfo> idInfoMap = partitionUpsertInfoList.get(true).stream().collect(Collectors.toMap(
-            OptionUpsertDto.UpsertInfo::getOptionId,
-            Function.identity(),
-            (existing, replace) -> existing
-        ));
-        List<ChoiceOption> saveList = choiceOptionRepository.getOptionsByIds(idInfoMap.keySet());
+            // 1. DB 저장 보기 전체 조회
+            List<ChoiceOption> prevOptionList = choiceOptionRepository.getOptionsByQuestionId(questionId);
 
-        saveList.forEach(option -> {
-            Long id = option.getChoiceOptionId();
-            OptionUpsertDto.UpsertInfo upsertInfo = idInfoMap.get(id);
-            option.updateOption(
-                upsertInfo.getContent(),
-                upsertInfo.getNextQuestionId()
-            );
-        });
+            // 2. Insert/Update 데이터 파티셔닝
+            Map<Boolean, List<OptionUpsertDto.OptionInfo>> partitionUpsertInfoList = requestInfos.stream()
+                .collect(Collectors.partitioningBy(info -> info.getOptionId() != null));
 
-        List<ChoiceOption> createdList = partitionUpsertInfoList.get(false).stream()
-            .map(upsertInfo -> ChoiceOption.of(
-                questionId,
-                upsertInfo.getContent(),
-                upsertInfo.getNextQuestionId()
-            )).toList();
-        saveList.addAll(createdList);
+            List<OptionUpsertDto.OptionInfo> newInfoList = partitionUpsertInfoList.get(false);
+            List<OptionUpsertDto.OptionInfo> updateInfoList = partitionUpsertInfoList.get(true);
 
-        return choiceOptionRepository.saveAll(saveList);
+            // 3. Update 대상 ID 추출
+            Set<Long> updateIdSet = updateInfoList.stream()
+                .map(OptionUpsertDto.OptionInfo::getOptionId)
+                .collect(Collectors.toSet());
+
+            // 4. Delete 대상 ID 추출 및 삭제
+            Set<Long> deleteIdSet = prevOptionList.stream()
+                .map(ChoiceOption::getChoiceOptionId)
+                .filter(optionId -> !updateIdSet.contains(optionId))
+                .collect(Collectors.toSet());
+            choiceOptionRepository.deleteAll(deleteIdSet);
+
+            // 5. Update 대상 수정
+            Map<Long, OptionUpsertDto.OptionInfo> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
+                OptionUpsertDto.OptionInfo::getOptionId,
+                Function.identity(),
+                (existing, replace) -> existing
+            ));
+            List<ChoiceOption> updateList = prevOptionList.stream()
+                .filter(option -> updateIdSet.contains(option.getChoiceOptionId()))
+                .toList();
+
+            updateList.forEach(option -> {
+                Long id = option.getChoiceOptionId();
+                OptionUpsertDto.OptionInfo optionInfo = updateInfoMap.get(id);
+                option.updateOption(
+                    optionInfo.getContent(),
+                    optionInfo.getNextQuestionId()
+                );
+            });
+
+            // 6. Insert 대상 객체 생성
+            List<ChoiceOption> insertList = newInfoList.stream()
+                .map(upsertInfo -> ChoiceOption.of(
+                    questionId,
+                    upsertInfo.getContent(),
+                    upsertInfo.getNextQuestionId()
+                )).toList();
+
+            finalList.addAll(updateList);
+            finalList.addAll(insertList);
+        }
+
+        // 7. Update/Insert 진행
+        List<ChoiceOption> optionList = choiceOptionRepository.saveAll(finalList);
+
+        // 8. 반환값 구성
+        Map<Long, List<ChoiceOption>> idOptionListMap = optionList.stream().collect(Collectors.groupingBy(ChoiceOption::getQuestionId));
+        return idOptionListMap.entrySet().stream().map(entry -> {
+            Long questionId = entry.getKey();
+            List<ChoiceOption> savedList = entry.getValue();
+
+            return OptionUpsertDto.builder()
+                .questionId(questionId)
+                .optionInfoList(savedList.stream().map(OptionUpsertDto::fromEntity).toList())
+                .build();
+            })
+            .toList();
     }
 }

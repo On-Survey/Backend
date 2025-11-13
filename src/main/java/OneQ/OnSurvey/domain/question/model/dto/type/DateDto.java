@@ -15,7 +15,7 @@ public class DateDto extends DefaultQuestionDto {
             .date(text.getDefaultDate())
             .questionId(text.getQuestionId())
             .surveyId(text.getSurveyId())
-            .type(text.getClass().toString())
+            .questionType(text.getType().name())
             .title(text.getTitle())
             .description(text.getDescription())
             .isRequired(text.getIsRequired())
