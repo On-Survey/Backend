@@ -17,9 +17,6 @@ public class Payment {
     @Column(name = "PAYMENT_ID")
     private Long id;
 
-    @Column(name = "SURVEY_ID", nullable = false)
-    private Long surveyId;
-
     @Column(name = "ORDER_ID", length = 50, nullable = false)
     private String orderId;
 
@@ -52,9 +49,8 @@ public class Payment {
         this.refundAt = refundedAt != null ? refundedAt : LocalDateTime.now();
     }
 
-    public static Payment pending(Long surveyId, Long userKey, String orderId, String sku, Integer totalAmount) {
+    public static Payment pending(Long userKey, String orderId, String sku, Integer totalAmount) {
         return Payment.builder()
-                .surveyId(surveyId)
                 .userKey(userKey)
                 .orderId(orderId)
                 .sku(sku)
