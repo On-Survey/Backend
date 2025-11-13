@@ -28,7 +28,7 @@ public class IapController {
             @Valid @RequestBody IapGrantRequest body
     ) {
         long userKey = principal.getUserKey();
-        return SuccessResponse.ok(iapService.grantByOrder(userKey, body.orderId(), body.surveyId(), body.price()));
+        return SuccessResponse.ok(iapService.grantByOrder(userKey, body.orderId(), body.price()));
     }
 
     /** 추가 컨트롤러. 삭제 고려 **/

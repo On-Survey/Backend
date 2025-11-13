@@ -52,7 +52,7 @@ public class IapService {
      * @return 지급 성공 여부
      */
     @Transactional
-    public boolean grantByOrder(long userKey, String orderId, Long surveyId, Long price) {
+    public boolean grantByOrder(long userKey, String orderId, Long price) {
 
         if (price == null || price <= 0L) {
             throw new CustomException(CoinErrorCode.COIN_NOT_POSITIVE);
@@ -87,7 +87,6 @@ public class IapService {
         // 결제 레코드 생성/갱신
         if (payment == null) {
             payment = Payment.pending(
-                    surveyId,
                     userKey,
                     os.orderId(),
                     os.sku(),
