@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.survey.service;
 
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
@@ -51,16 +52,22 @@ public class SurveyCommandService implements SurveyCommand {
     }
 
     @Override
-    public Screening upsertScreening(Long screeningId, Long surveyId, String content, Boolean answer) {
+    public ScreeningResponse upsertScreening(Long screeningId, Long surveyId, String content, Boolean answer) {
+        Screening screening;
         if (screeningId == null) {
-            Screening screening = Screening.of(surveyId, content, answer);
+            screening = Screening.of(surveyId, content, answer);
+            screening = screeningRepository.save(screening);
+        } else {
+            screening = screeningRepository.getScreeningBySurveyId(surveyId);
+            screening.updateScreening(content, answer);
 
-            return screeningRepository.save(screening);
+            screeningRepository.save(screening);
         }
-
-        Screening screening = screeningRepository.getScreeningBySurveyId(surveyId);
-        screening.updateScreening(content, answer);
-
-        return screeningRepository.save(screening);
+        return ScreeningResponse.builder()
+            .screeningId(screening.getId())
+            .surveyId(screening.getSurveyId())
+            .content(screening.getContent())
+            .answer(answer)
+            .build();
     }
 }

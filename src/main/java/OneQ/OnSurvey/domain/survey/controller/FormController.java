@@ -133,13 +133,6 @@ public class FormController implements FormControllerDoc {
         @RequestBody ScreeningRequest request,
         @PathVariable Long surveyId
     ) {
-        ScreeningResponse mockResponse = new ScreeningResponse(
-            1001L,
-            surveyId,
-            request.content(),
-            request.answer()
-        );
-
-        return SuccessResponse.ok(mockResponse);
+        return SuccessResponse.ok(surveyCommand.upsertScreening(null, surveyId, request.content(), request.answer()));
     }
 }
