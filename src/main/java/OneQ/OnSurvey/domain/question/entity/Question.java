@@ -33,6 +33,7 @@ public abstract class Question extends BaseEntity {
     @Column(name = "survey_id")
     private Long surveyId;
 
+    @Column(name = "QUESTION_ORDER")
     protected Integer order;
 
     @Column(name = "type", insertable = false, updatable = false)
