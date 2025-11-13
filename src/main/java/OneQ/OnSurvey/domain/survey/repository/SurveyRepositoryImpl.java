@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -21,7 +22,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public Survey getSurveyById(Long surveyId) {
+    public Optional<Survey> getSurveyById(Long surveyId) {
         return surveyJpaRepository.getSurveyById(surveyId);
     }
 

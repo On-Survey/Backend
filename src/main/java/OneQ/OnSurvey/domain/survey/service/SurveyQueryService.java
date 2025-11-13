@@ -9,6 +9,8 @@ import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
+import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -24,7 +26,7 @@ public class SurveyQueryService implements SurveyQuery {
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
-        Survey survey = surveyRepository.getSurveyById(surveyId);
+        Survey survey = surveyRepository.getSurveyById(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
 
         return new SurveyManagementDetailResponse(survey.getId(), survey.getMemberId(), survey.getStatus());
     }

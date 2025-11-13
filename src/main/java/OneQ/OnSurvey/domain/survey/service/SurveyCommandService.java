@@ -6,6 +6,8 @@ import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,14 +35,14 @@ public class SurveyCommandService implements SurveyCommand {
             return surveyRepository.save(survey);
         }
 
-        Survey survey = surveyRepository.getSurveyById(surveyId);
+        Survey survey = surveyRepository.getSurveyById(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
         survey.updateSurveyTitleAndDescription(title, description);
         return surveyRepository.save(survey);
     }
 
     @Override
     public Survey submitSurvey(Long surveyId) {
-        Survey survey = surveyRepository.getSurveyById(surveyId);
+        Survey survey = surveyRepository.getSurveyById(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
         survey.submitSurvey();
 
         return surveyRepository.save(survey);
