@@ -52,7 +52,7 @@ public record QuestionRequest(
                       },
                       {
                         "optionId": 4,
-                        "content": "보기2ㅣ",
+                        "content": "보기2",
                         "nextQuestionId": 4
                       }
                     ]

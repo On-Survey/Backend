@@ -49,7 +49,8 @@ public class QuestionUpsertDto {
             .title(question.getTitle())
             .description(question.getDescription())
             .isRequired(question.getIsRequired())
-            .questionOrder(question.getOrder());
+            .questionOrder(question.getOrder())
+            .questionType(question.getType());
 
         return switch (question.getType()) {
             case CHOICE -> {

@@ -66,7 +66,7 @@ public class FormController implements FormControllerDoc {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     ) {
-        if (!request.questions().isEmpty()
+        if (request.questions().isEmpty()
             || request.questions().getFirst().getQuestionType() == null
         ) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
@@ -96,7 +96,7 @@ public class FormController implements FormControllerDoc {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     ) {
-        if (!request.questions().isEmpty()
+        if (request.questions().isEmpty()
             || request.questions().getFirst().getQuestionType() == null
         ) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);

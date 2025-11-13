@@ -47,16 +47,11 @@ public interface FormControllerDoc {
                     name = "문항 생성",
                     value = """
                         {
-                            "info": [
+                            "questions": [
                                 {
-                                    "questionType": "LONG",
-                                    "questions": [
-                                        {
-                                           "type": "LONG",
-                                           "title": "string",
-                                           "questionOrder": 2
-                                        }
-                                    ]
+                                   "questionType": "LONG",
+                                   "title": "string",
+                                   "questionOrder": 2
                                 }
                             ]
                         }
