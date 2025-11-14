@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.domain.question.model.dto.type;
 
-import OneQ.OnSurvey.domain.question.entity.question.Text;
+import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -10,16 +10,16 @@ import java.time.LocalDateTime;
 public class DateDto extends DefaultQuestionDto {
     private LocalDateTime date;
 
-    public static DateDto fromEntity(Text text) {
+    public static DateDto fromEntity(DateAnswer date) {
         return DateDto.builder()
-            .date(text.getDefaultDate())
-            .questionId(text.getQuestionId())
-            .surveyId(text.getSurveyId())
-            .questionType(text.getType().name())
-            .title(text.getTitle())
-            .description(text.getDescription())
-            .isRequired(text.getIsRequired())
-            .questionOrder(text.getOrder())
+            .date(date.getDefaultDate())
+            .questionId(date.getQuestionId())
+            .surveyId(date.getSurveyId())
+            .questionType(date.getType().name())
+            .title(date.getTitle())
+            .description(date.getDescription())
+            .isRequired(date.getIsRequired())
+            .questionOrder(date.getOrder())
             .build();
     }
 }

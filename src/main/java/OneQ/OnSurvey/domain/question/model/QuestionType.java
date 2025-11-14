@@ -4,8 +4,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @RequiredArgsConstructor
@@ -42,5 +44,9 @@ public enum QuestionType {
         public static final String NUMBER = "NUMBER";
         public static final String DATE = "DATE";
         public static final String TEXT = "TEXT";
+    }
+
+    public boolean isText() {
+        return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || TEXT.equals(this);
     }
 }

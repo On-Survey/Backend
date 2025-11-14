@@ -4,8 +4,11 @@ import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
 import OneQ.OnSurvey.domain.question.entity.question.NPS;
+import OneQ.OnSurvey.domain.question.entity.question.NumberAnswer;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
-import OneQ.OnSurvey.domain.question.entity.question.Text;
+import OneQ.OnSurvey.domain.question.entity.question.ShortAnswer;
+import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
+import OneQ.OnSurvey.domain.question.entity.question.LongAnswer;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -145,13 +149,34 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder()
             );
-        } else if (question instanceof Text text) {
-            text.updateQuestion(
+        } else if (question instanceof DateAnswer date) {
+            date.updateQuestion(
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getDefaultDate()
+            );
+        } else if (question instanceof ShortAnswer shortAnswer) {
+            shortAnswer.updateQuestion(
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired(),
+                upsertInfo.getQuestionOrder()
+            );
+        } else if (question instanceof LongAnswer longAnswer) {
+            longAnswer.updateQuestion(
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired(),
+                upsertInfo.getQuestionOrder()
+            );
+        } else if (question instanceof NumberAnswer numberAnswer) {
+            numberAnswer.updateQuestion(
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired(),
+                upsertInfo.getQuestionOrder()
             );
         }
     }
@@ -159,16 +184,16 @@ public class QuestionCommandService implements QuestionCommand {
     private Question createQuestion(Long surveyId, QuestionUpsertDto.UpsertInfo upsertInfo) {
         QuestionType type = upsertInfo.getQuestionType();
 
-        if (type.equals(QuestionType.TEXT)) {
-            return Text.of(
+        if (QuestionType.DATE.equals(type)) {
+            return DateAnswer.of(
                 surveyId,
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getTextType()
+                upsertInfo.getDefaultDate()
             );
-        } else if (type.equals(QuestionType.NPS)) {
+        } else if (QuestionType.NPS.equals(type)) {
             return NPS.of(
                 surveyId,
                 upsertInfo.getQuestionOrder(),
@@ -176,7 +201,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired()
             );
-        } else if (type.equals(QuestionType.RATING)) {
+        } else if (QuestionType.RATING.equals(type)) {
             return Rating.of(
                 surveyId,
                 upsertInfo.getQuestionOrder(),
@@ -186,7 +211,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue()
             );
-        } else if (type.equals(QuestionType.CHOICE)) {
+        } else if (QuestionType.CHOICE.equals(type)) {
             return Choice.of(
                 surveyId,
                 upsertInfo.getQuestionOrder(),
@@ -196,6 +221,30 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput()
+            );
+        } else if (QuestionType.SHORT.equals(type)) {
+            return ShortAnswer.of(
+                surveyId,
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired()
+            );
+        } else if (QuestionType.LONG.equals(type)) {
+            return LongAnswer.of(
+                surveyId,
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired()
+            );
+        } else if (QuestionType.NUMBER.equals(type)) {
+            return NumberAnswer.of(
+                surveyId,
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired()
             );
         } else {
             throw new CustomException(ErrorCode.INVALID_REQUEST);

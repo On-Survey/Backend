@@ -2,10 +2,9 @@ package OneQ.OnSurvey.domain.question.service;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
+import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
-import OneQ.OnSurvey.domain.question.entity.question.Text;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
-import OneQ.OnSurvey.domain.question.model.TextType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
@@ -56,19 +55,9 @@ public class QuestionConverter {
                 );
             case RatingDto ratingDto -> builder.minValue(ratingDto.getMinValue())
                 .maxValue(ratingDto.getMaxValue());
-            case DateDto dateDto -> builder.defaultDate(dateDto.getDate())
-                .textType(TextType.DATE);
+            case DateDto dateDto -> builder.defaultDate(dateDto.getDate());
             default -> {
             }
-        }
-
-        // 3. TextType 매핑 (QuestionType 기반)
-        if (QuestionType.SHORT.name().equals(dto.getQuestionType())) {
-            builder.textType(TextType.SHORT);
-        } else if (QuestionType.LONG.name().equals(dto.getQuestionType())) {
-            builder.textType(TextType.LONG);
-        } else if (QuestionType.NUMBER.name().equals(dto.getQuestionType())) {
-            builder.textType(TextType.NUMBER);
         }
 
         return builder.build();
@@ -78,8 +67,7 @@ public class QuestionConverter {
         return switch (question) {
             case Choice choice -> ChoiceDto.fromEntity(choice);
             case Rating rating -> RatingDto.fromEntity(rating);
-            case Text text ->
-                TextType.DATE.equals(text.getTextType()) ? DateDto.fromEntity(text) : DefaultQuestionDto.fromEntity(text);
+            case DateAnswer date -> DateDto.fromEntity(date);
             default -> DefaultQuestionDto.fromEntity(question);
         };
     }

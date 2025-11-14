@@ -2,10 +2,9 @@ package OneQ.OnSurvey.domain.question.model.dto;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
+import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
-import OneQ.OnSurvey.domain.question.entity.question.Text;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
-import OneQ.OnSurvey.domain.question.model.TextType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -35,9 +34,6 @@ public class QuestionUpsertDto {
         // Rating 필드
         String minValue;
         String maxValue;
-
-        // Text 필드
-        TextType textType;
 
         // Date 필드
         LocalDateTime defaultDate;
@@ -69,8 +65,8 @@ public class QuestionUpsertDto {
                     .build();
             }
             case DATE -> {
-                Text text = (Text) question;
-                yield builder.defaultDate(text.getDefaultDate()).build();
+                DateAnswer dateAnswer = (DateAnswer) question;
+                yield builder.defaultDate(dateAnswer.getDefaultDate()).build();
             }
             default -> builder.build();
         };
