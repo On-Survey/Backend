@@ -84,10 +84,11 @@ public class ParticipationController {
     @Operation(summary = "스크리닝 문항에 대한 응답을 생성합니다.")
     public SuccessResponse<Boolean> createScreeningAnswer(
         @AuthenticationPrincipal CustomUserDetails details,
-        @RequestBody InsertScreeningAnswerRequest request
+        @RequestBody InsertScreeningAnswerRequest request,
+        @PathVariable Long screeningId
     ) {
         AnswerInsertDto.AnswerInfo answerInfo = AnswerInsertDto.AnswerInfo.builder()
-            .id(request.screeningId())
+            .id(screeningId)
             .memberId(memberFinder.getMemberByUserKey(details.getUserKey()).getId())
             .content(request.content())
             .build();
