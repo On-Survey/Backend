@@ -58,6 +58,10 @@ public class Member extends BaseEntity {
     @Builder.Default
     private Long coin = 0L;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Long promotionPoint = 0L;
+
     private String profileUrl;
 
     @Column(nullable = false)
@@ -142,6 +146,13 @@ public class Member extends BaseEntity {
         if (amount <= 0) throw new CustomException(CoinErrorCode.COIN_NOT_POSITIVE);
         if (this.coin < amount) throw new CustomException(CoinErrorCode.COIN_LACK);
         this.coin -= amount;
+    }
+
+    public void increasePromotionPoint(long amount) {
+        if (amount <= 0) {
+            throw new CustomException(CoinErrorCode.COIN_NOT_POSITIVE);
+        }
+        this.promotionPoint += amount;
     }
 
     public void changeProfileUrl(String profileUrl) {

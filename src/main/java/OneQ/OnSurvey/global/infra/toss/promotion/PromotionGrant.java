@@ -2,7 +2,7 @@ package OneQ.OnSurvey.global.infra.toss.promotion;
 
 import OneQ.OnSurvey.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.Instant;
 
@@ -15,6 +15,9 @@ import java.time.Instant;
         )
 )
 @Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PromotionGrant extends BaseEntity {
 
     @Id
@@ -40,6 +43,10 @@ public class PromotionGrant extends BaseEntity {
     @Column(name = "exec_key_issued_at")
     private Instant execKeyIssuedAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean pointGranted = false;
+
     public static PromotionGrant of(Long userKey, Long surveyId, String promotionCode) {
         PromotionGrant promotionGrant = new PromotionGrant();
         promotionGrant.userKey = userKey;
@@ -61,4 +68,8 @@ public class PromotionGrant extends BaseEntity {
 
     public boolean isSuccess() { return this.status == GrantStatus.SUCCESS; }
     public boolean isPending() { return this.status == GrantStatus.PENDING; }
+
+    public void markPointGranted() {
+        this.pointGranted = true;
+    }
 }
