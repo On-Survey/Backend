@@ -29,6 +29,6 @@ public class MemberQueryService implements MemberFinder {
         Member member = memberRepository.findMemberByUserKey(userKey)
                 .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        return MemberInfoResponse.of(member.getName(), member.getProfileUrl(), member.getCoin());
+        return MemberInfoResponse.of(member.getName(), member.getProfileUrl(), member.getCoin(), member.getPromotionPoint());
     }
 }
