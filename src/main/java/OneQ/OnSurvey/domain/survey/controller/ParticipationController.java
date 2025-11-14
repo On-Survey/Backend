@@ -49,7 +49,7 @@ public class ParticipationController {
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
-        Pageable pageable = PageRequest.of(0, size, Sort.by("surveyId"));
+        Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
         return SuccessResponse.ok(
             surveyQueryService.getParticipationSurveyList(
                 SurveyStatus.ONGOING, lastSurveyId, pageable

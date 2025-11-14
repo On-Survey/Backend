@@ -6,9 +6,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface SurveyJpaRepository extends JpaRepository<Survey, Long> {
-    Survey getSurveyById(Long id);
+    Optional<Survey> getSurveyById(Long id);
     List<Survey> getSurveysByMemberId(Long memberId);
 
     Page<Survey> getSurveysByIdGreaterThan(Long idIsGreaterThan, Pageable pageable);

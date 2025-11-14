@@ -62,6 +62,7 @@ public class ManagementController {
         Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
 
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
+
         if (!memberId.equals(response.getMemberId())) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }

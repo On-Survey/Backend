@@ -7,9 +7,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface SurveyRepository {
-    Survey getSurveyById(Long surveyId);
+    Optional<Survey> getSurveyById(Long surveyId);
     List<Survey> getSurveyListByMemberId(Long memberId);
     Slice<Survey> getSurveyListByStatus(SurveyStatus status, Long lastSurveyId, Pageable pageable);
     Slice<Survey> getSurveyList(Long lastSurveyId, Pageable pageable);
