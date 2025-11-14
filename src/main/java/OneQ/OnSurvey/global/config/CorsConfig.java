@@ -26,7 +26,7 @@ public class CorsConfig {
                 "https://onsurvey.apps.tossmini.com"
         ));
         config.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                "GET", "POST", "PUT", "DELETE", "PATCH" ,"OPTIONS"
         ));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(Arrays.asList(
