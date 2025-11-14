@@ -10,7 +10,10 @@ public record OnboardingRequest(
         @Schema(description = "거주지 정보", example = "SEOUL")
         Residence residence,
 
-        @Schema(description = "관심사 목록", example = "[CAREER, BUSINESS, FINANCE]")
+        @Schema(
+                description = "관심사 목록",
+                example = "[\"CAREER\", \"BUSINESS\", \"FINANCE\"]"
+        )
         Set<Interest> interests
 ) {
 }
