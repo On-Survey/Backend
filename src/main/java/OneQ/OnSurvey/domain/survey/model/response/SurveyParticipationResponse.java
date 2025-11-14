@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter @Builder
@@ -24,12 +25,15 @@ public class SurveyParticipationResponse {
         private Long memberId;
         private String title;
         private String description;
+
+        private LocalDateTime deadline;
     }
 
     public static SurveyData fromEntity(Survey survey) {
         return SurveyData.builder()
             .surveyId(survey.getId())
             .memberId(survey.getMemberId())
+            .deadline(survey.getDeadline())
             .title(survey.getTitle())
             .description(survey.getDescription())
             .build();
