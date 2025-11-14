@@ -4,8 +4,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @RequiredArgsConstructor
@@ -18,7 +20,7 @@ public enum QuestionType {
     NUMBER("숫자형", Values.NUMBER),
     DATE("날짜형", Values.DATE),
     TEXT("주관식", Values.TEXT);
-    private final String name;
+    private final String description;
     private final String value;
 
     public static final Map<String, QuestionType> VALUE_MAP;
@@ -44,7 +46,7 @@ public enum QuestionType {
         public static final String TEXT = "TEXT";
     }
 
-    public static QuestionType fromKey(String key) {
-        return VALUE_MAP.getOrDefault(key, null);
+    public boolean isText() {
+        return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || TEXT.equals(this);
     }
 }

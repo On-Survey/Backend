@@ -18,6 +18,11 @@ public class ChoiceOptionRepositoryImpl implements ChoiceOptionRepository {
     }
 
     @Override
+    public List<ChoiceOption> getOptionsByQuestionIds(List<Long> questionIdList) {
+        return choiceOptionJpaRepository.getChoiceOptionsByQuestionIdIsIn(questionIdList);
+    }
+
+    @Override
     public List<ChoiceOption> getOptionsByQuestionId(Long questionId) {
         return choiceOptionJpaRepository.getChoiceOptionsByQuestionId(questionId);
     }
@@ -25,5 +30,10 @@ public class ChoiceOptionRepositoryImpl implements ChoiceOptionRepository {
     @Override
     public List<ChoiceOption> saveAll(Collection<ChoiceOption> choiceOptions) {
         return choiceOptionJpaRepository.saveAll(choiceOptions);
+    }
+
+    @Override
+    public Boolean deleteAll(Collection<Long> optionIdList) {
+        return choiceOptionJpaRepository.deleteAllByChoiceOptionIdIsIn(optionIdList);
     }
 }
