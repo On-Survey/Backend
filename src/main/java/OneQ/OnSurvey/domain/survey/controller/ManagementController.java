@@ -73,7 +73,7 @@ public class ManagementController {
             .map(dto -> new SurveyManagementDetailResponse.DetailInfo(
                     dto.getQuestionId(),
                     dto.getQuestionOrder(),
-                    QuestionType.fromKey(dto.getType()),
+                    QuestionType.valueOf(dto.getQuestionType()),
                     dto.getTitle(),
                     dto.getDescription(),
                     dto.getIsRequired()

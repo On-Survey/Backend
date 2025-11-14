@@ -9,4 +9,8 @@ import java.util.List;
 public interface ChoiceOptionJpaRepository extends JpaRepository<ChoiceOption, Long> {
     List<ChoiceOption> getChoiceOptionsByQuestionId(Long questionId);
     List<ChoiceOption> getChoiceOptionsByChoiceOptionIdIn(Collection<Long> choiceOptionIds);
+
+    List<ChoiceOption> getChoiceOptionsByQuestionIdIsIn(Collection<Long> questionIds);
+
+    Boolean deleteAllByChoiceOptionIdIsIn(Collection<Long> choiceOptionIds);
 }
