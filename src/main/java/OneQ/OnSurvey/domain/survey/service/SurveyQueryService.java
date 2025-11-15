@@ -91,7 +91,8 @@ public class SurveyQueryService implements SurveyQuery {
                     survey.getTitle(),
                     survey.getStatus(),
                     survey.getTotalCoin(),
-                    survey.getCreatedAt().toLocalDate()
+                    survey.getCreatedAt().toLocalDate(),
+                    survey.getDeadline()
             );
 
             if (survey.getStatus() == REFUNDED) {

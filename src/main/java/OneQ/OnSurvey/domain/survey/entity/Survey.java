@@ -68,12 +68,14 @@ public class Survey extends BaseEntity {
         Long memberId,
         String title,
         String description,
+        LocalDateTime deadline,
         Integer totalCoin
     ) {
         return Survey.builder()
             .memberId(memberId)
             .title(title)
             .description(description)
+            .deadline(deadline)
             .totalCoin(totalCoin)
             .build();
     }
@@ -90,10 +92,12 @@ public class Survey extends BaseEntity {
     public void updateSurvey(
             String title,
             String description,
+            LocalDateTime deadline,
             Integer totalCoin
     ) {
         this.title = title;
         this.description = description;
+        this.deadline = deadline;
         this.totalCoin = totalCoin;
     }
 
