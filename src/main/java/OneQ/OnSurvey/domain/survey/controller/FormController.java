@@ -55,6 +55,9 @@ public class FormController implements FormControllerDoc {
     ) {
         Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
 
+        log.info("[FORM] 설문 생성 - title: {}, description: {}, memberId: {}",
+            request.title(), request.description(), memberId);
+
         SurveyFormResponse response = surveyCommand.upsertSurvey(
             null, request.title(), request.description(), memberId);
 
@@ -70,13 +73,14 @@ public class FormController implements FormControllerDoc {
     ) {
         log.info("[FORM] 새로운 문항 생성 - surveyId: {}, request: {}", surveyId, request.toString());
 
-        if (request.questions().isEmpty()
-            || request.questions().getFirst().getQuestionType() == null
+        if (request.getQuestions().isEmpty()
+            || request.getQuestions().getFirst().getQuestionType() == null
         ) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
 
-        DefaultQuestionDto questionDto = request.questions().getFirst();
+        DefaultQuestionDto questionDto = request.getQuestions().getFirst();
+        log.info(questionDto.getQuestionType());
         QuestionType type = QuestionType.valueOf(questionDto.getQuestionType());
 
         QuestionUpsertDto upsertDto = QuestionUpsertDto.builder()
@@ -100,14 +104,14 @@ public class FormController implements FormControllerDoc {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     ) {
-        if (request.questions().isEmpty()
-            || request.questions().getFirst().getQuestionType() == null
+        if (request.getQuestions().isEmpty()
+            || request.getQuestions().getFirst().getQuestionType() == null
         ) {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
 
         QuestionUpsertDto questionUpsertDto =
-            QuestionConverter.toQuestionUpsertDto(surveyId, request.questions());
+            QuestionConverter.toQuestionUpsertDto(surveyId, request.getQuestions());
 
         List<OptionUpsertDto> optionUpsertDtoList =
             questionUpsertDto.getUpsertInfoList().stream()

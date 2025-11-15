@@ -37,7 +37,8 @@ public class Choice extends Question {
         Boolean isRequired,
         Integer maxChoice,
         Boolean hasNoneOption,
-        Boolean hasCustomInput
+        Boolean hasCustomInput,
+        QuestionType type
     ) {
         return Choice.builder()
             .surveyId(surveyId)
@@ -48,6 +49,7 @@ public class Choice extends Question {
             .maxChoice(maxChoice)
             .hasNoneOption(hasNoneOption)
             .hasCustomInput(hasCustomInput)
+            .type(type.name())
             .build();
     }
 

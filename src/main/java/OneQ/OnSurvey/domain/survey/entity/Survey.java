@@ -58,7 +58,7 @@ public class Survey extends BaseEntity {
     @ElementCollection(targetClass = Interest.class)
     @CollectionTable(
         name = "survey_interest",
-        joinColumns = @JoinColumn(name = "id")
+        joinColumns = @JoinColumn(name = "survey_id")
     )
     @Enumerated(EnumType.STRING)
     @Column(name = "interest", length = 30, nullable = false)

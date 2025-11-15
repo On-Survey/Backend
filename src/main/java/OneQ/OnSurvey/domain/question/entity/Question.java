@@ -1,6 +1,5 @@
 package OneQ.OnSurvey.domain.question.entity;
 
-import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
@@ -37,7 +36,7 @@ public abstract class Question extends BaseEntity {
     protected Integer order;
 
     @Column(name = "type", insertable = false, updatable = false)
-    protected QuestionType type;
+    protected String type;
 
     @Column(length = 64)
     protected String title;

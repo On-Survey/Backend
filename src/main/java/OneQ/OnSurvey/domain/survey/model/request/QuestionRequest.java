@@ -2,10 +2,13 @@ package OneQ.OnSurvey.domain.survey.model.request;
 
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.ToString;
 
 import java.util.List;
 
-public record QuestionRequest(
+@Getter @ToString
+public class QuestionRequest {
     @Schema(
         example = """
                 [
@@ -80,6 +83,5 @@ public record QuestionRequest(
                 ]
                 """
     )
-    List<DefaultQuestionDto> questions
-) {
+    List<DefaultQuestionDto> questions;
 }

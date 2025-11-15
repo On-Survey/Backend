@@ -46,9 +46,9 @@ public class QuestionUpsertDto {
             .description(question.getDescription())
             .isRequired(question.getIsRequired())
             .questionOrder(question.getOrder())
-            .questionType(question.getType());
+            .questionType(QuestionType.valueOf(question.getType()));
 
-        return switch (question.getType()) {
+        return switch (QuestionType.valueOf(question.getType())) {
             case CHOICE -> {
                 Choice choice = (Choice) question;
                 yield builder
