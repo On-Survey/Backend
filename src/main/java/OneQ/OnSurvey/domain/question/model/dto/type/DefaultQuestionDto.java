@@ -51,4 +51,8 @@ public class DefaultQuestionDto {
             .questionOrder(question.getOrder())
             .build();
     }
+
+    public boolean isChoice() {
+        return this.questionType.equals("CHOICE");
+    }
 }

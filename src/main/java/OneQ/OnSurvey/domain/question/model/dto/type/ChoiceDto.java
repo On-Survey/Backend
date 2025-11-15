@@ -46,4 +46,8 @@ public class ChoiceDto extends DefaultQuestionDto {
             .questionOrder(choice.getOrder())
             .build();
     }
+
+    public void updateOptions(List<OptionInfo> optionInfoLIst) {
+        this.options = optionInfoLIst;
+    }
 }
