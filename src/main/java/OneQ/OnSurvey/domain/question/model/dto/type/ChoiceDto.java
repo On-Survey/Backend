@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.List;
 
 @Getter @SuperBuilder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ChoiceDto extends DefaultQuestionDto {
     private Integer maxChoice;
