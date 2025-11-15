@@ -94,10 +94,9 @@ public class ManagementController {
     @Operation(summary = "내 설문 목록 조회",
             description = "코인으로 결제한 설문들을 노출중/환불로 구분하여 조회합니다.")
     public SuccessResponse<MySurveyListResponse> getMySurveys(
-            //@AuthenticationPrincipal CustomUserDetails principal
+            @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        //Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-        Long memberId = 1L;
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         return SuccessResponse.ok(surveyQuery.getMySurveys(memberId));
     }
 
@@ -105,11 +104,10 @@ public class ManagementController {
     @Operation(summary = "내 설문 결제 상세 조회",
             description = "선택한 설문의 코인 결제 및 타겟 정보를 조회합니다.")
     public SuccessResponse<SurveyDetailResponse> getMySurveyDetail(
-            //@AuthenticationPrincipal CustomUserDetails principal,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable Long surveyId
     ) {
-        //Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-        Long memberId = 1L;
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         return SuccessResponse.ok(surveyQuery.getMySurveyDetail(memberId, surveyId));
     }
 }
