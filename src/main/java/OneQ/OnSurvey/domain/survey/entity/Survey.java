@@ -49,15 +49,21 @@ public class Survey extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SurveyStatus status = SurveyStatus.WRITING;
 
+    private Integer totalCoin;
+
     public static Survey of(
         Long memberId,
         String title,
-        String description
+        String description,
+        Integer dueCount,
+        Integer totalCoin
     ) {
         return Survey.builder()
             .memberId(memberId)
             .title(title)
             .description(description)
+            .dueCount(dueCount)
+            .totalCoin(totalCoin)
             .build();
     }
 
@@ -70,11 +76,13 @@ public class Survey extends BaseEntity {
         this.status = status;
     }
 
-    public void updateSurveyTitleAndDescription(
-        String title,
-        String description
+    public void updateSurvey(
+            String title,
+            String description,
+            Integer totalCoin
     ) {
         this.title = title;
         this.description = description;
+        this.totalCoin = totalCoin;
     }
 }

@@ -17,8 +17,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Getter @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -26,7 +24,7 @@ import java.time.LocalDateTime;
 public class SurveyInfo {
     @Id @Column(name = "info_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long info_id;
+    private Long infoId;
 
     @Column(name = "survey_id")
     private Long surveyId;
@@ -40,18 +38,28 @@ public class SurveyInfo {
     @Enumerated(EnumType.STRING)
     private Residence residence;
 
-    public SurveyInfo createSurveyInfo(
-        Long surveyId,
-        Gender gender,
-        AgeRange age,
-        Residence residence
+    public static SurveyInfo createSurveyInfo(
+            Long surveyId,
+            Gender gender,
+            AgeRange age,
+            Residence residence
     ) {
         return SurveyInfo.builder()
-            .surveyId(surveyId)
-            .gender(gender)
-            .age(age)
-            .residence(residence)
-            .build();
+                .surveyId(surveyId)
+                .gender(gender)
+                .age(age)
+                .residence(residence)
+                .build();
+    }
+
+    public void updateSurveyInfo(
+            Gender gender,
+            AgeRange age,
+            Residence residence
+    ) {
+        this.gender = gender;
+        this.age = age;
+        this.residence = residence;
     }
 }
 

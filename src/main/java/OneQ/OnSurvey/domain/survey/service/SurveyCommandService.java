@@ -2,11 +2,15 @@ package OneQ.OnSurvey.domain.survey.service;
 
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import OneQ.OnSurvey.domain.survey.model.AgeRange;
+import OneQ.OnSurvey.domain.survey.model.Gender;
+import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
+import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
-import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -17,24 +21,59 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class SurveyCommandService implements SurveyCommand {
+
     private final SurveyRepository surveyRepository;
     private final ScreeningRepository screeningRepository;
+    private final SurveyInfoRepository surveyInfoRepository;
 
     @Override
-    public SurveyFormResponse upsertSurvey(Long surveyId, String title, String description, Long memberId) {
+    public SurveyFormResponse upsertSurvey(Long surveyId, String title, String description,
+                                           Integer totalCoin, Gender gender, AgeRange age,
+                                           Residence residence, Integer dueCount, Long memberId) {
         Survey survey;
         if (surveyId == null) {
             survey = Survey.of(
-                memberId,
-                title,
-                description
+                    memberId,
+                    title,
+                    description,
+                    dueCount,
+                    totalCoin
             );
+            survey = surveyRepository.save(survey);
+
+            SurveyInfo info = SurveyInfo.createSurveyInfo(
+                    survey.getId(),
+                    gender,
+                    age,
+                    residence
+            );
+            surveyInfoRepository.save(info);
         } else {
-            survey = surveyRepository.getSurveyById(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
-            survey.updateSurveyTitleAndDescription(title, description);
+            survey = surveyRepository.getSurveyById(surveyId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+
+            survey.updateSurvey(title, description, totalCoin);
+
+            SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
+                    .orElseGet(() -> {
+                        SurveyInfo newInfo = SurveyInfo.createSurveyInfo(
+                                surveyId,
+                                gender,
+                                age,
+                                residence
+                        );
+                        return surveyInfoRepository.save(newInfo);
+                    });
+
+            if (info.getInfoId() != null) {
+                info.updateSurveyInfo(
+                        gender,
+                        age,
+                        residence
+                );
+            }
         }
-        survey = surveyRepository.save(survey);
-      
+
         return SurveyFormResponse.fromEntity(survey);
     }
 
