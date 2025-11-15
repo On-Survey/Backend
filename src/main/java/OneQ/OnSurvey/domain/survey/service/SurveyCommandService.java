@@ -1,17 +1,20 @@
 package OneQ.OnSurvey.domain.survey.service;
 
+import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
-import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +74,20 @@ public class SurveyCommandService implements SurveyCommand {
             .surveyId(screening.getSurveyId())
             .content(screening.getContent())
             .answer(answer)
+            .build();
+    }
+
+    @Override
+    public InterestResponse upsertInterest(Long surveyId, Set<Interest> interestSet) {
+        Survey survey = surveyRepository.getSurveyById(surveyId).orElseThrow(
+            () -> new CustomException(ErrorCode.INVALID_REQUEST)
+        );
+        survey.updateInterests(interestSet);
+
+        survey = surveyRepository.save(survey);
+
+        return InterestResponse.builder()
+            .interests(survey.getInterests())
             .build();
     }
 }

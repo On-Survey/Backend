@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.domain.survey.model.response;
 
+import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Getter @Builder
 public class SurveyParticipationResponse {
@@ -26,6 +28,8 @@ public class SurveyParticipationResponse {
         private String title;
         private String description;
 
+        private Set<Interest> interests;
+
         private LocalDateTime deadline;
     }
 
@@ -33,9 +37,10 @@ public class SurveyParticipationResponse {
         return SurveyData.builder()
             .surveyId(survey.getId())
             .memberId(survey.getMemberId())
-            .deadline(survey.getDeadline())
             .title(survey.getTitle())
             .description(survey.getDescription())
+            .interests(survey.getInterests())
+            .deadline(survey.getDeadline())
             .build();
     }
 }
