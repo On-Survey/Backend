@@ -68,7 +68,7 @@ public class FormController implements FormControllerDoc {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     ) {
-        log.info("[FORM]: surveyId: {}, request: {}", surveyId, request.toString());
+        log.info("[FORM] 새로운 문항 생성 - surveyId: {}, request: {}", surveyId, request.toString());
 
         if (request.questions().isEmpty()
             || request.questions().getFirst().getQuestionType() == null
