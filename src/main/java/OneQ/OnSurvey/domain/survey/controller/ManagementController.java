@@ -10,6 +10,7 @@ import OneQ.OnSurvey.domain.survey.model.response.MySurveyListResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementResponse;
+import OneQ.OnSurvey.domain.survey.service.SurveyCommand;
 import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
@@ -23,11 +24,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("v1/survey-management")
+@RequestMapping("/v1/survey-management")
 @RequiredArgsConstructor
 public class ManagementController {
 
     private final SurveyQuery surveyQuery;
+    private final SurveyCommand surveyCommand;
     private final QuestionQuery questionQuery;
     private final ResponseQuery responseQuery;
     private final AnswerQuery<QuestionAnswer> answerQuery;
@@ -109,5 +111,15 @@ public class ManagementController {
     ) {
         Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         return SuccessResponse.ok(surveyQuery.getMySurveyDetail(memberId, surveyId));
+    }
+
+    @PostMapping("/{surveyId}/refund")
+    @Operation(summary = "내 설문 결제 환불",
+            description = "선택한 설문의 코인 결제를 환불하고, survey의 totalCoin 만큼 코인을 돌려줍니다.")
+    public SuccessResponse<Boolean> refundMySurvey(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable Long surveyId
+    ) {
+        return SuccessResponse.ok(surveyCommand.refundSurvey(principal.getUserKey(), surveyId));
     }
 }

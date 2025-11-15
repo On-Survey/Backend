@@ -1,5 +1,9 @@
 package OneQ.OnSurvey.domain.survey.service;
 
+import OneQ.OnSurvey.domain.member.Member;
+import OneQ.OnSurvey.domain.member.MemberErrorCode;
+import OneQ.OnSurvey.domain.member.repository.MemberRepository;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
@@ -14,9 +18,11 @@ import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -25,6 +31,7 @@ public class SurveyCommandService implements SurveyCommand {
     private final SurveyRepository surveyRepository;
     private final ScreeningRepository screeningRepository;
     private final SurveyInfoRepository surveyInfoRepository;
+    private final MemberRepository memberRepository;
 
     @Override
     public SurveyFormResponse upsertSurvey(Long surveyId, String title, String description,
@@ -111,5 +118,30 @@ public class SurveyCommandService implements SurveyCommand {
             .content(screening.getContent())
             .answer(answer)
             .build();
+    }
+
+    @Override
+    public Boolean refundSurvey(Long userKey, Long surveyId) {
+        Survey survey = surveyRepository.getSurveyById(surveyId)
+                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+        SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
+                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
+
+        if (!surveyInfo.isRefundable()) {
+            log.warn("[SurveyRefund] 이미 환불 불가 상태 - surveyId={}", surveyId);
+            throw new CustomException(SurveyErrorCode.SURVEY_NOT_REFUNDABLE);
+        }
+
+        Member member = memberRepository.findMemberByUserKey(userKey)
+                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        member.increaseCoin(survey.getTotalCoin());
+        log.info("[SurveyRefund] 코인 환불 완료 - userKey={}, surveyId={}, refundedCoin={}, memberCoinAfter={}",
+                userKey, surveyId, survey.getTotalCoin(), member.getCoin());
+
+        surveyInfo.markNonRefundable();
+
+        return true;
     }
 }

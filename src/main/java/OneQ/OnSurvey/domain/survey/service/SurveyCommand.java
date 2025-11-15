@@ -12,4 +12,5 @@ public interface SurveyCommand {
     Boolean deleteById(Long surveyId);
 
     ScreeningResponse upsertScreening(Long screeningId, Long surveyId, String content, Boolean answer);
+    Boolean refundSurvey(Long memberId, Long surveyId);
 }

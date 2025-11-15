@@ -10,7 +10,8 @@ import org.springframework.http.HttpStatus;
 public enum SurveyErrorCode implements ApiErrorCode {
 
     SURVEY_NOT_FOUND("SURVEY_404", "설문을 찾지 못했습니다.", HttpStatus.NOT_FOUND),
-    SURVEY_INFO_NOT_FOUND("SURVEY_INFO_404", "설문 정보를 찾지 못했습니다.", HttpStatus.NOT_FOUND);
+    SURVEY_INFO_NOT_FOUND("SURVEY_INFO_404", "설문 정보를 찾지 못했습니다.", HttpStatus.NOT_FOUND),
+    SURVEY_NOT_REFUNDABLE("SURVEY_400", "해당 설문은 환불이 불가능합니다.", HttpStatus.BAD_REQUEST);
 
     private final String errorCode;
     private final String message;

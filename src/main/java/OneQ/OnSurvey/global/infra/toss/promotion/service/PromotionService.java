@@ -3,6 +3,7 @@ package OneQ.OnSurvey.global.infra.toss.promotion.service;
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
+import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.global.auth.token.TokenStore;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.promotion.PromotionGrant;
@@ -53,6 +54,7 @@ public class PromotionService {
     private final PromotionGrantRepository promotionGrantRepository;
     private final PromotionGrantTxService grantTx;
     private final MemberRepository memberRepository;
+    private final SurveyInfoRepository surveyInfoRepository;
 
     private SSLContext tossSslContext;
 
@@ -75,6 +77,7 @@ public class PromotionService {
 
         if (grant.isSuccess()) {
             grantPromotionPointIfNeeded(grant, userKey);
+            markSurveyNonRefundable(surveyId);
             return ExecutionResultResponse.success();
         }
 
@@ -115,6 +118,7 @@ public class PromotionService {
                 case "SUCCESS" -> {
                     grantTx.markSuccess(grant.getId());
                     grantPromotionPointIfNeeded(grant, userKey);
+                    markSurveyNonRefundable(surveyId);
                 }
                 case "PENDING" -> grantTx.markPending(grant.getId(), execResp.key());
                 default        -> grantTx.markFail(grant.getId());
@@ -252,4 +256,17 @@ public class PromotionService {
 
         return prefix + "****" + suffix;
     }
+
+    private void markSurveyNonRefundable(long surveyId) {
+        surveyInfoRepository.findBySurveyId(surveyId)
+                .ifPresent(info -> {
+                    if (info.isRefundable()) {
+                        info.markNonRefundable();
+                        log.info("[PROMO] surveyId={} 프로모션 성공 → 환불 불가로 변경", surveyId);
+                    } else {
+                        log.info("[PROMO] surveyId={} 이미 환불 불가 상태", surveyId);
+                    }
+                });
+    }
+
 }

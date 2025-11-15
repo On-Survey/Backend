@@ -12,5 +12,6 @@ public record SurveyFormRequest (
         AgeRange age,
         Residence residence,
         Integer dueCount
+        // TODO 가격 추가
 ) {
 }

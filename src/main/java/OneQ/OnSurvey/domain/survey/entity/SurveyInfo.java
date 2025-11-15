@@ -38,6 +38,10 @@ public class SurveyInfo {
     @Enumerated(EnumType.STRING)
     private Residence residence;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean refundable = true;
+
     public static SurveyInfo createSurveyInfo(
             Long surveyId,
             Gender gender,
@@ -49,6 +53,7 @@ public class SurveyInfo {
                 .gender(gender)
                 .age(age)
                 .residence(residence)
+                .refundable(true)
                 .build();
     }
 
@@ -60,6 +65,10 @@ public class SurveyInfo {
         this.gender = gender;
         this.age = age;
         this.residence = residence;
+    }
+
+    public void markNonRefundable() {
+        this.refundable = false;
     }
 }
 

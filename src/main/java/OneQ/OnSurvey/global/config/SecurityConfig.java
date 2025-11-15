@@ -43,8 +43,7 @@ public class SecurityConfig {
             "/auth/toss/login",
             "/auth/reissue",
             "/connect-out",
-            "/test/ok",
-            "/v1/**"
+            "/test/ok"
     };
 
     @Bean

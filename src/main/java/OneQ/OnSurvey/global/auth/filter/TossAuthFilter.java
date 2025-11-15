@@ -49,8 +49,7 @@ public class TossAuthFilter extends OncePerRequestFilter {
                 || path.equals("/swagger-ui.html")
                 || path.startsWith("/swagger-ui/")
                 || path.startsWith("/v3/api-docs")
-                || path.startsWith("/test/")
-                || path.startsWith("/v1/");
+                || path.startsWith("/test/");
     }
 
     @Override
