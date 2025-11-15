@@ -1,14 +1,18 @@
 package OneQ.OnSurvey.domain.survey.entity;
 
+import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.entity.BaseEntity;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -17,6 +21,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -47,6 +53,16 @@ public class Survey extends BaseEntity {
     private SurveyStatus status = SurveyStatus.WRITING;
 
     private Integer totalCoin;
+
+    @ElementCollection(targetClass = Interest.class)
+    @CollectionTable(
+        name = "survey_interest",
+        joinColumns = @JoinColumn(name = "id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "interest", length = 30, nullable = false)
+    @Builder.Default
+    private Set<Interest> interests = new HashSet<>();
 
     public static Survey of(
         Long memberId,
@@ -79,5 +95,9 @@ public class Survey extends BaseEntity {
         this.title = title;
         this.description = description;
         this.totalCoin = totalCoin;
+    }
+
+    public void updateInterests(Set<Interest> interests) {
+        this.interests = interests;
     }
 }

@@ -20,7 +20,8 @@ public class NPS extends Question {
         Integer order,
         String title,
         String description,
-        Boolean isRequired
+        Boolean isRequired,
+        QuestionType type
     ) {
         return NPS.builder()
             .surveyId(surveyId)
@@ -28,6 +29,7 @@ public class NPS extends Question {
             .title(title)
             .description(description)
             .isRequired(isRequired)
+            .type(type.name())
             .build();
     }
 

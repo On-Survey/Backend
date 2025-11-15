@@ -1,10 +1,13 @@
 package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Getter @SuperBuilder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RatingDto extends DefaultQuestionDto {
     private String minValue;
     private String maxValue;
@@ -15,7 +18,7 @@ public class RatingDto extends DefaultQuestionDto {
             .maxValue(rating.getMaxValue())
             .questionId(rating.getQuestionId())
             .surveyId(rating.getSurveyId())
-            .questionType(rating.getType().name())
+            .questionType(rating.getType())
             .title(rating.getTitle())
             .description(rating.getDescription())
             .isRequired(rating.getIsRequired())

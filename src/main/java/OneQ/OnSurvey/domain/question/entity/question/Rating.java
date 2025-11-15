@@ -29,7 +29,8 @@ public class Rating extends Question {
         String description,
         Boolean isRequired,
         String maxValue,
-        String minValue
+        String minValue,
+        QuestionType type
     ) {
         return Rating.builder()
             .surveyId(surveyId)
@@ -39,6 +40,7 @@ public class Rating extends Question {
             .isRequired(isRequired)
             .maxValue(maxValue)
             .minValue(minValue)
+            .type(type.name())
             .build();
     }
 

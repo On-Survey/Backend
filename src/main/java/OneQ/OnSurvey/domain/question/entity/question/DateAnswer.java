@@ -29,7 +29,8 @@ public class DateAnswer extends Question {
         String title,
         String description,
         Boolean isRequired,
-        LocalDateTime defaultDate
+        LocalDateTime defaultDate,
+        QuestionType type
     ) {
         return DateAnswer.builder()
             .surveyId(surveyId)
@@ -38,6 +39,7 @@ public class DateAnswer extends Question {
             .description(description)
             .isRequired(isRequired)
             .defaultDate(defaultDate)
+            .type(type.name())
             .build();
     }
 

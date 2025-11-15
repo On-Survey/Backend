@@ -4,8 +4,10 @@ import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
@@ -19,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 
@@ -37,6 +41,7 @@ public class SurveyCommandService implements SurveyCommand {
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormRequest request){
 
         Survey survey;
+        log.info("surveyId: {}", surveyId);
         if (surveyId == null) {
             survey = Survey.of(
                     memberId,
@@ -100,6 +105,7 @@ public class SurveyCommandService implements SurveyCommand {
             log.info("[SurveyUpsert] 설문 수정 완료 - surveyId={}", surveyId);
         }
 
+        survey = surveyRepository.save(survey);
         return SurveyFormResponse.fromEntity(survey);
     }
 
@@ -136,6 +142,20 @@ public class SurveyCommandService implements SurveyCommand {
             .surveyId(screening.getSurveyId())
             .content(screening.getContent())
             .answer(answer)
+            .build();
+    }
+
+    @Override
+    public InterestResponse upsertInterest(Long surveyId, Set<Interest> interestSet) {
+        Survey survey = surveyRepository.getSurveyById(surveyId).orElseThrow(
+            () -> new CustomException(ErrorCode.INVALID_REQUEST)
+        );
+        survey.updateInterests(interestSet);
+
+        survey = surveyRepository.save(survey);
+
+        return InterestResponse.builder()
+            .interests(survey.getInterests())
             .build();
     }
 

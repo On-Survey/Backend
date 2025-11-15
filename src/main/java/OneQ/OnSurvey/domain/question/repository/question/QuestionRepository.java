@@ -14,5 +14,5 @@ public interface QuestionRepository {
     Question save(Question question);
     List<Question> saveAll(Collection<Question> questions);
 
-    Boolean deleteAll(Set<Long> idList);
+    void deleteAll(Set<Long> idList);
 }

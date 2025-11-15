@@ -1,6 +1,5 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
-
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import org.springframework.data.domain.Pageable;

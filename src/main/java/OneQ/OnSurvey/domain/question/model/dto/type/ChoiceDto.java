@@ -2,13 +2,16 @@ package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
 @Getter @SuperBuilder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChoiceDto extends DefaultQuestionDto {
     private Integer maxChoice;
     private Boolean hasNoneOption;
@@ -36,7 +39,7 @@ public class ChoiceDto extends DefaultQuestionDto {
             .maxChoice(choice.getMaxChoice())
             .questionId(choice.getQuestionId())
             .surveyId(choice.getSurveyId())
-            .questionType(choice.getType().name())
+            .questionType(choice.getType())
             .title(choice.getTitle())
             .description(choice.getDescription())
             .isRequired(choice.getIsRequired())

@@ -17,10 +17,10 @@ import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -59,6 +60,8 @@ public class QuestionCommandService implements QuestionCommand {
 
     @Override
     public QuestionUpsertDto upsertQuestionList(QuestionUpsertDto upsertDto) {
+        log.info("[FROM:SERVICE] 문항 UPSERT - surveyId: {}, type: {}", upsertDto.getSurveyId(), upsertDto.getUpsertInfoList().getFirst().getQuestionType());
+
         Long surveyId = upsertDto.getSurveyId();
         List<QuestionUpsertDto.UpsertInfo> upsertInfoList = upsertDto.getUpsertInfoList();
 
@@ -76,12 +79,17 @@ public class QuestionCommandService implements QuestionCommand {
             .map(QuestionUpsertDto.UpsertInfo::getQuestionId)
             .collect(Collectors.toSet());
 
+        log.info("upsertSize: {}", upsertInfoList.size());
         // 4. Delete 대상 ID 추출 및 삭제
-        Set<Long> deleteIdSet = prevQuestionList.stream()
-            .map(Question::getQuestionId)
-            .filter(questionId -> !updateIdSet.contains(questionId))
-            .collect(Collectors.toSet());
-        questionRepository.deleteAll(deleteIdSet);
+        if (upsertInfoList.size() != 1) {
+            Set<Long> deleteIdSet = prevQuestionList.stream()
+                .map(Question::getQuestionId)
+                .filter(questionId -> !updateIdSet.contains(questionId))
+                .collect(Collectors.toSet());
+
+            log.info("[FORM:SERVICE] - 삭제되는 문항 ID: {}", deleteIdSet);
+            questionRepository.deleteAll(deleteIdSet);
+        }
 
         // 5. Update 대상 수정
         Map<Long, QuestionUpsertDto.UpsertInfo> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
@@ -191,7 +199,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getDefaultDate()
+                upsertInfo.getDefaultDate(),
+                type
             );
         } else if (QuestionType.NPS.equals(type)) {
             return NPS.of(
@@ -199,7 +208,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
-                upsertInfo.getIsRequired()
+                upsertInfo.getIsRequired(),
+                type
             );
         } else if (QuestionType.RATING.equals(type)) {
             return Rating.of(
@@ -209,7 +219,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getMaxValue(),
-                upsertInfo.getMinValue()
+                upsertInfo.getMinValue(),
+                type
             );
         } else if (QuestionType.CHOICE.equals(type)) {
             return Choice.of(
@@ -220,7 +231,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
-                upsertInfo.getHasCustomInput()
+                upsertInfo.getHasCustomInput(),
+                type
             );
         } else if (QuestionType.SHORT.equals(type)) {
             return ShortAnswer.of(
@@ -228,7 +240,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
-                upsertInfo.getIsRequired()
+                upsertInfo.getIsRequired(),
+                type
             );
         } else if (QuestionType.LONG.equals(type)) {
             return LongAnswer.of(
@@ -236,7 +249,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
-                upsertInfo.getIsRequired()
+                upsertInfo.getIsRequired(),
+                type
             );
         } else if (QuestionType.NUMBER.equals(type)) {
             return NumberAnswer.of(
@@ -244,7 +258,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
-                upsertInfo.getIsRequired()
+                upsertInfo.getIsRequired(),
+                type
             );
         } else {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
