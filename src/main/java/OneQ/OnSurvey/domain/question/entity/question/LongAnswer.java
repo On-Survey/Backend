@@ -2,11 +2,9 @@ package OneQ.OnSurvey.domain.question.entity.question;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
-import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;

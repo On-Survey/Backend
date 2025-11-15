@@ -41,7 +41,6 @@ public class SurveyManagementResponse {
             .description(survey.getDescription())
             .status(survey.getStatus())
             .deadLine(survey.getDeadline())
-            .dueCount(survey.getDueCount())
             .createdAt(survey.getCreatedAt())
             .updatedAt(survey.getUpdatedAt())
             .build();

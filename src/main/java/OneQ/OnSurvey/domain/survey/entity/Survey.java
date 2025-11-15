@@ -44,9 +44,6 @@ public class Survey extends BaseEntity {
 
     private LocalDateTime deadline;
 
-    @Column(name = "due_count")
-    private Integer dueCount;
-
     @Column(name = "is_temporary")
     @Builder.Default
     private Boolean isTemporary = true;
@@ -54,6 +51,8 @@ public class Survey extends BaseEntity {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     private SurveyStatus status = SurveyStatus.WRITING;
+
+    private Integer totalCoin;
 
     @ElementCollection(targetClass = Interest.class)
     @CollectionTable(
@@ -68,30 +67,34 @@ public class Survey extends BaseEntity {
     public static Survey of(
         Long memberId,
         String title,
-        String description
+        String description,
+        Integer totalCoin
     ) {
         return Survey.builder()
             .memberId(memberId)
             .title(title)
             .description(description)
+            .totalCoin(totalCoin)
             .build();
     }
 
     public void submitSurvey() {
         this.isTemporary = false;
-        this.status = SurveyStatus.REVIEW;
+        this.status = SurveyStatus.ONGOING;
     }
 
     public void updateSurveyStatus(SurveyStatus status) {
         this.status = status;
     }
 
-    public void updateSurveyTitleAndDescription(
-        String title,
-        String description
+    public void updateSurvey(
+            String title,
+            String description,
+            Integer totalCoin
     ) {
         this.title = title;
         this.description = description;
+        this.totalCoin = totalCoin;
     }
 
     public void updateInterests(Set<Interest> interests) {
