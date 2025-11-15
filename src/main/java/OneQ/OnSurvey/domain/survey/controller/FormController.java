@@ -48,15 +48,7 @@ public class FormController implements FormControllerDoc {
         Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
 
         SurveyFormResponse response = surveyCommand.upsertSurvey(
-            null,
-                request.title(),
-                request.description(),
-                request.totalCoin(),
-                request.gender(),
-                request.age(),
-                request.residence(),
-                request.dueCount(),
-                memberId
+            memberId, null, request
         );
 
         return SuccessResponse.ok(response);

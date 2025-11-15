@@ -6,17 +6,27 @@ import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 
 public record SurveyInfoResponse(
+        Integer dueCount,
+        Integer dueCountPrice,
         Gender gender,
+        Integer genderPrice,
         AgeRange age,
-        Residence residence
+        Integer agePrice,
+        Residence residence,
+        Integer residencePrice
 ) {
     public static SurveyInfoResponse from(SurveyInfo info) {
         if (info == null) return null;
 
         return new SurveyInfoResponse(
+                info.getDueCount(),
+                info.getDueCountPrice(),
                 info.getGender(),
+                info.getGenderPrice(),
                 info.getAge(),
-                info.getResidence()
+                info.getAgePrice(),
+                info.getResidence(),
+                info.getResidencePrice()
         );
     }
 }

@@ -7,9 +7,7 @@ import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
-import OneQ.OnSurvey.domain.survey.model.AgeRange;
-import OneQ.OnSurvey.domain.survey.model.Gender;
-import OneQ.OnSurvey.domain.survey.model.Residence;
+import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
@@ -21,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 
 @Slf4j
 @Service
@@ -34,51 +34,70 @@ public class SurveyCommandService implements SurveyCommand {
     private final MemberRepository memberRepository;
 
     @Override
-    public SurveyFormResponse upsertSurvey(Long surveyId, String title, String description,
-                                           Integer totalCoin, Gender gender, AgeRange age,
-                                           Residence residence, Integer dueCount, Long memberId) {
+    public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormRequest request){
+
         Survey survey;
         if (surveyId == null) {
             survey = Survey.of(
                     memberId,
-                    title,
-                    description,
-                    dueCount,
-                    totalCoin
+                    request.title(),
+                    request.description(),
+                    request.totalCoin()
             );
             survey = surveyRepository.save(survey);
 
             SurveyInfo info = SurveyInfo.createSurveyInfo(
                     survey.getId(),
-                    gender,
-                    age,
-                    residence
+                    request.dueCount(),
+                    request.gender(),
+                    request.age(),
+                    request.residence(),
+                    request.genderPrice(),
+                    request.agePrice(),
+                    request.residencePrice(),
+                    request.dueCountPrice()
             );
             surveyInfoRepository.save(info);
+
+            log.info("[SurveyUpsert] 설문 생성 완료 - surveyId={}", survey.getId());
         } else {
             survey = surveyRepository.getSurveyById(surveyId)
                     .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
 
-            survey.updateSurvey(title, description, totalCoin);
+            survey.updateSurvey(
+                    request.title(),
+                    request.description(),
+                    request.totalCoin()
+            );
 
             SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
                     .orElseGet(() -> {
                         SurveyInfo newInfo = SurveyInfo.createSurveyInfo(
                                 surveyId,
-                                gender,
-                                age,
-                                residence
+                                request.dueCount(),
+                                request.gender(),
+                                request.age(),
+                                request.residence(),
+                                request.genderPrice(),
+                                request.agePrice(),
+                                request.residencePrice(),
+                                request.dueCountPrice()
                         );
                         return surveyInfoRepository.save(newInfo);
                     });
 
-            if (info.getInfoId() != null) {
-                info.updateSurveyInfo(
-                        gender,
-                        age,
-                        residence
-                );
-            }
+            info.updateSurveyInfo(
+                    request.dueCount(),
+                    request.gender(),
+                    request.age(),
+                    request.residence(),
+                    request.genderPrice(),
+                    request.agePrice(),
+                    request.residencePrice(),
+                    request.dueCountPrice()
+            );
+
+            log.info("[SurveyUpsert] 설문 수정 완료 - surveyId={}", surveyId);
         }
 
         return SurveyFormResponse.fromEntity(survey);
@@ -140,6 +159,7 @@ public class SurveyCommandService implements SurveyCommand {
         log.info("[SurveyRefund] 코인 환불 완료 - userKey={}, surveyId={}, refundedCoin={}, memberCoinAfter={}",
                 userKey, surveyId, survey.getTotalCoin(), member.getCoin());
 
+        survey.updateSurveyStatus(REFUNDED);
         surveyInfo.markNonRefundable();
 
         return true;

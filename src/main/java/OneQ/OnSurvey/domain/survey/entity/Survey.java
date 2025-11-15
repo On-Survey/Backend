@@ -38,9 +38,6 @@ public class Survey extends BaseEntity {
 
     private LocalDateTime deadline;
 
-    @Column(name = "due_count")
-    private Integer dueCount;
-
     @Column(name = "is_temporary")
     @Builder.Default
     private Boolean isTemporary = true;
@@ -55,14 +52,12 @@ public class Survey extends BaseEntity {
         Long memberId,
         String title,
         String description,
-        Integer dueCount,
         Integer totalCoin
     ) {
         return Survey.builder()
             .memberId(memberId)
             .title(title)
             .description(description)
-            .dueCount(dueCount)
             .totalCoin(totalCoin)
             .build();
     }

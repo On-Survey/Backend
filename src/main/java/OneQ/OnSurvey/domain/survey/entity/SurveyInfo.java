@@ -29,6 +29,8 @@ public class SurveyInfo {
     @Column(name = "survey_id")
     private Long surveyId;
 
+    private Integer dueCount;
+
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
@@ -38,33 +40,58 @@ public class SurveyInfo {
     @Enumerated(EnumType.STRING)
     private Residence residence;
 
+    private Integer genderPrice;
+    private Integer agePrice;
+    private Integer residencePrice;
+    private Integer dueCountPrice;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean refundable = true;
 
     public static SurveyInfo createSurveyInfo(
             Long surveyId,
+            Integer dueCount,
             Gender gender,
             AgeRange age,
-            Residence residence
+            Residence residence,
+            Integer genderPrice,
+            Integer agePrice,
+            Integer residencePrice,
+            Integer dueCountPrice
     ) {
         return SurveyInfo.builder()
                 .surveyId(surveyId)
+                .dueCount(dueCount)
                 .gender(gender)
                 .age(age)
                 .residence(residence)
+                .genderPrice(genderPrice)
+                .agePrice(agePrice)
+                .residencePrice(residencePrice)
+                .dueCountPrice(dueCountPrice)
                 .refundable(true)
                 .build();
     }
 
     public void updateSurveyInfo(
+            Integer dueCount,
             Gender gender,
             AgeRange age,
-            Residence residence
+            Residence residence,
+            Integer genderPrice,
+            Integer agePrice,
+            Integer residencePrice,
+            Integer dueCountPrice
     ) {
+        this.dueCount = dueCount;
         this.gender = gender;
         this.age = age;
         this.residence = residence;
+        this.genderPrice = genderPrice;
+        this.agePrice = agePrice;
+        this.residencePrice = residencePrice;
+        this.dueCountPrice = dueCountPrice;
     }
 
     public void markNonRefundable() {
