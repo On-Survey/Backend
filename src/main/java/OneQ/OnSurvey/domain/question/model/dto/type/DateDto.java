@@ -20,7 +20,7 @@ public class DateDto extends DefaultQuestionDto {
             .date(date.getDefaultDate())
             .questionId(date.getQuestionId())
             .surveyId(date.getSurveyId())
-            .questionType(date.getType().name())
+            .questionType(date.getType())
             .title(date.getTitle())
             .description(date.getDescription())
             .isRequired(date.getIsRequired())

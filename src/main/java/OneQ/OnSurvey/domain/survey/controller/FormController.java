@@ -23,6 +23,7 @@ import OneQ.OnSurvey.global.exception.ErrorCode;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -35,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/survey-form")
 @RequiredArgsConstructor
@@ -66,6 +68,8 @@ public class FormController implements FormControllerDoc {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     ) {
+        log.info("[FORM]: surveyId: {}, request: {}", surveyId, request.toString());
+
         if (request.questions().isEmpty()
             || request.questions().getFirst().getQuestionType() == null
         ) {
@@ -73,7 +77,7 @@ public class FormController implements FormControllerDoc {
         }
 
         DefaultQuestionDto questionDto = request.questions().getFirst();
-        QuestionType type = QuestionType.valueOf(questionDto.getQuestionType());
+        QuestionType type = questionDto.getQuestionType();
 
         QuestionUpsertDto upsertDto = QuestionUpsertDto.builder()
             .surveyId(surveyId)

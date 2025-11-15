@@ -36,7 +36,7 @@ public abstract class Question extends BaseEntity {
     @Column(name = "QUESTION_ORDER")
     protected Integer order;
 
-    @Column(name = "type", insertable = false, updatable = false)
+    @Column(name = "type", updatable = false)
     protected QuestionType type;
 
     @Column(length = 64)
