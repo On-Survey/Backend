@@ -61,7 +61,7 @@ public class Survey extends BaseEntity {
         joinColumns = @JoinColumn(name = "id")
     )
     @Enumerated(EnumType.STRING)
-    @Column(name = "INTEREST", length = 30, nullable = false)
+    @Column(name = "interest", length = 30, nullable = false)
     @Builder.Default
     private Set<Interest> interests = new HashSet<>();
 
