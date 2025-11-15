@@ -7,9 +7,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-@Getter @SuperBuilder
+@Getter @SuperBuilder @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,             // 문자열로 식별
@@ -43,7 +44,7 @@ public class DefaultQuestionDto {
         return DefaultQuestionDto.builder()
             .questionId(question.getQuestionId())
             .surveyId(question.getSurveyId())
-            .questionType(question.getType().name())
+            .questionType(question.getType())
             .title(question.getTitle())
             .description(question.getDescription())
             .isRequired(question.getIsRequired())

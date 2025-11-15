@@ -39,7 +39,7 @@ public class ChoiceDto extends DefaultQuestionDto {
             .maxChoice(choice.getMaxChoice())
             .questionId(choice.getQuestionId())
             .surveyId(choice.getSurveyId())
-            .questionType(choice.getType().name())
+            .questionType(choice.getType())
             .title(choice.getTitle())
             .description(choice.getDescription())
             .isRequired(choice.getIsRequired())

@@ -11,11 +11,13 @@ import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -26,6 +28,7 @@ public class SurveyCommandService implements SurveyCommand {
     @Override
     public SurveyFormResponse upsertSurvey(Long surveyId, String title, String description, Long memberId) {
         Survey survey;
+        log.info("surveyId: {}", surveyId);
         if (surveyId == null) {
             survey = Survey.of(
                 memberId,
@@ -36,8 +39,9 @@ public class SurveyCommandService implements SurveyCommand {
             survey = surveyRepository.getSurveyById(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
             survey.updateSurveyTitleAndDescription(title, description);
         }
+        log.info("survey: {}, {}, {}, {}", survey.getId(), survey.getTitle(), survey.getDescription(), survey.getMemberId());
         survey = surveyRepository.save(survey);
-      
+
         return SurveyFormResponse.fromEntity(survey);
     }
 

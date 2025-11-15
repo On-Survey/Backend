@@ -1,14 +1,10 @@
 package OneQ.OnSurvey.domain.question.entity.question;
 
-import java.time.LocalDateTime;
-
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
-import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -24,7 +20,8 @@ public class ShortAnswer extends Question {
         Integer order,
         String title,
         String description,
-        Boolean isRequired
+        Boolean isRequired,
+        QuestionType type
     ) {
         return ShortAnswer.builder()
             .surveyId(surveyId)
@@ -32,6 +29,7 @@ public class ShortAnswer extends Question {
             .title(title)
             .description(description)
             .isRequired(isRequired)
+            .type(type.name())
             .build();
     }
 

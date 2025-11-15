@@ -14,5 +14,5 @@ public interface QuestionJpaRepository extends JpaRepository<Question, Long> {
 
     List<Question> getQuestionsByQuestionIdIn(Collection<Long> questionIds);
 
-    Boolean deleteAllByQuestionIdIsIn(Collection<Long> questionIds);
+    void deleteAllByQuestionIdIsIn(Collection<Long> questionIds);
 }

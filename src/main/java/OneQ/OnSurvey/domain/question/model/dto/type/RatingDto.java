@@ -18,7 +18,7 @@ public class RatingDto extends DefaultQuestionDto {
             .maxValue(rating.getMaxValue())
             .questionId(rating.getQuestionId())
             .surveyId(rating.getSurveyId())
-            .questionType(rating.getType().name())
+            .questionType(rating.getType())
             .title(rating.getTitle())
             .description(rating.getDescription())
             .isRequired(rating.getIsRequired())
