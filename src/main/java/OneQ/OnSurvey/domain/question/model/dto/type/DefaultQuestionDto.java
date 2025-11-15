@@ -15,7 +15,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME,             // 문자열(name)으로 식별
+    use = JsonTypeInfo.Id.CLASS,            // class 로 식별
     include = JsonTypeInfo.As.PROPERTY,     // JSON 객체 내의 프로퍼티(필드)로 타입 식별
     property = "questionType",              // questionType 필드 사용
     defaultImpl = DefaultQuestionDto.class, // 일치하는 타입을 못찾으면 기본 dto 사용
