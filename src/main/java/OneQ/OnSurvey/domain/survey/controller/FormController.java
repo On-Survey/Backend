@@ -77,7 +77,7 @@ public class FormController implements FormControllerDoc {
         }
 
         DefaultQuestionDto questionDto = request.questions().getFirst();
-        QuestionType type = questionDto.getQuestionType();
+        QuestionType type = QuestionType.valueOf(questionDto.getQuestionType());
 
         QuestionUpsertDto upsertDto = QuestionUpsertDto.builder()
             .surveyId(surveyId)

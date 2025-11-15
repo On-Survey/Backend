@@ -1,7 +1,6 @@
 package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
-import OneQ.OnSurvey.domain.question.model.QuestionType;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,7 +33,7 @@ public class DefaultQuestionDto {
             "CHOICE", "RATING", "NPS", "SHORT", "LONG", "NUMBER", "DATE"
         }
     )
-    private QuestionType questionType;
+    private String questionType;
     private String title;
     private String description;
     private Boolean isRequired;
@@ -44,7 +43,7 @@ public class DefaultQuestionDto {
         return DefaultQuestionDto.builder()
             .questionId(question.getQuestionId())
             .surveyId(question.getSurveyId())
-            .questionType(question.getType())
+            .questionType(question.getType().name())
             .title(question.getTitle())
             .description(question.getDescription())
             .isRequired(question.getIsRequired())
