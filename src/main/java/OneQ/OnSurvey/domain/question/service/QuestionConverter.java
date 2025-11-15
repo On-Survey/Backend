@@ -4,7 +4,6 @@ import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
 import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
-import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
@@ -39,7 +38,7 @@ public class QuestionConverter {
             .description(dto.getDescription())
             .isRequired(dto.getIsRequired())
             .questionOrder(dto.getQuestionOrder())
-            .questionType(QuestionType.valueOf(dto.getQuestionType()));
+            .questionType(dto.getQuestionType());
 
         // 2. 타입별 특정 필드 매핑
         switch (dto) {

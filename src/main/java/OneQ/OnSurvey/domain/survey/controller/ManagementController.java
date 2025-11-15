@@ -4,7 +4,6 @@ import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
-import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementResponse;
@@ -74,7 +73,7 @@ public class ManagementController {
             .map(dto -> new SurveyManagementDetailResponse.DetailInfo(
                     dto.getQuestionId(),
                     dto.getQuestionOrder(),
-                    QuestionType.valueOf(dto.getQuestionType()),
+                    dto.getQuestionType(),
                     dto.getTitle(),
                     dto.getDescription(),
                     dto.getIsRequired()
