@@ -2,11 +2,13 @@ package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
 @Getter @SuperBuilder
+@NoArgsConstructor
 public class DateDto extends DefaultQuestionDto {
     private LocalDateTime date;
 

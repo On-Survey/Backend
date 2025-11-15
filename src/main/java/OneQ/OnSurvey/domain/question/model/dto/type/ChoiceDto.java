@@ -4,11 +4,13 @@ import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
 @Getter @SuperBuilder
+@NoArgsConstructor
 public class ChoiceDto extends DefaultQuestionDto {
     private Integer maxChoice;
     private Boolean hasNoneOption;
