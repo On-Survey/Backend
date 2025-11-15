@@ -17,21 +17,13 @@ import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.model.response.UpdateQuestionResponse;
 import OneQ.OnSurvey.domain.survey.service.SurveyCommand;
-import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -48,10 +40,11 @@ public class FormController implements FormControllerDoc {
     @PostMapping("surveys")
     @Operation(summary = "설문 폼을 생성합니다.")
     public SuccessResponse<SurveyFormResponse> createSurvey(
-        @AuthenticationPrincipal CustomUserDetails details,
+        //@AuthenticationPrincipal CustomUserDetails details,
         @RequestBody SurveyFormRequest request
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+        //Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+        Long memberId = 1L;
 
         SurveyFormResponse response = surveyCommand.upsertSurvey(
             null,

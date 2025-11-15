@@ -6,6 +6,8 @@ import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
+import OneQ.OnSurvey.domain.survey.model.response.MySurveyListResponse;
+import OneQ.OnSurvey.domain.survey.model.response.SurveyDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementResponse;
 import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
@@ -16,10 +18,7 @@ import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,6 +26,7 @@ import java.util.List;
 @RequestMapping("v1/survey-management")
 @RequiredArgsConstructor
 public class ManagementController {
+
     private final SurveyQuery surveyQuery;
     private final QuestionQuery questionQuery;
     private final ResponseQuery responseQuery;
@@ -34,7 +34,7 @@ public class ManagementController {
 
     private final MemberFinder memberFinder;
 
-    @GetMapping("surveys")
+    @GetMapping("/surveys")
     @Operation(summary = "사용자가 생성한 설문을 조회합니다.")
     public SuccessResponse<SurveyManagementResponse> getSurveyManagementList(
         @AuthenticationPrincipal CustomUserDetails details
@@ -52,7 +52,7 @@ public class ManagementController {
         return SuccessResponse.ok(new SurveyManagementResponse(surveyInfoList));
     }
 
-    @GetMapping("surveys/answers")
+    @GetMapping("/surveys/answers")
     @Operation(summary = "사용자가 관리할 설문을 상세 조회합니다.")
     public SuccessResponse<SurveyManagementDetailResponse> getSurveyManagementDetailInfo(
         @RequestParam Long surveyId,
@@ -88,5 +88,28 @@ public class ManagementController {
         response.updateDetailInfoList(detailInfoList);
 
         return SuccessResponse.ok(response);
+    }
+
+    @GetMapping
+    @Operation(summary = "내 설문 목록 조회",
+            description = "코인으로 결제한 설문들을 노출중/환불로 구분하여 조회합니다.")
+    public SuccessResponse<MySurveyListResponse> getMySurveys(
+            //@AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        //Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
+        Long memberId = 1L;
+        return SuccessResponse.ok(surveyQuery.getMySurveys(memberId));
+    }
+
+    @GetMapping("/{surveyId}")
+    @Operation(summary = "내 설문 결제 상세 조회",
+            description = "선택한 설문의 코인 결제 및 타겟 정보를 조회합니다.")
+    public SuccessResponse<SurveyDetailResponse> getMySurveyDetail(
+            //@AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable Long surveyId
+    ) {
+        //Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
+        Long memberId = 1L;
+        return SuccessResponse.ok(surveyQuery.getMySurveyDetail(memberId, surveyId));
     }
 }

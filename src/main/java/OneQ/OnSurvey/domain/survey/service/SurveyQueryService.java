@@ -1,12 +1,12 @@
 package OneQ.OnSurvey.domain.survey.service;
 
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
-import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
+import OneQ.OnSurvey.domain.survey.model.response.*;
+import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
@@ -17,13 +17,20 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+
+import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.ONGOING;
+import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SurveyQueryService implements SurveyQuery {
+
     private final SurveyRepository surveyRepository;
+    private final SurveyInfoRepository surveyInfoRepository;
     private final ScreeningRepository screeningRepository;
 
     @Override
@@ -68,5 +75,61 @@ public class SurveyQueryService implements SurveyQuery {
             .data(screeningLIst.stream().map(ParticipationScreeningResponse::fromEntity).toList())
             .hasNext(surveyList.hasNext())
             .build();
+    }
+
+    @Override
+    public MySurveyListResponse getMySurveys(Long memberId) {
+
+        List<Survey> surveys = surveyRepository.getSurveyListByMemberId(memberId);
+
+        List<MySurveyItemResponse> ongoing = new ArrayList<>();
+        List<MySurveyItemResponse> refunded = new ArrayList<>();
+
+        for (Survey survey : surveys) {
+            MySurveyItemResponse item = new MySurveyItemResponse(
+                    survey.getId(),
+                    survey.getTitle(),
+                    survey.getStatus(),
+                    survey.getTotalCoin(),
+                    survey.getCreatedAt().toLocalDate()
+            );
+
+            if (survey.getStatus() == REFUNDED) {
+                refunded.add(item);
+            } else if (survey.getStatus() == ONGOING || survey.getStatus() == SurveyStatus.CLOSED) {
+                ongoing.add(item);
+            }
+        }
+
+        Comparator<MySurveyItemResponse> byDateDesc =
+                Comparator.comparing(MySurveyItemResponse::createdDate).reversed();
+
+        ongoing.sort(byDateDesc);
+        refunded.sort(byDateDesc);
+
+        int totalCount = ongoing.size();
+        int refundedCount = refunded.size();
+
+        return new MySurveyListResponse(
+                totalCount,
+                refundedCount,
+                ongoing,
+                refunded
+        );
+    }
+
+    @Override
+    public SurveyDetailResponse getMySurveyDetail(Long memberId, Long surveyId) {
+        Survey survey = surveyRepository.getSurveyById(surveyId)
+                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+        SurveyInfo info = surveyInfoRepository.findBySurveyId(survey.getId())
+                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
+
+        if (!survey.getMemberId().equals(memberId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        return SurveyDetailResponse.from(survey, info);
     }
 }

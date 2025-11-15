@@ -69,7 +69,7 @@ public class Survey extends BaseEntity {
 
     public void submitSurvey() {
         this.isTemporary = false;
-        this.status = SurveyStatus.REVIEW;
+        this.status = SurveyStatus.ONGOING;
     }
 
     public void updateSurveyStatus(SurveyStatus status) {
