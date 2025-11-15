@@ -12,7 +12,9 @@ import OneQ.OnSurvey.domain.survey.controller.swagger.FormControllerDoc;
 import OneQ.OnSurvey.domain.survey.model.request.QuestionRequest;
 import OneQ.OnSurvey.domain.survey.model.request.ScreeningRequest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
+import OneQ.OnSurvey.domain.survey.model.request.SurveyInterestRequest;
 import OneQ.OnSurvey.domain.survey.model.response.CreateQuestionResponse;
+import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.model.response.UpdateQuestionResponse;
@@ -23,6 +25,8 @@ import OneQ.OnSurvey.global.exception.ErrorCode;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -38,10 +42,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/v1/survey-form")
 @RequiredArgsConstructor
+@Slf4j
 public class FormController implements FormControllerDoc {
     private final SurveyCommand surveyCommand;
     private final QuestionCommand questionCommand;
-    private final QuestionQuery questionQuery;
 
     private final MemberFinder memberFinder;
 
@@ -125,6 +129,17 @@ public class FormController implements FormControllerDoc {
         @PathVariable Long surveyId
     ) {
         return SuccessResponse.ok(surveyCommand.submitSurvey(surveyId));
+    }
+
+    @PatchMapping("surveys/{surveyId}/interests")
+    @Operation(summary = "설문의 관심사를 등록합니다.")
+    public SuccessResponse<InterestResponse> updateInterest(
+        @RequestBody SurveyInterestRequest request,
+        @PathVariable Long surveyId
+    ) {
+        log.info("[FORM] surveyId: {}, interests: {}", surveyId, request.getInterests().toString());
+
+        return SuccessResponse.ok(surveyCommand.upsertInterest(surveyId, request.getInterests()));
     }
 
     @PostMapping("surveys/{surveyId}/screenings")
