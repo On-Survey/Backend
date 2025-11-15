@@ -4,12 +4,15 @@ import OneQ.OnSurvey.domain.question.entity.Question;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Getter @SuperBuilder
 @NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,             // 문자열(name)으로 식별
     include = JsonTypeInfo.As.PROPERTY,     // JSON 객체 내의 프로퍼티(필드)로 타입 식별
