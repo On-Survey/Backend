@@ -47,6 +47,7 @@ public class SurveyCommandService implements SurveyCommand {
                     memberId,
                     request.title(),
                     request.description(),
+                    request.deadline(),
                     request.totalCoin()
             );
             survey = surveyRepository.save(survey);
@@ -72,6 +73,7 @@ public class SurveyCommandService implements SurveyCommand {
             survey.updateSurvey(
                     request.title(),
                     request.description(),
+                    request.deadline(),
                     request.totalCoin()
             );
 

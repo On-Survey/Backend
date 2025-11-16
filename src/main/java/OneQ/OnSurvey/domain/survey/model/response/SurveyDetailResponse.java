@@ -13,6 +13,7 @@ public record SurveyDetailResponse(
         SurveyStatus status,
         int totalCoin,
         @DateFormat LocalDateTime createdAt,
+        @DateFormat LocalDateTime deadline,
         SurveyInfoResponse surveyInfo
 ) {
     public static SurveyDetailResponse from(Survey survey, SurveyInfo info) {
@@ -22,6 +23,7 @@ public record SurveyDetailResponse(
                 survey.getStatus(),
                 survey.getTotalCoin(),
                 survey.getCreatedAt(),
+                survey.getDeadline(),
                 SurveyInfoResponse.from(info)
         );
     }
