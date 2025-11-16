@@ -27,6 +27,8 @@ public class QuestionQueryService implements QuestionQuery {
 
     @Override
     public ParticipationQuestionResponse getQuestionListBySurveyId(Long surveyId) {
+        log.info("[QUESTION_SERVICE] 설문ID 기반 문항 정보 조회 - surveyId: {}", surveyId);
+
         List<Question> questionList = questionRepository.getQuestionListBySurveyId(surveyId);
         List<DefaultQuestionDto> infoList = questionList.stream().map(QuestionConverter::toQuestionDto).toList();
 

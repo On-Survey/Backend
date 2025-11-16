@@ -7,11 +7,11 @@ import lombok.Getter;
 public class AnswerStats {
     Long questionId;
     String content;
-    Integer count;
+    Long count;
 
     public AnswerStats(Long questionId, String content) {
         this.questionId = questionId;
         this.content = content;
-        this.count = 1;
+        this.count = 1L;
     }
 }

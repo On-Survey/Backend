@@ -88,7 +88,7 @@ public class ManagementController {
             )
             .toList();
 
-        detailInfoList = answerQuery.getDetailInfo(detailInfoList);
+        detailInfoList = answerQuery.getDetailInfo(surveyId, detailInfoList);
         response.updateDetailInfoList(detailInfoList);
 
         return SuccessResponse.ok(response);

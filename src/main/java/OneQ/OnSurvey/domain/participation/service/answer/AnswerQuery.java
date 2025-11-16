@@ -17,6 +17,7 @@ public interface AnswerQuery<E extends AbstractAnswer> {
     }
 
     List<SurveyManagementDetailResponse.DetailInfo> getDetailInfo(
+        Long surveyId,
         List<SurveyManagementDetailResponse.DetailInfo> detailInfoList
     );
 }
