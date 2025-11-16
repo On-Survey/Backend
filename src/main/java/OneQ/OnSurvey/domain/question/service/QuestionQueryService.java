@@ -12,6 +12,7 @@ import OneQ.OnSurvey.domain.survey.model.response.FormQuestionResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class QuestionQueryService implements QuestionQuery {
     private final QuestionRepository questionRepository;
     private final ChoiceOptionRepository choiceOptionRepository;
@@ -44,12 +46,14 @@ public class QuestionQueryService implements QuestionQuery {
 
     @Override
     public FormQuestionResponse getWritingQuestions(Long surveyId) {
+        log.info("[QUESTION_SERVICE] 조회할 설문 ID - surveyId: {}", surveyId);
+
         List<Question> questionList = questionRepository.getQuestionListBySurveyId(surveyId);
         Set<Long> choiceIdSet = questionList.stream()
             .filter(Question::isChoice)
             .map(Question::getQuestionId)
             .collect(Collectors.toSet());
-        log.info("[FORM:SERVICE] 작성 중 설문 문항 - Ids: {}", choiceIdSet);
+        log.info("[QUESTION_SERVICE] 조회할 설문 문항 IDs - Ids: {}", choiceIdSet);
 
         List<ChoiceOption> totalOptionList = choiceOptionRepository.getOptionsByQuestionIds(choiceIdSet);
         Map<Long, List<ChoiceOption>> questionIdChoiceOptionMap = totalOptionList.stream()
@@ -67,6 +71,6 @@ public class QuestionQueryService implements QuestionQuery {
             }
         });
 
-        return new FormQuestionResponse(questionDtoList);
+        return new FormQuestionResponse(surveyId, questionDtoList);
     }
 }

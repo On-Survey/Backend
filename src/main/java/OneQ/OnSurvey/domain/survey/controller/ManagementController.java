@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
+import OneQ.OnSurvey.domain.survey.model.response.FormQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.MySurveyListResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
@@ -90,6 +91,22 @@ public class ManagementController {
 
         detailInfoList = answerQuery.getDetailInfo(surveyId, detailInfoList);
         response.updateDetailInfoList(detailInfoList);
+
+        return SuccessResponse.ok(response);
+    }
+
+    @GetMapping("/writing")
+    @Operation(summary = "작성 중인 설문을 조회합니다.")
+    public SuccessResponse<FormQuestionResponse> getQuestionsInWriting(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestParam Long surveyId
+    ) {
+        Long userKey = principal.getUserKey();
+        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
+
+        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
+
+        FormQuestionResponse response = questionQuery.getWritingQuestions(surveyId);
 
         return SuccessResponse.ok(response);
     }
