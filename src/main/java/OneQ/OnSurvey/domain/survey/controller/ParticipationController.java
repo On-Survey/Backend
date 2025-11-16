@@ -17,6 +17,7 @@ import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/survey-participation")
 @RequiredArgsConstructor
@@ -62,6 +64,8 @@ public class ParticipationController {
     public SuccessResponse<ParticipationQuestionResponse> getQuestionsOfSurveyId(
         @RequestParam Long surveyId
     ) {
+        log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}", surveyId);
+
         return SuccessResponse.ok(questionQueryService.getQuestionListBySurveyId(surveyId));
     }
 

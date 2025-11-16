@@ -29,12 +29,11 @@ public class QuestionQueryService implements QuestionQuery {
 
     @Override
     public ParticipationQuestionResponse getQuestionListBySurveyId(Long surveyId) {
-        log.info("[QUESTION_SERVICE] 설문ID 기반 문항 정보 조회 - surveyId: {}", surveyId);
+        log.info("[QUESTION_SERVICE] 응답하고자 하는 설문 문항 조회 - surveyId: {}", surveyId);
 
-        List<Question> questionList = questionRepository.getQuestionListBySurveyId(surveyId);
-        List<DefaultQuestionDto> infoList = questionList.stream().map(QuestionConverter::toQuestionDto).toList();
+        List<DefaultQuestionDto> questionDtoList = getQuestionDtoList(surveyId);
 
-        return new ParticipationQuestionResponse(infoList);
+        return new ParticipationQuestionResponse(questionDtoList);
     }
 
     @Override
@@ -48,6 +47,12 @@ public class QuestionQueryService implements QuestionQuery {
     public FormQuestionResponse getWritingQuestions(Long surveyId) {
         log.info("[QUESTION_SERVICE] 조회할 설문 ID - surveyId: {}", surveyId);
 
+        List<DefaultQuestionDto> questionDtoList = getQuestionDtoList(surveyId);
+
+        return new FormQuestionResponse(surveyId, questionDtoList);
+    }
+
+    private List<DefaultQuestionDto> getQuestionDtoList(Long surveyId) {
         List<Question> questionList = questionRepository.getQuestionListBySurveyId(surveyId);
         Set<Long> choiceIdSet = questionList.stream()
             .filter(Question::isChoice)
@@ -71,6 +76,6 @@ public class QuestionQueryService implements QuestionQuery {
             }
         });
 
-        return new FormQuestionResponse(surveyId, questionDtoList);
+        return questionDtoList;
     }
 }

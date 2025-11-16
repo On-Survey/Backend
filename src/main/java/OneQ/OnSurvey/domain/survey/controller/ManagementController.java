@@ -101,10 +101,10 @@ public class ManagementController {
         @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam Long surveyId
     ) {
-        Long userKey = principal.getUserKey();
-        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
+//        Long userKey = principal.getUserKey();
+//        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
 
-        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
+        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, 1);
 
         FormQuestionResponse response = questionQuery.getWritingQuestions(surveyId);
 
