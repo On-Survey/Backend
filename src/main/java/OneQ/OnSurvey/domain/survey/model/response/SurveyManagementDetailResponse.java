@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.survey.model.response;
 
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -31,10 +32,33 @@ public class SurveyManagementDetailResponse {
         private final Boolean isRequired;
 
         @Setter
+        @Schema(
+            description = "(객관식, 평가형, NPS) 선택값 별 응답 집계",
+            example = """ 
+                {
+                    "string": "number",
+                    "answer1": 15,
+                    "answer2": 10,
+                    "answer3": 16
+                }
+            """
+        )
         // 객관식 (CHIOCE, RATING, NPS) 설문 필드
         private Map<String, Long> answerMap;
 
         @Setter
+        @Schema(
+            description = "(주관식) 응답값",
+            example = """
+                [
+                    "string",
+                    "answer1",
+                    "answer2",
+                    "answer3",
+                    "answer4"
+                ]
+            """
+        )
         // 주관식 (SHORT, LONG, DATE, NUMBER) 설문 필드
         private List<String> answerList;
     }
