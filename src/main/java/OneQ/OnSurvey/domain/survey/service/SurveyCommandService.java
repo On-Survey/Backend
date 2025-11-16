@@ -112,13 +112,13 @@ public class SurveyCommandService implements SurveyCommand {
     }
 
     @Override
-    public Boolean submitSurvey(Long surveyId) {
+    public SurveyFormResponse submitSurvey(Long surveyId) {
         Survey survey = surveyRepository.getSurveyById(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
         survey.submitSurvey();
 
         surveyRepository.save(survey);
 
-        return true;
+        return SurveyFormResponse.fromEntity(survey);
     }
 
     @Override

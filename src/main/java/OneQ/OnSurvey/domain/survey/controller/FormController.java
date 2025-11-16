@@ -124,7 +124,7 @@ public class FormController implements FormControllerDoc {
 
     @PatchMapping("surveys/{surveyId}")
     @Operation(summary = "폼을 완성합니다.")
-    public SuccessResponse<Boolean> completeSurvey(
+    public SuccessResponse<SurveyFormResponse> completeSurvey(
         @PathVariable Long surveyId
     ) {
         return SuccessResponse.ok(surveyCommand.submitSurvey(surveyId));
