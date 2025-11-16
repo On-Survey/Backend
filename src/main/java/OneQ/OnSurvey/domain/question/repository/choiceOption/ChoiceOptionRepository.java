@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface ChoiceOptionRepository {
     List<ChoiceOption> getOptionsByIds(Collection<Long> idList);
-    List<ChoiceOption> getOptionsByQuestionIds(List<Long> questionIdList);
+    List<ChoiceOption> getOptionsByQuestionIds(Collection<Long> questionIdList);
     List<ChoiceOption> getOptionsByQuestionId(Long questionId);
 
     List<ChoiceOption> saveAll(Collection<ChoiceOption> choiceOptions);

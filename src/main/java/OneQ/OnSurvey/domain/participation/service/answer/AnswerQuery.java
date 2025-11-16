@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface AnswerQuery<E extends AbstractAnswer> {
     List<E> getAnswersByIdListAndMemberId(List<Long> idList, Long memberId);
-    default List<SurveyManagementDetailResponse.DetailInfo> getDetailInfo(
+    default List<SurveyManagementDetailResponse.DetailInfo> getDetailInfoByMemberId(
         List<SurveyManagementDetailResponse.DetailInfo> detailInfoList,
         List<Long> questionIdList, Long memberId) {
         return null;
@@ -15,4 +15,9 @@ public interface AnswerQuery<E extends AbstractAnswer> {
     default E getAnswerById(Long id, Long memberId) {
         return null;
     }
+
+    List<SurveyManagementDetailResponse.DetailInfo> getDetailInfo(
+        Long surveyId,
+        List<SurveyManagementDetailResponse.DetailInfo> detailInfoList
+    );
 }

@@ -5,7 +5,11 @@ import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.response.FormQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.MySurveyListResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyDetailResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
@@ -18,11 +22,13 @@ import OneQ.OnSurvey.global.exception.ErrorCode;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/survey-management")
 @RequiredArgsConstructor
@@ -55,13 +61,15 @@ public class ManagementController {
     }
 
     @GetMapping("/surveys/answers")
-    @Operation(summary = "사용자가 관리할 설문을 상세 조회합니다.")
+    @Operation(summary = "사용자가 응답을 확인할 설문을 상세 조회합니다.")
     public SuccessResponse<SurveyManagementDetailResponse> getSurveyManagementDetailInfo(
         @RequestParam Long surveyId,
         @AuthenticationPrincipal CustomUserDetails details
     ) {
         Long userKey = details.getUserKey();
         Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
+
+        log.info("[MANAGEMENT] 응답을 확인할 설문 상세조회 - surveyId: {}, memberId: {}", surveyId, memberId);
 
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
 
@@ -72,7 +80,7 @@ public class ManagementController {
         int count = responseQuery.getResponseCountBySurveyId(surveyId);
         response.updateCurrentCount(count);
 
-        List<SurveyManagementDetailResponse.DetailInfo> detailInfoList = questionQuery.getQuestionListBySurveyId(surveyId).info().stream()
+        List<SurveyManagementDetailResponse.DetailInfo> detailInfoList = questionQuery.getQuestionDtoListBySurveyId(surveyId).stream()
             .map(dto -> new SurveyManagementDetailResponse.DetailInfo(
                     dto.getQuestionId(),
                     dto.getQuestionOrder(),
@@ -84,12 +92,32 @@ public class ManagementController {
             )
             .toList();
 
-        List<Long> questionIdList = detailInfoList.stream().map(SurveyManagementDetailResponse.DetailInfo::getQuestionId).toList();
-        detailInfoList = answerQuery.getDetailInfo(detailInfoList, questionIdList, memberId);
-
+        detailInfoList = answerQuery.getDetailInfo(surveyId, detailInfoList);
         response.updateDetailInfoList(detailInfoList);
 
         return SuccessResponse.ok(response);
+    }
+
+    @GetMapping("/writing")
+    @Operation(summary = "작성 중인 설문을 조회합니다.")
+    public SuccessResponse<FormQuestionResponse> getQuestionsInWriting(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestParam Long surveyId
+    ) {
+        Long userKey = principal.getUserKey();
+        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
+
+        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
+
+        SurveyStatus status = surveyQuery.getMySurveyDetail(memberId, surveyId).status();
+        if (!SurveyStatus.WRITING.equals(status)) {
+            log.warn("[MANAGEMENT] 작성 중인 설문이 아님 - surveyId: {}, memberId: {}, status: {}", surveyId, memberId, status);
+            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
+        }
+
+        List<DefaultQuestionDto> questionDto = questionQuery.getQuestionDtoListBySurveyId(surveyId);
+
+        return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto));
     }
 
     @GetMapping

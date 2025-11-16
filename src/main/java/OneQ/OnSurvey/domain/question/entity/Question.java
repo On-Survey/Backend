@@ -63,4 +63,8 @@ public abstract class Question extends BaseEntity {
     public void updateOrder(Integer order) {
         this.order = order;
     }
+
+    public boolean isChoice() {
+        return this.type.equals("CHOICE");
+    }
 }

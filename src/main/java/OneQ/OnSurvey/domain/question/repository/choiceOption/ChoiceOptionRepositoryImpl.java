@@ -18,7 +18,7 @@ public class ChoiceOptionRepositoryImpl implements ChoiceOptionRepository {
     }
 
     @Override
-    public List<ChoiceOption> getOptionsByQuestionIds(List<Long> questionIdList) {
+    public List<ChoiceOption> getOptionsByQuestionIds(Collection<Long> questionIdList) {
         return choiceOptionJpaRepository.getChoiceOptionsByQuestionIdIsIn(questionIdList);
     }
 

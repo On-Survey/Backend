@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.domain.participation.repository.answer;
 
 import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
+import OneQ.OnSurvey.domain.participation.model.dto.AnswerStats;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.stereotype.Repository;
 
@@ -42,5 +44,19 @@ public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<Scre
 
     public ScreeningAnswer save(ScreeningAnswer answer) {
         return answerJpaRepository.save(answer);
+    }
+
+    @Override
+    public List<AnswerStats> getAggregatedAnswersByQuestionIds(List<Long> screeningIdList) {
+        return jpaQueryFactory.select(Projections.constructor(AnswerStats.class,
+                screeningAnswer.screeningId,
+                screeningAnswer.content,
+                screeningAnswer.answerId.count()
+            ))
+            .from(screeningAnswer)
+            .where(screeningAnswer.screeningId.in(screeningIdList))
+            .groupBy(screeningAnswer.screeningId, screeningAnswer.content)
+            .orderBy(screeningAnswer.screeningId.asc())
+            .fetch();
     }
 }

@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface SurveyQuery {
     SurveyManagementDetailResponse getSurvey(Long surveyId);
-    List<SurveyManagementResponse.SurveyInfo> getSurveyListByMemberId(Long memberId); // dueCount + answerCount 함께
+    List<SurveyManagementResponse.SurveyInfo> getSurveyListByMemberId(Long memberId);
     SurveyParticipationResponse getParticipationSurveyList(SurveyStatus status, Long lastSurveyId, Pageable pageable);
     ParticipationScreeningResponse getScreeningList(Long lastSurveyId, Pageable pageable);
     MySurveyListResponse getMySurveys(Long memberId);
