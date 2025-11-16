@@ -12,6 +12,7 @@ import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import java.util.List;
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.ONGOING;
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -124,12 +126,11 @@ public class SurveyQueryService implements SurveyQuery {
         Survey survey = surveyRepository.getSurveyById(surveyId)
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
+        log.info("[getMySurveyDetail] survey found: id={}, memberId={}, status={}",
+                survey.getId(), survey.getMemberId(), survey.getStatus());
+
         SurveyInfo info = surveyInfoRepository.findBySurveyId(survey.getId())
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
-
-        if (!survey.getMemberId().equals(memberId)) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
 
         return SurveyDetailResponse.from(survey, info);
     }
