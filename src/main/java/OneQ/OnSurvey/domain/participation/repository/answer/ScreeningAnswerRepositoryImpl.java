@@ -48,7 +48,7 @@ public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<Scre
 
     @Override
     public List<AnswerStats> getAggregatedAnswersByQuestionIds(List<Long> screeningIdList) {
-        return jpaQueryFactory.selectDistinct(Projections.constructor(AnswerStats.class,
+        return jpaQueryFactory.select(Projections.constructor(AnswerStats.class,
                 screeningAnswer.screeningId,
                 screeningAnswer.content,
                 screeningAnswer.answerId.count()

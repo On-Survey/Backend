@@ -43,7 +43,8 @@ public class QuestionQueryService implements QuestionQuery {
             .collect(Collectors.toSet());
         log.info("[QUESTION_SERVICE] 조회할 설문 문항 IDs - Ids: {}", choiceIdSet);
 
-        List<ChoiceOption> totalOptionList = choiceOptionRepository.getOptionsByQuestionIds(choiceIdSet);
+        List<ChoiceOption> totalOptionList = choiceIdSet.isEmpty() ?
+            List.of() : choiceOptionRepository.getOptionsByQuestionIds(choiceIdSet);
         Map<Long, List<ChoiceOption>> questionIdChoiceOptionMap = totalOptionList.stream()
             .collect(Collectors.groupingBy(ChoiceOption::getQuestionId));
 

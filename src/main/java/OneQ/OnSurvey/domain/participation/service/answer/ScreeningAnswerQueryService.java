@@ -57,7 +57,7 @@ public class ScreeningAnswerQueryService extends AnswerQueryService<ScreeningAns
 
         detailInfoList.forEach(detailInfo -> {
             Long questionId = detailInfo.getQuestionId();
-            detailInfo.setAnswerMap(screeningAnswerMap.get(questionId));
+            detailInfo.setAnswerMap(screeningAnswerMap.getOrDefault(questionId, Map.of()));
         });
 
         return detailInfoList;

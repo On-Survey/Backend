@@ -14,8 +14,8 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class QuestionAnswerQueryServiceImpl extends AnswerQueryService<QuestionAnswer> {
-    public QuestionAnswerQueryServiceImpl(
+public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswer> {
+    public QuestionAnswerQueryService(
         AnswerRepository<QuestionAnswer> answerRepository
     ) {
         super(answerRepository);
@@ -51,8 +51,10 @@ public class QuestionAnswerQueryServiceImpl extends AnswerQueryService<QuestionA
 
         log.info("[QUESTION_ANSWER_SERVICE] 응답을 조회할 문항 IDs - 주관식: {}, 비주관식: {}", textQuestionIdList, nonTextQuestionIdList);
 
-        List<AnswerStats> nonTextAnswerStats = answerRepository.getAggregatedAnswersByQuestionIds(nonTextQuestionIdList);
-        List<AnswerStats> textAnswerStats = answerRepository.getAnswersByQuestionIds(textQuestionIdList);
+        List<AnswerStats> nonTextAnswerStats = nonTextQuestionIdList.isEmpty() ?
+            List.of() : answerRepository.getAggregatedAnswersByQuestionIds(nonTextQuestionIdList);
+        List<AnswerStats> textAnswerStats = textQuestionIdList.isEmpty() ?
+            List.of() : answerRepository.getAnswersByQuestionIds(textQuestionIdList);
 
         Map<Long, Map<String, Long>> nonTextAnswerMap = nonTextAnswerStats.stream()
             .collect(Collectors.groupingBy(
@@ -72,9 +74,9 @@ public class QuestionAnswerQueryServiceImpl extends AnswerQueryService<QuestionA
         detailInfoList.forEach(detailInfo -> {
             Long questionId = detailInfo.getQuestionId();
             if (detailInfo.getType().isText()) {
-                detailInfo.setAnswerList(textAnswerMap.get(questionId));
+                detailInfo.setAnswerList(textAnswerMap.getOrDefault(questionId, List.of()));
             } else {
-                detailInfo.setAnswerMap(nonTextAnswerMap.get(questionId));
+                detailInfo.setAnswerMap(nonTextAnswerMap.getOrDefault(questionId, Map.of()));
             }
         });
 

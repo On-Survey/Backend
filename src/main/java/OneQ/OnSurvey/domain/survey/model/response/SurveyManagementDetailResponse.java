@@ -43,7 +43,7 @@ public class SurveyManagementDetailResponse {
                 }
             """
         )
-        // 객관식 (CHIOCE, RATING, NPS) 설문 필드
+        // 객관식 (CHOICE, RATING, NPS) 설문 필드
         private Map<String, Long> answerMap;
 
         @Setter

@@ -107,10 +107,13 @@ public class ManagementController {
         Long userKey = principal.getUserKey();
         Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
 
-        if (!SurveyStatus.WRITING.equals(surveyQuery.getMySurveyDetail(memberId, surveyId).status())) {
+        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
+
+        SurveyStatus status = surveyQuery.getMySurveyDetail(memberId, surveyId).status();
+        if (!SurveyStatus.WRITING.equals(status)) {
+            log.warn("[MANAGEMENT] 작성 중인 설문이 아님 - surveyId: {}, memberId: {}, status: {}", surveyId, memberId, status);
             throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
         }
-        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
 
         List<DefaultQuestionDto> questionDto = questionQuery.getQuestionDtoListBySurveyId(surveyId);
 

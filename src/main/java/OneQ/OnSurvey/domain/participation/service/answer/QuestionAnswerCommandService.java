@@ -6,8 +6,8 @@ import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import org.springframework.stereotype.Service;
 
 @Service
-public class QuestionAnswerCommandServiceImpl extends AnswerCommandService<QuestionAnswer> {
-    public QuestionAnswerCommandServiceImpl(
+public class QuestionAnswerCommandService extends AnswerCommandService<QuestionAnswer> {
+    public QuestionAnswerCommandService(
         AnswerRepository<QuestionAnswer> answerRepository
     ) {
         super(answerRepository);
