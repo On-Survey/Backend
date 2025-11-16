@@ -4,6 +4,7 @@ import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,12 @@ public class SurveyManagementDetailResponse {
         private final String description;
         private final Boolean isRequired;
 
+        @Setter
+        // 객관식 (CHIOCE, RATING, NPS) 설문 필드
         private Map<String, Integer> answerMap;
+
+        @Setter
+        // 주관식 (SHORT, LONG, DATE, NUMBER) 설문 필드
         private List<String> answerList;
     }
 

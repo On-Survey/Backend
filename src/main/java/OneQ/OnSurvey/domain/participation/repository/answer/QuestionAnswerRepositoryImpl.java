@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.domain.participation.repository.answer;
 
 import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
+import OneQ.OnSurvey.domain.participation.model.dto.AnswerStats;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.stereotype.Repository;
 
@@ -27,6 +29,32 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                 questionAnswer.questionId.in(questionIdList),
                 questionAnswer.memberId.eq(memberId)
             )
+            .fetch();
+    }
+
+    @Override
+    public List<AnswerStats> getAggregatedAnswersByQuestionIds(List<Long> questionIdList) {
+        return jpaQueryFactory.select(Projections.constructor(AnswerStats.class,
+                questionAnswer.questionId,
+                questionAnswer.content,
+                questionAnswer.answerId.count()
+            ))
+            .from(questionAnswer)
+            .where(questionAnswer.questionId.in(questionIdList))
+            .groupBy(questionAnswer.questionId, questionAnswer.content)
+            .orderBy(questionAnswer.questionId.asc())
+            .fetch();
+    }
+
+    @Override
+    public List<AnswerStats> getAnswersByQuestionIds(List<Long> questionIdList) {
+        return jpaQueryFactory.select(Projections.constructor(AnswerStats.class,
+                questionAnswer.questionId,
+                questionAnswer.content
+            ))
+            .from(questionAnswer)
+            .where(questionAnswer.questionId.in(questionIdList))
+            .orderBy(questionAnswer.questionId.asc())
             .fetch();
     }
 }

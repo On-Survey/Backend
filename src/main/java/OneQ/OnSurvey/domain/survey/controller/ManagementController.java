@@ -57,13 +57,15 @@ public class ManagementController {
     }
 
     @GetMapping("/surveys/answers")
-    @Operation(summary = "사용자가 관리할 설문을 상세 조회합니다.")
+    @Operation(summary = "사용자가 응답을 확인할 설문을 상세 조회합니다.")
     public SuccessResponse<SurveyManagementDetailResponse> getSurveyManagementDetailInfo(
         @RequestParam Long surveyId,
         @AuthenticationPrincipal CustomUserDetails details
     ) {
         Long userKey = details.getUserKey();
         Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
+
+        log.info("[MANAGEMENT] 응답을 확인할 설문 상세조회 - surveyId: {}, memberId: {}", surveyId, memberId);
 
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
 
@@ -86,9 +88,7 @@ public class ManagementController {
             )
             .toList();
 
-        List<Long> questionIdList = detailInfoList.stream().map(SurveyManagementDetailResponse.DetailInfo::getQuestionId).toList();
-        detailInfoList = answerQuery.getDetailInfo(detailInfoList, questionIdList, memberId);
-
+        detailInfoList = answerQuery.getDetailInfo(detailInfoList);
         response.updateDetailInfoList(detailInfoList);
 
         return SuccessResponse.ok(response);
