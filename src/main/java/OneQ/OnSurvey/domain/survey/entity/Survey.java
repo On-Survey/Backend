@@ -67,16 +67,12 @@ public class Survey extends BaseEntity {
     public static Survey of(
         Long memberId,
         String title,
-        String description,
-        LocalDateTime deadline,
-        Integer totalCoin
+        String description
     ) {
         return Survey.builder()
             .memberId(memberId)
             .title(title)
             .description(description)
-            .deadline(deadline)
-            .totalCoin(totalCoin)
             .build();
     }
 

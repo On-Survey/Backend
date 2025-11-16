@@ -7,9 +7,10 @@ import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
-import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
+import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
@@ -38,7 +39,7 @@ public class SurveyCommandService implements SurveyCommand {
     private final MemberRepository memberRepository;
 
     @Override
-    public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormRequest request){
+    public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
 
         Survey survey;
         log.info("surveyId: {}", surveyId);
@@ -46,25 +47,9 @@ public class SurveyCommandService implements SurveyCommand {
             survey = Survey.of(
                     memberId,
                     request.title(),
-                    request.description(),
-                    request.deadline(),
-                    request.totalCoin()
+                    request.description()
             );
             survey = surveyRepository.save(survey);
-
-            SurveyInfo info = SurveyInfo.createSurveyInfo(
-                    survey.getId(),
-                    request.dueCount(),
-                    request.gender(),
-                    request.age(),
-                    request.residence(),
-                    request.genderPrice(),
-                    request.agePrice(),
-                    request.residencePrice(),
-                    request.dueCountPrice()
-            );
-            surveyInfoRepository.save(info);
-
             log.info("[SurveyUpsert] 설문 생성 완료 - surveyId={}", survey.getId());
         } else {
             survey = surveyRepository.getSurveyById(surveyId)
@@ -73,50 +58,63 @@ public class SurveyCommandService implements SurveyCommand {
             survey.updateSurvey(
                     request.title(),
                     request.description(),
-                    request.deadline(),
-                    request.totalCoin()
+                    survey.getDeadline(),
+                    survey.getTotalCoin()
             );
-
-            SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
-                    .orElseGet(() -> {
-                        SurveyInfo newInfo = SurveyInfo.createSurveyInfo(
-                                surveyId,
-                                request.dueCount(),
-                                request.gender(),
-                                request.age(),
-                                request.residence(),
-                                request.genderPrice(),
-                                request.agePrice(),
-                                request.residencePrice(),
-                                request.dueCountPrice()
-                        );
-                        return surveyInfoRepository.save(newInfo);
-                    });
-
-            info.updateSurveyInfo(
-                    request.dueCount(),
-                    request.gender(),
-                    request.age(),
-                    request.residence(),
-                    request.genderPrice(),
-                    request.agePrice(),
-                    request.residencePrice(),
-                    request.dueCountPrice()
-            );
-
+            survey = surveyRepository.save(survey);
             log.info("[SurveyUpsert] 설문 수정 완료 - surveyId={}", surveyId);
         }
 
-        survey = surveyRepository.save(survey);
         return SurveyFormResponse.fromEntity(survey);
     }
 
     @Override
-    public SurveyFormResponse submitSurvey(Long surveyId) {
-        Survey survey = surveyRepository.getSurveyById(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+    public SurveyFormResponse submitSurvey(Long surveyId, SurveyFormRequest request) {
+        Survey survey = surveyRepository.getSurveyById(surveyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+
+        log.info("[SurveySubmit] submit surveyId={}", surveyId);
+
+        survey.updateSurvey(
+                survey.getTitle(),
+                survey.getDescription(),
+                request.deadline(),
+                request.totalCoin()
+        );
+
+        SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
+                .orElseGet(() -> {
+                    SurveyInfo newInfo = SurveyInfo.createSurveyInfo(
+                            surveyId,
+                            request.dueCount(),
+                            request.gender(),
+                            request.age(),
+                            request.residence(),
+                            request.genderPrice(),
+                            request.agePrice(),
+                            request.residencePrice(),
+                            request.dueCountPrice()
+                    );
+                    return surveyInfoRepository.save(newInfo);
+                });
+
+        info.updateSurveyInfo(
+                request.dueCount(),
+                request.gender(),
+                request.age(),
+                request.residence(),
+                request.genderPrice(),
+                request.agePrice(),
+                request.residencePrice(),
+                request.dueCountPrice()
+        );
+
         survey.submitSurvey();
 
         surveyRepository.save(survey);
+        surveyInfoRepository.save(info);
+
+        log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 
         return SurveyFormResponse.fromEntity(survey);
     }

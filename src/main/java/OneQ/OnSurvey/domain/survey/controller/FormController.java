@@ -8,10 +8,7 @@ import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionCommand;
 import OneQ.OnSurvey.domain.question.service.QuestionConverter;
 import OneQ.OnSurvey.domain.survey.controller.swagger.FormControllerDoc;
-import OneQ.OnSurvey.domain.survey.model.request.QuestionRequest;
-import OneQ.OnSurvey.domain.survey.model.request.ScreeningRequest;
-import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
-import OneQ.OnSurvey.domain.survey.model.request.SurveyInterestRequest;
+import OneQ.OnSurvey.domain.survey.model.request.*;
 import OneQ.OnSurvey.domain.survey.model.response.CreateQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
@@ -45,7 +42,7 @@ public class FormController implements FormControllerDoc {
     @Operation(summary = "설문 폼을 생성합니다.")
     public SuccessResponse<SurveyFormResponse> createSurvey(
         @AuthenticationPrincipal CustomUserDetails details,
-        @RequestBody SurveyFormRequest request
+        @RequestBody SurveyFormCreateRequest request
     ) {
         Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
 
@@ -125,9 +122,10 @@ public class FormController implements FormControllerDoc {
     @PatchMapping("surveys/{surveyId}")
     @Operation(summary = "폼을 완성합니다.")
     public SuccessResponse<SurveyFormResponse> completeSurvey(
-        @PathVariable Long surveyId
+            @PathVariable Long surveyId,
+            @RequestBody SurveyFormRequest request
     ) {
-        return SuccessResponse.ok(surveyCommand.submitSurvey(surveyId));
+        return SuccessResponse.ok(surveyCommand.submitSurvey(surveyId, request));
     }
 
     @PatchMapping("surveys/{surveyId}/interests")
