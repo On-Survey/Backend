@@ -5,7 +5,10 @@ import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.response.FormQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.MySurveyListResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyDetailResponse;
@@ -77,7 +80,7 @@ public class ManagementController {
         int count = responseQuery.getResponseCountBySurveyId(surveyId);
         response.updateCurrentCount(count);
 
-        List<SurveyManagementDetailResponse.DetailInfo> detailInfoList = questionQuery.getQuestionListBySurveyId(surveyId).info().stream()
+        List<SurveyManagementDetailResponse.DetailInfo> detailInfoList = questionQuery.getQuestionDtoListBySurveyId(surveyId).stream()
             .map(dto -> new SurveyManagementDetailResponse.DetailInfo(
                     dto.getQuestionId(),
                     dto.getQuestionOrder(),
@@ -101,14 +104,17 @@ public class ManagementController {
         @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam Long surveyId
     ) {
-//        Long userKey = principal.getUserKey();
-//        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
+        Long userKey = principal.getUserKey();
+        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
 
-        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, 1);
+        if (!SurveyStatus.WRITING.equals(surveyQuery.getMySurveyDetail(memberId, surveyId).status())) {
+            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
+        }
+        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
 
-        FormQuestionResponse response = questionQuery.getWritingQuestions(surveyId);
+        List<DefaultQuestionDto> questionDto = questionQuery.getQuestionDtoListBySurveyId(surveyId);
 
-        return SuccessResponse.ok(response);
+        return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto));
     }
 
     @GetMapping

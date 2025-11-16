@@ -7,8 +7,6 @@ import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.repository.choiceOption.ChoiceOptionRepository;
 import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
-import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
-import OneQ.OnSurvey.domain.survey.model.response.FormQuestionResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,15 +26,6 @@ public class QuestionQueryService implements QuestionQuery {
     private final ChoiceOptionRepository choiceOptionRepository;
 
     @Override
-    public ParticipationQuestionResponse getQuestionListBySurveyId(Long surveyId) {
-        log.info("[QUESTION_SERVICE] 응답하고자 하는 설문 문항 조회 - surveyId: {}", surveyId);
-
-        List<DefaultQuestionDto> questionDtoList = getQuestionDtoList(surveyId);
-
-        return new ParticipationQuestionResponse(questionDtoList);
-    }
-
-    @Override
     public List<OptionUpsertDto.OptionInfo> getOptionsByQuestionIdList(List<Long> questionIdList) {
         List<ChoiceOption> optionList = choiceOptionRepository.getOptionsByQuestionIds(questionIdList);
 
@@ -44,15 +33,9 @@ public class QuestionQueryService implements QuestionQuery {
     }
 
     @Override
-    public FormQuestionResponse getWritingQuestions(Long surveyId) {
+    public List<DefaultQuestionDto> getQuestionDtoListBySurveyId(Long surveyId) {
         log.info("[QUESTION_SERVICE] 조회할 설문 ID - surveyId: {}", surveyId);
 
-        List<DefaultQuestionDto> questionDtoList = getQuestionDtoList(surveyId);
-
-        return new FormQuestionResponse(surveyId, questionDtoList);
-    }
-
-    private List<DefaultQuestionDto> getQuestionDtoList(Long surveyId) {
         List<Question> questionList = questionRepository.getQuestionListBySurveyId(surveyId);
         Set<Long> choiceIdSet = questionList.stream()
             .filter(Question::isChoice)
