@@ -20,7 +20,8 @@ public enum Residence {
     JEONBUK("전북"),
     JEJU("제주"),
     CHUNGNAM("충남"),
-    CHUNGBUK("충북");
+    CHUNGBUK("충북"),
+    SEJONG("세종");
 
     private final String value;
 }
