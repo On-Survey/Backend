@@ -33,10 +33,25 @@ public class SurveyRepositoryImpl implements SurveyRepository {
 
     @Override
     public Slice<Survey> getSurveyListByStatus(SurveyStatus status, Long lastSurveyId, Pageable pageable) {
-        List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
+        List<Long> surveyIds = jpaQueryFactory
+            .select(survey.id) // ID만 선택
+            .from(survey)
             .where(
                 survey.status.eq(status),
-                survey.id.gt(lastSurveyId)
+                survey.id.gt(lastSurveyId) // No-Offset (커서 기반) 조건
+            )
+            .orderBy(QuerydslUtils.getSort(pageable, survey)) // 1, 2단계 쿼리의 정렬 순서는 동일해야 합니다.
+            .limit(pageable.getPageSize() + 1)
+            .fetch();
+
+        if (surveyIds.isEmpty()) {
+            return createSlice(List.of(), pageable);
+        }
+
+        List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
+            .leftJoin(survey.interests).fetchJoin()
+            .where(
+                survey.id.in(surveyIds)
             )
             .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)

@@ -14,5 +14,7 @@ public interface QuestionRepository {
     Question save(Question question);
     List<Question> saveAll(Collection<Question> questions);
 
+    Long getSurveyId(Long questionId);
+
     void deleteAll(Set<Long> idList);
 }

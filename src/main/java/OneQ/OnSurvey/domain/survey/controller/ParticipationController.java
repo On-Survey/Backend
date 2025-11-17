@@ -96,9 +96,14 @@ public class ParticipationController {
         @RequestBody InsertScreeningAnswerRequest request,
         @PathVariable Long screeningId
     ) {
+        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+
+        log.info("[PARTICIPATION] 스크리닝 응답 생성 - screeningId: {}, userKey: {}, content: {}",
+            screeningId, memberId, request.content());
+
         AnswerInsertDto.AnswerInfo answerInfo = AnswerInsertDto.AnswerInfo.builder()
             .id(screeningId)
-            .memberId(memberFinder.getMemberByUserKey(details.getUserKey()).getId())
+            .memberId(memberId)
             .content(request.content())
             .build();
         return SuccessResponse.ok(answerCommand.insertAnswer(answerInfo));
@@ -113,6 +118,9 @@ public class ParticipationController {
         @RequestBody InsertQuestionAnswerRequest request
     ) {
         Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+
+        log.info("[PARTICIPATION] 설문 응답 생성 - surveyId: {}, userKey: {}, request: {}",
+            surveyId, memberId, request.toString());
 
         AnswerInsertDto answerInsertDto = request.toDto(memberId);
 

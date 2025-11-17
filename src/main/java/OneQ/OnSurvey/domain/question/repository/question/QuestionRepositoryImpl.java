@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.domain.question.repository.question;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -8,10 +10,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static OneQ.OnSurvey.domain.question.entity.QQuestion.question;
+
 @Repository
 @RequiredArgsConstructor
 public class QuestionRepositoryImpl implements QuestionRepository {
     private final QuestionJpaRepository questionJpaRepository;
+
+    @PersistenceContext
+    private final JPAQueryFactory jpaQueryFactory;
 
     @Override
     public List<Question> getQuestionListBySurveyId(Long surveyId) {
@@ -36,6 +43,14 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     @Override
     public List<Question> saveAll(Collection<Question> questions) {
         return questionJpaRepository.saveAll(questions);
+    }
+
+    @Override
+    public Long getSurveyId(Long questionId) {
+        return jpaQueryFactory.select(question.surveyId)
+            .from(question)
+            .where(question.questionId.eq(questionId))
+            .fetchOne();
     }
 
     @Override
