@@ -33,10 +33,26 @@ public class SurveyRepositoryImpl implements SurveyRepository {
 
     @Override
     public Slice<Survey> getSurveyListByStatus(SurveyStatus status, Long lastSurveyId, Pageable pageable) {
-        List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
+        List<Long> surveyIds = jpaQueryFactory
+            .select(survey.id)
+            .from(survey)
             .where(
                 survey.status.eq(status),
                 survey.id.gt(lastSurveyId)
+            )
+            .orderBy(QuerydslUtils.getSort(pageable, survey))
+            .limit(pageable.getPageSize() + 1)
+            .fetch();
+
+        if (surveyIds.isEmpty()) {
+            return createSlice(List.of(), pageable);
+        }
+
+        List<Survey> surveyList = jpaQueryFactory
+            .selectFrom(survey)
+            .leftJoin(survey.interests).fetchJoin()
+            .where(
+                survey.id.in(surveyIds)
             )
             .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)
