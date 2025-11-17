@@ -14,8 +14,8 @@ public class ScreeningAnswerCommandService extends AnswerCommandService<Screenin
 
     public ScreeningAnswerCommandService(
         AnswerRepository<ScreeningAnswer> answerRepository,
-        ScreeningRepository screeningRepository,
-        MemberSurveyStatusRepository memberSurveyStatusRepository
+        MemberSurveyStatusRepository memberSurveyStatusRepository,
+        ScreeningRepository screeningRepository
     ) {
         super(answerRepository, memberSurveyStatusRepository);
         this.screeningRepository = screeningRepository;
@@ -24,6 +24,19 @@ public class ScreeningAnswerCommandService extends AnswerCommandService<Screenin
     @Override
     public ScreeningAnswer createAnswerFromDto(AnswerInsertDto.AnswerInfo answerInfo) {
         return ScreeningAnswer.from(answerInfo);
+    }
+
+    @Override
+    public Boolean insertAnswer(AnswerInsertDto.AnswerInfo answerInfo) {
+        super.insertAnswer(answerInfo);
+        Long surveyId = getSurveyIdFromScreening(answerInfo.getId());
+        createMemberSurveyStatus(surveyId, answerInfo);
+
+        return true;
+    }
+
+    private Long getSurveyIdFromScreening(Long screeningId) {
+        return screeningRepository.getSurveyId(screeningId);
     }
 
     @Override

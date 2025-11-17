@@ -30,10 +30,18 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
 
     @Override
     public Boolean getScreeningAnswer(Long screeningId) {
-    return jpaQueryFactory.select(screening.answer)
-        .from(screening)
-        .where(screening.id.eq(screeningId))
-        .fetchOne();
+        return jpaQueryFactory.select(screening.answer)
+            .from(screening)
+            .where(screening.id.eq(screeningId))
+            .fetchOne();
+    }
+
+    @Override
+    public Long getSurveyId(Long screeningId) {
+        return jpaQueryFactory.select(screening.surveyId)
+            .from(screening)
+            .where(screening.id.eq(screeningId))
+            .fetchOne();
     }
 
     @Override
