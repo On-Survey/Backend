@@ -13,4 +13,6 @@ public interface SurveyQuery {
     ParticipationScreeningResponse getScreeningList(Long lastSurveyId, Pageable pageable);
     MySurveyListResponse getMySurveys(Long memberId);
     SurveyDetailResponse getMySurveyDetail(Long memberId, Long surveyId);
+
+    void validateSurveyRequest(Long surveyId, Long memberId, SurveyStatus status);
 }

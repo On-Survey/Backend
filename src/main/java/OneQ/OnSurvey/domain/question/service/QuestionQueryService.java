@@ -37,11 +37,12 @@ public class QuestionQueryService implements QuestionQuery {
         log.info("[QUESTION_SERVICE] 조회할 설문 ID - surveyId: {}", surveyId);
 
         List<Question> questionList = questionRepository.getQuestionListBySurveyId(surveyId);
+        log.info("[QUESTION_SERVICE] 조회할 설문 문항 IDs - Ids: {}", questionList.stream().map(Question::getQuestionId).toList());
+
         Set<Long> choiceIdSet = questionList.stream()
             .filter(Question::isChoice)
             .map(Question::getQuestionId)
             .collect(Collectors.toSet());
-        log.info("[QUESTION_SERVICE] 조회할 설문 문항 IDs - Ids: {}", choiceIdSet);
 
         List<ChoiceOption> totalOptionList = choiceIdSet.isEmpty() ?
             List.of() : choiceOptionRepository.getOptionsByQuestionIds(choiceIdSet);

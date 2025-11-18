@@ -7,7 +7,6 @@ import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
-import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.response.FormQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.MySurveyListResponse;
@@ -104,17 +103,11 @@ public class ManagementController {
         @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam Long surveyId
     ) {
-        Long userKey = principal.getUserKey();
-        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
 
         log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
 
-        SurveyStatus status = surveyQuery.getMySurveyDetail(memberId, surveyId).status();
-        if (!SurveyStatus.WRITING.equals(status)) {
-            log.warn("[MANAGEMENT] 작성 중인 설문이 아님 - surveyId: {}, memberId: {}, status: {}", surveyId, memberId, status);
-            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
-        }
-
+        surveyQuery.validateSurveyRequest(surveyId, memberId, SurveyStatus.WRITING);
         List<DefaultQuestionDto> questionDto = questionQuery.getQuestionDtoListBySurveyId(surveyId);
 
         return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto));

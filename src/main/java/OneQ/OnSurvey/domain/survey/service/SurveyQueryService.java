@@ -137,4 +137,21 @@ public class SurveyQueryService implements SurveyQuery {
 
         return SurveyDetailResponse.from(survey, info);
     }
+
+    @Override
+    public void validateSurveyRequest(Long surveyId, Long memberId, SurveyStatus status) {
+        Survey survey = surveyRepository.getSurveyById(surveyId)
+                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+        if (!survey.getMemberId().equals(memberId)) {
+            log.warn("[SURVEY:QUERY:VALIDATE] 접근 권한 없음 - surveyId: {}, memberId: {}, surveyMemberId: {}",
+                    surveyId, memberId, survey.getMemberId());
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        if (!survey.getStatus().equals(status)) {
+            log.warn("[SURVEY:QUERY:VALIDATE] 설문 상태 불일치 - surveyId: {}, memberId: {}, expectedStatus: {}, actualStatus: {}",
+                    surveyId, memberId, status, survey.getStatus());
+        }
+    }
 }
