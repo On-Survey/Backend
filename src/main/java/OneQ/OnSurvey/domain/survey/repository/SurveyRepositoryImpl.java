@@ -1,9 +1,11 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
+import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.util.QuerydslUtils;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,15 +35,32 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     }
 
     @Override
-    public Slice<Survey> getSurveyListByStatus(SurveyStatus status, Long lastSurveyId, Pageable pageable) {
+    public Slice<Survey> getSurveyListByFilters(
+        Long lastSurveyId, Pageable pageable,
+        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, Collection<Interest> memberInterests
+    ) {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(
+            survey.id.gt(lastSurveyId),
+            survey.status.eq(status)
+        );
+
+        if (!excludedIds.isEmpty()) {
+            builder.and(survey.id.notIn(excludedIds));
+        }
+        if (!memberInterest.isEmpty()) {
+            builder.and(survey.interests.in(memberInterests));
+        }
+        if (creatorId == null) {
+            builder.and(survey.memberId.ne(creatorId));
+        }
+
         List<Long> surveyIds = jpaQueryFactory
-            .select(survey.id) // ID만 선택
+            .select(survey.id)
             .from(survey)
-            .where(
-                survey.status.eq(status),
-                survey.id.gt(lastSurveyId) // No-Offset (커서 기반) 조건
-            )
-            .orderBy(QuerydslUtils.getSort(pageable, survey)) // 1, 2단계 쿼리의 정렬 순서는 동일해야 합니다.
+            .leftJoin(survey.interests).fetchJoin()
+            .where(builder)
+            .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)
             .fetch();
 
@@ -53,7 +73,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .where(
                 survey.id.in(surveyIds)
             )
-            .orderBy(QuerydslUtils.getSort(pageable, survey))
+            .orderBy(QuerydslUtils.getSort(pageable, survey)) 
             .limit(pageable.getPageSize() + 1)
             .fetch();
 
