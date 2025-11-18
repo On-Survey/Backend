@@ -51,13 +51,18 @@ public class ParticipationController {
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getSurveyListOnGoing(
+        @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
+        log.info("[PARTICIPATION] 노출 중 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
+
+        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+
         Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
         return SuccessResponse.ok(
             surveyQueryService.getParticipationSurveyList(
-                SurveyStatus.ONGOING, lastSurveyId, pageable
+                SurveyStatus.ONGOING, lastSurveyId, pageable, memberId
             )
         );
     }
@@ -74,19 +79,19 @@ public class ParticipationController {
         return SuccessResponse.ok(new ParticipationQuestionResponse(questionDtoList));
     }
 
-    /* TODO 사용자 id 기반 관심사 필터링 추가 */
     @GetMapping("surveys/screenings")
     @Operation(summary = "관심사에 일치하는 설문의 스크리닝 문항을 조회합니다.")
     public SuccessResponse<ParticipationScreeningResponse> getRecommendedScreenings(
         @AuthenticationPrincipal CustomUserDetails details,
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size
-        ) {
+    ) {
+        log.info("[PARTICIPATION] 전체 스크리닝 문항 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
+
         Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
-        // memberId 기반 추천 설문id 조회
 
         Pageable pageable = PageRequest.of(0, size);
-        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable));
+        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, memberId));
     }
 
     @PostMapping("screenings/{screeningId}")
