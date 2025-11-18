@@ -69,9 +69,12 @@ public class SurveyCommandService implements SurveyCommand {
     }
 
     @Override
-    public SurveyFormResponse submitSurvey(Long surveyId, SurveyFormRequest request) {
+    public SurveyFormResponse submitSurvey(Long userKey, Long surveyId, SurveyFormRequest request) {
         Survey survey = surveyRepository.getSurveyById(surveyId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+
+        Member member = memberRepository.findMemberByUserKey(userKey)
+                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         log.info("[SurveySubmit] submit surveyId={}", surveyId);
 
@@ -113,6 +116,8 @@ public class SurveyCommandService implements SurveyCommand {
 
         surveyRepository.save(survey);
         surveyInfoRepository.save(info);
+
+        member.decreaseCoin(request.totalCoin());
 
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 

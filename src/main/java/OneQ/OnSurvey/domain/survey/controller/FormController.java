@@ -122,10 +122,11 @@ public class FormController implements FormControllerDoc {
     @PatchMapping("surveys/{surveyId}")
     @Operation(summary = "폼을 완성합니다.")
     public SuccessResponse<SurveyFormResponse> completeSurvey(
+            @AuthenticationPrincipal CustomUserDetails details,
             @PathVariable Long surveyId,
             @RequestBody SurveyFormRequest request
     ) {
-        return SuccessResponse.ok(surveyCommand.submitSurvey(surveyId, request));
+        return SuccessResponse.ok(surveyCommand.submitSurvey(details.getUserKey(), surveyId, request));
     }
 
     @PatchMapping("surveys/{surveyId}/interests")

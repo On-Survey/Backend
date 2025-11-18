@@ -11,7 +11,7 @@ import java.util.Set;
 
 public interface SurveyCommand {
     SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request);
-    SurveyFormResponse submitSurvey(Long surveyId, SurveyFormRequest request);
+    SurveyFormResponse submitSurvey(Long userKey, Long surveyId, SurveyFormRequest request);
     Boolean deleteById(Long surveyId);
 
     ScreeningResponse upsertScreening(Long screeningId, Long surveyId, String content, Boolean answer);
