@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
-@Getter @SuperBuilder @ToString
+@Getter @SuperBuilder @ToString(callSuper = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DateDto extends DefaultQuestionDto {
     private LocalDateTime date;

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-@Getter @SuperBuilder @ToString
+@Getter @SuperBuilder @ToString(callSuper = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RatingDto extends DefaultQuestionDto {
     private String minValue;

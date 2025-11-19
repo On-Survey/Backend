@@ -117,23 +117,29 @@ public class FormController implements FormControllerDoc {
         QuestionUpsertDto questionUpsertDto =
             QuestionConverter.toQuestionUpsertDto(surveyId, request.getQuestions());
 
-        questionUpsertDto = questionCommand.upsertQuestionList(questionUpsertDto);
-
-        List<OptionUpsertDto> optionUpsertDtoList =
-            questionUpsertDto.getUpsertInfoList().stream()
-                .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
-                .map(info -> OptionUpsertDto.builder()
-                    .questionId(info.getQuestionId())
-                    .optionInfoList(info.getOptions())
-                    .build())
-                .toList();
-
+        // CHOICE 타입에 대한 questionID - UpsertInfo 맵 생성
         Map<Long, QuestionUpsertDto.UpsertInfo> questionIdUpsertInfoListMap = questionUpsertDto.getUpsertInfoList().stream()
             .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
             .collect(Collectors.toMap(
                 QuestionUpsertDto.UpsertInfo::getQuestionId,
                 Function.identity()
             ));
+        log.info("[FORM:updateSurvey] Choice 문항 맵: {}", questionIdUpsertInfoListMap);
+
+        questionUpsertDto = questionCommand.upsertQuestionList(questionUpsertDto);
+
+        List<OptionUpsertDto> optionUpsertDtoList = questionIdUpsertInfoListMap.entrySet().stream()
+            .map(entry -> OptionUpsertDto.builder()
+                .questionId(entry.getKey())
+                .optionInfoList(entry.getValue().getOptions().stream().map(optionInfo -> OptionUpsertDto.OptionInfo.builder()
+                    .optionId(optionInfo.getOptionId())
+                    .content(optionInfo.getContent())
+                    .nextQuestionId(optionInfo.getNextQuestionId())
+                    .build()).toList())
+                .build())
+            .toList();
+        log.info("[FORM:updateSurvey] 문항 별 보기 리스트: {}", optionUpsertDtoList);
+
 
         optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
 
