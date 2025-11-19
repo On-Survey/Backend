@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
@@ -91,7 +92,7 @@ public class SurveyCommandService implements SurveyCommand {
                             surveyId,
                             request.dueCount(),
                             request.gender(),
-                            request.age(),
+                            new HashSet<>(request.ages()),
                             request.residence(),
                             request.genderPrice(),
                             request.agePrice(),
@@ -104,7 +105,7 @@ public class SurveyCommandService implements SurveyCommand {
         info.updateSurveyInfo(
                 request.dueCount(),
                 request.gender(),
-                request.age(),
+                request.ages() == null ? Set.of() : new HashSet<>(request.ages()),
                 request.residence(),
                 request.genderPrice(),
                 request.agePrice(),
