@@ -18,7 +18,6 @@ import OneQ.OnSurvey.domain.survey.model.response.UpdateQuestionResponse;
 import OneQ.OnSurvey.domain.survey.service.SurveyCommand;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.exception.ErrorCode;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -67,17 +66,20 @@ public class FormController implements FormControllerDoc {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     ) {
-        log.info("[FORM] 새로운 문항 생성 - surveyId: {}, request: {}", surveyId, request.toString());
+        log.info("[FORM:createQuestion] 새로운 문항 생성 - surveyId: {}, request: {}", surveyId, request.toString());
 
-        if (request.getQuestions().isEmpty()
-            || request.getQuestions().getFirst().getQuestionType() == null
-        ) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
+        if (request.getQuestions().isEmpty()) {
+            log.warn("[FORM:createQuestion] 문항 데이터가 비어있습니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_EMPTY_REQUEST);
+        }
+        if (request.getQuestions().getFirst().getQuestionType() == null) {
+            log.warn("[FORM:createQuestion] 문항 타입이 유효하지 않습니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
         }
 
         DefaultQuestionDto questionDto = request.getQuestions().getFirst();
-        log.info(questionDto.getQuestionType());
         QuestionType type = QuestionType.valueOf(questionDto.getQuestionType());
+        log.info("[FORM:createQuestion] 문항 타입: {}", type.name());
 
         QuestionUpsertDto upsertDto = QuestionUpsertDto.builder()
             .surveyId(surveyId)
@@ -85,6 +87,7 @@ public class FormController implements FormControllerDoc {
                 List.of(QuestionUpsertDto.UpsertInfo.builder()
                     .questionType(type)
                     .title(questionDto.getTitle())
+                    .description(questionDto.getDescription())
                     .questionOrder(questionDto.getQuestionOrder())
                     .build())
             ).build();
@@ -104,11 +107,11 @@ public class FormController implements FormControllerDoc {
 
         if (request.getQuestions().isEmpty()) {
             log.warn("[FORM:updateSurvey] 문항 데이터가 비어있습니다.");
-            throw new CustomException(SurveyErrorCode.SURVEY_EMPTY_REQUEST);
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_EMPTY_REQUEST);
         }
         if (request.getQuestions().stream().anyMatch(dto -> dto.getQuestionType() == null)) {
             log.warn("[FORM:updateSurvey] 문항 타입이 유효하지 않습니다.");
-            throw new CustomException(SurveyErrorCode.SURVEY_INVALID_QUESTION_TYPE);
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
         }
 
         QuestionUpsertDto questionUpsertDto =
@@ -125,7 +128,7 @@ public class FormController implements FormControllerDoc {
                     .build())
                 .toList();
 
-        Map <Long, QuestionUpsertDto.UpsertInfo> questionIdUpsertInfoListMap = questionUpsertDto.getUpsertInfoList().stream()
+        Map<Long, QuestionUpsertDto.UpsertInfo> questionIdUpsertInfoListMap = questionUpsertDto.getUpsertInfoList().stream()
             .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
             .collect(Collectors.toMap(
                 QuestionUpsertDto.UpsertInfo::getQuestionId,

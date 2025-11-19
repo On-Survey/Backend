@@ -4,11 +4,12 @@ import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
-@Getter @SuperBuilder
+@Getter @SuperBuilder @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class DateDto extends DefaultQuestionDto {
     private LocalDateTime date;

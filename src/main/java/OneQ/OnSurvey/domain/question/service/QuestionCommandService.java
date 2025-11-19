@@ -311,7 +311,6 @@ public class QuestionCommandService implements QuestionCommand {
 
             log.info("[QUESTION:COMMAND:upsertChoiceOptionList] DELETE 진행");
 
-
             // 5. Update 대상 수정
             Map<Long, OptionUpsertDto.OptionInfo> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
                 OptionUpsertDto.OptionInfo::getOptionId,
