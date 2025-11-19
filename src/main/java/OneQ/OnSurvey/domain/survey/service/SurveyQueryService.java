@@ -1,7 +1,6 @@
 package OneQ.OnSurvey.domain.survey.service;
 
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
-import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
@@ -35,8 +34,6 @@ public class SurveyQueryService implements SurveyQuery {
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final ScreeningRepository screeningRepository;
-
-    private final QuestionQuery questionQuery;
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
