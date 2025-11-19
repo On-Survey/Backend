@@ -7,6 +7,7 @@ import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionCommand;
 import OneQ.OnSurvey.domain.question.service.QuestionConverter;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.controller.swagger.FormControllerDoc;
 import OneQ.OnSurvey.domain.survey.model.request.*;
 import OneQ.OnSurvey.domain.survey.model.response.CreateQuestionResponse;
@@ -27,6 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/v1/survey-form")
@@ -96,14 +100,21 @@ public class FormController implements FormControllerDoc {
         @RequestBody QuestionRequest request,
         @PathVariable Long surveyId
     ) {
-        if (request.getQuestions().isEmpty()
-            || request.getQuestions().getFirst().getQuestionType() == null
-        ) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
+        log.info("[FORM:updateSurvey] 문항 임시저장: surveyId: {}, request: {}", surveyId, request.toString());
+
+        if (request.getQuestions().isEmpty()) {
+            log.warn("[FORM:updateSurvey] 문항 데이터가 비어있습니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_EMPTY_REQUEST);
+        }
+        if (request.getQuestions().stream().anyMatch(dto -> dto.getQuestionType() == null)) {
+            log.warn("[FORM:updateSurvey] 문항 타입이 유효하지 않습니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_INVALID_QUESTION_TYPE);
         }
 
         QuestionUpsertDto questionUpsertDto =
             QuestionConverter.toQuestionUpsertDto(surveyId, request.getQuestions());
+
+        questionUpsertDto = questionCommand.upsertQuestionList(questionUpsertDto);
 
         List<OptionUpsertDto> optionUpsertDtoList =
             questionUpsertDto.getUpsertInfoList().stream()
@@ -113,8 +124,22 @@ public class FormController implements FormControllerDoc {
                     .optionInfoList(info.getOptions())
                     .build())
                 .toList();
-        questionUpsertDto = questionCommand.upsertQuestionList(questionUpsertDto);
-        questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
+
+        Map <Long, QuestionUpsertDto.UpsertInfo> questionIdUpsertInfoListMap = questionUpsertDto.getUpsertInfoList().stream()
+            .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
+            .collect(Collectors.toMap(
+                QuestionUpsertDto.UpsertInfo::getQuestionId,
+                Function.identity()
+            ));
+
+        optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
+
+        optionUpsertDtoList.forEach(upsertDto -> {
+            Long questionId = upsertDto.getQuestionId();
+
+            QuestionUpsertDto.UpsertInfo upsertInfo = questionIdUpsertInfoListMap.get(questionId);
+            upsertInfo.setOptions(upsertDto.getOptionInfoList());
+        });
 
         return SuccessResponse.ok(new UpdateQuestionResponse(questionUpsertDto.getSurveyId(), questionUpsertDto.getUpsertInfoList()));
     }

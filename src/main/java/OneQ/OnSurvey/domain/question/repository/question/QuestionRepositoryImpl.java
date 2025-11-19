@@ -40,7 +40,7 @@ public class QuestionRepositoryImpl implements QuestionRepository {
 
     @Override
     public List<Question> saveAll(Collection<Question> questions) {
-        return questionJpaRepository.saveAll(questions);
+        return questionJpaRepository.saveAllAndFlush(questions);
     }
 
     @Override
