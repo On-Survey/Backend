@@ -6,11 +6,12 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
-@Getter @SuperBuilder
+@Getter @SuperBuilder @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChoiceDto extends DefaultQuestionDto {
     private Integer maxChoice;
@@ -19,6 +20,7 @@ public class ChoiceDto extends DefaultQuestionDto {
 
     private List<OptionInfo> options;
 
+    @ToString
     @Getter @Builder
     public static class OptionInfo {
         private Long optionId;

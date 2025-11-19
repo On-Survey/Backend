@@ -29,7 +29,7 @@ public class ChoiceOptionRepositoryImpl implements ChoiceOptionRepository {
 
     @Override
     public List<ChoiceOption> saveAll(Collection<ChoiceOption> choiceOptions) {
-        return choiceOptionJpaRepository.saveAll(choiceOptions);
+        return choiceOptionJpaRepository.saveAllAndFlush(choiceOptions);
     }
 
     @Override

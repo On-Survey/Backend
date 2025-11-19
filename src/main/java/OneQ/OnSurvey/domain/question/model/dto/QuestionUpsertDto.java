@@ -7,6 +7,8 @@ import OneQ.OnSurvey.domain.question.entity.question.Rating;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,7 +18,7 @@ public class QuestionUpsertDto {
     private final Long surveyId;
     private final List<UpsertInfo> upsertInfoList;
 
-    @Getter @Builder
+    @Getter @Builder @ToString
     public static class UpsertInfo {
         Long questionId;
         String title;
@@ -29,6 +31,7 @@ public class QuestionUpsertDto {
         Integer maxChoice;
         Boolean hasNoneOption;
         Boolean hasCustomInput;
+        @Setter
         List<OptionUpsertDto.OptionInfo> options;
 
         // Rating 필드

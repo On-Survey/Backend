@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.domain.question.entity;
 
+import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
@@ -17,6 +18,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.ColumnDefault;
 
 @Getter @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -45,6 +47,7 @@ public abstract class Question extends BaseEntity {
     protected String description;
 
     @Column(name = "is_required")
+    @ColumnDefault("FALSE")
     @Builder.Default
     protected Boolean isRequired = false;
 
@@ -65,6 +68,6 @@ public abstract class Question extends BaseEntity {
     }
 
     public boolean isChoice() {
-        return this.type.equals("CHOICE");
+        return QuestionType.CHOICE.equals(QuestionType.valueOf(this.type));
     }
 }

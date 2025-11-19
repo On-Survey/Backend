@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.ColumnDefault;
 
 @Getter @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -20,14 +21,19 @@ import lombok.experimental.SuperBuilder;
 public class Choice extends Question {
     // 객관식 문항 필드
     @Column(name = "max_choice")
+    @ColumnDefault("1")
     @Builder.Default
     private Integer maxChoice = 1;
 
     @Column(name = "has_none_option")
-    private Boolean hasNoneOption;
+    @ColumnDefault("FALSE")
+    @Builder.Default
+    private Boolean hasNoneOption = false;
 
     @Column(name = "has_custom_input")
-    private Boolean hasCustomInput;
+    @ColumnDefault("FALSE")
+    @Builder.Default
+    private Boolean hasCustomInput = false;
 
     public static Choice of(
         Long surveyId,

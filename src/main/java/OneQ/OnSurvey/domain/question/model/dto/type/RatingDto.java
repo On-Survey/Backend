@@ -4,9 +4,10 @@ import OneQ.OnSurvey.domain.question.entity.question.Rating;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-@Getter @SuperBuilder
+@Getter @SuperBuilder @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RatingDto extends DefaultQuestionDto {
     private String minValue;

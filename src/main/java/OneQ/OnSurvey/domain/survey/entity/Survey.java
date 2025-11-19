@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -45,9 +46,11 @@ public class Survey extends BaseEntity {
     private LocalDateTime deadline;
 
     @Column(name = "is_temporary")
+    @ColumnDefault("TRUE")
     @Builder.Default
     private Boolean isTemporary = true;
 
+    @ColumnDefault("'WRITING'")
     @Builder.Default
     @Enumerated(EnumType.STRING)
     private SurveyStatus status = SurveyStatus.WRITING;

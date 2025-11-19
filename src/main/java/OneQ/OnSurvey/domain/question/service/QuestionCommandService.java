@@ -60,7 +60,7 @@ public class QuestionCommandService implements QuestionCommand {
 
     @Override
     public QuestionUpsertDto upsertQuestionList(QuestionUpsertDto upsertDto) {
-        log.info("[FROM:SERVICE] 문항 UPSERT - surveyId: {}, type: {}", upsertDto.getSurveyId(), upsertDto.getUpsertInfoList().getFirst().getQuestionType());
+        log.info("[QUESTION:COMMAND:upsertQuestionList] 문항 UPSERT - surveyId: {}, upsertInfoList: {}", upsertDto.getSurveyId(), upsertDto.getUpsertInfoList().toString());
 
         Long surveyId = upsertDto.getSurveyId();
         List<QuestionUpsertDto.UpsertInfo> upsertInfoList = upsertDto.getUpsertInfoList();
@@ -79,7 +79,9 @@ public class QuestionCommandService implements QuestionCommand {
             .map(QuestionUpsertDto.UpsertInfo::getQuestionId)
             .collect(Collectors.toSet());
 
-        log.info("upsertSize: {}", upsertInfoList.size());
+        log.info("[QUESTION:COMMAND:upsertQuestionList] 수정되는 문항 IDs: {}", updateIdSet);
+        log.info("[QUESTION:COMMAND:upsertQuestionList] 생성되는 문항 개수: {}", newInfoList.size());
+
         // 4. Delete 대상 ID 추출 및 삭제
         if (upsertInfoList.size() != 1) {
             Set<Long> deleteIdSet = prevQuestionList.stream()
@@ -87,8 +89,10 @@ public class QuestionCommandService implements QuestionCommand {
                 .filter(questionId -> !updateIdSet.contains(questionId))
                 .collect(Collectors.toSet());
 
-            log.info("[FORM:SERVICE] - 삭제되는 문항 ID: {}", deleteIdSet);
+            log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 문항 IDs: {}", deleteIdSet);
             questionRepository.deleteAll(deleteIdSet);
+
+            log.info("[QUESTION:COMMAND:upsertQuestionList] DELETE 진행");
         }
 
         // 5. Update 대상 수정
@@ -117,6 +121,8 @@ public class QuestionCommandService implements QuestionCommand {
 
         // 7. Update/Insert 진행
         updateList = questionRepository.saveAll(finalList);
+
+        log.info("[QUESTION:COMMAND:upsertQuestionList] UPSERT 완료");
 
         // 8. 반환값 구성
         upsertInfoList = updateList.stream()
@@ -268,6 +274,8 @@ public class QuestionCommandService implements QuestionCommand {
 
     @Override
     public List<OptionUpsertDto> upsertChoiceOptionList(List<OptionUpsertDto> upsertDtoList) {
+        log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 보기 UPSERT - upsertDtoList : {}", upsertDtoList.toString());
+
         List<ChoiceOption> finalList = new ArrayList<>();
 
         for (OptionUpsertDto upsertDto : upsertDtoList) {
@@ -289,12 +297,19 @@ public class QuestionCommandService implements QuestionCommand {
                 .map(OptionUpsertDto.OptionInfo::getOptionId)
                 .collect(Collectors.toSet());
 
+            log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 수정되는 문항: {}, 보기 IDs: {}", questionId, updateIdSet);
+            log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 생성되는 문항: {}, 보기 개수: {}", questionId, newInfoList.size());
+
             // 4. Delete 대상 ID 추출 및 삭제
             Set<Long> deleteIdSet = prevOptionList.stream()
                 .map(ChoiceOption::getChoiceOptionId)
                 .filter(optionId -> !updateIdSet.contains(optionId))
                 .collect(Collectors.toSet());
+            log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 삭제되는 문항: {}, 보기 IDs: {}", questionId, deleteIdSet);
+
             choiceOptionRepository.deleteAll(deleteIdSet);
+
+            log.info("[QUESTION:COMMAND:upsertChoiceOptionList] DELETE 진행");
 
             // 5. Update 대상 수정
             Map<Long, OptionUpsertDto.OptionInfo> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
@@ -329,6 +344,8 @@ public class QuestionCommandService implements QuestionCommand {
 
         // 7. Update/Insert 진행
         List<ChoiceOption> optionList = choiceOptionRepository.saveAll(finalList);
+
+        log.info("[QUESTION:COMMAND:upsertChoiceOptionList] UPSERT 완료");
 
         // 8. 반환값 구성
         Map<Long, List<ChoiceOption>> idOptionListMap = optionList.stream().collect(Collectors.groupingBy(ChoiceOption::getQuestionId));
