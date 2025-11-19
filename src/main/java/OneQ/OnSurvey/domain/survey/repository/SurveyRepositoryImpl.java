@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.util.QuerydslUtils;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.dsl.StringTemplate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -14,6 +15,11 @@ import org.springframework.stereotype.Repository;
 
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,14 +41,30 @@ public class SurveyRepositoryImpl implements SurveyRepository {
 
     @Override
     public Slice<Survey> getSurveyListByFilters(
-        Long lastSurveyId, Pageable pageable,
+        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
         SurveyStatus status, Long creatorId, Collection<Long> excludedIds, Collection<Interest> memberInterests
     ) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(
-            survey.id.gt(lastSurveyId),
             survey.status.eq(status)
         );
+
+        if (lastDeadline == null) {
+            StringTemplate deadlineTemplate = QuerydslUtils.convertLocalDateTimeIntoStringTemplate(LocalDateTime.now());
+            builder.and(
+                survey.id.gt(lastSurveyId),
+                survey.deadline.gt(deadlineTemplate)
+            );
+        } else {
+            StringTemplate deadlineTemplate = QuerydslUtils.convertDateIntoStringTemplate(lastDeadline);
+            builder.and(
+                survey.deadline.gt(deadlineTemplate)
+                .or(survey.deadline.ge(deadlineTemplate)
+                    .and(survey.id.gt(lastSurveyId)
+                    )
+                )
+            );
+        }
 
         if (!excludedIds.isEmpty()) {
             builder.and(survey.id.notIn(excludedIds));

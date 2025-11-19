@@ -22,6 +22,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -59,10 +60,10 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public SurveyParticipationResponse getParticipationSurveyList(
+    public List<SurveyParticipationResponse.SurveyData> getParticipationSurveyList(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId
     ) {
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 스크리닝, 관심사, 마감 기반 설문 조회 - "
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 스크리닝, 관심사, 마감기한 기반 설문 조회 - "
             + "lastSurveyId: {}, size: {}, status: {}, memberId: {}",
             lastSurveyId, pageable.getPageSize(), status.name(), memberId
         );
@@ -71,18 +72,29 @@ public class SurveyQueryService implements SurveyQuery {
         Set<Interest> interestSet = memberRepository.findMeberInterestsById(memberId);
 
         Slice<Survey> recommendedList = surveyRepository.getSurveyListByFilters(
-            lastSurveyId, pageable,
-            status, memberId, excludedIdList, interestSet);
+            lastSurveyId, null, pageable,
+            status, memberId, excludedIdList, interestSet
+        );
+
+        return recommendedList.stream().map(SurveyParticipationResponse::fromEntity).toList();
+    }
+
+    @Override
+    public List<SurveyParticipationResponse.SurveyData> getParticipationSurveyList(
+        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId
+    ) {
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 마감기한 기반 설문 조회 - "
+            + "lastSurveyId: {}, lastDateTime: {}, size: {}, status: {}, memberId: {}",
+            lastSurveyId, lastDeadline.toString(), pageable.getPageSize(), status.name(), memberId
+        );
+
+        List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, true);
         Slice<Survey> impendingList = surveyRepository.getSurveyListByFilters(
-            lastSurveyId, (PageRequest.of(0,  pageable.getPageSize(), Sort.by("deadline"))),
+            lastSurveyId, lastDeadline, pageable,
             status, memberId, excludedIdList, Set.of()
         );
 
-        return SurveyParticipationResponse.builder()
-            .recommended(recommendedList.stream().map(SurveyParticipationResponse::fromEntity).toList())
-            .impending(impendingList.stream().map(SurveyParticipationResponse::fromEntity).toList())
-            .hasNext(recommendedList.hasNext())
-            .build();
+        return impendingList.stream().map(SurveyParticipationResponse::fromEntity).toList();
     }
 
     @Override
@@ -98,7 +110,7 @@ public class SurveyQueryService implements SurveyQuery {
         Set<Interest> interestSet = memberRepository.findMeberInterestsById(memberId);
 
         Slice<Survey> surveyList = surveyRepository.getSurveyListByFilters(
-            lastSurveyId, pageable,
+            lastSurveyId, null, pageable,
             SurveyStatus.ONGOING, memberId, excludedIdList, interestSet
         );
         List<Long> idList = surveyList.stream().map(Survey::getId).toList();
