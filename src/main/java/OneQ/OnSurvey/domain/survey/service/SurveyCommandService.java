@@ -39,6 +39,7 @@ public class SurveyCommandService implements SurveyCommand {
     private final SurveyInfoRepository surveyInfoRepository;
     private final MemberRepository memberRepository;
     private final SurveyRefundPolicy surveyRefundPolicy;
+    private final SurveyGlobalStatsService surveyGlobalStatsService;
 
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
@@ -118,6 +119,7 @@ public class SurveyCommandService implements SurveyCommand {
 
         surveyRepository.save(survey);
         surveyInfoRepository.save(info);
+        surveyGlobalStatsService.addDueCount(info.getDueCount());
 
         member.decreaseCoin(request.totalCoin());
 
