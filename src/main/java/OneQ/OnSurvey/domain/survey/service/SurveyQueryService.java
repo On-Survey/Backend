@@ -58,7 +58,7 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public List<SurveyParticipationResponse.SurveyData> getParticipationSurveyList(
+    public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId
     ) {
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 스크리닝, 관심사, 마감기한 기반 설문 조회 - "
@@ -74,16 +74,18 @@ public class SurveyQueryService implements SurveyQuery {
             status, memberId, excludedIdList, interestSet
         );
 
-        return recommendedList.stream().map(SurveyParticipationResponse::fromEntity).toList();
+        return new SurveyParticipationResponse.SliceSurveyData(
+            recommendedList.stream().map(SurveyParticipationResponse::fromEntity).toList(), recommendedList.hasNext()
+        );
     }
 
     @Override
-    public List<SurveyParticipationResponse.SurveyData> getParticipationSurveyList(
+    public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId
     ) {
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 마감기한 기반 설문 조회 - "
             + "lastSurveyId: {}, lastDateTime: {}, size: {}, status: {}, memberId: {}",
-            lastSurveyId, lastDeadline.toString(), pageable.getPageSize(), status.name(), memberId
+            lastSurveyId, lastDeadline, pageable.getPageSize(), status.name(), memberId
         );
 
         List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, true);
@@ -92,7 +94,9 @@ public class SurveyQueryService implements SurveyQuery {
             status, memberId, excludedIdList, Set.of()
         );
 
-        return impendingList.stream().map(SurveyParticipationResponse::fromEntity).toList();
+        return new SurveyParticipationResponse.SliceSurveyData(
+            impendingList.stream().map(SurveyParticipationResponse::fromEntity).toList(), impendingList.hasNext()
+        );
     }
 
     @Override

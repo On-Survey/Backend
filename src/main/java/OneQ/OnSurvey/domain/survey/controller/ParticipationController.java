@@ -48,7 +48,7 @@ public class ParticipationController {
     @Operation(summary = "노출 중인 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getSurveyListOnGoing(
         @AuthenticationPrincipal CustomUserDetails principal,
-        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
         log.info("[PARTICIPATION] 노출 중 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
@@ -61,15 +61,18 @@ public class ParticipationController {
             Sort.Order.asc("id")
         ));
 
-        List<SurveyParticipationResponse.SurveyData> recommendedList =
-            surveyQueryService.getParticipationSurveyList(lastSurveyId, recommendedPageable, SurveyStatus.ONGOING, memberId);
-        List<SurveyParticipationResponse.SurveyData> impendingList =
-            surveyQueryService.getParticipationSurveyList(lastSurveyId, LocalDateTime.now(), impendingPageable, SurveyStatus.ONGOING, memberId);
+        SurveyParticipationResponse.SliceSurveyData recommended = surveyQueryService.getParticipationSurveyList(
+            lastSurveyId, recommendedPageable, SurveyStatus.ONGOING, memberId
+        );
+        SurveyParticipationResponse.SliceSurveyData impending = surveyQueryService.getParticipationSurveyList(
+            lastSurveyId, LocalDateTime.now(), impendingPageable, SurveyStatus.ONGOING, memberId
+        );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
-            .recommended(recommendedList)
-            .impending(impendingList)
-            .hasNext(impendingList.size() > size)
+            .recommended(recommended.getSurveyDataList())
+            .impending(impending.getSurveyDataList())
+            .recommendedHasNext(recommended.getHasNext())
+            .impendingHasNext(impending.getHasNext())
             .build();
 
         return SuccessResponse.ok(response);
@@ -79,7 +82,7 @@ public class ParticipationController {
     @Operation(summary = "사용자 추천 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getRecommendedSurveyList(
         @AuthenticationPrincipal CustomUserDetails principal,
-        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
         log.info("[PARTICIPATION] 사용자 추천 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
@@ -87,12 +90,13 @@ public class ParticipationController {
         Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         
         Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
-        List<SurveyParticipationResponse.SurveyData> recommendedList =
-            surveyQueryService.getParticipationSurveyList(lastSurveyId, pageable, SurveyStatus.ONGOING, memberId);
+        SurveyParticipationResponse.SliceSurveyData recommended =
+            surveyQueryService.getParticipationSurveyList(lastSurveyId, pageable, SurveyStatus.ONGOING, memberId
+        );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
-            .recommended(recommendedList)
-            .hasNext(recommendedList.size() > size)
+            .recommended(recommended.getSurveyDataList())
+            .recommendedHasNext(recommended.getHasNext())
             .build();
 
         return SuccessResponse.ok(response);
@@ -102,7 +106,7 @@ public class ParticipationController {
     @Operation(summary = "마감 임박 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getImpendingSurveyList(
         @AuthenticationPrincipal CustomUserDetails principal,
-        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
         @RequestParam(required = false) LocalDateTime lastDeadline,
         @RequestParam(defaultValue = "15") Integer size
     ) {
@@ -114,12 +118,13 @@ public class ParticipationController {
             Sort.Order.asc("deadline"),
             Sort.Order.asc("id")
         ));
-        List<SurveyParticipationResponse.SurveyData> impendingList =
-            surveyQueryService.getParticipationSurveyList(lastSurveyId, lastDeadline, pageable, SurveyStatus.ONGOING, memberId);
+        SurveyParticipationResponse.SliceSurveyData impending =
+            surveyQueryService.getParticipationSurveyList(lastSurveyId, lastDeadline, pageable, SurveyStatus.ONGOING, memberId
+        );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
-            .impending(impendingList)
-            .hasNext(impendingList.size() > size)
+            .impending(impending.getSurveyDataList())
+            .impendingHasNext(impending.getHasNext())
             .build();
         
         return SuccessResponse.ok(response);
@@ -141,7 +146,7 @@ public class ParticipationController {
     @Operation(summary = "관심사에 일치하는 설문의 스크리닝 문항을 조회합니다.")
     public SuccessResponse<ParticipationScreeningResponse> getRecommendedScreenings(
         @AuthenticationPrincipal CustomUserDetails details,
-        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size
     ) {
         log.info("[PARTICIPATION] 관심사 일치 스크리닝 문항 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);

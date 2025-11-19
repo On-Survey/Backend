@@ -10,10 +10,10 @@ import java.util.List;
 public interface SurveyQuery {
     SurveyManagementDetailResponse getSurvey(Long surveyId);
     List<SurveyManagementResponse.SurveyInfo> getSurveyListByMemberId(Long memberId);
-    List<SurveyParticipationResponse.SurveyData> getParticipationSurveyList(
+    SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId
     );
-    List<SurveyParticipationResponse.SurveyData> getParticipationSurveyList(
+    SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId
     );
     ParticipationScreeningResponse getScreeningList(
