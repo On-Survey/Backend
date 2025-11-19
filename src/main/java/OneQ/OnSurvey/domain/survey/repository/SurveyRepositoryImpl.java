@@ -71,25 +71,9 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             builder.and(survey.memberId.ne(creatorId));
         }
 
-        List<Long> surveyIds = jpaQueryFactory
-            .select(survey.id)
-            .from(survey)
-            .leftJoin(survey.interests)
-            .where(builder)
-            .orderBy(QuerydslUtils.getSort(pageable, survey))
-            .limit(pageable.getPageSize() + 1)
-            .distinct()
-            .fetch();
-
-        if (surveyIds.isEmpty()) {
-            return createSlice(List.of(), pageable);
-        }
-
         List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
             .leftJoin(survey.interests).fetchJoin()
-            .where(
-                survey.id.in(surveyIds)
-            )
+            .where(builder)
             .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)
             .fetch();

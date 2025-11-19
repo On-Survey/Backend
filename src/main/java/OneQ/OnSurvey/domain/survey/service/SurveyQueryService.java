@@ -12,7 +12,6 @@ import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
-import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -73,6 +72,7 @@ public class SurveyQueryService implements SurveyQuery {
             lastSurveyId, null, pageable,
             status, memberId, excludedIdList, interestSet
         );
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 추천 설문 조회 결과 - recommended: {}", recommendedList);
 
         return new SurveyParticipationResponse.SliceSurveyData(
             recommendedList.stream().map(SurveyParticipationResponse::fromEntity).toList(), recommendedList.hasNext()
@@ -93,6 +93,7 @@ public class SurveyQueryService implements SurveyQuery {
             lastSurveyId, lastDeadline, pageable,
             status, memberId, excludedIdList, Set.of()
         );
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 마감임박 설문 조회 결과 - impending: {}", impendingList);
 
         return new SurveyParticipationResponse.SliceSurveyData(
             impendingList.stream().map(SurveyParticipationResponse::fromEntity).toList(), impendingList.hasNext()
@@ -110,12 +111,14 @@ public class SurveyQueryService implements SurveyQuery {
 
         List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, false);
         Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId);
+        log.info("[SURVEY:QUERY:getScreeningList] 사용자 관심사 - memberId: {}, interests: {}", memberId, interestSet);
 
         Slice<Survey> surveyList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
             SurveyStatus.ONGOING, memberId, excludedIdList, interestSet
         );
         List<Long> idList = surveyList.stream().map(Survey::getId).toList();
+        log.info("[SURVEY:QUERY:getScreeningList] 스크리닝을 조회할 설문 IDs: {}", idList);
 
         List<Screening> screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
 
