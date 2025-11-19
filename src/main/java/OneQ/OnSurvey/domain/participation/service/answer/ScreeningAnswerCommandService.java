@@ -46,16 +46,12 @@ public class ScreeningAnswerCommandService extends AnswerCommandService<Screenin
     ) {
         boolean answer = screeningRepository.getScreeningAnswer(answerInfo.getId());
 
-        if (answer != answerInfo.getBooleanContent()) {
-            MemberSurveyStatus status = MemberSurveyStatus.of(
-                surveyId,
-                answerInfo.getMemberId(),
-                false,
-                true
-            );
-            return memberSurveyStatusRepository.save(status);
-        }
-
-        return null;
+        MemberSurveyStatus status = MemberSurveyStatus.of(
+            surveyId,
+            answerInfo.getMemberId(),
+            false,
+            answer != answerInfo.getBooleanContent()
+        );
+        return memberSurveyStatusRepository.save(status);
     }
 }

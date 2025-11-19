@@ -44,11 +44,17 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
         Long surveyId,
         AnswerInsertDto.AnswerInfo answerInfo
     ) {
-        MemberSurveyStatus status = MemberSurveyStatus.of(
-            surveyId,
-            answerInfo.getMemberId(),
-            true
-        );
+        MemberSurveyStatus status = memberSurveyStatusRepository.getMemberSurveyStatus(surveyId, answerInfo.getMemberId());
+
+        if (status != null) {
+            status.updateResponseStatus(true);
+        } else {
+            status = MemberSurveyStatus.of(
+                surveyId,
+                answerInfo.getMemberId(),
+                true
+            );
+        }
         return memberSurveyStatusRepository.save(status);
     }
 }

@@ -3,7 +3,6 @@ package OneQ.OnSurvey.domain.participation.repository.memberSurveyStatus;
 import OneQ.OnSurvey.domain.participation.entity.MemberSurveyStatus;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -17,7 +16,6 @@ import static OneQ.OnSurvey.domain.participation.entity.QMemberSurveyStatus.memb
 public class MemberSurveyStatusRepositoryImpl implements MemberSurveyStatusRepository {
     private final MemberSurveyStatusJpaRepository jpaRepository;
 
-    @PersistenceContext
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
@@ -35,7 +33,15 @@ public class MemberSurveyStatusRepositoryImpl implements MemberSurveyStatusRepos
             .where(builder)
             .fetch();
     }
- 
+
+    @Override
+    public MemberSurveyStatus getMemberSurveyStatus(Long surveyId, Long memberId) {
+        return jpaQueryFactory.selectFrom(memberSurveyStatus)
+            .where(memberSurveyStatus.surveyId.eq(surveyId)
+                .and(memberSurveyStatus.memberId.eq(memberId)))
+            .fetchOne();
+    }
+
     @Override
     public MemberSurveyStatus save(MemberSurveyStatus memberSurveyStatus) {
         return jpaRepository.save(memberSurveyStatus);

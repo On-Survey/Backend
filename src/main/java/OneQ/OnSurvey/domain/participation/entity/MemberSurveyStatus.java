@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @Getter @SuperBuilder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity @Table(name = "user_survey_status")
+@Entity @Table(name = "member_survey_status")
 @IdClass(MemberSurveyStatusId.class)
 public class MemberSurveyStatus extends BaseEntity {
 
