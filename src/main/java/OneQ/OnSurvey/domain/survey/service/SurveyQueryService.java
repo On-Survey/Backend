@@ -66,7 +66,7 @@ public class SurveyQueryService implements SurveyQuery {
         );
 
         List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, true);
-        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId);
+        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId).getInterests();
 
         Slice<Survey> recommendedList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
@@ -110,7 +110,7 @@ public class SurveyQueryService implements SurveyQuery {
         );
 
         List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, false);
-        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId);
+        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId).getInterests();
         log.info("[SURVEY:QUERY:getScreeningList] 사용자 관심사 - memberId: {}, interests: {}", memberId, interestSet);
 
         Slice<Survey> surveyList = surveyRepository.getSurveyListByFilters(

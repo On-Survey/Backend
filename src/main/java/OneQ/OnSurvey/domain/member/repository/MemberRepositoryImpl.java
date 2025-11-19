@@ -1,13 +1,11 @@
 package OneQ.OnSurvey.domain.member.repository;
 
 import OneQ.OnSurvey.domain.member.Member;
-import OneQ.OnSurvey.domain.member.value.Interest;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.Set;
 
 import static OneQ.OnSurvey.domain.member.QMember.member;
 
@@ -35,9 +33,9 @@ public class MemberRepositoryImpl implements MemberRepository {
     }
 
     @Override
-    public Set<Interest> findMemberInterestsById(Long memberId) {
-        return jpaQueryFactory.select(member.interests)
-            .from(member)
+    public Member findMemberInterestsById(Long memberId) {
+        return jpaQueryFactory.selectFrom(member)
+            .leftJoin(member.interests).fetchJoin()
             .where(member.id.eq(memberId))
             .fetchOne();
     }
