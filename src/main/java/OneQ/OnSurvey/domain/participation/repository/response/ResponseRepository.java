@@ -11,4 +11,5 @@ public interface ResponseRepository {
     Integer getResponseCountBySurveyId(Long surveyId);
 
     Response save(Response response);
+    boolean existsBySurveyIdAndMemberId(Long surveyId, Long memberId);
 }

@@ -19,6 +19,10 @@ public class ResponseCommandService implements ResponseCommand {
 
     @Override
     public Boolean createResponse(Long surveyId, Long memberId) {
+        if (responseRepository.existsBySurveyIdAndMemberId(surveyId, memberId)) {
+            throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
+        }
+
         Response response = Response.of(surveyId, memberId);
         responseRepository.save(response);
 

@@ -12,4 +12,6 @@ public interface ResponseJpaRepository extends JpaRepository<Response, ResponseI
     List<Response> getResponsesByMemberId(Long memberId);
 
     List<Response> getResponsesBySurveyId(Long surveyId);
+
+    boolean existsBySurveyIdAndMemberId(Long surveyId, Long memberId);
 }
