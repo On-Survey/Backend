@@ -31,6 +31,10 @@ public class SurveyInfo {
 
     private Integer dueCount;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer completedCount = 0;
+
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
@@ -63,6 +67,7 @@ public class SurveyInfo {
         return SurveyInfo.builder()
                 .surveyId(surveyId)
                 .dueCount(dueCount)
+                .completedCount(0)
                 .gender(gender)
                 .age(age)
                 .residence(residence)
@@ -96,6 +101,13 @@ public class SurveyInfo {
 
     public void markNonRefundable() {
         this.refundable = false;
+    }
+
+    public void increaseCompletedCount() {
+        if (this.completedCount == null) {
+            this.completedCount = 0;
+        }
+        this.completedCount++;
     }
 }
 
