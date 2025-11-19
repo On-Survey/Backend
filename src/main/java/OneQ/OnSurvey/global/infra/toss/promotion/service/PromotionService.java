@@ -3,14 +3,14 @@ package OneQ.OnSurvey.global.infra.toss.promotion.service;
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
-import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
+import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.global.auth.token.TokenStore;
 import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.infra.toss.promotion.PromotionGrant;
+import OneQ.OnSurvey.global.infra.toss.adapter.TossApiClient;
 import OneQ.OnSurvey.global.infra.toss.common.TossApiException;
 import OneQ.OnSurvey.global.infra.toss.common.TossErrorCode;
 import OneQ.OnSurvey.global.infra.toss.common.TossErrorMapper;
-import OneQ.OnSurvey.global.infra.toss.adapter.TossApiClient;
+import OneQ.OnSurvey.global.infra.toss.promotion.PromotionGrant;
 import OneQ.OnSurvey.global.infra.toss.promotion.dto.ExecutePromotionResponse;
 import OneQ.OnSurvey.global.infra.toss.promotion.dto.ExecutionResultResponse;
 import OneQ.OnSurvey.global.infra.toss.promotion.dto.PromotionKeyResponse;
@@ -54,7 +54,7 @@ public class PromotionService {
     private final PromotionGrantRepository promotionGrantRepository;
     private final PromotionGrantTxService grantTx;
     private final MemberRepository memberRepository;
-    private final SurveyInfoRepository surveyInfoRepository;
+    private final SurveyGlobalStatsService surveyGlobalStatsService;
 
     private SSLContext tossSslContext;
 
@@ -154,6 +154,7 @@ public class PromotionService {
 
         member.increasePromotionPoint(promotionAmount);
         grant.markPointGranted();
+        surveyGlobalStatsService.addPromotionCount(1);
     }
 
     private ExecutionResultResponse pollWithRecoveryAndPersist(PromotionGrant grant, long userKey, String execKey) {
