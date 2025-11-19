@@ -26,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -46,15 +47,87 @@ public class ParticipationController {
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getSurveyListOnGoing(
-        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
-        Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
-        return SuccessResponse.ok(
-            surveyQueryService.getParticipationSurveyList(
-                SurveyStatus.ONGOING, lastSurveyId, pageable
-            )
+        log.info("[PARTICIPATION] 노출 중 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
+
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
+
+        Pageable recommendedPageable = PageRequest.of(0, size, Sort.by("id"));
+        Pageable impendingPageable = PageRequest.of(0, size, Sort.by(
+            Sort.Order.asc("deadline"),
+            Sort.Order.asc("id")
+        ));
+
+        SurveyParticipationResponse.SliceSurveyData recommended = surveyQueryService.getParticipationSurveyList(
+            lastSurveyId, recommendedPageable, SurveyStatus.ONGOING, memberId
         );
+        SurveyParticipationResponse.SliceSurveyData impending = surveyQueryService.getParticipationSurveyList(
+            lastSurveyId, LocalDateTime.now(), impendingPageable, SurveyStatus.ONGOING, memberId
+        );
+
+        SurveyParticipationResponse response = SurveyParticipationResponse.builder()
+            .recommended(recommended.getSurveyDataList())
+            .impending(impending.getSurveyDataList())
+            .recommendedHasNext(recommended.getHasNext())
+            .impendingHasNext(impending.getHasNext())
+            .build();
+
+        return SuccessResponse.ok(response);
+    }
+
+    @GetMapping("surveys/ongoing/recommended")
+    @Operation(summary = "사용자 추천 설문을 조회합니다.")
+    public SuccessResponse<SurveyParticipationResponse> getRecommendedSurveyList(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
+        @RequestParam(defaultValue = "15") Integer size
+    ) {
+        log.info("[PARTICIPATION] 사용자 추천 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
+
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
+        
+        Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
+        SurveyParticipationResponse.SliceSurveyData recommended =
+            surveyQueryService.getParticipationSurveyList(lastSurveyId, pageable, SurveyStatus.ONGOING, memberId
+        );
+
+        SurveyParticipationResponse response = SurveyParticipationResponse.builder()
+            .recommended(recommended.getSurveyDataList())
+            .recommendedHasNext(recommended.getHasNext())
+            .build();
+
+        return SuccessResponse.ok(response);
+    }
+
+    @GetMapping("surveys/ongoing/impending")
+    @Operation(summary = "마감 임박 설문을 조회합니다.")
+    public SuccessResponse<SurveyParticipationResponse> getImpendingSurveyList(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
+        @RequestParam(required = false) LocalDateTime lastDeadline,
+        @RequestParam(defaultValue = "15") Integer size
+    ) {
+        log.info("[PARTICIPATION] 마감 임박 설문 조회 - lastSurveyId: {}, lastDeadline: {}, size: {}", lastSurveyId, lastDeadline, size);
+
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
+
+        Pageable pageable = PageRequest.of(0, size, Sort.by(
+            Sort.Order.asc("deadline"),
+            Sort.Order.asc("id")
+        ));
+        SurveyParticipationResponse.SliceSurveyData impending =
+            surveyQueryService.getParticipationSurveyList(lastSurveyId, lastDeadline, pageable, SurveyStatus.ONGOING, memberId
+        );
+
+        SurveyParticipationResponse response = SurveyParticipationResponse.builder()
+            .impending(impending.getSurveyDataList())
+            .impendingHasNext(impending.getHasNext())
+            .build();
+        
+        return SuccessResponse.ok(response);
     }
 
     @GetMapping("surveys")
@@ -69,19 +142,19 @@ public class ParticipationController {
         return SuccessResponse.ok(new ParticipationQuestionResponse(questionDtoList));
     }
 
-    /* TODO 사용자 id 기반 관심사 필터링 추가 */
     @GetMapping("surveys/screenings")
     @Operation(summary = "관심사에 일치하는 설문의 스크리닝 문항을 조회합니다.")
     public SuccessResponse<ParticipationScreeningResponse> getRecommendedScreenings(
         @AuthenticationPrincipal CustomUserDetails details,
-        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size
-        ) {
+    ) {
+        log.info("[PARTICIPATION] 관심사 일치 스크리닝 문항 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
+
         Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
-        // memberId 기반 추천 설문id 조회
 
         Pageable pageable = PageRequest.of(0, size);
-        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable));
+        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, memberId));
     }
 
     @PostMapping("screenings/{screeningId}")
@@ -91,9 +164,14 @@ public class ParticipationController {
         @RequestBody InsertScreeningAnswerRequest request,
         @PathVariable Long screeningId
     ) {
+        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+
+        log.info("[PARTICIPATION] 스크리닝 응답 생성 - screeningId: {}, userKey: {}, content: {}",
+            screeningId, memberId, request.content());
+
         AnswerInsertDto.AnswerInfo answerInfo = AnswerInsertDto.AnswerInfo.builder()
             .id(screeningId)
-            .memberId(memberFinder.getMemberByUserKey(details.getUserKey()).getId())
+            .memberId(memberId)
             .content(request.content())
             .build();
         return SuccessResponse.ok(answerCommand.insertAnswer(answerInfo));
@@ -107,6 +185,9 @@ public class ParticipationController {
         @RequestBody InsertQuestionAnswerRequest request
     ) {
         Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+
+        log.info("[PARTICIPATION] 설문 응답 생성 - surveyId: {}, userKey: {}, request: {}",
+            surveyId, memberId, request.toString());
 
         AnswerInsertDto answerInsertDto = request.toDto(memberId);
 

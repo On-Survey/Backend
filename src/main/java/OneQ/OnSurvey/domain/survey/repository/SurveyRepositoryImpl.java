@@ -1,9 +1,11 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
+import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.util.QuerydslUtils;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Repository;
 
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,24 +36,56 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     }
 
     @Override
-    public Slice<Survey> getSurveyListByStatus(SurveyStatus status, Long lastSurveyId, Pageable pageable) {
+    public Slice<Survey> getSurveyListByFilters(
+        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
+        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, Collection<Interest> memberInterests
+    ) {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(
+            survey.status.eq(status)
+        );
+
+        if (lastDeadline == null) {
+            // StringTemplate deadlineTemplate = QuerydslUtils.convertLocalDateTimeIntoStringTemplate(LocalDateTime.now());
+            builder
+                .and(survey.id.gt(lastSurveyId))
+                .and(survey.deadline.goe(LocalDateTime.now()));
+        } else {
+            // StringTemplate deadlineTemplate = QuerydslUtils.convertLocalDateTimeIntoStringTemplate(lastDeadline);
+            builder.and(
+                survey.deadline.gt(lastDeadline)
+                .or(survey.deadline.eq(lastDeadline)
+                    .and(survey.id.gt(lastSurveyId)
+                    )
+                )
+            );
+        }
+
+        if (!excludedIds.isEmpty()) {
+            builder.and(survey.id.notIn(excludedIds));
+        }
+        if (!memberInterests.isEmpty()) {
+            builder.and(survey.interests.any().in(memberInterests));
+        }
+        if (creatorId != null) {
+            builder.and(survey.memberId.ne(creatorId));
+        }
+
         List<Long> surveyIds = jpaQueryFactory
             .select(survey.id)
             .from(survey)
-            .where(
-                survey.status.eq(status),
-                survey.id.gt(lastSurveyId)
-            )
+            .leftJoin(survey.interests)
+            .where(builder)
             .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)
+            .distinct()
             .fetch();
 
         if (surveyIds.isEmpty()) {
             return createSlice(List.of(), pageable);
         }
 
-        List<Survey> surveyList = jpaQueryFactory
-            .selectFrom(survey)
+        List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
             .leftJoin(survey.interests).fetchJoin()
             .where(
                 survey.id.in(surveyIds)

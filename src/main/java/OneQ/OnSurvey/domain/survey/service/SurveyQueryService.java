@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.domain.survey.service;
 
-import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.member.repository.MemberRepository;
+import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.participation.repository.memberSurveyStatus.MemberSurveyStatusRepository;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
@@ -9,6 +11,8 @@ import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +22,11 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.ONGOING;
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
@@ -34,6 +40,8 @@ public class SurveyQueryService implements SurveyQuery {
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final ScreeningRepository screeningRepository;
+    private final MemberSurveyStatusRepository memberSurveyStatusRepository;
+    private final MemberRepository memberRepository;
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
@@ -50,31 +58,69 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public SurveyParticipationResponse getParticipationSurveyList(
-        SurveyStatus status,
-        Long lastSurveyId,
-        Pageable pageable
+    public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
+        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId
     ) {
-        Slice<Survey> surveyList = surveyRepository.getSurveyListByStatus(status, lastSurveyId, pageable);
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 스크리닝, 관심사, 마감기한 기반 설문 조회 - "
+            + "lastSurveyId: {}, size: {}, status: {}, memberId: {}",
+            lastSurveyId, pageable.getPageSize(), status.name(), memberId
+        );
 
-        return SurveyParticipationResponse.builder()
-            .recommended(surveyList.stream().map(SurveyParticipationResponse::fromEntity).toList())
-            .impending(surveyList.stream().map(SurveyParticipationResponse::fromEntity).toList())
-            .hasNext(surveyList.hasNext())
-            .build();
+        List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, true);
+        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId);
+
+        Slice<Survey> recommendedList = surveyRepository.getSurveyListByFilters(
+            lastSurveyId, null, pageable,
+            status, memberId, excludedIdList, interestSet
+        );
+
+        return new SurveyParticipationResponse.SliceSurveyData(
+            recommendedList.stream().map(SurveyParticipationResponse::fromEntity).toList(), recommendedList.hasNext()
+        );
+    }
+
+    @Override
+    public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
+        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId
+    ) {
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 마감기한 기반 설문 조회 - "
+            + "lastSurveyId: {}, lastDateTime: {}, size: {}, status: {}, memberId: {}",
+            lastSurveyId, lastDeadline, pageable.getPageSize(), status.name(), memberId
+        );
+
+        List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, true);
+        Slice<Survey> impendingList = surveyRepository.getSurveyListByFilters(
+            lastSurveyId, lastDeadline, pageable,
+            status, memberId, excludedIdList, Set.of()
+        );
+
+        return new SurveyParticipationResponse.SliceSurveyData(
+            impendingList.stream().map(SurveyParticipationResponse::fromEntity).toList(), impendingList.hasNext()
+        );
     }
 
     @Override
     public ParticipationScreeningResponse getScreeningList(
-        Long lastSurveyId, Pageable pageable
+        Long lastSurveyId, Pageable pageable, Long memberId
     ) {
-        Slice<Survey> surveyList = surveyRepository.getSurveyList(lastSurveyId, pageable);
+        log.info("[SURVEY:QUERY:getScreeningList] 본인 제작 제외 관심사 기반 설문의 스크리닝 문항 조회 - "
+            + "lastSurveyId: {}, size: {}, memberId: {}",
+            lastSurveyId, pageable.getPageSize(), memberId
+        );
+
+        List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, false);
+        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId);
+
+        Slice<Survey> surveyList = surveyRepository.getSurveyListByFilters(
+            lastSurveyId, null, pageable,
+            SurveyStatus.ONGOING, memberId, excludedIdList, interestSet
+        );
         List<Long> idList = surveyList.stream().map(Survey::getId).toList();
 
-        List<Screening> screeningLIst = screeningRepository.getScreeningListBySurveyIdList(idList);
+        List<Screening> screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
 
         return ParticipationScreeningResponse.builder()
-            .data(screeningLIst.stream().map(ParticipationScreeningResponse::fromEntity).toList())
+            .data(screeningList.stream().map(ParticipationScreeningResponse::fromEntity).toList())
             .hasNext(surveyList.hasNext())
             .build();
     }

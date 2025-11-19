@@ -17,8 +17,10 @@ public class SurveyParticipationResponse {
     private List<SurveyData> recommended;
     @Schema(description = "마감 임박 설문")
     private List<SurveyData> impending;
-    @Schema(description = "다음 문항 존재 여부")
-    private Boolean hasNext;
+    @Schema(description = "사용자 추천 설문 다음 문항 존재 여부")
+    private Boolean recommendedHasNext;
+    @Schema(description = "마감 임박 설문 다음 문항 존재 여부")
+    private Boolean impendingHasNext;
 
     @Getter @Builder
     @AllArgsConstructor
@@ -42,5 +44,11 @@ public class SurveyParticipationResponse {
             .interests(survey.getInterests())
             .deadline(survey.getDeadline())
             .build();
+    }
+
+    @Getter @AllArgsConstructor
+    public static class SliceSurveyData {
+        private List<SurveyData> surveyDataList;
+        private Boolean hasNext;
     }
 }
