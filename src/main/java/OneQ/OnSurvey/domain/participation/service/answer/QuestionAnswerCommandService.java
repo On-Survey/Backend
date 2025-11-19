@@ -4,8 +4,10 @@ import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class QuestionAnswerCommandService extends AnswerCommandService<QuestionAnswer> {
     public QuestionAnswerCommandService(
         AnswerRepository<QuestionAnswer> answerRepository

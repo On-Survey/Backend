@@ -77,7 +77,6 @@ public class PromotionService {
 
         if (grant.isSuccess()) {
             grantPromotionPointIfNeeded(grant, userKey);
-            markSurveyNonRefundable(surveyId);
             return ExecutionResultResponse.success();
         }
 
@@ -118,7 +117,6 @@ public class PromotionService {
                 case "SUCCESS" -> {
                     grantTx.markSuccess(grant.getId());
                     grantPromotionPointIfNeeded(grant, userKey);
-                    markSurveyNonRefundable(surveyId);
                 }
                 case "PENDING" -> grantTx.markPending(grant.getId(), execResp.key());
                 default        -> grantTx.markFail(grant.getId());
@@ -255,18 +253,6 @@ public class PromotionService {
         String suffix = key.substring(key.length() - suffixLen);
 
         return prefix + "****" + suffix;
-    }
-
-    private void markSurveyNonRefundable(long surveyId) {
-        surveyInfoRepository.findBySurveyId(surveyId)
-                .ifPresent(info -> {
-                    if (info.isRefundable()) {
-                        info.markNonRefundable();
-                        log.info("[PROMO] surveyId={} 프로모션 성공 → 환불 불가로 변경", surveyId);
-                    } else {
-                        log.info("[PROMO] surveyId={} 이미 환불 불가 상태", surveyId);
-                    }
-                });
     }
 
 }
