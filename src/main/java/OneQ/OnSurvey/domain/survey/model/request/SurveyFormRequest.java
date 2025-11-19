@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.survey.model.Residence;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record SurveyFormRequest(
         @Schema(description = "설문 마감일", example = "2024-12-31T23:59:59")
@@ -16,8 +17,8 @@ public record SurveyFormRequest(
         @Schema(description = "성별 가격", example = "100")
         Integer genderPrice,
 
-        @Schema(description = "연령대", example = "TWENTY")
-        AgeRange age,
+        @Schema(description = "연령대 목록", example = "[\"TEN\",\"TWENTY\",\"THIRTY\"]")
+        List<AgeRange> ages,
         @Schema(description = "연령대 가격", example = "100")
         Integer agePrice,
 

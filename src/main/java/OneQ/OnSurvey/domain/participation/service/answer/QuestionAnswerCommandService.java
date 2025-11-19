@@ -7,8 +7,10 @@ import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.memberSurveyStatus.MemberSurveyStatusRepository;
 import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class QuestionAnswerCommandService extends AnswerCommandService<QuestionAnswer> {
     private final QuestionRepository questionRepository;
 

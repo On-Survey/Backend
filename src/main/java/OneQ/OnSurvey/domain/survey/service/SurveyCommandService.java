@@ -16,6 +16,7 @@ import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
+import OneQ.OnSurvey.domain.survey.service.refund.SurveyRefundPolicy;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
@@ -37,6 +39,7 @@ public class SurveyCommandService implements SurveyCommand {
     private final ScreeningRepository screeningRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final MemberRepository memberRepository;
+    private final SurveyRefundPolicy surveyRefundPolicy;
 
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
@@ -91,7 +94,7 @@ public class SurveyCommandService implements SurveyCommand {
                             surveyId,
                             request.dueCount(),
                             request.gender(),
-                            request.age(),
+                            new HashSet<>(request.ages()),
                             request.residence(),
                             request.genderPrice(),
                             request.agePrice(),
@@ -104,7 +107,7 @@ public class SurveyCommandService implements SurveyCommand {
         info.updateSurveyInfo(
                 request.dueCount(),
                 request.gender(),
-                request.age(),
+                request.ages() == null ? Set.of() : new HashSet<>(request.ages()),
                 request.residence(),
                 request.genderPrice(),
                 request.agePrice(),
@@ -177,10 +180,18 @@ public class SurveyCommandService implements SurveyCommand {
             throw new CustomException(SurveyErrorCode.SURVEY_NOT_REFUNDABLE);
         }
 
+        int refundAmount = surveyRefundPolicy.calculateRefundAmount(survey, surveyInfo);
+
+        if (refundAmount <= 0) {
+            log.warn("[SurveyRefund] 환불 가능 금액이 0 이하 - surveyId={}, refundAmount={}",
+                    surveyId, refundAmount);
+            throw new CustomException(SurveyErrorCode.SURVEY_NOT_REFUNDABLE);
+        }
+
         Member member = memberRepository.findMemberByUserKey(userKey)
                 .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        member.increaseCoin(survey.getTotalCoin());
+        member.increaseCoin(refundAmount);
         log.info("[SurveyRefund] 코인 환불 완료 - userKey={}, surveyId={}, refundedCoin={}, memberCoinAfter={}",
                 userKey, surveyId, survey.getTotalCoin(), member.getCoin());
 

@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
 import OneQ.OnSurvey.domain.member.service.MemberFinder;
+import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
@@ -11,8 +12,8 @@ import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
+import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
 import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.response.SuccessResponse;
@@ -23,14 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +39,7 @@ public class ParticipationController {
     private final QuestionQuery questionQueryService;
 
     private final AnswerCommand<ScreeningAnswer> answerCommand;
+    private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
 
     private final MemberFinder memberFinder;
     private final ResponseCommand responseCommand;
@@ -179,7 +174,6 @@ public class ParticipationController {
 
     @PostMapping("surveys/{surveyId}")
     @Operation(summary = "설문에 대한 응답을 생성합니다.")
-    @Transactional
     public SuccessResponse<Boolean> createQuestionAnswer(
         @AuthenticationPrincipal CustomUserDetails details,
         @PathVariable Long surveyId,
@@ -192,10 +186,9 @@ public class ParticipationController {
 
         AnswerInsertDto answerInsertDto = request.toDto(memberId);
 
-        answerCommand.insertAnswers(answerInsertDto);
+        questionAnswerCommand.insertAnswers(answerInsertDto);
         responseCommand.createResponse(surveyId, memberId);
 
         return SuccessResponse.ok(true);
-
     }
 }

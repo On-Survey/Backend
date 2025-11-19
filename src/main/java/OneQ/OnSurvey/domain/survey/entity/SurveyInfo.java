@@ -3,19 +3,11 @@ package OneQ.OnSurvey.domain.survey.entity;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -31,11 +23,22 @@ public class SurveyInfo {
 
     private Integer dueCount;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer completedCount = 0;
+
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    @ElementCollection(targetClass = AgeRange.class)
+    @CollectionTable(
+            name = "survey_age",
+            joinColumns = @JoinColumn(name = "info_id")
+    )
     @Enumerated(EnumType.STRING)
-    private AgeRange age;
+    @Column(name = "age", length = 30, nullable = false)
+    @Builder.Default
+    private Set<AgeRange> ages = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     private Residence residence;
@@ -53,7 +56,7 @@ public class SurveyInfo {
             Long surveyId,
             Integer dueCount,
             Gender gender,
-            AgeRange age,
+            Set<AgeRange> ages,
             Residence residence,
             Integer genderPrice,
             Integer agePrice,
@@ -63,8 +66,9 @@ public class SurveyInfo {
         return SurveyInfo.builder()
                 .surveyId(surveyId)
                 .dueCount(dueCount)
+                .completedCount(0)
                 .gender(gender)
-                .age(age)
+                .ages(ages)
                 .residence(residence)
                 .genderPrice(genderPrice)
                 .agePrice(agePrice)
@@ -77,7 +81,7 @@ public class SurveyInfo {
     public void updateSurveyInfo(
             Integer dueCount,
             Gender gender,
-            AgeRange age,
+            Set<AgeRange> ages,
             Residence residence,
             Integer genderPrice,
             Integer agePrice,
@@ -86,7 +90,7 @@ public class SurveyInfo {
     ) {
         this.dueCount = dueCount;
         this.gender = gender;
-        this.age = age;
+        this.ages = ages;
         this.residence = residence;
         this.genderPrice = genderPrice;
         this.agePrice = agePrice;
@@ -96,6 +100,13 @@ public class SurveyInfo {
 
     public void markNonRefundable() {
         this.refundable = false;
+    }
+
+    public void increaseCompletedCount() {
+        if (this.completedCount == null) {
+            this.completedCount = 0;
+        }
+        this.completedCount++;
     }
 }
 

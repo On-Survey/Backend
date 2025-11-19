@@ -1,10 +1,8 @@
 package OneQ.OnSurvey.domain.survey.service;
 
-import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.participation.repository.memberSurveyStatus.MemberSurveyStatusRepository;
-import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
@@ -13,6 +11,8 @@ import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -42,8 +42,6 @@ public class SurveyQueryService implements SurveyQuery {
     private final ScreeningRepository screeningRepository;
     private final MemberSurveyStatusRepository memberSurveyStatusRepository;
     private final MemberRepository memberRepository;
-
-    private final QuestionQuery questionQuery;
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
