@@ -56,9 +56,9 @@ public class ParticipationController {
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
-        log.info("[PARTICIPATION] 노출 중 설문 조회 - lastSurveyId: {}, lastDeadline: {}, size: {}", lastSurveyId, lastDeadline, size);
+        log.info("[PARTICIPATION] 노출 중 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
 
         Pageable recommendedPageable = PageRequest.of(0, size, Sort.by("id"));
         Pageable impendingPageable = PageRequest.of(0, size, Sort.by(
@@ -74,7 +74,7 @@ public class ParticipationController {
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
             .recommended(recommendedList)
             .impending(impendingList)
-            .hasNext(impendingList.size > size)
+            .hasNext(impendingList.size() > size)
             .build();
 
         return SuccessResponse.ok(response);
@@ -82,14 +82,14 @@ public class ParticipationController {
 
     @GetMapping("surveys/ongoing/recommended")
     @Operation(summary = "사용자 추천 설문을 조회합니다.")
-    public SuccessResponse<SurveyParticipationResponse> getRecommnededSurveyList(
+    public SuccessResponse<SurveyParticipationResponse> getRecommendedSurveyList(
         @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
         log.info("[PARTICIPATION] 사용자 추천 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         
         Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
         List<SurveyParticipationResponse.SurveyData> recommendedList =
@@ -97,7 +97,7 @@ public class ParticipationController {
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
             .recommended(recommendedList)
-            .hasNext(recommendedList.size > size)
+            .hasNext(recommendedList.size() > size)
             .build();
 
         return SuccessResponse.ok(response);
@@ -113,7 +113,7 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 마감 임박 설문 조회 - lastSurveyId: {}, lastDeadline: {}, size: {}", lastSurveyId, lastDeadline, size);
 
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
 
         Pageable pageable = PageRequest.of(0, size, Sort.by(
             Sort.Order.asc("deadline"),
@@ -124,7 +124,7 @@ public class ParticipationController {
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
             .impending(impendingList)
-            .hasNext(impendingList.size > size)
+            .hasNext(impendingList.size() > size)
             .build();
         
         return SuccessResponse.ok(response);

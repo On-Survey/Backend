@@ -3,14 +3,13 @@ package OneQ.OnSurvey.domain.member.repository;
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 import java.util.Set;
 
-import static OneQ.OnSurvey.domain.member.entity.QMember.member;
+import static OneQ.OnSurvey.domain.member.QMember.member;
 
 @Repository
 @RequiredArgsConstructor
@@ -18,7 +17,6 @@ public class MemberRepositoryImpl implements MemberRepository {
 
     private final MemberJpaRepository memberJpaRepository;
 
-    @PersistenceContext
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
@@ -37,11 +35,11 @@ public class MemberRepositoryImpl implements MemberRepository {
     }
 
     @Override
-    public Set<Interest> findMeberInterestsById(Long memberId) {
+    public Set<Interest> findMemberInterestsById(Long memberId) {
         return jpaQueryFactory.select(member.interests)
             .from(member)
             .leftJoin(member.interests).fetchJoin()
             .where(member.id.eq(memberId))
-            .fetch();
+            .fetchOne();
     }
 }

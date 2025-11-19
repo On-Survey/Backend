@@ -37,11 +37,11 @@ public class MemberSurveyStatus extends BaseEntity {
     private Boolean isResponded;
 
     @Builder.Default
-    @Column(name = "is_screening_rejected")
-    private Boolean isScreeningRejected = false;
+    @Column(name = "is_screened")
+    private Boolean isScreened = false;
 
     public boolean isExcluded() {
-        return this.isResponded || !this.isScreeningRejected;
+        return this.isResponded || !this.isScreened;
     }
 
     public static MemberSurveyStatus of(
@@ -60,13 +60,13 @@ public class MemberSurveyStatus extends BaseEntity {
         Long surveyId,
         Long memberId,
         Boolean isResponded,
-        Boolean isScreeningRejected
+        Boolean isScreened
     ) {
         return MemberSurveyStatus.builder()
             .surveyId(surveyId)
             .memberId(memberId)
             .isResponded(isResponded)
-            .isScreeningRejected(isScreeningRejected)
+            .isScreened(isScreened)
             .build();
     }
 

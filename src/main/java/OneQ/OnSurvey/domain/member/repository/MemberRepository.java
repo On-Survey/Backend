@@ -11,5 +11,5 @@ public interface MemberRepository {
     Member save(Member newMember);
     void deleteById(Long memberId);
 
-    Set<Interest> findMeberInterestsById(Long memberId);
+    Set<Interest> findMemberInterestsById(Long memberId);
 }

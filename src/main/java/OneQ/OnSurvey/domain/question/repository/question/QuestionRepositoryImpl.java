@@ -2,7 +2,6 @@ package OneQ.OnSurvey.domain.question.repository.question;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -17,7 +16,6 @@ import static OneQ.OnSurvey.domain.question.entity.QQuestion.question;
 public class QuestionRepositoryImpl implements QuestionRepository {
     private final QuestionJpaRepository questionJpaRepository;
 
-    @PersistenceContext
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override

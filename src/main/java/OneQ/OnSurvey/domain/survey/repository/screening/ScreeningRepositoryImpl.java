@@ -2,7 +2,6 @@ package OneQ.OnSurvey.domain.survey.repository.screening;
 
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -15,7 +14,6 @@ import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 public class ScreeningRepositoryImpl implements ScreeningRepository {
     private final ScreeningJpaRepository screeningJpaRepository;
 
-    @PersistenceContext
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override

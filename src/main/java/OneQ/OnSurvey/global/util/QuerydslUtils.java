@@ -8,6 +8,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import com.querydsl.core.types.dsl.StringTemplate;
 import org.springframework.data.domain.Pageable;
 
 public abstract class QuerydslUtils {
@@ -23,8 +24,7 @@ public abstract class QuerydslUtils {
 
     public static StringTemplate convertLocalDateTimeIntoStringTemplate(LocalDateTime dateTime) {
         String dateFormat = dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        StringTemplate formattedDate = Expressions.stringTemplate("datetime({0})", dateFormat);
-    
-        return formattedDate;
+
+        return Expressions.stringTemplate("datetime({0})", dateFormat);
     }
 }
