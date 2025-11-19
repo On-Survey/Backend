@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -36,8 +37,9 @@ public class MemberSurveyStatus extends BaseEntity {
     @Column(name = "is_responded")
     private Boolean isResponded;
 
-    @Builder.Default
     @Column(name = "is_screened")
+    @ColumnDefault("FALSE")
+    @Builder.Default
     private Boolean isScreened = false;
 
     public boolean isExcluded() {
