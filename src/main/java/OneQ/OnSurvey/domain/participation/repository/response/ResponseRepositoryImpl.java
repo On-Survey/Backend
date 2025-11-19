@@ -44,4 +44,9 @@ public class ResponseRepositoryImpl implements ResponseRepository {
     public Response save(Response response) {
         return responseJpaRepository.save(response);
     }
+
+    @Override
+    public boolean existsBySurveyIdAndMemberId(Long surveyId, Long memberId) {
+        return responseJpaRepository.existsBySurveyIdAndMemberId(surveyId, memberId);
+    }
 }
