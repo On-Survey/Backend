@@ -102,12 +102,11 @@ public class ParticipationController {
     @PostMapping("surveys/{surveyId}")
     @Operation(summary = "설문에 대한 응답을 생성합니다.")
     public SuccessResponse<Boolean> createQuestionAnswer(
-        //@AuthenticationPrincipal CustomUserDetails details,
+        @AuthenticationPrincipal CustomUserDetails details,
         @PathVariable Long surveyId,
         @RequestBody InsertQuestionAnswerRequest request
     ) {
-        //Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
-        Long memberId = 1L;
+        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
 
         AnswerInsertDto answerInsertDto = request.toDto(memberId);
 
