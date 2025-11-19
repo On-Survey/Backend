@@ -38,7 +38,6 @@ public class MemberRepositoryImpl implements MemberRepository {
     public Set<Interest> findMemberInterestsById(Long memberId) {
         return jpaQueryFactory.select(member.interests)
             .from(member)
-            .leftJoin(member.interests).fetchJoin()
             .where(member.id.eq(memberId))
             .fetchOne();
     }
