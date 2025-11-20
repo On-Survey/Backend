@@ -1,0 +1,34 @@
+package OneQ.OnSurvey.global.infra.toss.iap.controller;
+
+import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.infra.toss.iap.dto.PaymentSummaryResponse;
+import OneQ.OnSurvey.global.infra.toss.iap.service.PaymentQueryService;
+import OneQ.OnSurvey.global.response.SuccessResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/v1/payments")
+public class PaymentController {
+
+    private final PaymentQueryService paymentQueryService;
+
+    @GetMapping()
+    @Operation(summary = "본인 결제 내역 조회")
+    public SuccessResponse<List<PaymentSummaryResponse>> getMyPayments(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userKey = userDetails.getUserKey();
+        List<PaymentSummaryResponse> payments = paymentQueryService.getPaymentsByUserKey(userKey);
+
+        return SuccessResponse.ok(payments);
+    }
+}
+
