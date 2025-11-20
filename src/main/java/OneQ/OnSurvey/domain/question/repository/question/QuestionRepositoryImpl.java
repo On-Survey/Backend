@@ -53,6 +53,6 @@ public class QuestionRepositoryImpl implements QuestionRepository {
 
     @Override
     public void deleteAll(Set<Long> idList) {
-        questionJpaRepository.deleteAllById(idList);
+        questionJpaRepository.deleteAllByIdInBatch(idList);
     }
 }

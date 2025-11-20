@@ -33,7 +33,7 @@ public class ChoiceOptionRepositoryImpl implements ChoiceOptionRepository {
     }
 
     @Override
-    public Boolean deleteAll(Collection<Long> optionIdList) {
-        return choiceOptionJpaRepository.deleteAllByChoiceOptionIdIsIn(optionIdList);
+    public void deleteAll(Collection<Long> optionIdList) {
+        choiceOptionJpaRepository.deleteAllByIdInBatch(optionIdList);
     }
 }

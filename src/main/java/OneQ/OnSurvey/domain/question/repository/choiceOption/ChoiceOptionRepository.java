@@ -12,5 +12,5 @@ public interface ChoiceOptionRepository {
 
     List<ChoiceOption> saveAll(Collection<ChoiceOption> choiceOptions);
 
-    Boolean deleteAll(Collection<Long> idList);
+    void deleteAll(Collection<Long> idList);
 }

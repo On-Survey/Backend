@@ -143,14 +143,16 @@ public class FormController implements FormControllerDoc {
 
         optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
 
-        optionUpsertDtoList.forEach(upsertDto -> {
+        List<QuestionUpsertDto.UpsertInfo> result = optionUpsertDtoList.stream().map(upsertDto -> {
             Long questionId = upsertDto.getQuestionId();
 
             QuestionUpsertDto.UpsertInfo upsertInfo = questionIdUpsertInfoListMap.get(questionId);
             upsertInfo.setOptions(upsertDto.getOptionInfoList());
-        });
 
-        return SuccessResponse.ok(new UpdateQuestionResponse(questionUpsertDto.getSurveyId(), questionUpsertDto.getUpsertInfoList()));
+            return upsertInfo;
+        }).toList();
+
+        return SuccessResponse.ok(new UpdateQuestionResponse(questionUpsertDto.getSurveyId(), result));
     }
 
     @PatchMapping("surveys/{surveyId}")
