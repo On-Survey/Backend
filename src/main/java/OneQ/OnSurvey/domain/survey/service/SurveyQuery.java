@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface SurveyQuery {
     SurveyManagementDetailResponse getSurvey(Long surveyId);
-    List<SurveyManagementResponse.SurveyInfo> getSurveyListByMemberId(Long memberId);
+    List<SurveyManagementResponse.SurveyInformation> getSurveyListByMemberId(Long memberId);
     SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId
     );

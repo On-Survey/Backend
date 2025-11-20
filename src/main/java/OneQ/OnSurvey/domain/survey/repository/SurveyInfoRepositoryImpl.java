@@ -4,6 +4,7 @@ import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,5 +22,10 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
     @Override
     public Optional<SurveyInfo> findBySurveyId(Long surveyId) {
         return surveyInfoJpaRepository.findBySurveyId(surveyId);
+    }
+
+    @Override
+    public List<SurveyInfo> findBySurveyIdIn(List<Long> surveyIds) {
+        return surveyInfoJpaRepository.findBySurveyIdIn(surveyIds);
     }
 }

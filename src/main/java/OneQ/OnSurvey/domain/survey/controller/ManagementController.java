@@ -49,7 +49,7 @@ public class ManagementController {
         Long userKey = details.getUserKey();
         Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
 
-        List<SurveyManagementResponse.SurveyInfo> surveyInfoList = surveyQuery.getSurveyListByMemberId(memberId);
+        List<SurveyManagementResponse.SurveyInformation> surveyInfoList = surveyQuery.getSurveyListByMemberId(memberId);
 
         surveyInfoList.forEach(info -> {
             int count = responseQuery.getResponseCountBySurveyId(info.getSurveyId());

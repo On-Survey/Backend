@@ -22,10 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.ONGOING;
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
@@ -50,10 +49,24 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public List<SurveyManagementResponse.SurveyInfo> getSurveyListByMemberId(Long memberId) {
+    public List<SurveyManagementResponse.SurveyInformation> getSurveyListByMemberId(Long memberId) {
         List<Survey> surveyList = surveyRepository.getSurveyListByMemberId(memberId);
 
-        return surveyList.stream().map(SurveyManagementResponse::fromEntity).toList();
+        List<Long> surveyIds = surveyList.stream()
+                .map(Survey::getId)
+                .toList();
+
+        List<SurveyInfo> surveyInfos = surveyInfoRepository.findBySurveyIdIn(surveyIds);
+
+        Map<Long, SurveyInfo> infoMap = surveyInfos.stream()
+                .collect(Collectors.toMap(SurveyInfo::getSurveyId, Function.identity()));
+
+        return surveyList.stream()
+                .map(survey -> {
+                    SurveyInfo info = infoMap.get(survey.getId());
+                    return SurveyManagementResponse.fromEntity(survey, info);
+                })
+                .toList();
     }
 
     @Override
