@@ -48,4 +48,16 @@ public class SurveyManagementResponse {
             .updatedAt(survey.getUpdatedAt())
             .build();
     }
+
+    public static SurveyInformation fromEntity(Survey survey) {
+        return SurveyInformation.builder()
+            .surveyId(survey.getId())
+            .title(survey.getTitle())
+            .description(survey.getDescription())
+            .status(survey.getStatus())
+            .deadLine(survey.getDeadline())
+            .createdAt(survey.getCreatedAt())
+            .updatedAt(survey.getUpdatedAt())
+            .build();
+    }
 }

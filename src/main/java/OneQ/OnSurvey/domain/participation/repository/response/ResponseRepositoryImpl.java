@@ -5,7 +5,10 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 
@@ -38,6 +41,20 @@ public class ResponseRepositoryImpl implements ResponseRepository {
     @Override
     public Integer getResponseCountBySurveyId(Long surveyId) {
         return responseJpaRepository.countResponsesBySurveyId(surveyId);
+    }
+
+    @Override
+    public Map<Long, Long> getResponseCountsBySurveyIds(Collection<Long> surveyIds) {
+        return jpaQueryFactory.select(response.surveyId, response.surveyId.count())
+            .from(response)
+            .where(response.surveyId.in(surveyIds))
+            .groupBy(response.surveyId)
+            .fetch()
+            .stream()
+            .collect(Collectors.toMap(
+                tuple -> tuple.get(response.surveyId),
+                tuple -> tuple.get(response.surveyId.count())
+            ));
     }
 
     @Override

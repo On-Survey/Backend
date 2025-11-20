@@ -26,6 +26,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -49,13 +52,31 @@ public class ManagementController {
         Long userKey = details.getUserKey();
         Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
 
+        log.info("[MANAGEMENT] 사용자 생성 설문 조회 - memberId: {}", memberId);
+
         List<SurveyManagementResponse.SurveyInformation> surveyInfoList = surveyQuery.getSurveyListByMemberId(memberId);
 
-        surveyInfoList.forEach(info -> {
-            int count = responseQuery.getResponseCountBySurveyId(info.getSurveyId());
-            info.updateCurrentParticipationCount(count);
-            }
-        );
+
+        Map<Long, SurveyManagementResponse.SurveyInformation> responseExistSurveyIdInformationMap = surveyInfoList.stream()
+            .filter(info -> SurveyStatus.ONGOING.equals(info.getStatus())
+                                            || SurveyStatus.CLOSED.equals(info.getStatus()))
+            .collect(Collectors.toMap(
+                SurveyManagementResponse.SurveyInformation::getSurveyId,
+                Function.identity()
+            ));
+
+        if (!responseExistSurveyIdInformationMap.isEmpty()) {
+            log.info("[MANAGEMENT] 사용자 생성 설문 정보 조회 - IDs: {}", responseExistSurveyIdInformationMap.keySet());
+
+            Map<Long, Long> surveyResponseCountMap
+                = responseQuery.getResponseCountsBySurveyIds(responseExistSurveyIdInformationMap.keySet());
+
+            surveyResponseCountMap.forEach((surveyId, count) -> {
+                SurveyManagementResponse.SurveyInformation surveyInformation = responseExistSurveyIdInformationMap.get(surveyId);
+                surveyInformation.updateCurrentParticipationCount(Math.toIntExact(count));
+            });
+        }
+
         return SuccessResponse.ok(new SurveyManagementResponse(surveyInfoList));
     }
 

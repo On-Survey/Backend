@@ -63,8 +63,10 @@ public class SurveyQueryService implements SurveyQuery {
 
         return surveyList.stream()
                 .map(survey -> {
-                    SurveyInfo info = infoMap.get(survey.getId());
-                    return SurveyManagementResponse.fromEntity(survey, info);
+                    SurveyInfo info = infoMap.getOrDefault(survey.getId(), null);
+                    return info == null
+                        ? SurveyManagementResponse.fromEntity(survey)
+                        : SurveyManagementResponse.fromEntity(survey, info);
                 })
                 .toList();
     }
