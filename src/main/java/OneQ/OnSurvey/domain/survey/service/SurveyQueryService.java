@@ -156,7 +156,7 @@ public class SurveyQueryService implements SurveyQuery {
                     survey.getId(),
                     survey.getTitle(),
                     survey.getStatus(),
-                    survey.getTotalCoin(),
+                    survey.getTotalCoin() != null ? survey.getTotalCoin() : 0,
                     survey.getCreatedAt().toLocalDate(),
                     survey.getDeadline()
             );
