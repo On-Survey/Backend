@@ -5,14 +5,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-@Getter @SuperBuilder
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity @Table(name = "screening_answer")
 public class ScreeningAnswer extends AbstractAnswer {
     @Column(name = "screening_id")
@@ -20,6 +18,7 @@ public class ScreeningAnswer extends AbstractAnswer {
 
     private Boolean content;
 
+    @Builder
     public static ScreeningAnswer of(
         Long screeningId,
         Long memberId,

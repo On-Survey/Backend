@@ -5,39 +5,33 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-@Getter @SuperBuilder
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity @Table(name = "question_answer")
 public class QuestionAnswer extends AbstractAnswer {
+
     @Column(name = "question_id")
     private Long questionId;
 
     @Column(length = 512)
     private String content;
 
-    public static QuestionAnswer of(
-        Long questionId,
-        Long memberId,
-        String content
-    ) {
-        return QuestionAnswer.builder()
-            .questionId(questionId)
-            .memberId(memberId)
-            .content(content)
-            .build();
+    @Builder
+    private QuestionAnswer(Long questionId, Long memberId, String content) {
+        this.questionId = questionId;
+        this.memberId = memberId;
+        this.content = content;
     }
 
-    public static QuestionAnswer from(AnswerInsertDto.AnswerInfo answerInfo) {
-        return QuestionAnswer.of(
-            answerInfo.getId(),
-            answerInfo.getMemberId(),
-            answerInfo.getContent()
-        );
+    public static QuestionAnswer from(AnswerInsertDto.AnswerInfo info) {
+        return QuestionAnswer.builder()
+                .questionId(info.getId())
+                .memberId(info.getMemberId())
+                .content(info.getContent())
+                .build();
     }
 }
