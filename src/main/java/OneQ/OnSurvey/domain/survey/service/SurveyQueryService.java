@@ -169,19 +169,19 @@ public class SurveyQueryService implements SurveyQuery {
         }
 
         // [임시]
-        surveyRepository.getSurveyById(10L).ifPresent(survey10 -> {
+        surveyRepository.getSurveyById(12L).ifPresent(survey12 -> {
             MySurveyItemResponse tmp = new MySurveyItemResponse(
-                    survey10.getId(),
-                    survey10.getTitle(),
-                    survey10.getStatus(),
-                    survey10.getTotalCoin() != null ? survey10.getTotalCoin() : 0,
-                    survey10.getCreatedAt().toLocalDate(),
-                    survey10.getDeadline()
+                    survey12.getId(),
+                    survey12.getTitle(),
+                    survey12.getStatus(),
+                    survey12.getTotalCoin() != null ? survey12.getTotalCoin() : 0,
+                    survey12.getCreatedAt().toLocalDate(),
+                    survey12.getDeadline()
             );
 
-            if (survey10.getStatus() == REFUNDED) {
+            if (survey12.getStatus() == REFUNDED) {
                 refunded.add(tmp);
-            } else if (survey10.getStatus() == ONGOING || survey10.getStatus() == SurveyStatus.CLOSED) {
+            } else if (survey12.getStatus() == ONGOING || survey12.getStatus() == SurveyStatus.CLOSED) {
                 ongoing.add(tmp);
             }
         });
