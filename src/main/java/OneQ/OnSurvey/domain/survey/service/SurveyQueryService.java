@@ -168,6 +168,25 @@ public class SurveyQueryService implements SurveyQuery {
             }
         }
 
+        // [임시]
+        surveyRepository.getSurveyById(10L).ifPresent(survey10 -> {
+            MySurveyItemResponse tmp = new MySurveyItemResponse(
+                    survey10.getId(),
+                    survey10.getTitle(),
+                    survey10.getStatus(),
+                    survey10.getTotalCoin() != null ? survey10.getTotalCoin() : 0,
+                    survey10.getCreatedAt().toLocalDate(),
+                    survey10.getDeadline()
+            );
+
+            if (survey10.getStatus() == REFUNDED) {
+                refunded.add(tmp);
+            } else if (survey10.getStatus() == ONGOING || survey10.getStatus() == SurveyStatus.CLOSED) {
+                ongoing.add(tmp);
+            }
+        });
+        // 여기까지 임시 코드
+
         Comparator<MySurveyItemResponse> byDateDesc =
                 Comparator.comparing(MySurveyItemResponse::createdDate).reversed();
 
