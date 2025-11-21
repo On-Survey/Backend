@@ -37,10 +37,10 @@ public class Survey extends BaseEntity {
     @Column(name = "member_id")
     private Long memberId;
 
-    @Column(length = 32)
+    @Column(length = 50)
     private String title;
 
-    @Column(length = 50)
+    @Column(length = 200)
     private String description;
 
     private LocalDateTime deadline;
