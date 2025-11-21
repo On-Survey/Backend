@@ -192,8 +192,20 @@ public class ParticipationController {
         AnswerInsertDto answerInsertDto = request.toDto(memberId);
 
         questionAnswerCommand.insertAnswers(answerInsertDto);
-        responseCommand.createResponse(surveyId, memberId);
 
         return SuccessResponse.ok(true);
+    }
+
+    @PostMapping("surveys/{surveyId}/complete")
+    @Operation(summary = "설문 작성을 완료합니다.")
+    public SuccessResponse<Boolean> completeSurvey(
+            @AuthenticationPrincipal CustomUserDetails details,
+            @PathVariable Long surveyId
+    ) {
+        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
+        log.info("[PARTICIPATION] 설문 완료 - surveyId: {}, memberId: {}", surveyId, memberId);
+
+        Boolean result = responseCommand.createResponse(surveyId, memberId);
+        return SuccessResponse.ok(result);
     }
 }
