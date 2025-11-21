@@ -56,15 +56,6 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
         List<AnswerStats> textAnswerStats = textQuestionIdList.isEmpty() ?
             List.of() : answerRepository.getAnswersByQuestionIds(textQuestionIdList);
 
-        // 임시 로그
-        log.info("[QUESTION_ANSWER_SERVICE] nonTextAnswerStats questionIds: {}",
-                nonTextAnswerStats.stream()
-                        .map(AnswerStats::getQuestionId)
-                        .distinct()
-                        .toList()
-        );
-        //
-
         Map<Long, Map<String, Long>> nonTextAnswerMap = nonTextAnswerStats.stream()
             .collect(Collectors.groupingBy(
                 AnswerStats::getQuestionId,
