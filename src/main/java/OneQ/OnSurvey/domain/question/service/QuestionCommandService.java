@@ -83,7 +83,7 @@ public class QuestionCommandService implements QuestionCommand {
         log.info("[QUESTION:COMMAND:upsertQuestionList] 생성되는 문항 개수: {}", newInfoList.size());
 
         // 4. Delete 대상 ID 추출 및 삭제
-        if (!newInfoList.isEmpty()) {
+        if (newInfoList.isEmpty()) {
             Set<Long> deleteIdSet = prevQuestionList.stream()
                 .map(Question::getQuestionId)
                 .filter(questionId -> !updateIdSet.contains(questionId))
