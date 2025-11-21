@@ -170,19 +170,20 @@ public class SurveyQueryService implements SurveyQuery {
 
         // [임시]
         surveyRepository.getSurveyById(24L).ifPresent(survey24 -> {
-            MySurveyItemResponse tmp = new MySurveyItemResponse(
-                    survey24.getId(),
-                    survey24.getTitle(),
-                    survey24.getStatus(),
-                    survey24.getTotalCoin() != null ? survey24.getTotalCoin() : 0,
-                    survey24.getCreatedAt().toLocalDate(),
-                    survey24.getDeadline()
-            );
+            boolean alreadyExists = ongoing.stream().anyMatch(i -> i.surveyId().equals(survey24.getId()))
+                    || refunded.stream().anyMatch(i -> i.surveyId().equals(survey24.getId()));
 
-            if (survey24.getStatus() == REFUNDED) {
-                refunded.add(tmp);
-            } else if (survey24.getStatus() == ONGOING || survey24.getStatus() == SurveyStatus.CLOSED) {
+            if (!alreadyExists) {
+                MySurveyItemResponse tmp = new MySurveyItemResponse(
+                        survey24.getId(),
+                        survey24.getTitle(),
+                        survey24.getStatus(),
+                        survey24.getTotalCoin() != null ? survey24.getTotalCoin() : 0,
+                        survey24.getCreatedAt().toLocalDate(),
+                        survey24.getDeadline()
+                );
                 ongoing.add(tmp);
+                log.info("[MY_SURVEY] force-added survey24 to ongoing list");
             }
         });
         // 여기까지 임시 코드
