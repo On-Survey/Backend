@@ -89,10 +89,11 @@ public class QuestionCommandService implements QuestionCommand {
                 .filter(questionId -> !updateIdSet.contains(questionId))
                 .collect(Collectors.toSet());
 
-            log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 문항 IDs: {}", deleteIdSet);
-            questionRepository.deleteAll(deleteIdSet);
-
-            log.info("[QUESTION:COMMAND:upsertQuestionList] DELETE 진행");
+            if (!deleteIdSet.isEmpty()) {
+                log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 문항 IDs: {}", deleteIdSet);
+                questionRepository.deleteAll(deleteIdSet);
+                log.info("[QUESTION:COMMAND:upsertQuestionList] DELETE 진행");
+            }
         }
 
         // 5. Update 대상 수정

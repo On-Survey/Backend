@@ -72,6 +72,11 @@ public class FormController implements FormControllerDoc {
             log.warn("[FORM:createQuestion] 문항 데이터가 비어있습니다.");
             throw new CustomException(SurveyErrorCode.SURVEY_FORM_EMPTY_REQUEST);
         }
+        if (request.getQuestions().getFirst().getQuestionId() != null) {
+            log.warn("[FORM:createQuestion] 문항 ID가 이미 존재합니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_DUPLICATE_POST);
+        }
+
         if (request.getQuestions().getFirst().getQuestionType() == null) {
             log.warn("[FORM:createQuestion] 문항 타입이 유효하지 않습니다.");
             throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
@@ -114,6 +119,7 @@ public class FormController implements FormControllerDoc {
             throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
         }
 
+        // questionUpserDto : 원본 문항 정보
         QuestionUpsertDto questionUpsertDto =
             QuestionConverter.toQuestionUpsertDto(surveyId, request.getQuestions());
 
@@ -140,19 +146,23 @@ public class FormController implements FormControllerDoc {
             .toList();
         log.info("[FORM:updateSurvey] 문항 별 보기 리스트: {}", optionUpsertDtoList);
 
-
         optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
+        Map<Long, OptionUpsertDto> optionDtoMap = optionUpsertDtoList.stream()
+            .collect(Collectors.toMap(
+                OptionUpsertDto::getQuestionId,
+                Function.identity()
+            ));
 
-        List<QuestionUpsertDto.UpsertInfo> result = optionUpsertDtoList.stream().map(upsertDto -> {
-            Long questionId = upsertDto.getQuestionId();
+        questionUpsertDto.getUpsertInfoList().forEach(upsertInfo -> {
+            Long questionId = upsertInfo.getQuestionId();
+            OptionUpsertDto optionInfoList = optionDtoMap.get(questionId);
 
-            QuestionUpsertDto.UpsertInfo upsertInfo = questionIdUpsertInfoListMap.get(questionId);
-            upsertInfo.setOptions(upsertDto.getOptionInfoList());
+            if (optionInfoList != null) {
+                upsertInfo.setOptions(optionInfoList.getOptionInfoList());
+            }
+        });
 
-            return upsertInfo;
-        }).toList();
-
-        return SuccessResponse.ok(new UpdateQuestionResponse(questionUpsertDto.getSurveyId(), result));
+        return SuccessResponse.ok(new UpdateQuestionResponse(questionUpsertDto.getSurveyId(), questionUpsertDto.getUpsertInfoList()));
     }
 
     @PatchMapping("surveys/{surveyId}")
