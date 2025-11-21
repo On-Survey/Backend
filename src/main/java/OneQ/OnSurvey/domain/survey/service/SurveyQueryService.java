@@ -145,6 +145,7 @@ public class SurveyQueryService implements SurveyQuery {
 
     @Override
     public MySurveyListResponse getMySurveys(Long memberId) {
+        log.info("[MY_SURVEY] getMySurveys service called, memberId={}", memberId);
 
         List<Survey> surveys = surveyRepository.getSurveyListByMemberId(memberId);
 
@@ -170,6 +171,8 @@ public class SurveyQueryService implements SurveyQuery {
 
         // [임시]
         surveyRepository.getSurveyById(24L).ifPresent(survey24 -> {
+            log.info("[MY_SURVEY] force add survey 24, status={}", survey24.getStatus());
+
             boolean alreadyExists = ongoing.stream().anyMatch(i -> i.surveyId().equals(survey24.getId()))
                     || refunded.stream().anyMatch(i -> i.surveyId().equals(survey24.getId()));
 
