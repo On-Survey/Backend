@@ -20,17 +20,18 @@ public class MemberSurveyStatusRepositoryImpl implements MemberSurveyStatusRepos
 
     @Override
     public List<Long> getExcludedSurveyIdList(Long memberId, boolean checkScreened) {
-        BooleanBuilder builder = new BooleanBuilder();
+        BooleanBuilder statusBuilder = new BooleanBuilder();
 
-        builder.and(memberSurveyStatus.memberId.eq(memberId));
+        statusBuilder.or(memberSurveyStatus.isResponded.eq(true));
         // 스크리닝 응답 여부를 확인하는 경우에만 조건 추가
         if (checkScreened) {
-            builder.and(memberSurveyStatus.isScreened.eq(true));
+            statusBuilder.or(memberSurveyStatus.isScreened.eq(true));
         }
 
         return jpaQueryFactory.select(memberSurveyStatus.surveyId)
             .from(memberSurveyStatus)
-            .where(builder)
+            .where(memberSurveyStatus.memberId.eq(memberId)
+                .and(statusBuilder))
             .fetch();
     }
 
