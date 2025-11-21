@@ -93,9 +93,10 @@ public class ManagementController {
 
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
 
-        if (!memberId.equals(response.getMemberId())) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
+        //TODO 임시 비활성화
+//        if (!memberId.equals(response.getMemberId())) {
+//            throw new CustomException(ErrorCode.FORBIDDEN);
+//        }
 
         int count = responseQuery.getResponseCountBySurveyId(surveyId);
         response.updateCurrentCount(count);
