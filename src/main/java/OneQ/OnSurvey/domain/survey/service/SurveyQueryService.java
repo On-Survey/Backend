@@ -52,6 +52,17 @@ public class SurveyQueryService implements SurveyQuery {
     public List<SurveyManagementResponse.SurveyInformation> getSurveyListByMemberId(Long memberId) {
         List<Survey> surveyList = surveyRepository.getSurveyListByMemberId(memberId);
 
+        // [임시] 24번 설문 강제 추가
+        surveyRepository.getSurveyById(24L).ifPresent(survey24 -> {
+            boolean exists = surveyList.stream()
+                    .anyMatch(s -> s.getId().equals(survey24.getId()));
+
+            if (!exists) {
+                surveyList.add(survey24);
+            }
+        });
+        // [임시] 여기까지
+
         List<Long> surveyIds = surveyList.stream()
                 .map(Survey::getId)
                 .toList();
@@ -145,8 +156,6 @@ public class SurveyQueryService implements SurveyQuery {
 
     @Override
     public MySurveyListResponse getMySurveys(Long memberId) {
-        log.info("[MY_SURVEY] getMySurveys service called, memberId={}", memberId);
-
         List<Survey> surveys = surveyRepository.getSurveyListByMemberId(memberId);
 
         List<MySurveyItemResponse> ongoing = new ArrayList<>();
@@ -168,28 +177,6 @@ public class SurveyQueryService implements SurveyQuery {
                 ongoing.add(item);
             }
         }
-
-        // [임시]
-        surveyRepository.getSurveyById(24L).ifPresent(survey24 -> {
-            log.info("[MY_SURVEY] force add survey 24, status={}", survey24.getStatus());
-
-            boolean alreadyExists = ongoing.stream().anyMatch(i -> i.surveyId().equals(survey24.getId()))
-                    || refunded.stream().anyMatch(i -> i.surveyId().equals(survey24.getId()));
-
-            if (!alreadyExists) {
-                MySurveyItemResponse tmp = new MySurveyItemResponse(
-                        survey24.getId(),
-                        survey24.getTitle(),
-                        survey24.getStatus(),
-                        survey24.getTotalCoin() != null ? survey24.getTotalCoin() : 0,
-                        survey24.getCreatedAt().toLocalDate(),
-                        survey24.getDeadline()
-                );
-                ongoing.add(tmp);
-                log.info("[MY_SURVEY] force-added survey24 to ongoing list");
-            }
-        });
-        // 여기까지 임시 코드
 
         Comparator<MySurveyItemResponse> byDateDesc =
                 Comparator.comparing(MySurveyItemResponse::createdDate).reversed();
