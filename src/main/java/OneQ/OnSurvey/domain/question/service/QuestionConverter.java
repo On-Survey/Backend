@@ -64,11 +64,14 @@ public class QuestionConverter {
     }
 
     public static DefaultQuestionDto toQuestionDto(Question question) {
-        return switch (question) {
-            case Choice choice -> ChoiceDto.fromEntity(choice);
-            case Rating rating -> RatingDto.fromEntity(rating);
-            case DateAnswer date -> DateDto.fromEntity(date);
-            default -> DefaultQuestionDto.fromEntity(question);
-        };
+        if (question instanceof Choice choice) {
+            return ChoiceDto.fromEntity(choice);
+        } else if (question instanceof Rating rating) {
+            return RatingDto.fromEntity(rating);
+        } else if (question instanceof DateAnswer dateAnswer) {
+            return DateDto.fromEntity(dateAnswer);
+        } else {
+            return DefaultQuestionDto.fromEntity(question);
+        }
     }
 }
