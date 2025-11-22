@@ -22,6 +22,9 @@ public class Rating extends Question {
     @Column(name = "min_value")
     private String minValue;
 
+    @Column(name = "rate")
+    private Integer rate;
+
     public static Rating of(
         Long surveyId,
         Integer order,
@@ -30,6 +33,7 @@ public class Rating extends Question {
         Boolean isRequired,
         String maxValue,
         String minValue,
+        Integer rate,
         QuestionType type
     ) {
         return Rating.builder()
@@ -40,6 +44,7 @@ public class Rating extends Question {
             .isRequired(isRequired)
             .maxValue(maxValue)
             .minValue(minValue)
+            .rate(rate)
             .type(type.name())
             .build();
     }
@@ -50,10 +55,12 @@ public class Rating extends Question {
         Boolean isRequired,
         Integer order,
         String maxValue,
-        String minValue
+        String minValue,
+        Integer rate
     ) {
         super.updateQuestion(title, description, isRequired, order);
         this.maxValue = maxValue;
         this.minValue = minValue;
+        this.rate = rate;
     }
 }

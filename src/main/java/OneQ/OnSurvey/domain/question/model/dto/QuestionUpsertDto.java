@@ -37,6 +37,7 @@ public class QuestionUpsertDto {
         // Rating 필드
         String minValue;
         String maxValue;
+        Integer rate; // 선택 가능한 점수 개수
 
         // Date 필드
         LocalDateTime defaultDate;
@@ -65,6 +66,7 @@ public class QuestionUpsertDto {
                 yield builder
                     .maxValue(rating.getMaxValue())
                     .minValue(rating.getMinValue())
+                    .rate(rating.getRate())
                     .build();
             }
             case DATE -> {

@@ -8,8 +8,9 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-@Getter
+@Getter @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity @Table(name = "question_answer")
 public class QuestionAnswer extends AbstractAnswer {

@@ -12,11 +12,13 @@ import lombok.experimental.SuperBuilder;
 public class RatingDto extends DefaultQuestionDto {
     private String minValue;
     private String maxValue;
+    private Integer rate;
 
     public static RatingDto fromEntity(Rating rating) {
         return RatingDto.builder()
             .minValue(rating.getMinValue())
             .maxValue(rating.getMaxValue())
+            .rate(rating.getRate())
             .questionId(rating.getQuestionId())
             .surveyId(rating.getSurveyId())
             .questionType(rating.getType())
