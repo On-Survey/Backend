@@ -52,17 +52,6 @@ public class SurveyQueryService implements SurveyQuery {
     public List<SurveyManagementResponse.SurveyInformation> getSurveyListByMemberId(Long memberId) {
         List<Survey> surveyList = surveyRepository.getSurveyListByMemberId(memberId);
 
-        // [임시] 24번 설문 강제 추가
-        surveyRepository.getSurveyById(24L).ifPresent(survey24 -> {
-            boolean exists = surveyList.stream()
-                    .anyMatch(s -> s.getId().equals(survey24.getId()));
-
-            if (!exists) {
-                surveyList.add(survey24);
-            }
-        });
-        // [임시] 여기까지
-
         List<Long> surveyIds = surveyList.stream()
                 .map(Survey::getId)
                 .toList();
