@@ -48,12 +48,29 @@ public class FormController implements FormControllerDoc {
         @RequestBody SurveyFormCreateRequest request
     ) {
         Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
-
         log.info("[FORM] 설문 생성 - title: {}, description: {}, memberId: {}",
             request.title(), request.description(), memberId);
 
         SurveyFormResponse response = surveyCommand.upsertSurvey(
             memberId, null, request
+        );
+
+        return SuccessResponse.ok(response);
+    }
+
+    @PatchMapping("surveys/title/{surveyId}")
+    @Operation(summary = "설문 제목과 상세설명을 수정합니다.")
+    public SuccessResponse<SurveyFormResponse> updateSurvey(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestBody SurveyFormCreateRequest request,
+        @PathVariable Long surveyId
+    ) {
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
+        log.info("[FORM:updateSurvey] 설문 수정 - surveyId: {}, title: {}, description: {}, memberId: {}",
+            surveyId, request.title(), request.description(), memberId);
+
+        SurveyFormResponse response = surveyCommand.upsertSurvey(
+            memberId, surveyId, request
         );
 
         return SuccessResponse.ok(response);
