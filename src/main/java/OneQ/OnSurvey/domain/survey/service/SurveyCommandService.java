@@ -56,7 +56,10 @@ public class SurveyCommandService implements SurveyCommand {
             log.info("[SURVEY:COMMAND:upsertSurvey] 설문 생성 완료 - surveyId={}", survey.getId());
         } else {
             survey = surveyRepository.getSurveyById(surveyId)
-                    .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+                    .orElseThrow(() -> {
+                        log.warn("[SURVEY:COMMAND:upsertSurvey] 설문이 존재하지 않음 - surveyId={}, memberId={}", surveyId, memberId);
+                        throw new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND);
+                    });
 
             if (!survey.getMemberId().equals(memberId)) {
                 log.warn("[SURVEY:COMMAND:upsertSurvey] 설문 수정 권한 없음 - surveyId={}, memberId={}", surveyId, memberId);
