@@ -32,7 +32,7 @@ public class QuestionUpsertDto {
         Boolean hasNoneOption;
         Boolean hasCustomInput;
         @Setter
-        List<OptionUpsertDto.OptionInfo> options;
+        List<OptionDto> options;
 
         // Rating 필드
         String minValue;
