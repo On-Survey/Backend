@@ -46,7 +46,6 @@ public class SurveyCommandService implements SurveyCommand {
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
 
         Survey survey;
-        log.info("surveyId: {}", surveyId);
         if (surveyId == null) {
             survey = Survey.of(
                     memberId,
@@ -54,10 +53,24 @@ public class SurveyCommandService implements SurveyCommand {
                     request.description()
             );
             survey = surveyRepository.save(survey);
-            log.info("[SurveyUpsert] 설문 생성 완료 - surveyId={}", survey.getId());
+            log.info("[SURVEY:COMMAND:upsertSurvey] 설문 생성 완료 - surveyId={}", survey.getId());
         } else {
             survey = surveyRepository.getSurveyById(surveyId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+                    .orElseThrow(() -> {
+                        log.warn("[SURVEY:COMMAND:upsertSurvey] 설문이 존재하지 않음 - surveyId={}, memberId={}", surveyId, memberId);
+                        throw new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND);
+                    });
+
+            if (!survey.getMemberId().equals(memberId)) {
+                log.warn("[SURVEY:COMMAND:upsertSurvey] 설문 수정 권한 없음 - surveyId={}, memberId={}", surveyId, memberId);
+                throw new CustomException(SurveyErrorCode.SURVEY_FORBIDDEN);
+            }
+            if (survey.getTitle().equals(request.title())
+                && survey.getDescription().equals(request.description())
+            ) {
+                log.info("[SURVEY:COMMAND:upsertSurvey] 설문 수정 사항 없음 - surveyId={}", surveyId);
+                return SurveyFormResponse.fromEntity(survey);
+            }
 
             survey.updateSurvey(
                     request.title(),
@@ -66,7 +79,7 @@ public class SurveyCommandService implements SurveyCommand {
                     survey.getTotalCoin()
             );
             survey = surveyRepository.save(survey);
-            log.info("[SurveyUpsert] 설문 수정 완료 - surveyId={}", surveyId);
+            log.info("[SURVEY:COMMAND:upsertSurvey] 설문 수정 완료 - surveyId={}", surveyId);
         }
 
         return SurveyFormResponse.fromEntity(survey);
