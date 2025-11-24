@@ -54,7 +54,8 @@ public class QuestionConverter {
                     ).toList()
                 );
             case RatingDto ratingDto -> builder.minValue(ratingDto.getMinValue())
-                .maxValue(ratingDto.getMaxValue());
+                .maxValue(ratingDto.getMaxValue())
+                .rate(ratingDto.getRate());
             case DateDto dateDto -> builder.defaultDate(dateDto.getDate());
             default -> {
             }

@@ -155,7 +155,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getMaxValue(),
-                upsertInfo.getMinValue()
+                upsertInfo.getMinValue(),
+                upsertInfo.getRate()
             );
         } else if (question instanceof NPS nps) {
             nps.updateQuestion(
@@ -227,6 +228,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
+                upsertInfo.getRate(),
                 type
             );
         } else if (QuestionType.CHOICE.equals(type)) {

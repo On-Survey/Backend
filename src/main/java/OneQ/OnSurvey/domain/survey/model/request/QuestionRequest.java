@@ -78,7 +78,8 @@ public class QuestionRequest {
                     "isRequired": false,
                     "questionOrder": 3,
                     "minValue": "최소 라벨",
-                    "maxValue": "최대 라벨"
+                    "maxValue": "최대 라벨",
+                    "rate": 5
                   }
                 ]
                 """
