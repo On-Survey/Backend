@@ -58,7 +58,7 @@ public class FormController implements FormControllerDoc {
         return SuccessResponse.ok(response);
     }
 
-    @PatchMapping("surveys/title/{surveyId}")
+    @PatchMapping("surveys/{surveyId}/display")
     @Operation(summary = "설문 제목과 상세설명을 수정합니다.")
     public SuccessResponse<SurveyFormResponse> updateSurvey(
         @AuthenticationPrincipal CustomUserDetails principal,
