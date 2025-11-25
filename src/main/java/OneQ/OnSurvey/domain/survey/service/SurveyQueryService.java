@@ -44,8 +44,12 @@ public class SurveyQueryService implements SurveyQuery {
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
         Survey survey = surveyRepository.getSurveyById(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+        SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
 
-        return new SurveyManagementDetailResponse(survey.getId(), survey.getMemberId(), survey.getStatus());
+        SurveyManagementDetailResponse response = new SurveyManagementDetailResponse(survey.getId(), survey.getMemberId(), survey.getStatus());
+        response.updateCurrentCount(surveyInfo.getCompletedCount());
+
+        return response;
     }
 
     @Override
