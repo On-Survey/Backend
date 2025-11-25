@@ -91,7 +91,7 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
                 List<String> answerList = new ArrayList<>(); // 기타(직접입력) 답변
                 answerMap.entrySet().stream()
                     .filter(entry -> !frame.containsKey(entry.getKey()))
-                    .forEach(entry -> IntStream.range(0, count.intValue()).forEach((ignored) -> answerList.add(entry.getKey())));
+                    .forEach(entry -> IntStream.range(0, entry.getValue().intValue()).forEach((ignored) -> answerList.add(entry.getKey())));
 
                 detailInfo.setAnswerList(answerList);
             } else { // 기타 (평가형, NPS) 문항
