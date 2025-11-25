@@ -126,7 +126,7 @@ public class ManagementController {
                     .stream().sorted(Comparator.comparingLong(OptionDto::getOptionId)).toList();
 
                 if (!optionDtoList.isEmpty()) {
-                    Map<String, Long> contentSet = optionDtoList.stream()
+                    Map<String, Long> contentMap = optionDtoList.stream()
                         .sorted(Comparator.comparingLong(OptionDto::getOptionId))
                         .collect(Collectors.toMap(
                             OptionDto::getContent,
@@ -134,7 +134,7 @@ public class ManagementController {
                             (existing, replacement) -> existing,
                             () -> new TreeMap<>(Comparator.naturalOrder())
                         ));
-                    detailInfo.setAnswerMap(contentSet);
+                    detailInfo.setAnswerMap(contentMap);
                 }
             });
         }
