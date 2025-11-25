@@ -86,11 +86,12 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
 
                 frame.keySet().forEach(key -> {
                     frame.put(key, answerMap.getOrDefault(key, 0L));
-                    answerMap.remove(key);
                 });
 
                 List<String> answerList = new ArrayList<>(); // 기타(직접입력) 답변
-                answerMap.forEach((key, count) -> IntStream.of(count.intValue()).forEach((ignored) -> answerList.add(key)));
+                answerMap.entrySet().stream()
+                    .filter(entry -> !frame.containsKey(entry.getKey()))
+                    .forEach(entry -> IntStream.range(0, count.intValue()).forEach((ignored) -> answerList.add(entry.getKey())));
 
                 detailInfo.setAnswerList(answerList);
             } else { // 기타 (평가형, NPS) 문항

@@ -28,9 +28,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -100,20 +100,20 @@ public class ManagementController {
         int count = responseQuery.getResponseCountBySurveyId(surveyId);
         response.updateCurrentCount(count);
 
-        List<Long> choiceIdList = new ArrayList<>();
         List<SurveyManagementDetailResponse.DetailInfo> detailInfoList = questionQuery.getQuestionDtoListBySurveyId(surveyId).stream()
-            .map(dto -> {
-                if (dto.isChoice())
-                    choiceIdList.add(dto.getQuestionId());
-                return new SurveyManagementDetailResponse.DetailInfo(
+            .map(dto -> new SurveyManagementDetailResponse.DetailInfo(
                     dto.getQuestionId(),
                     dto.getQuestionOrder(),
                     QuestionType.valueOf(dto.getQuestionType()),
                     dto.getTitle(),
                     dto.getDescription(),
                     dto.getIsRequired()
-                );
-            })
+                ))
+            .toList();
+
+        List<Long> choiceIdList = detailInfoList.stream()
+            .filter(dto -> dto.getType().isChoice())
+            .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
             .toList();
 
         if (!choiceIdList.isEmpty()) {
@@ -122,20 +122,17 @@ public class ManagementController {
                 .collect(Collectors.groupingBy(OptionDto::getQuestionId));
 
             detailInfoList.forEach(detailInfo -> {
-                List<OptionDto> optionDtoList = questionIdOptionInfoMap.getOrDefault(detailInfo.getQuestionId(), List.of())
-                    .stream().sorted(Comparator.comparingLong(OptionDto::getOptionId)).toList();
+                List<OptionDto> optionDtoList = questionIdOptionInfoMap.getOrDefault(detailInfo.getQuestionId(), List.of());
 
-                if (!optionDtoList.isEmpty()) {
-                    Map<String, Long> contentMap = optionDtoList.stream()
-                        .sorted(Comparator.comparingLong(OptionDto::getOptionId))
-                        .collect(Collectors.toMap(
-                            OptionDto::getContent,
-                            dto -> 0L,
-                            (existing, replacement) -> existing,
-                            () -> new TreeMap<>(Comparator.naturalOrder())
-                        ));
-                    detailInfo.setAnswerMap(contentMap);
-                }
+                Map<String, Long> contentMap = optionDtoList.stream()
+                    .sorted(Comparator.comparingLong(OptionDto::getOptionId))
+                    .collect(Collectors.toMap(
+                        OptionDto::getContent,
+                        dto -> 0L,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                    ));
+                detailInfo.setAnswerMap(contentMap.isEmpty() ? Map.of() : contentMap);
             });
         }
 
