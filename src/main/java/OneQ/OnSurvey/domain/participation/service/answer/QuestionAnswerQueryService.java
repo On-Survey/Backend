@@ -4,13 +4,16 @@ import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerStats;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
+import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -73,10 +76,28 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
 
         detailInfoList.forEach(detailInfo -> {
             Long questionId = detailInfo.getQuestionId();
-            if (detailInfo.getType().isText()) {
+            QuestionType questionType = detailInfo.getType();
+
+            if (questionType.isText()) { // 주관식 문항
                 detailInfo.setAnswerList(textAnswerMap.getOrDefault(questionId, List.of()));
-            } else {
-                detailInfo.setAnswerMap(nonTextAnswerMap.getOrDefault(questionId, Map.of()));
+            } else if (questionType.isChoice()) { // 객관식 문항
+                Map<String, Long> frame = detailInfo.getAnswerMap();
+                Map<String, Long> answerMap = nonTextAnswerMap.getOrDefault(questionId, Map.of());
+
+                frame.keySet().forEach(key -> {
+                    frame.put(key, answerMap.getOrDefault(key, 0L));
+                });
+
+                List<String> answerList = new ArrayList<>(); // 기타(직접입력) 답변
+                answerMap.entrySet().stream()
+                    .filter(entry -> !frame.containsKey(entry.getKey()))
+                    .forEach(entry -> IntStream.range(0, entry.getValue().intValue()).forEach((ignored) -> answerList.add(entry.getKey())));
+
+                detailInfo.setAnswerList(answerList);
+            } else { // 기타 (평가형, NPS) 문항
+                Map<String, Long> answerMap = nonTextAnswerMap.getOrDefault(questionId, Map.of());
+
+                detailInfo.setAnswerMap(answerMap);
             }
         });
 

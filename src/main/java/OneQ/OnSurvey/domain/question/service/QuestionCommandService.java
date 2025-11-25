@@ -10,6 +10,7 @@ import OneQ.OnSurvey.domain.question.entity.question.ShortAnswer;
 import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
 import OneQ.OnSurvey.domain.question.entity.question.LongAnswer;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.repository.choiceOption.ChoiceOptionRepository;
@@ -283,21 +284,21 @@ public class QuestionCommandService implements QuestionCommand {
 
         for (OptionUpsertDto upsertDto : upsertDtoList) {
             Long questionId = upsertDto.getQuestionId();
-            List<OptionUpsertDto.OptionInfo> requestInfos = upsertDto.getOptionInfoList();
+            List<OptionDto> requestInfos = upsertDto.getOptionInfoList();
 
             // 1. DB 저장 보기 전체 조회
             List<ChoiceOption> prevOptionList = choiceOptionRepository.getOptionsByQuestionId(questionId);
 
             // 2. Insert/Update 데이터 파티셔닝
-            Map<Boolean, List<OptionUpsertDto.OptionInfo>> partitionUpsertInfoList = requestInfos.stream()
+            Map<Boolean, List<OptionDto>> partitionUpsertInfoList = requestInfos.stream()
                 .collect(Collectors.partitioningBy(info -> info.getOptionId() != null));
 
-            List<OptionUpsertDto.OptionInfo> newInfoList = partitionUpsertInfoList.get(false);
-            List<OptionUpsertDto.OptionInfo> updateInfoList = partitionUpsertInfoList.get(true);
+            List<OptionDto> newInfoList = partitionUpsertInfoList.get(false);
+            List<OptionDto> updateInfoList = partitionUpsertInfoList.get(true);
 
             // 3. Update 대상 ID 추출
             Set<Long> updateIdSet = updateInfoList.stream()
-                .map(OptionUpsertDto.OptionInfo::getOptionId)
+                .map(OptionDto::getOptionId)
                 .collect(Collectors.toSet());
 
             log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 수정되는 문항: {}, 보기 IDs: {}", questionId, updateIdSet);
@@ -315,8 +316,8 @@ public class QuestionCommandService implements QuestionCommand {
             log.info("[QUESTION:COMMAND:upsertChoiceOptionList] DELETE 진행");
 
             // 5. Update 대상 수정
-            Map<Long, OptionUpsertDto.OptionInfo> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
-                OptionUpsertDto.OptionInfo::getOptionId,
+            Map<Long, OptionDto> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
+                OptionDto::getOptionId,
                 Function.identity(),
                 (existing, replace) -> existing
             ));
@@ -326,7 +327,7 @@ public class QuestionCommandService implements QuestionCommand {
 
             updateList.forEach(option -> {
                 Long id = option.getChoiceOptionId();
-                OptionUpsertDto.OptionInfo optionInfo = updateInfoMap.get(id);
+                OptionDto optionInfo = updateInfoMap.get(id);
                 option.updateOption(
                     optionInfo.getContent(),
                     optionInfo.getNextQuestionId()
@@ -358,7 +359,7 @@ public class QuestionCommandService implements QuestionCommand {
 
             return OptionUpsertDto.builder()
                 .questionId(questionId)
-                .optionInfoList(savedList.stream().map(OptionUpsertDto::fromEntity).toList())
+                .optionInfoList(savedList.stream().map(OptionDto::fromEntity).toList())
                 .build();
             })
             .toList();

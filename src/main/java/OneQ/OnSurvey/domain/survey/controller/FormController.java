@@ -154,11 +154,7 @@ public class FormController implements FormControllerDoc {
         List<OptionUpsertDto> optionUpsertDtoList = questionIdUpsertInfoListMap.entrySet().stream()
             .map(entry -> OptionUpsertDto.builder()
                 .questionId(entry.getKey())
-                .optionInfoList(entry.getValue().getOptions().stream().map(optionInfo -> OptionUpsertDto.OptionInfo.builder()
-                    .optionId(optionInfo.getOptionId())
-                    .content(optionInfo.getContent())
-                    .nextQuestionId(optionInfo.getNextQuestionId())
-                    .build()).toList())
+                .optionInfoList(entry.getValue().getOptions())
                 .build())
             .toList();
         log.info("[FORM:updateSurvey] 문항 별 보기 리스트: {}", optionUpsertDtoList);
