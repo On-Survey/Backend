@@ -9,6 +9,7 @@ import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -87,12 +88,11 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
                     frame.put(key, answerMap.getOrDefault(key, 0L));
                     answerMap.remove(key);
                 });
-                if (!answerMap.isEmpty()) { // 기타 문항
-                    List<String> answerList = new ArrayList<>();
-                    answerMap.forEach((key, count) -> IntStream.of(count.intValue()).forEach((ignored) -> answerList.add(key)));
 
-                    detailInfo.setAnswerList(answerList);
-                }
+                List<String> answerList = new ArrayList<>(); // 기타(직접입력) 답변
+                answerMap.forEach((key, count) -> IntStream.of(count.intValue()).forEach((ignored) -> answerList.add(key)));
+
+                detailInfo.setAnswerList(answerList);
             } else { // 기타 (평가형, NPS) 문항
                 Map<String, Long> answerMap = nonTextAnswerMap.getOrDefault(questionId, Map.of());
 
