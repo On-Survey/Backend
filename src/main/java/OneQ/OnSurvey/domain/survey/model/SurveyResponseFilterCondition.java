@@ -39,4 +39,8 @@ public record SurveyResponseFilterCondition(
                 normalizedResidences
         );
     }
+
+    public static SurveyResponseFilterCondition empty() {
+        return new SurveyResponseFilterCondition(List.of(), List.of(), List.of());
+    }
 }

@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyResponseFilterCondition;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.EnumPath;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -48,7 +49,35 @@ public class ResponseRepositoryImpl implements ResponseRepository {
 
     @Override
     public Integer getResponseCountBySurveyId(Long surveyId) {
-        return responseJpaRepository.countResponsesBySurveyId(surveyId);
+        Long cnt = jpaQueryFactory
+                .select(response.count())
+                .from(response)
+                .where(response.surveyId.eq(surveyId))
+                .fetchOne();
+        return cnt == null ? 0 : cnt.intValue();
+    }
+
+    @Override
+    public Integer getResponseCountBySurveyId(
+            Long surveyId,
+            SurveyResponseFilterCondition filter
+    ) {
+        SurveyResponseFilterCondition f =
+                (filter == null ? SurveyResponseFilterCondition.empty() : filter);
+
+        Long cnt = jpaQueryFactory
+                .select(response.count())
+                .from(response)
+                .join(member).on(member.id.eq(response.memberId))
+                .where(
+                        response.surveyId.eq(surveyId),
+                        buildAgeCondition(member.birthDay, f.ages()),
+                        buildGenderCondition(member.gender, f.genders()),
+                        buildResidenceCondition(member.residence, f.residences())
+                )
+                .fetchOne();
+
+        return cnt == null ? 0 : cnt.intValue();
     }
 
     @Override
@@ -75,45 +104,27 @@ public class ResponseRepositoryImpl implements ResponseRepository {
         return responseJpaRepository.existsBySurveyIdAndMemberId(surveyId, memberId);
     }
 
-    @Override
-    public Integer getResponseCountBySurveyId(Long surveyId, SurveyResponseFilterCondition filter) {
-        Long count = jpaQueryFactory
-                .select(response.count())
-                .from(response)
-                .join(member).on(response.memberId.eq(member.id))
-                .where(
-                        response.surveyId.eq(surveyId),
-                        buildAgeCondition(member.birthDay, filter.ages()),
-                        buildGenderCondition(member.gender, filter.genders()),
-                        buildResidenceCondition(member.residence, filter.residences())
-                )
-                .fetchOne();
 
-        return count == null ? 0 : count.intValue();
-    }
-
-    private BooleanExpression buildGenderCondition(
-            com.querydsl.core.types.dsl.EnumPath<Gender> genderPath,
-            List<Gender> genders
-    ) {
+    private BooleanExpression buildGenderCondition(EnumPath<Gender> genderPath, List<Gender> genders) {
         if (genders == null || genders.isEmpty()) return null;
+        if (genders.contains(Gender.ALL)) return null;
         return genderPath.in(genders);
     }
 
-    private BooleanExpression buildResidenceCondition(
-            com.querydsl.core.types.dsl.EnumPath<Residence> residencePath,
-            List<Residence> residences
-    ) {
+    private BooleanExpression buildResidenceCondition(EnumPath<Residence> residencePath, List<Residence> residences) {
         if (residences == null || residences.isEmpty()) return null;
+        if (residences.contains(Residence.ALL)) return null;
         return residencePath.in(residences);
     }
 
     private BooleanExpression buildAgeCondition(StringPath birthDayPath, List<AgeRange> ages) {
         if (ages == null || ages.isEmpty()) return null;
+        if (ages.contains(AgeRange.ALL)) return null;
 
         BooleanExpression exp = null;
         for (AgeRange range : ages) {
             BooleanExpression one = ageRangeExpr(birthDayPath, range);
+            if (one == null) continue;
             exp = (exp == null) ? one : exp.or(one);
         }
         return exp;
