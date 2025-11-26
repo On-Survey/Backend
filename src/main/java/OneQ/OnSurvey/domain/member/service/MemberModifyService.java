@@ -31,6 +31,7 @@ public class MemberModifyService implements MemberUpdater, MemberDeleter {
                             decryptedLoginMeResponse.phone(),
                             decryptedLoginMeResponse.birthday(),
                             decryptedLoginMeResponse.email(),
+                            decryptedLoginMeResponse.gender(),
                             MemberStatus.ACTIVE
                     );
 
@@ -44,6 +45,7 @@ public class MemberModifyService implements MemberUpdater, MemberDeleter {
                             decryptedLoginMeResponse.phone(),
                             decryptedLoginMeResponse.birthday(),
                             decryptedLoginMeResponse.email(),
+                            decryptedLoginMeResponse.gender(),
                             Role.ROLE_MEMBER,
                             MemberStatus.ACTIVE
                     );

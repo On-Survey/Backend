@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.member;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
+import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.global.entity.BaseEntity;
 import OneQ.OnSurvey.global.exception.CustomException;
@@ -39,6 +40,9 @@ public class Member extends BaseEntity {
     private String birthDay;
 
     private String email;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Column(nullable = false)
     @Builder.Default
@@ -89,6 +93,7 @@ public class Member extends BaseEntity {
             String phoneNumber,
             String birthDay,
             String email,
+            Gender gender,
             Role role,
             MemberStatus status
     ) {
@@ -98,6 +103,7 @@ public class Member extends BaseEntity {
                 .phoneNumber(phoneNumber)
                 .birthDay(birthDay)
                 .email(email)
+                .gender(gender)
                 .role(role)
                 .status(status)
                 .build();
@@ -108,12 +114,14 @@ public class Member extends BaseEntity {
             String phoneNumber,
             String birthDay,
             String email,
+            Gender gender,
             MemberStatus status
     ) {
         this.name = name;
         this.phoneNumber = phoneNumber;
         this.birthDay = birthDay;
         this.email = email;
+        this.gender = gender;
         this.status = status;
     }
 

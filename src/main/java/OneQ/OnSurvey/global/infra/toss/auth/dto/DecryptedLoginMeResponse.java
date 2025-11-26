@@ -1,5 +1,7 @@
 package OneQ.OnSurvey.global.infra.toss.auth.dto;
 
+import OneQ.OnSurvey.domain.survey.model.Gender;
+
 import java.util.List;
 
 public record DecryptedLoginMeResponse(
@@ -11,7 +13,7 @@ public record DecryptedLoginMeResponse(
         String name,
         String phone,
         String birthday,
-        String gender,
+        Gender gender,
         String nationality,
         String email
 ) {

@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.global.infra.toss.auth.service;
 
+import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.DecryptedLoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,8 @@ public class TossMemberInfoDecryptService {
         String name = decryptSafe(enc.name());
         String phone = decryptSafe(enc.phone());
         String birthday = decryptSafe(enc.birthday());
-        String gender = decryptSafe(enc.gender());
+        String genderStr = decryptSafe(enc.gender()); // 1단계: 복호화된 문자열
+        Gender gender = toGender(genderStr);
         String nationality = decryptSafe(enc.nationality());
         String email = decryptSafe(enc.email());
 
@@ -72,5 +74,17 @@ public class TossMemberInfoDecryptService {
             return encoded;
         }
         return decrypt(encoded);
+    }
+
+    private Gender toGender(String decrypted) {
+        if (decrypted == null || decrypted.isBlank()) {
+            return Gender.ALL;
+        }
+
+        try {
+            return Gender.valueOf(decrypted.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }
