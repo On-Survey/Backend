@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
@@ -25,6 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -47,11 +51,9 @@ public class ManagementController {
     @GetMapping("/surveys")
     @Operation(summary = "사용자가 생성한 설문을 조회합니다.")
     public SuccessResponse<SurveyManagementResponse> getSurveyManagementList(
-        @AuthenticationPrincipal CustomUserDetails details
+        @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        Long userKey = details.getUserKey();
-        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
-
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         log.info("[MANAGEMENT] 사용자 생성 설문 조회 - memberId: {}", memberId);
 
         List<SurveyManagementResponse.SurveyInformation> surveyInfoList = surveyQuery.getSurveyListByMemberId(memberId);
@@ -84,11 +86,9 @@ public class ManagementController {
     @Operation(summary = "사용자가 응답을 확인할 설문을 상세 조회합니다.")
     public SuccessResponse<SurveyManagementDetailResponse> getSurveyManagementDetailInfo(
         @RequestParam Long surveyId,
-        @AuthenticationPrincipal CustomUserDetails details
+        @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        Long userKey = details.getUserKey();
-        Long memberId = memberFinder.getMemberByUserKey(userKey).getId();
-
+        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         log.info("[MANAGEMENT] 응답을 확인할 설문 상세조회 - surveyId: {}, memberId: {}", surveyId, memberId);
 
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
@@ -108,9 +108,33 @@ public class ManagementController {
                     dto.getTitle(),
                     dto.getDescription(),
                     dto.getIsRequired()
-                )
-            )
+                ))
             .toList();
+
+        List<Long> choiceIdList = detailInfoList.stream()
+            .filter(dto -> dto.getType().isChoice())
+            .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
+            .toList();
+
+        if (!choiceIdList.isEmpty()) {
+            List<OptionDto> optionInfoList = questionQuery.getOptionsByQuestionIdList(choiceIdList);
+            Map<Long, List<OptionDto>> questionIdOptionInfoMap = optionInfoList.stream()
+                .collect(Collectors.groupingBy(OptionDto::getQuestionId));
+
+            detailInfoList.forEach(detailInfo -> {
+                List<OptionDto> optionDtoList = questionIdOptionInfoMap.getOrDefault(detailInfo.getQuestionId(), List.of());
+
+                Map<String, Long> contentMap = optionDtoList.stream()
+                    .sorted(Comparator.comparingLong(OptionDto::getOptionId))
+                    .collect(Collectors.toMap(
+                        OptionDto::getContent,
+                        dto -> 0L,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                    ));
+                detailInfo.setAnswerMap(contentMap.isEmpty() ? Map.of() : contentMap);
+            });
+        }
 
         detailInfoList = answerQuery.getDetailInfo(surveyId, detailInfoList);
         response.updateDetailInfoList(detailInfoList);
@@ -125,7 +149,6 @@ public class ManagementController {
         @RequestParam Long surveyId
     ) {
         Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-
         log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
 
         surveyQuery.validateSurveyRequest(surveyId, memberId, SurveyStatus.WRITING);

@@ -5,7 +5,7 @@ import OneQ.OnSurvey.domain.question.entity.question.Choice;
 import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
-import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
+import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DateDto;
@@ -47,7 +47,7 @@ public class QuestionConverter {
                 .hasNoneOption(choiceDto.getHasNoneOption())
                 .hasCustomInput(choiceDto.getHasCustomInput())
                 .options(choiceDto.getOptions().stream().map(option ->
-                    OptionUpsertDto.OptionInfo.builder()
+                    OptionDto.builder()
                         .optionId(option.getOptionId())
                         .content(option.getContent())
                         .nextQuestionId(option.getNextQuestionId()).build()

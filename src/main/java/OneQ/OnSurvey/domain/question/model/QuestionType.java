@@ -3,12 +3,6 @@ package OneQ.OnSurvey.domain.question.model;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 @Getter
 @RequiredArgsConstructor
 public enum QuestionType {
@@ -23,18 +17,6 @@ public enum QuestionType {
     private final String description;
     private final String value;
 
-    public static final Map<String, QuestionType> VALUE_MAP;
-
-    static {
-        Map<String, QuestionType> map = new HashMap<>();
-
-        for (QuestionType type : values()) {
-            map.put(type.getValue(), type);
-        }
-
-        VALUE_MAP = Collections.unmodifiableMap(map);
-    }
-
     public static class Values {
         public static final String CHOICE = "CHOICE";
         public static final String RATING = "RATING";
@@ -48,5 +30,9 @@ public enum QuestionType {
 
     public boolean isText() {
         return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || TEXT.equals(this);
+    }
+
+    public boolean isChoice() {
+        return CHOICE.equals(this);
     }
 }

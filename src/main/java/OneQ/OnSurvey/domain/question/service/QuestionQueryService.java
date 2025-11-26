@@ -2,7 +2,7 @@ package OneQ.OnSurvey.domain.question.service;
 
 import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.Question;
-import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
+import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.repository.choiceOption.ChoiceOptionRepository;
@@ -26,10 +26,10 @@ public class QuestionQueryService implements QuestionQuery {
     private final ChoiceOptionRepository choiceOptionRepository;
 
     @Override
-    public List<OptionUpsertDto.OptionInfo> getOptionsByQuestionIdList(List<Long> questionIdList) {
+    public List<OptionDto> getOptionsByQuestionIdList(List<Long> questionIdList) {
         List<ChoiceOption> optionList = choiceOptionRepository.getOptionsByQuestionIds(questionIdList);
 
-        return optionList.stream().map(OptionUpsertDto::fromEntity).toList();
+        return optionList.stream().map(OptionDto::fromEntity).toList();
     }
 
     @Override
@@ -58,7 +58,7 @@ public class QuestionQueryService implements QuestionQuery {
             if (dto.isChoice()) {
                 ChoiceDto choiceDto = (ChoiceDto) dto;
                 List<ChoiceOption> optionList = questionIdChoiceOptionMap.getOrDefault(dto.getQuestionId(), List.of());
-                choiceDto.updateOptions(optionList.stream().map(ChoiceDto::fromEntity).toList());
+                choiceDto.updateOptions(optionList.stream().map(OptionDto::fromEntity).toList());
             }
         });
 

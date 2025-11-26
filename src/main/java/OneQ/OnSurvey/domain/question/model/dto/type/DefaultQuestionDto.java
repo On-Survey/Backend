@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
+import OneQ.OnSurvey.domain.question.model.QuestionType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -52,7 +54,8 @@ public class DefaultQuestionDto {
             .build();
     }
 
+    @JsonIgnore
     public boolean isChoice() {
-        return this.questionType.equals("CHOICE");
+        return QuestionType.valueOf(this.questionType).isChoice();
     }
 }
