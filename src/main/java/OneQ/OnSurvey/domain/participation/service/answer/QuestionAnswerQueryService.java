@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerStats;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.survey.model.SurveyResponseFilterCondition;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,67 +37,84 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
 
     @Override
     public List<SurveyManagementDetailResponse.DetailInfo> getDetailInfo(
-        Long surveyId,
-        List<SurveyManagementDetailResponse.DetailInfo> detailInfoList
+            Long surveyId,
+            List<SurveyManagementDetailResponse.DetailInfo> detailInfoList
     ) {
-        log.info("[QUESTION_ANSWER_SERVICE] 문항 별 응답결과 조회 - surveyId: {}", surveyId);
+        return getDetailInfo(surveyId, null, detailInfoList);
+    }
+
+    @Override
+    public List<SurveyManagementDetailResponse.DetailInfo> getDetailInfo(
+            Long surveyId,
+            SurveyResponseFilterCondition filter,
+            List<SurveyManagementDetailResponse.DetailInfo> detailInfoList
+    ) {
+        log.info("[QUESTION_ANSWER_SERVICE] 문항 별 응답결과 조회 - surveyId: {}, filter: {}", surveyId, filter);
 
         Map<Boolean, List<SurveyManagementDetailResponse.DetailInfo>> typeInfoMap = detailInfoList.stream()
-            .collect(Collectors.partitioningBy(detailInfo -> detailInfo.getType().isText()));
+                .collect(Collectors.partitioningBy(detailInfo -> detailInfo.getType().isText()));
 
         List<Long> nonTextQuestionIdList = typeInfoMap.get(false).stream()
-            .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
-            .toList();
+                .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
+                .toList();
 
         List<Long> textQuestionIdList = typeInfoMap.get(true).stream()
-            .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
-            .toList();
+                .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
+                .toList();
 
-        log.info("[QUESTION_ANSWER_SERVICE] 응답을 조회할 문항 IDs - 주관식: {}, 비주관식: {}", textQuestionIdList, nonTextQuestionIdList);
+        log.info("[QUESTION_ANSWER_SERVICE] 응답을 조회할 문항 IDs - 주관식: {}, 비주관식: {}",
+                textQuestionIdList, nonTextQuestionIdList);
 
-        List<AnswerStats> nonTextAnswerStats = nonTextQuestionIdList.isEmpty() ?
-            List.of() : answerRepository.getAggregatedAnswersByQuestionIds(nonTextQuestionIdList);
-        List<AnswerStats> textAnswerStats = textQuestionIdList.isEmpty() ?
-            List.of() : answerRepository.getAnswersByQuestionIds(textQuestionIdList);
+        List<AnswerStats> nonTextAnswerStats = nonTextQuestionIdList.isEmpty()
+                ? List.of()
+                : answerRepository.getAggregatedAnswersByQuestionIds(nonTextQuestionIdList, filter);
+
+        List<AnswerStats> textAnswerStats = textQuestionIdList.isEmpty()
+                ? List.of()
+                : answerRepository.getAnswersByQuestionIds(textQuestionIdList, filter);
 
         Map<Long, Map<String, Long>> nonTextAnswerMap = nonTextAnswerStats.stream()
-            .collect(Collectors.groupingBy(
-                AnswerStats::getQuestionId,
-                Collectors.toMap(
-                    AnswerStats::getContent,
-                    AnswerStats::getCount
-                )
-            ));
+                .collect(Collectors.groupingBy(
+                        AnswerStats::getQuestionId,
+                        Collectors.toMap(
+                                AnswerStats::getContent,
+                                AnswerStats::getCount
+                        )
+                ));
 
         Map<Long, List<String>> textAnswerMap = textAnswerStats.stream()
-            .collect(Collectors.groupingBy(
-                AnswerStats::getQuestionId,
-                Collectors.mapping(AnswerStats::getContent, Collectors.toList())
-            ));
+                .collect(Collectors.groupingBy(
+                        AnswerStats::getQuestionId,
+                        Collectors.mapping(AnswerStats::getContent, Collectors.toList())
+                ));
 
         detailInfoList.forEach(detailInfo -> {
             Long questionId = detailInfo.getQuestionId();
             QuestionType questionType = detailInfo.getType();
 
-            if (questionType.isText()) { // 주관식 문항
-                detailInfo.setAnswerList(textAnswerMap.getOrDefault(questionId, List.of()));
-            } else if (questionType.isChoice()) { // 객관식 문항
+            if (questionType.isText()) {
+                detailInfo.setAnswerList(
+                        textAnswerMap.getOrDefault(questionId, List.of())
+                );
+
+            } else if (questionType.isChoice()) {
                 Map<String, Long> frame = detailInfo.getAnswerMap();
                 Map<String, Long> answerMap = nonTextAnswerMap.getOrDefault(questionId, Map.of());
 
-                frame.keySet().forEach(key -> {
-                    frame.put(key, answerMap.getOrDefault(key, 0L));
-                });
+                frame.keySet().forEach(key ->
+                        frame.put(key, answerMap.getOrDefault(key, 0L))
+                );
 
-                List<String> answerList = new ArrayList<>(); // 기타(직접입력) 답변
+                List<String> etcList = new ArrayList<>();
                 answerMap.entrySet().stream()
-                    .filter(entry -> !frame.containsKey(entry.getKey()))
-                    .forEach(entry -> IntStream.range(0, entry.getValue().intValue()).forEach((ignored) -> answerList.add(entry.getKey())));
+                        .filter(entry -> !frame.containsKey(entry.getKey()))
+                        .forEach(entry -> IntStream.range(0, entry.getValue().intValue())
+                                .forEach((ignored) -> etcList.add(entry.getKey())));
 
-                detailInfo.setAnswerList(answerList);
-            } else { // 기타 (평가형, NPS) 문항
+                detailInfo.setAnswerList(etcList);
+
+            } else { // 평가형, NPS
                 Map<String, Long> answerMap = nonTextAnswerMap.getOrDefault(questionId, Map.of());
-
                 detailInfo.setAnswerMap(answerMap);
             }
         });

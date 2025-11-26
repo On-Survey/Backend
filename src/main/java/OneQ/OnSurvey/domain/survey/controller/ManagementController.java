@@ -8,12 +8,8 @@ import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
-import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
-import OneQ.OnSurvey.domain.survey.model.response.FormQuestionResponse;
-import OneQ.OnSurvey.domain.survey.model.response.MySurveyListResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyDetailResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementResponse;
+import OneQ.OnSurvey.domain.survey.model.*;
+import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.service.SurveyCommand;
 import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
@@ -26,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,6 +81,9 @@ public class ManagementController {
     @Operation(summary = "사용자가 응답을 확인할 설문을 상세 조회합니다.")
     public SuccessResponse<SurveyManagementDetailResponse> getSurveyManagementDetailInfo(
         @RequestParam Long surveyId,
+        @RequestParam(required = false) List<AgeRange> ages,
+        @RequestParam(required = false) List<Gender> genders,
+        @RequestParam(required = false) List<Residence> residences,
         @AuthenticationPrincipal CustomUserDetails principal
     ) {
         Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
@@ -97,7 +95,10 @@ public class ManagementController {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
-        int count = responseQuery.getResponseCountBySurveyId(surveyId);
+        SurveyResponseFilterCondition filter =
+                new SurveyResponseFilterCondition(ages, genders, residences).normalize();
+
+        int count = responseQuery.getResponseCountBySurveyId(surveyId, filter);
         response.updateCurrentCount(count);
 
         List<SurveyManagementDetailResponse.DetailInfo> detailInfoList = questionQuery.getQuestionDtoListBySurveyId(surveyId).stream()
@@ -136,7 +137,7 @@ public class ManagementController {
             });
         }
 
-        detailInfoList = answerQuery.getDetailInfo(surveyId, detailInfoList);
+        detailInfoList = answerQuery.getDetailInfo(surveyId, filter, detailInfoList);
         response.updateDetailInfoList(detailInfoList);
 
         return SuccessResponse.ok(response);
