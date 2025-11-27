@@ -8,12 +8,11 @@ import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
-import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
-import OneQ.OnSurvey.domain.survey.model.response.FormQuestionResponse;
-import OneQ.OnSurvey.domain.survey.model.response.MySurveyListResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyDetailResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementResponse;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import OneQ.OnSurvey.domain.survey.model.*;
+import OneQ.OnSurvey.domain.survey.model.response.*;
+import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.service.SurveyCommand;
 import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
@@ -26,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,6 +43,7 @@ public class ManagementController {
     private final QuestionQuery questionQuery;
     private final ResponseQuery responseQuery;
     private final AnswerQuery<QuestionAnswer> answerQuery;
+    private final SurveyInfoRepository surveyInfoRepository;
 
     private final MemberFinder memberFinder;
 
@@ -57,7 +56,6 @@ public class ManagementController {
         log.info("[MANAGEMENT] 사용자 생성 설문 조회 - memberId: {}", memberId);
 
         List<SurveyManagementResponse.SurveyInformation> surveyInfoList = surveyQuery.getSurveyListByMemberId(memberId);
-
 
         Map<Long, SurveyManagementResponse.SurveyInformation> responseExistSurveyIdInformationMap = surveyInfoList.stream()
             .filter(info -> SurveyStatus.ONGOING.equals(info.getStatus())
@@ -86,18 +84,25 @@ public class ManagementController {
     @Operation(summary = "사용자가 응답을 확인할 설문을 상세 조회합니다.")
     public SuccessResponse<SurveyManagementDetailResponse> getSurveyManagementDetailInfo(
         @RequestParam Long surveyId,
+        @RequestParam(required = false) List<AgeRange> ages,
+        @RequestParam(required = false) List<Gender> genders,
+        @RequestParam(required = false) List<Residence> residences,
         @AuthenticationPrincipal CustomUserDetails principal
     ) {
         Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         log.info("[MANAGEMENT] 응답을 확인할 설문 상세조회 - surveyId: {}, memberId: {}", surveyId, memberId);
 
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
+        SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId).orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
 
         if (!memberId.equals(response.getMemberId())) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
-        int count = responseQuery.getResponseCountBySurveyId(surveyId);
+        SurveyResponseFilterCondition filter =
+                new SurveyResponseFilterCondition(ages, genders, residences).normalize();
+
+        int count = responseQuery.getResponseCountBySurveyId(surveyId, filter);
         response.updateCurrentCount(count);
 
         List<SurveyManagementDetailResponse.DetailInfo> detailInfoList = questionQuery.getQuestionDtoListBySurveyId(surveyId).stream()
@@ -136,8 +141,9 @@ public class ManagementController {
             });
         }
 
-        detailInfoList = answerQuery.getDetailInfo(surveyId, detailInfoList);
+        detailInfoList = answerQuery.getDetailInfo(surveyId, filter, detailInfoList);
         response.updateDetailInfoList(detailInfoList);
+        response.updateSurveyInfo(surveyInfo);
 
         return SuccessResponse.ok(response);
     }

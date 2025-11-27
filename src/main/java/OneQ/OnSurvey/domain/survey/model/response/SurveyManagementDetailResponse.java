@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.model.response;
 
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -16,6 +17,7 @@ public class SurveyManagementDetailResponse {
     private final Long surveyId;
     private final Long memberId;
     private final SurveyStatus status;
+    private SurveyInfoResponse surveyInfo;
 
     private Integer currentCount;
 
@@ -69,5 +71,9 @@ public class SurveyManagementDetailResponse {
 
     public void updateDetailInfoList(List<DetailInfo> detailInfoList) {
         this.detailInfoList = detailInfoList;
+    }
+
+    public void updateSurveyInfo(SurveyInfo info) {
+        this.surveyInfo = SurveyInfoResponse.from(info);
     }
 }
