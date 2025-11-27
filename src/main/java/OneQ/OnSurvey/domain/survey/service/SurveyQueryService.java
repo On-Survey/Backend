@@ -81,11 +81,10 @@ public class SurveyQueryService implements SurveyQuery {
         );
 
         List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, true);
-        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId).getInterests();
 
         Slice<Survey> recommendedList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
-            status, memberId, excludedIdList, interestSet
+            status, memberId, excludedIdList, Collections.emptyList()
         );
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 추천 설문 조회 결과 - recommended: {}", recommendedList);
 
