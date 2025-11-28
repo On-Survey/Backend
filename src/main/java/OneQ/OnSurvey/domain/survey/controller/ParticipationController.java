@@ -8,6 +8,7 @@ import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseCommand;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
+import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
@@ -137,9 +138,13 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}", surveyId);
 
+        Survey survey = surveyQueryService.getSurveyById(surveyId);
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
 
-        return SuccessResponse.ok(new ParticipationQuestionResponse(questionDtoList));
+        ParticipationQuestionResponse body =
+                ParticipationQuestionResponse.of(survey, questionDtoList);
+
+        return SuccessResponse.ok(body);
     }
 
     @GetMapping("surveys/screenings")

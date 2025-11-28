@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.domain.survey.service;
 
+import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import org.springframework.data.domain.Pageable;
@@ -23,4 +24,5 @@ public interface SurveyQuery {
     SurveyDetailResponse getMySurveyDetail(Long memberId, Long surveyId);
 
     void validateSurveyRequest(Long surveyId, Long memberId, SurveyStatus status);
+    Survey getSurveyById(Long surveyId);
 }

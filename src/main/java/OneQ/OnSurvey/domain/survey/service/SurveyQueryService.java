@@ -224,4 +224,10 @@ public class SurveyQueryService implements SurveyQuery {
                     surveyId, memberId, status, survey.getStatus());
         }
     }
+
+    @Override
+    public Survey getSurveyById(Long surveyId) {
+        return surveyRepository.getSurveyById(surveyId)
+                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+    }
 }
