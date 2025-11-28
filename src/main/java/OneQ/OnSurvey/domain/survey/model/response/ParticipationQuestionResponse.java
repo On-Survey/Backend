@@ -22,12 +22,16 @@ public record ParticipationQuestionResponse(
             Survey survey,
             List<DefaultQuestionDto> info
     ) {
+        Set<Interest> interestsSet = survey.getInterests() != null
+                        ? new java.util.HashSet<>(survey.getInterests())
+                        : java.util.Collections.emptySet();
+
         return new ParticipationQuestionResponse(
                 survey.getId(),
                 survey.getMemberId(),
                 survey.getTitle(),
                 survey.getDescription(),
-                survey.getInterests(),
+                interestsSet,
                 survey.getDeadline(),
                 info
         );
