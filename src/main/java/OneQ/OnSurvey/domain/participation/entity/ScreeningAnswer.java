@@ -5,20 +5,21 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity @Table(name = "screening_answer")
+@SuperBuilder
 public class ScreeningAnswer extends AbstractAnswer {
+
     @Column(name = "screening_id")
     private Long screeningId;
 
     private Boolean content;
 
-    @Builder
     public static ScreeningAnswer of(
         Long screeningId,
         Long memberId,
