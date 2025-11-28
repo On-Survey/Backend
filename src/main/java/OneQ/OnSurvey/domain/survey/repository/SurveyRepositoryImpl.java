@@ -64,9 +64,6 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         if (!excludedIds.isEmpty()) {
             builder.and(survey.id.notIn(excludedIds));
         }
-        if (!memberInterests.isEmpty()) {
-            builder.and(survey.interests.any().in(memberInterests));
-        }
         if (creatorId != null) {
             builder.and(survey.memberId.ne(creatorId));
         }
