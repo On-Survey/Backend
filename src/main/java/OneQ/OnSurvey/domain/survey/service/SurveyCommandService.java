@@ -7,6 +7,7 @@ import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
@@ -87,6 +88,7 @@ public class SurveyCommandService implements SurveyCommand {
 
     @Override
     public SurveyFormResponse submitSurvey(Long userKey, Long surveyId, SurveyFormRequest request) {
+
         Survey survey = surveyRepository.getSurveyById(surveyId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
 
@@ -94,6 +96,10 @@ public class SurveyCommandService implements SurveyCommand {
                 .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         log.info("[SurveySubmit] submit surveyId={}", surveyId);
+
+        Set<AgeRange> ages = (request.ages() == null)
+                ? Set.of()
+                : new HashSet<>(request.ages());
 
         survey.updateSurvey(
                 survey.getTitle(),
@@ -103,25 +109,22 @@ public class SurveyCommandService implements SurveyCommand {
         );
 
         SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
-                .orElseGet(() -> {
-                    SurveyInfo newInfo = SurveyInfo.createSurveyInfo(
-                            surveyId,
-                            request.dueCount(),
-                            request.gender(),
-                            new HashSet<>(request.ages()),
-                            request.residence(),
-                            request.genderPrice(),
-                            request.agePrice(),
-                            request.residencePrice(),
-                            request.dueCountPrice()
-                    );
-                    return surveyInfoRepository.save(newInfo);
-                });
+                .orElseGet(() -> SurveyInfo.createSurveyInfo(
+                        surveyId,
+                        request.dueCount(),
+                        request.gender(),
+                        ages,
+                        request.residence(),
+                        request.genderPrice(),
+                        request.agePrice(),
+                        request.residencePrice(),
+                        request.dueCountPrice()
+                ));
 
         info.updateSurveyInfo(
                 request.dueCount(),
                 request.gender(),
-                request.ages() == null ? Set.of() : new HashSet<>(request.ages()),
+                ages,
                 request.residence(),
                 request.genderPrice(),
                 request.agePrice(),
