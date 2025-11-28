@@ -5,12 +5,10 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @MappedSuperclass
-@SuperBuilder
 public abstract class AbstractAnswer extends BaseEntity {
 
     @Id @Column(name = "answer_id", nullable = false)
@@ -19,4 +17,8 @@ public abstract class AbstractAnswer extends BaseEntity {
 
     @Column(name = "member_id")
     protected Long memberId;
+
+    protected void setMemberId(Long memberId) {
+        this.memberId = memberId;
+    }
 }

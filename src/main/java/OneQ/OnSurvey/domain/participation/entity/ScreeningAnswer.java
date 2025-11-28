@@ -7,12 +7,10 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity @Table(name = "screening_answer")
-@SuperBuilder
 public class ScreeningAnswer extends AbstractAnswer {
 
     @Column(name = "screening_id")
@@ -21,22 +19,22 @@ public class ScreeningAnswer extends AbstractAnswer {
     private Boolean content;
 
     public static ScreeningAnswer of(
-        Long screeningId,
-        Long memberId,
-        Boolean content
+            Long screeningId,
+            Long memberId,
+            Boolean content
     ) {
-        return ScreeningAnswer.builder()
-            .screeningId(screeningId)
-            .memberId(memberId)
-            .content(content)
-            .build();
+        ScreeningAnswer answer = new ScreeningAnswer();
+        answer.screeningId = screeningId;
+        answer.content = content;
+        answer.setMemberId(memberId);
+        return answer;
     }
 
     public static ScreeningAnswer from(AnswerInsertDto.AnswerInfo answerInfo) {
         return ScreeningAnswer.of(
-            answerInfo.getId(),
-            answerInfo.getMemberId(),
-            answerInfo.getBooleanContent()
+                answerInfo.getId(),
+                answerInfo.getMemberId(),
+                answerInfo.getBooleanContent()
         );
     }
 }
