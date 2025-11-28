@@ -4,6 +4,7 @@ import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.util.QuerydslUtils;
+import com.querydsl.core.types.dsl.EnumPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.core.BooleanBuilder;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,16 @@ public class SurveyRepositoryImpl implements SurveyRepository {
 
     @Override
     public Optional<Survey> getSurveyById(Long surveyId) {
-        return surveyJpaRepository.getSurveyById(surveyId);
+        EnumPath<Interest> interest = survey.interests.any();
+
+        Survey result = jpaQueryFactory
+                .selectFrom(survey)
+                .distinct()
+                .leftJoin(survey.interests, interest).fetchJoin()
+                .where(survey.id.eq(surveyId))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
     }
 
     @Override
