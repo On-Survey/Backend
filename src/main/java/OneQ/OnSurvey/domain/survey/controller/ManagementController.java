@@ -95,9 +95,9 @@ public class ManagementController {
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
         SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId).orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
 
-        if (!memberId.equals(response.getMemberId())) {
-            throw new CustomException(ErrorCode.FORBIDDEN);
-        }
+//        if (!memberId.equals(response.getMemberId())) {
+//            throw new CustomException(ErrorCode.FORBIDDEN);
+//        }
 
         SurveyResponseFilterCondition filter =
                 new SurveyResponseFilterCondition(ages, genders, residences).normalize();
