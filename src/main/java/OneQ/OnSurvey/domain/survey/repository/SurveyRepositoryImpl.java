@@ -4,21 +4,20 @@ import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.util.QuerydslUtils;
-import com.querydsl.core.types.dsl.EnumPath;
-import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
 
-import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
 @Repository
 @RequiredArgsConstructor
@@ -28,12 +27,10 @@ public class SurveyRepositoryImpl implements SurveyRepository {
 
     @Override
     public Optional<Survey> getSurveyById(Long surveyId) {
-        EnumPath<Interest> interest = survey.interests.any();
-
         Survey result = jpaQueryFactory
                 .selectFrom(survey)
                 .distinct()
-                .leftJoin(survey.interests, interest).fetchJoin()
+                .leftJoin(survey.interests).fetchJoin()
                 .where(survey.id.eq(surveyId))
                 .fetchOne();
 
