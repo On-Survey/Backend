@@ -18,6 +18,7 @@
 | MANAGEMENT    | 설문 관리 및 집계 |
 | PARTICIPATION | 설문 참여      |
 | PAYMENT       | 결제         |
+| 멱등성 & 분산 락 | PromotionGrant + Redis 락으로 중복 지급 방지 |
 
 ---
 
@@ -94,6 +95,25 @@ docker build -t yourrepo/yourproject:latest .
 | 단위 테스트 | `./gradlew test` | JUnit  5 + Mockito |
 | 통합 테스트 | `./gradlew integrationTest` (프로젝트에 정의) | Testcontainers 로 실제 DB 구동 |
 | 커버리지 보고서 | `./gradlew jacocoTestReport` | `build/reports/jacoco/test/html/index.html` 확인 |
+
+---
+
+## 5. 멱등성 & 분산 락 (Promotion)
+
+토스 프로모션 포인트 지급은 다음 조합으로 중복 지급을 방지합니다.
+
+- DB 유니크 제약 + 낙관적 락 기반 멱등 처리
+- Redis 기반 분산 락
+- 토스 API 재시도 및 결과 폴링
+- 포인트 지급 여부 플래그
+
+---
+
+### 5.1 PromotionGrant 기반 멱등 처리
+
+- 엔티티: `promotion_grant`
+- 유니크 제약 (1 유저 · 1 설문 · 1 코드당 1건)
+    - `user_key`, `survey_id`, `promotion_code`
 
 ---
 
