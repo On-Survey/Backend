@@ -2,7 +2,8 @@ package OneQ.OnSurvey.domain.survey.service;
 
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
-import OneQ.OnSurvey.domain.participation.repository.memberSurveyStatus.MemberSurveyStatusRepository;
+import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
@@ -11,7 +12,6 @@ import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
-import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class SurveyQueryService implements SurveyQuery {
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final ScreeningRepository screeningRepository;
-    private final MemberSurveyStatusRepository memberSurveyStatusRepository;
+    private final ResponseRepository responseRepository;
     private final MemberRepository memberRepository;
 
     @Override
@@ -91,7 +91,7 @@ public class SurveyQueryService implements SurveyQuery {
             lastSurveyId, pageable.getPageSize(), status.name(), memberId
         );
 
-        List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, true);
+        List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
 
         Slice<Survey> recommendedList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
@@ -113,7 +113,7 @@ public class SurveyQueryService implements SurveyQuery {
             lastSurveyId, lastDeadline, pageable.getPageSize(), status.name(), memberId
         );
 
-        List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, true);
+        List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
         Slice<Survey> impendingList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, lastDeadline, pageable,
             status, memberId, excludedIdList, Set.of()
@@ -134,7 +134,7 @@ public class SurveyQueryService implements SurveyQuery {
             lastSurveyId, pageable.getPageSize(), memberId
         );
 
-        List<Long> excludedIdList = memberSurveyStatusRepository.getExcludedSurveyIdList(memberId, false);
+        List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, false);
         Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId).getInterests();
         log.info("[SURVEY:QUERY:getScreeningList] 사용자 관심사 - memberId: {}, interests: {}", memberId, interestSet);
 
