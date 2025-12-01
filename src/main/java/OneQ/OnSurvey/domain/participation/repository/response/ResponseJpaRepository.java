@@ -4,14 +4,8 @@ import OneQ.OnSurvey.domain.participation.entity.Response;
 import OneQ.OnSurvey.domain.participation.entity.id.ResponseId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import java.util.Optional;
 
 public interface ResponseJpaRepository extends JpaRepository<Response, ResponseId> {
-    Integer countResponsesBySurveyId(Long surveyId);
-
-    List<Response> getResponsesByMemberId(Long memberId);
-
-    List<Response> getResponsesBySurveyId(Long surveyId);
-
-    boolean existsBySurveyIdAndMemberId(Long surveyId, Long memberId);
+    Optional<Response> findBySurveyIdAndMemberId(Long surveyId, Long memberId);
 }

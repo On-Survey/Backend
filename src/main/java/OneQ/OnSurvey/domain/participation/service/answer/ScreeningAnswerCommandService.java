@@ -1,23 +1,24 @@
 package OneQ.OnSurvey.domain.participation.service.answer;
 
-import OneQ.OnSurvey.domain.participation.entity.MemberSurveyStatus;
+import OneQ.OnSurvey.domain.participation.entity.Response;
 import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
-import OneQ.OnSurvey.domain.participation.repository.memberSurveyStatus.MemberSurveyStatusRepository;
+import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ScreeningAnswerCommandService extends AnswerCommandService<ScreeningAnswer> {
+
     private final ScreeningRepository screeningRepository;
 
     public ScreeningAnswerCommandService(
         AnswerRepository<ScreeningAnswer> answerRepository,
-        MemberSurveyStatusRepository memberSurveyStatusRepository,
+        ResponseRepository responseRepository,
         ScreeningRepository screeningRepository
     ) {
-        super(answerRepository, memberSurveyStatusRepository);
+        super(answerRepository, responseRepository);
         this.screeningRepository = screeningRepository;
     }
 
@@ -29,8 +30,9 @@ public class ScreeningAnswerCommandService extends AnswerCommandService<Screenin
     @Override
     public Boolean insertAnswer(AnswerInsertDto.AnswerInfo answerInfo) {
         super.insertAnswer(answerInfo);
+
         Long surveyId = getSurveyIdFromScreening(answerInfo.getId());
-        createMemberSurveyStatus(surveyId, answerInfo);
+        updateResponseAfterScreening(surveyId, answerInfo);
 
         return true;
     }
@@ -39,19 +41,19 @@ public class ScreeningAnswerCommandService extends AnswerCommandService<Screenin
         return screeningRepository.getSurveyId(screeningId);
     }
 
-    @Override
-    public MemberSurveyStatus createMemberSurveyStatus(
-        Long surveyId,
-        AnswerInsertDto.AnswerInfo answerInfo
+    public void updateResponseAfterScreening(
+            Long surveyId,
+            AnswerInsertDto.AnswerInfo answerInfo
     ) {
-        boolean answer = screeningRepository.getScreeningAnswer(answerInfo.getId());
+        boolean expected = screeningRepository.getScreeningAnswer(answerInfo.getId());
 
-        MemberSurveyStatus status = MemberSurveyStatus.of(
-            surveyId,
-            answerInfo.getMemberId(),
-            false,
-            answer != answerInfo.getBooleanContent()
-        );
-        return memberSurveyStatusRepository.save(status);
+        boolean screenedFlag = (expected != answerInfo.getBooleanContent());
+
+        Response response = responseRepository
+                .findBySurveyIdAndMemberId(surveyId, answerInfo.getMemberId())
+                .orElseGet(() -> Response.of(surveyId, answerInfo.getMemberId()));
+
+        response.markScreened(screenedFlag);
+        responseRepository.save(response);
     }
 }

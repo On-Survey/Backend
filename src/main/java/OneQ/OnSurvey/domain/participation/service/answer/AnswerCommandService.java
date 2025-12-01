@@ -3,7 +3,7 @@ package OneQ.OnSurvey.domain.participation.service.answer;
 import OneQ.OnSurvey.domain.participation.entity.AbstractAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
-import OneQ.OnSurvey.domain.participation.repository.memberSurveyStatus.MemberSurveyStatusRepository;
+import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,9 +12,9 @@ import java.util.List;
 @Transactional
 @RequiredArgsConstructor
 public abstract class AnswerCommandService<E extends AbstractAnswer> implements AnswerCommand<E> {
-    private final AnswerRepository<E> answerRepository;
 
-    protected final MemberSurveyStatusRepository memberSurveyStatusRepository;
+    private final AnswerRepository<E> answerRepository;
+    protected final ResponseRepository responseRepository;
 
     public Boolean insertAnswers(AnswerInsertDto insertDto) {
         List<E> answerList = insertDto.getAnswerInfoList().stream()

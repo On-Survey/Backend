@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyResponseFilterCondition;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.EnumPath;
 import com.querydsl.core.types.dsl.Expressions;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static OneQ.OnSurvey.domain.member.QMember.member;
@@ -24,28 +26,9 @@ import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 @Repository
 @RequiredArgsConstructor
 public class ResponseRepositoryImpl implements ResponseRepository {
+
     private final ResponseJpaRepository responseJpaRepository;
     private final JPAQueryFactory jpaQueryFactory;
-
-    @Override
-    public List<Response> getResponsesByMemberId(Long memberId) {
-        return responseJpaRepository.getResponsesByMemberId(memberId);
-    }
-
-    @Override
-    public List<Response> getResponsesBySurveyId(Long surveyId) {
-        return responseJpaRepository.getResponsesBySurveyId(surveyId);
-    }
-
-    @Override
-    public Response getResponseBySurveyIdAndMemberId(Long surveyId, Long memberId) {
-        return jpaQueryFactory.selectFrom(response)
-            .where(
-                response.surveyId.eq(surveyId),
-                response.memberId.eq(memberId)
-            )
-            .fetchOne();
-    }
 
     @Override
     public Integer getResponseCountBySurveyId(Long surveyId) {
@@ -100,10 +83,29 @@ public class ResponseRepositoryImpl implements ResponseRepository {
     }
 
     @Override
-    public boolean existsBySurveyIdAndMemberId(Long surveyId, Long memberId) {
-        return responseJpaRepository.existsBySurveyIdAndMemberId(surveyId, memberId);
+    public List<Long> getExcludedSurveyIdList(Long memberId, boolean checkScreened) {
+        BooleanBuilder statusBuilder = new BooleanBuilder();
+
+        statusBuilder.or(response.isResponded.eq(true));
+
+        if (checkScreened) {
+            statusBuilder.or(response.isScreened.eq(true));
+        }
+
+        return jpaQueryFactory
+                .select(response.surveyId)
+                .from(response)
+                .where(
+                        response.memberId.eq(memberId)
+                                .and(statusBuilder)
+                )
+                .fetch();
     }
 
+    @Override
+    public Optional<Response> findBySurveyIdAndMemberId(Long surveyId, Long memberId) {
+        return responseJpaRepository.findBySurveyIdAndMemberId(surveyId, memberId);
+    }
 
     private BooleanExpression buildGenderCondition(EnumPath<Gender> genderPath, List<Gender> genders) {
         if (genders == null || genders.isEmpty()) return null;

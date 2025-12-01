@@ -22,11 +22,15 @@ public class ResponseCommandService implements ResponseCommand {
 
     @Override
     public Boolean createResponse(Long surveyId, Long memberId) {
-        if (responseRepository.existsBySurveyIdAndMemberId(surveyId, memberId)) {
+        Response response = responseRepository
+                .findBySurveyIdAndMemberId(surveyId, memberId)
+                .orElseGet(() -> Response.of(surveyId, memberId));
+
+        if (Boolean.TRUE.equals(response.getIsResponded())) {
             throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
         }
 
-        Response response = Response.of(surveyId, memberId);
+        response.markResponded();
         responseRepository.save(response);
 
         surveyGlobalStatsService.addCompletedCount(1);
@@ -35,6 +39,7 @@ public class ResponseCommandService implements ResponseCommand {
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
 
         surveyInfo.increaseCompletedCount();
+
         return true;
     }
 }

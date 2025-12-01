@@ -6,15 +6,15 @@ import OneQ.OnSurvey.domain.survey.model.SurveyResponseFilterCondition;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface ResponseRepository {
-    List<Response> getResponsesByMemberId(Long memberId);
-    List<Response> getResponsesBySurveyId(Long surveyId);
-    Response getResponseBySurveyIdAndMemberId(Long surveyId, Long memberId);
     Integer getResponseCountBySurveyId(Long surveyId);
     Integer getResponseCountBySurveyId(Long surveyId, SurveyResponseFilterCondition filter);
     Map<Long, Long> getResponseCountsBySurveyIds(Collection<Long> surveyIds);
 
     Response save(Response response);
-    boolean existsBySurveyIdAndMemberId(Long surveyId, Long memberId);
+    List<Long> getExcludedSurveyIdList(Long memberId, boolean checkScreened);
+    Optional<Response> findBySurveyIdAndMemberId(Long surveyId, Long memberId);
 }
+
