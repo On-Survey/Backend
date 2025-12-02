@@ -54,6 +54,9 @@ public class IapService {
     @Transactional
     public boolean grantByOrder(long userKey, String orderId, Long price) {
 
+        log.info("[IAP] grantByOrder request: userKey={}, orderId={}, price={}",
+                userKey, orderId, price);
+
         if (price == null || price <= 0L) {
             throw new CustomException(CoinErrorCode.COIN_NOT_POSITIVE);
         }
