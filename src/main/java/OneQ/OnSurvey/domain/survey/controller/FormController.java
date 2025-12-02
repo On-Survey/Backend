@@ -23,8 +23,8 @@ public class FormController implements FormControllerDoc {
     @PostMapping("/surveys")
     @Operation(summary = "설문 폼을 생성합니다.")
     public SuccessResponse<SurveyFormResponse> createSurvey(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody SurveyFormCreateRequest request
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestBody SurveyFormCreateRequest request
     ) {
         return SuccessResponse.ok(surveyFormFacade.createSurvey(principal.getMemberId(), request));
     }
@@ -32,9 +32,9 @@ public class FormController implements FormControllerDoc {
     @PatchMapping("/surveys/{surveyId}/display")
     @Operation(summary = "설문 제목과 상세설명을 수정합니다.")
     public SuccessResponse<SurveyFormResponse> updateSurvey(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @RequestBody SurveyFormCreateRequest request,
-            @PathVariable Long surveyId
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestBody SurveyFormCreateRequest request,
+        @PathVariable Long surveyId
     ) {
         return SuccessResponse.ok(surveyFormFacade.updateSurveyDisplay(principal.getMemberId(), surveyId, request));
     }
@@ -42,8 +42,8 @@ public class FormController implements FormControllerDoc {
     @PostMapping("/surveys/{surveyId}/questions")
     @Operation(summary = "새로운 문항을 생성합니다.")
     public SuccessResponse<CreateQuestionResponse> createQuestion(
-            @RequestBody QuestionRequest request,
-            @PathVariable Long surveyId
+        @RequestBody QuestionRequest request,
+        @PathVariable Long surveyId
     ) {
         return SuccessResponse.ok(surveyFormFacade.createQuestion(surveyId, request));
     }
@@ -51,8 +51,8 @@ public class FormController implements FormControllerDoc {
     @PutMapping("/surveys/{surveyId}/questions")
     @Operation(summary = "기존 문항을 수정합니다. (임시저장)")
     public SuccessResponse<UpdateQuestionResponse> updateSurvey(
-            @RequestBody QuestionRequest request,
-            @PathVariable Long surveyId
+        @RequestBody QuestionRequest request,
+        @PathVariable Long surveyId
     ) {
         return SuccessResponse.ok(surveyFormFacade.upsertQuestions(surveyId, request));
     }
@@ -60,9 +60,9 @@ public class FormController implements FormControllerDoc {
     @PatchMapping("/surveys/{surveyId}")
     @Operation(summary = "폼을 완성합니다.")
     public SuccessResponse<SurveyFormResponse> completeSurvey(
-            @AuthenticationPrincipal CustomUserDetails details,
-            @PathVariable Long surveyId,
-            @RequestBody SurveyFormRequest request
+        @AuthenticationPrincipal CustomUserDetails details,
+        @PathVariable Long surveyId,
+        @RequestBody SurveyFormRequest request
     ) {
         return SuccessResponse.ok(surveyFormFacade.completeSurvey(details.getUserKey(), surveyId, request));
     }
@@ -70,8 +70,8 @@ public class FormController implements FormControllerDoc {
     @PatchMapping("/surveys/{surveyId}/interests")
     @Operation(summary = "설문의 관심사를 등록합니다.")
     public SuccessResponse<InterestResponse> updateInterest(
-            @RequestBody SurveyInterestRequest request,
-            @PathVariable Long surveyId
+        @RequestBody SurveyInterestRequest request,
+        @PathVariable Long surveyId
     ) {
         return SuccessResponse.ok(surveyFormFacade.updateInterest(surveyId, request));
     }
@@ -79,8 +79,8 @@ public class FormController implements FormControllerDoc {
     @PostMapping("/surveys/{surveyId}/screenings")
     @Operation(summary = "설문에 대한 스크리닝 문항을 생성합니다.")
     public SuccessResponse<ScreeningResponse> createScreening(
-            @RequestBody ScreeningRequest request,
-            @PathVariable Long surveyId
+        @RequestBody ScreeningRequest request,
+        @PathVariable Long surveyId
     ) {
         return SuccessResponse.ok(surveyFormFacade.createScreening(surveyId, request));
     }
