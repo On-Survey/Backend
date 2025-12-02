@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.domain.survey.service;
+package OneQ.OnSurvey.domain.survey.service.command;
 
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;

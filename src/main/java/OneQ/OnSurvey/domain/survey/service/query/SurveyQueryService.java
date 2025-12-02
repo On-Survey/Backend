@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.domain.survey.service;
+package OneQ.OnSurvey.domain.survey.service.query;
 
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
