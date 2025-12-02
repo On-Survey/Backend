@@ -1,6 +1,5 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
-import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
@@ -35,20 +34,18 @@ public class FormController implements FormControllerDoc {
 
     private final SurveyCommand surveyCommand;
     private final QuestionCommand questionCommand;
-    private final MemberFinder memberFinder;
 
     @PostMapping("surveys")
     @Operation(summary = "설문 폼을 생성합니다.")
     public SuccessResponse<SurveyFormResponse> createSurvey(
-        @AuthenticationPrincipal CustomUserDetails details,
+        @AuthenticationPrincipal CustomUserDetails principal,
         @RequestBody SurveyFormCreateRequest request
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
         log.info("[FORM] 설문 생성 - title: {}, description: {}, memberId: {}",
-            request.title(), request.description(), memberId);
+            request.title(), request.description(), principal.getMemberId());
 
         SurveyFormResponse response = surveyCommand.upsertSurvey(
-            memberId, null, request
+                principal.getMemberId(), null, request
         );
 
         return SuccessResponse.ok(response);
@@ -61,12 +58,11 @@ public class FormController implements FormControllerDoc {
         @RequestBody SurveyFormCreateRequest request,
         @PathVariable Long surveyId
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
         log.info("[FORM:updateSurvey] 설문 수정 - surveyId: {}, title: {}, description: {}, memberId: {}",
-            surveyId, request.title(), request.description(), memberId);
+            surveyId, request.title(), request.description(), principal.getMemberId());
 
         SurveyFormResponse response = surveyCommand.upsertSurvey(
-            memberId, surveyId, request
+            principal.getMemberId(), surveyId, request
         );
 
         return SuccessResponse.ok(response);

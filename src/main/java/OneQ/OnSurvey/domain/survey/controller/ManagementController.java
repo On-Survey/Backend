@@ -1,6 +1,5 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
-import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
@@ -44,17 +43,15 @@ public class ManagementController {
     private final ResponseQuery responseQuery;
     private final AnswerQuery<QuestionAnswer> answerQuery;
     private final SurveyInfoRepository surveyInfoRepository;
-    private final MemberFinder memberFinder;
 
     @GetMapping("/surveys")
     @Operation(summary = "사용자가 생성한 설문을 조회합니다.")
     public SuccessResponse<SurveyManagementResponse> getSurveyManagementList(
         @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-        log.info("[MANAGEMENT] 사용자 생성 설문 조회 - memberId: {}", memberId);
+        log.info("[MANAGEMENT] 사용자 생성 설문 조회 - memberId: {}", principal.getMemberId());
 
-        List<SurveyManagementResponse.SurveyInformation> surveyInfoList = surveyQuery.getSurveyListByMemberId(memberId);
+        List<SurveyManagementResponse.SurveyInformation> surveyInfoList = surveyQuery.getSurveyListByMemberId(principal.getMemberId());
 
         Map<Long, SurveyManagementResponse.SurveyInformation> responseExistSurveyIdInformationMap = surveyInfoList.stream()
             .filter(info -> SurveyStatus.ONGOING.equals(info.getStatus())
@@ -88,13 +85,12 @@ public class ManagementController {
         @RequestParam(required = false) List<Residence> residences,
         @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-        log.info("[MANAGEMENT] 응답을 확인할 설문 상세조회 - surveyId: {}, memberId: {}", surveyId, memberId);
+        log.info("[MANAGEMENT] 응답을 확인할 설문 상세조회 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
 
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
         SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId).orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
 
-        if (!memberId.equals(response.getMemberId())) {
+        if (!principal.getMemberId().equals(response.getMemberId())) {
             throw new CustomException(ErrorCode.FORBIDDEN);
         }
 
@@ -153,10 +149,9 @@ public class ManagementController {
         @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam Long surveyId
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, memberId);
+        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
 
-        surveyQuery.validateSurveyRequest(surveyId, memberId, SurveyStatus.WRITING);
+        surveyQuery.validateSurveyRequest(surveyId, principal.getMemberId(), SurveyStatus.WRITING);
         List<DefaultQuestionDto> questionDto = questionQuery.getQuestionDtoListBySurveyId(surveyId);
 
         return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto));
@@ -168,8 +163,7 @@ public class ManagementController {
     public SuccessResponse<MySurveyListResponse> getMySurveys(
             @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-        return SuccessResponse.ok(surveyQuery.getMySurveys(memberId));
+        return SuccessResponse.ok(surveyQuery.getMySurveys(principal.getMemberId()));
     }
 
     @GetMapping("/{surveyId}")
@@ -179,8 +173,7 @@ public class ManagementController {
             @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable Long surveyId
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-        return SuccessResponse.ok(surveyQuery.getMySurveyDetail(memberId, surveyId));
+        return SuccessResponse.ok(surveyQuery.getMySurveyDetail(principal.getMemberId(), surveyId));
     }
 
     @PostMapping("/{surveyId}/refund")

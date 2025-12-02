@@ -31,6 +31,10 @@ public class CustomUserDetails implements UserDetails {
         return null;
     }
 
+    public Long getMemberId() {
+        return member.getId();
+    }
+
     public Long getUserKey() {
         return member.getUserKey();
     }
