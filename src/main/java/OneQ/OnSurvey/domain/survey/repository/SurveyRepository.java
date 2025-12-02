@@ -17,8 +17,6 @@ public interface SurveyRepository {
     Slice<Survey> getSurveyListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
         SurveyStatus status, Long creatorId, Collection<Long> excludedIds, Collection<Interest> interests);
-    Slice<Survey> getSurveyList(Long lastSurveyId, Pageable pageable);
 
     Survey save(Survey survey);
-    void deleteById(Long surveyId);
 }

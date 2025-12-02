@@ -5,11 +5,7 @@ import OneQ.OnSurvey.domain.question.model.QuestionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.ColumnDefault;
 
@@ -19,6 +15,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Entity
 @DiscriminatorValue(value = QuestionType.Values.CHOICE)
 public class Choice extends Question {
+
     // 객관식 문항 필드
     @Column(name = "max_choice")
     @ColumnDefault("1")

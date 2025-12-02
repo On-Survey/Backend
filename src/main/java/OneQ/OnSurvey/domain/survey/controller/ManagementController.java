@@ -12,12 +12,11 @@ import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.*;
 import OneQ.OnSurvey.domain.survey.model.response.*;
-import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
+import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.service.SurveyCommand;
 import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.exception.ErrorCode;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,6 @@ public class ManagementController {
     private final ResponseQuery responseQuery;
     private final AnswerQuery<QuestionAnswer> answerQuery;
     private final SurveyInfoRepository surveyInfoRepository;
-
     private final MemberFinder memberFinder;
 
     @GetMapping("/surveys")

@@ -22,6 +22,7 @@ import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 @Repository
 @RequiredArgsConstructor
 public class SurveyRepositoryImpl implements SurveyRepository {
+
     private final SurveyJpaRepository surveyJpaRepository;
     private final JPAQueryFactory jpaQueryFactory;
 
@@ -86,26 +87,8 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     }
 
     @Override
-    public Slice<Survey> getSurveyList(Long lastSurveyId, Pageable pageable) {
-        List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
-            .where(
-                survey.id.gt(lastSurveyId)
-            )
-            .orderBy(QuerydslUtils.getSort(pageable, survey))
-            .limit(pageable.getPageSize() + 1)
-            .fetch();
-
-        return createSlice(surveyList, pageable);
-    }
-
-    @Override
     public Survey save(Survey survey) {
         return surveyJpaRepository.save(survey);
-    }
-
-    @Override
-    public void deleteById(Long surveyId) {
-        surveyJpaRepository.deleteById(surveyId);
     }
 
     private Slice<Survey> createSlice(List<Survey> surveyList, Pageable pageable) {

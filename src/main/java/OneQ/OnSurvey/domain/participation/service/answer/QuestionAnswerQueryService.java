@@ -1,7 +1,6 @@
 package OneQ.OnSurvey.domain.participation.service.answer;
 
 import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
-import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerStats;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
@@ -23,16 +22,6 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
         AnswerRepository<QuestionAnswer> answerRepository
     ) {
         super(answerRepository);
-    }
-
-    @Override
-    public QuestionAnswer getAnswerById(Long questionId, Long memberId) {
-        return null;
-    }
-
-    @Override
-    public QuestionAnswer createAnswerFromDto(AnswerInsertDto.AnswerInfo answerInfo) {
-        return QuestionAnswer.from(answerInfo);
     }
 
     @Override

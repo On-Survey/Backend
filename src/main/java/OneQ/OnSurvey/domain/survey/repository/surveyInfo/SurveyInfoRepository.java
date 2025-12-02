@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.domain.survey.repository;
+package OneQ.OnSurvey.domain.survey.repository.surveyInfo;
 
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 

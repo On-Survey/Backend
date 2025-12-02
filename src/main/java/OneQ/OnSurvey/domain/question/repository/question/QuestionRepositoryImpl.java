@@ -14,23 +14,13 @@ import static OneQ.OnSurvey.domain.question.entity.QQuestion.question;
 @Repository
 @RequiredArgsConstructor
 public class QuestionRepositoryImpl implements QuestionRepository {
-    private final QuestionJpaRepository questionJpaRepository;
 
+    private final QuestionJpaRepository questionJpaRepository;
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
     public List<Question> getQuestionListBySurveyId(Long surveyId) {
         return questionJpaRepository.getQuestionsBySurveyIdOrderByOrder(surveyId);
-    }
-
-    @Override
-    public Question getQuestionById(Long questionId) {
-        return questionJpaRepository.getQuestionByQuestionId(questionId);
-    }
-
-    @Override
-    public List<Question> getQuestionsByIds(Collection<Long> questionIdList) {
-        return questionJpaRepository.getQuestionsByQuestionIdIn(questionIdList);
     }
 
     @Override

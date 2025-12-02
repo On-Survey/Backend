@@ -8,13 +8,9 @@ import java.util.Set;
 
 public interface QuestionRepository {
     List<Question> getQuestionListBySurveyId(Long surveyId);
-    Question getQuestionById(Long questionId);
-    List<Question> getQuestionsByIds(Collection<Long> questionIdList);
-
     Question save(Question question);
     List<Question> saveAll(Collection<Question> questions);
 
     Long getSurveyId(Long questionId);
-
     void deleteAll(Set<Long> idList);
 }

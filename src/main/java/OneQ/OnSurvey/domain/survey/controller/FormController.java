@@ -10,11 +10,7 @@ import OneQ.OnSurvey.domain.question.service.QuestionConverter;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.controller.swagger.FormControllerDoc;
 import OneQ.OnSurvey.domain.survey.model.request.*;
-import OneQ.OnSurvey.domain.survey.model.response.CreateQuestionResponse;
-import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
-import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
-import OneQ.OnSurvey.domain.survey.model.response.UpdateQuestionResponse;
+import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.service.SurveyCommand;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
@@ -36,9 +32,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class FormController implements FormControllerDoc {
+
     private final SurveyCommand surveyCommand;
     private final QuestionCommand questionCommand;
-
     private final MemberFinder memberFinder;
 
     @PostMapping("surveys")

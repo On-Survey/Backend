@@ -2,13 +2,7 @@ package OneQ.OnSurvey.domain.question.service;
 
 import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.Question;
-import OneQ.OnSurvey.domain.question.entity.question.Choice;
-import OneQ.OnSurvey.domain.question.entity.question.NPS;
-import OneQ.OnSurvey.domain.question.entity.question.NumberAnswer;
-import OneQ.OnSurvey.domain.question.entity.question.Rating;
-import OneQ.OnSurvey.domain.question.entity.question.ShortAnswer;
-import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
-import OneQ.OnSurvey.domain.question.entity.question.LongAnswer;
+import OneQ.OnSurvey.domain.question.entity.question.*;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
@@ -22,11 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -35,29 +25,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class QuestionCommandService implements QuestionCommand {
+
     private final QuestionRepository questionRepository;
     private final ChoiceOptionRepository choiceOptionRepository;
-
-    @Override
-    public Boolean deleteQuestionById(Long questionId) {
-        Question question = questionRepository.getQuestionById(questionId);
-        question.setDeleted(true);
-        questionRepository.save(question);
-        return true;
-    }
-
-    @Override
-    public void changeQuestionOrder(Map<Long, Integer> idOrderMap) {
-        // List<Map<Long, Integer>> idOrderMapList = questionList.stream().map(question -> Map.of(question.getQuestionId(), question.getQuestionOrder())).toList();
-        List<Question> questionList = questionRepository.getQuestionsByIds(idOrderMap.keySet());
-
-        questionList.forEach(question -> {
-            Integer order = idOrderMap.get(question.getQuestionId());
-            question.updateOrder(order);
-        });
-
-        questionRepository.saveAll(questionList);
-    }
 
     @Override
     public QuestionUpsertDto upsertQuestionList(QuestionUpsertDto upsertDto) {
