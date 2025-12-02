@@ -50,34 +50,13 @@ public class SurveyFormFacade implements SurveyFormUseCase {
     public CreateQuestionResponse createQuestion(Long surveyId, QuestionRequest request) {
         log.info("[FORM:createQuestion] 새로운 문항 생성 - surveyId: {}, request: {}", surveyId, request.toString());
 
-        if (request.getQuestions().isEmpty()) {
-            log.warn("[FORM:createQuestion] 문항 데이터가 비어있습니다.");
-            throw new CustomException(SurveyErrorCode.SURVEY_FORM_EMPTY_REQUEST);
-        }
-        if (request.getQuestions().getFirst().getQuestionId() != null) {
-            log.warn("[FORM:createQuestion] 문항 ID가 이미 존재합니다.");
-            throw new CustomException(SurveyErrorCode.SURVEY_FORM_DUPLICATE_POST);
-        }
-        if (request.getQuestions().getFirst().getQuestionType() == null) {
-            log.warn("[FORM:createQuestion] 문항 타입이 유효하지 않습니다.");
-            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
-        }
+        validateCreateQuestionRequest(request);
 
         DefaultQuestionDto questionDto = request.getQuestions().getFirst();
-        QuestionType type = QuestionType.valueOf(questionDto.getQuestionType());
+        QuestionType type = parseQuestionType(questionDto);
         log.info("[FORM:createQuestion] 문항 타입: {}", type.name());
 
-        QuestionUpsertDto upsertDto = QuestionUpsertDto.builder()
-                .surveyId(surveyId)
-                .upsertInfoList(
-                        List.of(QuestionUpsertDto.UpsertInfo.builder()
-                                .questionType(type)
-                                .title(questionDto.getTitle())
-                                .description(questionDto.getDescription())
-                                .questionOrder(questionDto.getQuestionOrder())
-                                .build())
-                )
-                .build();
+        QuestionUpsertDto upsertDto = buildSingleQuestionUpsertDto(surveyId, questionDto, type);
 
         upsertDto = questionCommand.upsertQuestionList(upsertDto);
         return CreateQuestionResponse.fromDto(upsertDto);
@@ -87,65 +66,26 @@ public class SurveyFormFacade implements SurveyFormUseCase {
     public UpdateQuestionResponse upsertQuestions(Long surveyId, QuestionRequest request) {
         log.info("[FORM:updateSurvey] 문항 임시저장: surveyId: {}, request: {}", surveyId, request.toString());
 
-        if (request.getQuestions().isEmpty()) {
-            log.warn("[FORM:updateSurvey] 문항 데이터가 비어있습니다.");
-            throw new CustomException(SurveyErrorCode.SURVEY_FORM_EMPTY_REQUEST);
-        }
-        if (request.getQuestions().stream().anyMatch(dto -> dto.getQuestionType() == null)) {
-            log.warn("[FORM:updateSurvey] 문항 타입이 유효하지 않습니다.");
-            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
-        }
+        validateUpsertQuestionsRequest(request);
 
-        // questionUpsertDto : 원본 문항 정보
-        QuestionUpsertDto questionUpsertDto =
+        QuestionUpsertDto requestQuestionUpsertDto =
                 QuestionConverter.toQuestionUpsertDto(surveyId, request.getQuestions());
 
-        // CHOICE 타입에 대한 questionID - UpsertInfo 맵 생성
-        Map<Long, QuestionUpsertDto.UpsertInfo> questionIdUpsertInfoListMap =
-                questionUpsertDto.getUpsertInfoList().stream()
-                        .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
-                        .collect(Collectors.toMap(
-                                QuestionUpsertDto.UpsertInfo::getQuestionId,
-                                Function.identity()
-                        ));
+        QuestionUpsertDto savedQuestionUpsertDto =
+                questionCommand.upsertQuestionList(requestQuestionUpsertDto);
 
-        log.info("[FORM:updateSurvey] Choice 문항 맵: {}", questionIdUpsertInfoListMap);
-
-        // 문항 UPSERT
-        questionUpsertDto = questionCommand.upsertQuestionList(questionUpsertDto);
-
-        // 보기 UPSERT DTO 생성
-        List<OptionUpsertDto> optionUpsertDtoList = questionIdUpsertInfoListMap.entrySet().stream()
-                .map(entry -> OptionUpsertDto.builder()
-                        .questionId(entry.getKey())
-                        .optionInfoList(entry.getValue().getOptions())
-                        .build())
-                .toList();
-
+        List<OptionUpsertDto> optionUpsertDtoList =
+                buildOptionUpsertDtosFromSavedQuestions(savedQuestionUpsertDto);
         log.info("[FORM:updateSurvey] 문항 별 보기 리스트: {}", optionUpsertDtoList);
 
-        // 보기 UPSERT
         optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
+        Map<Long, OptionUpsertDto> optionDtoMap = mapOptionsByQuestionId(optionUpsertDtoList);
 
-        Map<Long, OptionUpsertDto> optionDtoMap = optionUpsertDtoList.stream()
-                .collect(Collectors.toMap(
-                        OptionUpsertDto::getQuestionId,
-                        Function.identity()
-                ));
-
-        // UPSERT 결과를 questionUpsertDto에 다시 매핑
-        questionUpsertDto.getUpsertInfoList().forEach(upsertInfo -> {
-            Long questionId = upsertInfo.getQuestionId();
-            OptionUpsertDto optionInfoList = optionDtoMap.get(questionId);
-
-            if (optionInfoList != null) {
-                upsertInfo.setOptions(optionInfoList.getOptionInfoList());
-            }
-        });
+        applyOptionsToQuestionUpsertDto(savedQuestionUpsertDto, optionDtoMap);
 
         return new UpdateQuestionResponse(
-                questionUpsertDto.getSurveyId(),
-                questionUpsertDto.getUpsertInfoList()
+                savedQuestionUpsertDto.getSurveyId(),
+                savedQuestionUpsertDto.getUpsertInfoList()
         );
     }
 
@@ -165,5 +105,113 @@ public class SurveyFormFacade implements SurveyFormUseCase {
     public ScreeningResponse createScreening(Long surveyId, ScreeningRequest request) {
         log.info("[FORM:createScreening] surveyId: {}, content: {}", surveyId, request.content());
         return surveyCommand.upsertScreening(null, surveyId, request.content(), request.answer());
+    }
+
+
+    private void validateCreateQuestionRequest(QuestionRequest request) {
+        if (request.getQuestions().isEmpty()) {
+            log.warn("[FORM:createQuestion] 문항 데이터가 비어있습니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_EMPTY_REQUEST);
+        }
+        if (request.getQuestions().getFirst().getQuestionId() != null) {
+            log.warn("[FORM:createQuestion] 문항 ID가 이미 존재합니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_DUPLICATE_POST);
+        }
+        if (request.getQuestions().getFirst().getQuestionType() == null) {
+            log.warn("[FORM:createQuestion] 문항 타입이 유효하지 않습니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
+        }
+    }
+
+    private QuestionType parseQuestionType(DefaultQuestionDto questionDto) {
+        String rawType = questionDto.getQuestionType();
+        try {
+            return QuestionType.valueOf(rawType);
+        } catch (IllegalArgumentException e) {
+            log.warn("[FORM:createQuestion] 지원하지 않는 문항 타입입니다. rawType={}", rawType);
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
+        }
+    }
+
+    private QuestionUpsertDto buildSingleQuestionUpsertDto(
+            Long surveyId,
+            DefaultQuestionDto questionDto,
+            QuestionType type
+    ) {
+        return QuestionUpsertDto.builder()
+                .surveyId(surveyId)
+                .upsertInfoList(
+                        List.of(QuestionUpsertDto.UpsertInfo.builder()
+                                .questionType(type)
+                                .title(questionDto.getTitle())
+                                .description(questionDto.getDescription())
+                                .questionOrder(questionDto.getQuestionOrder())
+                                .build())
+                )
+                .build();
+    }
+
+    private void validateUpsertQuestionsRequest(QuestionRequest request) {
+        if (request.getQuestions().isEmpty()) {
+            log.warn("[FORM:updateSurvey] 문항 데이터가 비어있습니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_EMPTY_REQUEST);
+        }
+        if (request.getQuestions().stream().anyMatch(dto -> dto.getQuestionType() == null)) {
+            log.warn("[FORM:updateSurvey] 문항 타입이 유효하지 않습니다.");
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_QUESTION_TYPE);
+        }
+    }
+
+    /** UPSERT 이후 CHOICE 타입 문항에 대해 questionId -> UpsertInfo 맵 생성 */
+    private Map<Long, QuestionUpsertDto.UpsertInfo> buildChoiceQuestionMap(QuestionUpsertDto questionUpsertDto) {
+        return questionUpsertDto.getUpsertInfoList().stream()
+                .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
+                .filter(info -> info.getQuestionId() != null) // 🔹 null key 방지
+                .collect(Collectors.toMap(
+                        QuestionUpsertDto.UpsertInfo::getQuestionId,
+                        Function.identity()
+                ));
+    }
+
+    /** UPSERT된 QuestionUpsertDto에서 CHOICE 문항별 OptionUpsertDto 리스트 생성 */
+    private List<OptionUpsertDto> buildOptionUpsertDtosFromSavedQuestions(
+            QuestionUpsertDto savedQuestionUpsertDto
+    ) {
+        Map<Long, QuestionUpsertDto.UpsertInfo> choiceQuestionMap = buildChoiceQuestionMap(savedQuestionUpsertDto);
+
+        return choiceQuestionMap.entrySet().stream()
+                .map(entry -> OptionUpsertDto.builder()
+                        .questionId(entry.getKey())
+                        .optionInfoList(
+                                entry.getValue().getOptions() != null
+                                        ? entry.getValue().getOptions()
+                                        : List.of()
+                        )
+                        .build())
+                .toList();
+    }
+
+    /** questionId 기준 OptionUpsertDto 맵핑 */
+    private Map<Long, OptionUpsertDto> mapOptionsByQuestionId(List<OptionUpsertDto> optionUpsertDtoList) {
+        return optionUpsertDtoList.stream()
+                .collect(Collectors.toMap(
+                        OptionUpsertDto::getQuestionId,
+                        Function.identity()
+                ));
+    }
+
+    /** UPSERT된 보기 정보를 questionUpsertDto에 다시 반영 */
+    private void applyOptionsToQuestionUpsertDto(
+            QuestionUpsertDto questionUpsertDto,
+            Map<Long, OptionUpsertDto> optionDtoMap
+    ) {
+        questionUpsertDto.getUpsertInfoList().forEach(upsertInfo -> {
+            Long questionId = upsertInfo.getQuestionId();
+            OptionUpsertDto optionInfoList = optionDtoMap.get(questionId);
+
+            if (optionInfoList != null) {
+                upsertInfo.setOptions(optionInfoList.getOptionInfoList());
+            }
+        });
     }
 }
