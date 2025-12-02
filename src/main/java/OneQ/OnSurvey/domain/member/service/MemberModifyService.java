@@ -6,9 +6,9 @@ import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
+import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.DecryptedLoginMeResponse;
-import OneQ.OnSurvey.domain.survey.model.Residence;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,8 +77,7 @@ public class MemberModifyService implements MemberUpdater, MemberDeleter {
     }
 
     @Override
-    public Boolean deleteById(Long memberId) {
+    public void deleteById(Long memberId) {
         memberRepository.deleteById(memberId);
-        return true;
     }
 }

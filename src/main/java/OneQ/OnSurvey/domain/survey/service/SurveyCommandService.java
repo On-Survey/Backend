@@ -3,20 +3,20 @@ package OneQ.OnSurvey.domain.survey.service;
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
-import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
+import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
-import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
-import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
-import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
+import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.service.refund.SurveyRefundPolicy;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.exception.ErrorCode;
@@ -143,12 +143,6 @@ public class SurveyCommandService implements SurveyCommand {
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 
         return SurveyFormResponse.fromEntity(survey);
-    }
-
-    @Override
-    public Boolean deleteById(Long surveyId) {
-        surveyRepository.deleteById(surveyId);
-        return true;
     }
 
     @Override

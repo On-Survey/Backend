@@ -1,7 +1,6 @@
 package OneQ.OnSurvey.domain.participation.service.answer;
 
 import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
-import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerStats;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyManagementDetailResponse;
@@ -15,20 +14,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class ScreeningAnswerQueryService extends AnswerQueryService<ScreeningAnswer> {
+
     public ScreeningAnswerQueryService(
         AnswerRepository<ScreeningAnswer> answerRepository
     ) {
         super(answerRepository);
-    }
-
-    @Override
-    public ScreeningAnswer getAnswerById(Long id, Long memberId) {
-        return answerRepository.getAnswerByQuestionIdAndMemberId(id, memberId);
-    }
-
-    @Override
-    public ScreeningAnswer createAnswerFromDto(AnswerInsertDto.AnswerInfo answerInfo) {
-        return ScreeningAnswer.from(answerInfo);
     }
 
     @Override

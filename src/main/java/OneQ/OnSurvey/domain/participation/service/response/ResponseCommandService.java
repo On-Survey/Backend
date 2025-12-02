@@ -4,7 +4,7 @@ import OneQ.OnSurvey.domain.participation.entity.Response;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
-import OneQ.OnSurvey.domain.survey.repository.SurveyInfoRepository;
+import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;

@@ -14,6 +14,7 @@ import java.util.Set;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity @Table(name = "survey_info")
 public class SurveyInfo {
+
     @Id @Column(name = "info_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long infoId;

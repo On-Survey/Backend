@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class QuestionQueryService implements QuestionQuery {
+
     private final QuestionRepository questionRepository;
     private final ChoiceOptionRepository choiceOptionRepository;
 

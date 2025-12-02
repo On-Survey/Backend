@@ -10,12 +10,8 @@ import java.util.List;
 @Repository
 @RequiredArgsConstructor
 public class ChoiceOptionRepositoryImpl implements ChoiceOptionRepository {
-    private final ChoiceOptionJpaRepository choiceOptionJpaRepository;
 
-    @Override
-    public List<ChoiceOption> getOptionsByIds(Collection<Long> idList) {
-        return choiceOptionJpaRepository.getChoiceOptionsByChoiceOptionIdIn(idList);
-    }
+    private final ChoiceOptionJpaRepository choiceOptionJpaRepository;
 
     @Override
     public List<ChoiceOption> getOptionsByQuestionIds(Collection<Long> questionIdList) {

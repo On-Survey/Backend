@@ -1,12 +1,10 @@
-package OneQ.OnSurvey.domain.survey.repository;
+package OneQ.OnSurvey.domain.survey.repository.surveyInfo;
 
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface SurveyInfoJpaRepository extends JpaRepository<SurveyInfo,Long> {
-    Optional<SurveyInfo> findBySurveyId(Long surveyId);
     List<SurveyInfo> findBySurveyIdIn(List<Long> surveyIds);
 }

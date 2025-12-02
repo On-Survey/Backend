@@ -12,8 +12,8 @@ import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 @Repository
 @RequiredArgsConstructor
 public class ScreeningRepositoryImpl implements ScreeningRepository {
-    private final ScreeningJpaRepository screeningJpaRepository;
 
+    private final ScreeningJpaRepository screeningJpaRepository;
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
