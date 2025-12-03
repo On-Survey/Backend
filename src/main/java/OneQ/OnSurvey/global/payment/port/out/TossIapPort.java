@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.payment.port.out;
 
-import OneQ.OnSurvey.global.infra.toss.iap.dto.OrderStatusResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;

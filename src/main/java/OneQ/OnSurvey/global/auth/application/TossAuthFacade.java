@@ -8,7 +8,7 @@ import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.auth.TossMemberInfoDecryptService;
 import OneQ.OnSurvey.global.infra.toss.auth.TossUnlinkValue;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.*;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import static OneQ.OnSurvey.global.auth.AuthErrorCode.INVALID_REFRESH_TOKEN;
 import static OneQ.OnSurvey.global.exception.ErrorCode.UNAUTHORIZED;
-import static OneQ.OnSurvey.global.infra.toss.common.TossErrorCode.*;
+import static OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode.*;
 
 @Service
 @RequiredArgsConstructor

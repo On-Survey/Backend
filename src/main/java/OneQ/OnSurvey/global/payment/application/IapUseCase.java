@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.payment.application;
 
-import OneQ.OnSurvey.global.infra.toss.iap.dto.OrderStatusResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 
 public interface IapUseCase {
 

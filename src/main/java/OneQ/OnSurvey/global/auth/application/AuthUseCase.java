@@ -1,10 +1,10 @@
 package OneQ.OnSurvey.global.auth.application;
 
 import OneQ.OnSurvey.global.infra.toss.auth.TossUnlinkValue;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginResponse;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossReissueRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossReissueRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

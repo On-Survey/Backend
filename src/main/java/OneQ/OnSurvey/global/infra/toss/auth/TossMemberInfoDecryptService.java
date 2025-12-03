@@ -2,7 +2,7 @@ package OneQ.OnSurvey.global.infra.toss.auth;
 
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.global.auth.dto.DecryptedLoginMeResponse;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

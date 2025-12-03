@@ -2,17 +2,18 @@ package OneQ.OnSurvey.global.infra.toss.client;
 
 import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
 import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossTokenResponse;
-import OneQ.OnSurvey.global.infra.toss.common.TossApiException;
-import OneQ.OnSurvey.global.infra.toss.common.TossErrorCode;
-import OneQ.OnSurvey.global.infra.toss.iap.dto.GetOrderStatusRequest;
-import OneQ.OnSurvey.global.infra.toss.iap.dto.OrderStatusResponse;
-import OneQ.OnSurvey.global.infra.toss.promotion.dto.ExecutePromotionResponse;
-import OneQ.OnSurvey.global.infra.toss.promotion.dto.ExecutionResultResponse;
-import OneQ.OnSurvey.global.infra.toss.promotion.dto.PromotionKeyResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossTokenResponse;
+import OneQ.OnSurvey.global.infra.toss.common.exception.TossApiException;
+import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.GetOrderStatusRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutePromotionResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutionResultResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.PromotionKeyResponse;
 import OneQ.OnSurvey.global.payment.port.out.TossIapPort;
+import OneQ.OnSurvey.global.promotion.port.out.TossPromotionPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -42,7 +43,7 @@ import java.util.List;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TossApiClient implements TossAuthPort, TossIapPort {
+public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPort {
 
     private static final int CONNECT_TIMEOUT_MS = 5_000;
     private static final int READ_TIMEOUT_MS = 5_000;
@@ -239,6 +240,7 @@ public class TossApiClient implements TossAuthPort, TossIapPort {
     }
 
     /* ===================== 프로모션 ===================== */
+    @Override
     public PromotionKeyResponse getPromotionKey(long userKey, SSLContext ctx) throws IOException {
         HttpsURLConnection conn = open(promotionGetKeyUrl, ctx, "POST", true);
         conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
@@ -259,6 +261,7 @@ public class TossApiClient implements TossAuthPort, TossIapPort {
     }
 
     /** 지급 실행 (4110 재시도, 4113 멱등 성공 처리) */
+    @Override
     public ExecutePromotionResponse executePromotionWithRetry(
             long userKey, String promotionCode, String key, int amount, int retries, SSLContext ctx
     ) throws Exception {
@@ -295,6 +298,7 @@ public class TossApiClient implements TossAuthPort, TossIapPort {
         }
     }
 
+    @Override
     public ExecutionResultResponse getPromotionResult(long userKey, String promotionCode, String key, SSLContext ctx) throws IOException {
         HttpsURLConnection conn = open(promotionResultUrl, ctx, "POST", true);
         conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));

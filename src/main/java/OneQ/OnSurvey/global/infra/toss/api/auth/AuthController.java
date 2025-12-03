@@ -1,9 +1,9 @@
 package OneQ.OnSurvey.global.infra.toss.api.auth;
 
 import OneQ.OnSurvey.global.auth.application.AuthUseCase;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginResponse;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossReissueRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossReissueRequest;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;

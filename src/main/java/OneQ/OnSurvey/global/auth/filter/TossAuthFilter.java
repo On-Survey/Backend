@@ -6,7 +6,7 @@ import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.global.auth.application.AuthUseCase;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

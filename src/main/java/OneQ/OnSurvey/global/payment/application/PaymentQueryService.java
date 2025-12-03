@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.payment.application;
 
-import OneQ.OnSurvey.global.infra.toss.iap.dto.PaymentSummaryResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.PaymentSummaryResponse;
 import OneQ.OnSurvey.global.payment.entity.Payment;
 import OneQ.OnSurvey.global.payment.port.out.PaymentRepository;
 import lombok.RequiredArgsConstructor;

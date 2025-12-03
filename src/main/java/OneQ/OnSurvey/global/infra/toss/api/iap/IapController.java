@@ -1,8 +1,8 @@
 package OneQ.OnSurvey.global.infra.toss.api.iap;
 
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
-import OneQ.OnSurvey.global.infra.toss.iap.dto.IapGrantRequest;
-import OneQ.OnSurvey.global.infra.toss.iap.dto.OrderStatusResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.IapGrantRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 import OneQ.OnSurvey.global.payment.application.IapUseCase;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;

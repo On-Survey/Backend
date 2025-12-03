@@ -1,8 +1,8 @@
 package OneQ.OnSurvey.global.auth.port.out;
 
-import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.TossTokenResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossTokenResponse;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
