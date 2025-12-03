@@ -1,8 +1,8 @@
-package OneQ.OnSurvey.global.infra.toss.iap.controller;
+package OneQ.OnSurvey.global.payment.controller;
 
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.infra.toss.iap.dto.PaymentSummaryResponse;
-import OneQ.OnSurvey.global.infra.toss.iap.service.PaymentQueryService;
+import OneQ.OnSurvey.global.payment.application.PaymentQueryService;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;

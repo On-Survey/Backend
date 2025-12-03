@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.infra.toss.iap.service;
+package OneQ.OnSurvey.global.payment.application;
 
 import OneQ.OnSurvey.domain.member.CoinErrorCode;
 import OneQ.OnSurvey.domain.member.Member;
@@ -7,10 +7,10 @@ import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.client.TossApiClient;
 import OneQ.OnSurvey.global.infra.toss.common.TossErrorCode;
-import OneQ.OnSurvey.global.infra.toss.iap.Payment;
-import OneQ.OnSurvey.global.infra.toss.iap.PaymentStatus;
 import OneQ.OnSurvey.global.infra.toss.iap.dto.OrderStatusResponse;
-import OneQ.OnSurvey.global.infra.toss.iap.repository.PaymentRepository;
+import OneQ.OnSurvey.global.payment.entity.Payment;
+import OneQ.OnSurvey.global.payment.entity.PaymentStatus;
+import OneQ.OnSurvey.global.payment.port.out.PaymentRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import java.util.Set;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class IapService {
+public class IapFacade implements IapUseCase {
 
     private final TossApiClient tossApiClient;
     private final PaymentRepository paymentRepository;
@@ -47,10 +47,7 @@ public class IapService {
         this.tossSslContext = tossApiClient.createSSLContext(publicCrt, privateKey);
     }
 
-    /**
-     * 토스 IAP 주문을 검증하고, 유효하면 우리 도메인에 결제 반영
-     * @return 지급 성공 여부
-     */
+    @Override
     @Transactional
     public boolean grantByOrder(long userKey, String orderId, Long price) {
 
@@ -108,6 +105,7 @@ public class IapService {
         return true;
     }
 
+    @Override
     public OrderStatusResponse getStatus(long userKey, String orderId) {
         try {
             return tossApiClient.getIapOrderStatus(tossSslContext, userKey, orderId);

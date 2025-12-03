@@ -1,8 +1,8 @@
-package OneQ.OnSurvey.global.infra.toss.iap.service;
+package OneQ.OnSurvey.global.payment.application;
 
-import OneQ.OnSurvey.global.infra.toss.iap.Payment;
 import OneQ.OnSurvey.global.infra.toss.iap.dto.PaymentSummaryResponse;
-import OneQ.OnSurvey.global.infra.toss.iap.repository.PaymentRepository;
+import OneQ.OnSurvey.global.payment.entity.Payment;
+import OneQ.OnSurvey.global.payment.port.out.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

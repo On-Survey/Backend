@@ -1,9 +1,9 @@
-package OneQ.OnSurvey.global.infra.toss.iap.controller;
+package OneQ.OnSurvey.global.infra.toss.api.iap;
 
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
-import OneQ.OnSurvey.global.infra.toss.iap.service.IapService;
 import OneQ.OnSurvey.global.infra.toss.iap.dto.IapGrantRequest;
 import OneQ.OnSurvey.global.infra.toss.iap.dto.OrderStatusResponse;
+import OneQ.OnSurvey.global.payment.application.IapUseCase;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class IapController {
 
-    private final IapService iapService;
+    private final IapUseCase iapUseCase;
 
     @PostMapping("/grant")
     @Operation(summary = "IAP 상품 지급(결제 반영)", description = "orderId 서버검증 후 우리 도메인(PAYMENT)에 결제 반영. 멱등 처리됨.")
@@ -28,7 +28,7 @@ public class IapController {
             @Valid @RequestBody IapGrantRequest body
     ) {
         long userKey = principal.getUserKey();
-        return SuccessResponse.ok(iapService.grantByOrder(userKey, body.orderId(), body.price()));
+        return SuccessResponse.ok(iapUseCase.grantByOrder(userKey, body.orderId(), body.price()));
     }
 
     /** 추가 컨트롤러. 삭제 고려 **/
@@ -39,6 +39,6 @@ public class IapController {
             @Valid @RequestBody IapGrantRequest body
     ) {
         long userKey = principal.getUserKey();
-        return SuccessResponse.ok(iapService.getStatus(userKey, body.orderId()));
+        return SuccessResponse.ok(iapUseCase.getStatus(userKey, body.orderId()));
     }
 }

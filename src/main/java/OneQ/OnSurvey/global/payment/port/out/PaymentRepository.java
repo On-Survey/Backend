@@ -1,6 +1,6 @@
-package OneQ.OnSurvey.global.infra.toss.iap.repository;
+package OneQ.OnSurvey.global.payment.port.out;
 
-import OneQ.OnSurvey.global.infra.toss.iap.Payment;
+import OneQ.OnSurvey.global.payment.entity.Payment;
 
 import java.util.List;
 import java.util.Optional;

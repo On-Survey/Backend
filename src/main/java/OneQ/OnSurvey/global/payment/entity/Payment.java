@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.infra.toss.iap;
+package OneQ.OnSurvey.global.payment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

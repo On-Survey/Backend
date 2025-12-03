@@ -1,6 +1,6 @@
-package OneQ.OnSurvey.global.infra.toss.iap.repository;
+package OneQ.OnSurvey.global.infra.toss.payment.jpa;
 
-import OneQ.OnSurvey.global.infra.toss.iap.Payment;
+import OneQ.OnSurvey.global.payment.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

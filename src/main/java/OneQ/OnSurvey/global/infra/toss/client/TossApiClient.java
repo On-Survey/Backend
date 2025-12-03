@@ -12,6 +12,7 @@ import OneQ.OnSurvey.global.infra.toss.iap.dto.OrderStatusResponse;
 import OneQ.OnSurvey.global.infra.toss.promotion.dto.ExecutePromotionResponse;
 import OneQ.OnSurvey.global.infra.toss.promotion.dto.ExecutionResultResponse;
 import OneQ.OnSurvey.global.infra.toss.promotion.dto.PromotionKeyResponse;
+import OneQ.OnSurvey.global.payment.port.out.TossIapPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -41,7 +42,7 @@ import java.util.List;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TossApiClient implements TossAuthPort {
+public class TossApiClient implements TossAuthPort, TossIapPort {
 
     private static final int CONNECT_TIMEOUT_MS = 5_000;
     private static final int READ_TIMEOUT_MS = 5_000;
@@ -317,6 +318,7 @@ public class TossApiClient implements TossAuthPort {
     }
 
     /* ===================== IAP ===================== */
+    @Override
     public OrderStatusResponse getIapOrderStatus(SSLContext ctx, long userKey, String orderId) throws IOException {
         HttpsURLConnection conn = open(getIapOrderStatusUrl, ctx, "POST", true);
         conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));

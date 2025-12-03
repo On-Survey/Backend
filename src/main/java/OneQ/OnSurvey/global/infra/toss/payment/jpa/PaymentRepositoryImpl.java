@@ -1,6 +1,7 @@
-package OneQ.OnSurvey.global.infra.toss.iap.repository;
+package OneQ.OnSurvey.global.infra.toss.payment.jpa;
 
-import OneQ.OnSurvey.global.infra.toss.iap.Payment;
+import OneQ.OnSurvey.global.payment.entity.Payment;
+import OneQ.OnSurvey.global.payment.port.out.PaymentRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
