@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.domain.member;
 
-import OneQ.OnSurvey.global.exception.ApiErrorCode;
+import OneQ.OnSurvey.global.common.exception.ApiErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

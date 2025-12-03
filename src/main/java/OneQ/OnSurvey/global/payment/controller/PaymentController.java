@@ -1,9 +1,9 @@
 package OneQ.OnSurvey.global.payment.controller;
 
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.iap.PaymentSummaryResponse;
 import OneQ.OnSurvey.global.payment.application.PaymentQueryService;
-import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.infra.ncp.objectStorage.image;
 
-import OneQ.OnSurvey.global.exception.ApiErrorCode;
+import OneQ.OnSurvey.global.common.exception.ApiErrorCode;
 import org.springframework.http.HttpStatus;
 
 public enum ImageErrorCode implements ApiErrorCode {

@@ -1,11 +1,11 @@
-package OneQ.OnSurvey.global.config;
+package OneQ.OnSurvey.global.common.config;
 
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.global.auth.application.AuthUseCase;
 import OneQ.OnSurvey.global.auth.filter.ExactBasicHeaderFilter;
 import OneQ.OnSurvey.global.auth.filter.TossAuthFilter;
-import OneQ.OnSurvey.global.handler.CustomAccessDeniedHandler;
-import OneQ.OnSurvey.global.handler.JWTAuthenticationEntryPoint;
+import OneQ.OnSurvey.global.common.handler.CustomAccessDeniedHandler;
+import OneQ.OnSurvey.global.common.handler.JWTAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

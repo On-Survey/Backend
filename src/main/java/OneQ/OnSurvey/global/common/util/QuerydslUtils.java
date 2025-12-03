@@ -1,15 +1,14 @@
-package OneQ.OnSurvey.global.util;
+package OneQ.OnSurvey.global.common.util;
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.EntityPathBase;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.StringTemplate;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
-import com.querydsl.core.types.dsl.StringTemplate;
-import org.springframework.data.domain.Pageable;
 
 public abstract class QuerydslUtils {
 

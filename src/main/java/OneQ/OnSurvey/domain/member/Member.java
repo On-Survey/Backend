@@ -5,8 +5,8 @@ import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
-import OneQ.OnSurvey.global.entity.BaseEntity;
-import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.common.entity.BaseEntity;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import jakarta.persistence.*;
 import lombok.*;
 

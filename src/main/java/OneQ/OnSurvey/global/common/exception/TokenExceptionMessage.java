@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.exception;
+package OneQ.OnSurvey.global.common.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

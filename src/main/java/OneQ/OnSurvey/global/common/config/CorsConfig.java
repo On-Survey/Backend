@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.config;
+package OneQ.OnSurvey.global.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

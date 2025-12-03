@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.annotation;
+package OneQ.OnSurvey.global.common.annotation;
 
 import com.fasterxml.jackson.annotation.JacksonAnnotationsInside;
 import com.fasterxml.jackson.annotation.JsonFormat;

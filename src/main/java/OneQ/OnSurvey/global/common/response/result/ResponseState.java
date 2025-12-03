@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.response.result;
+package OneQ.OnSurvey.global.common.response.result;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

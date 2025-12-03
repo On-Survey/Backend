@@ -1,7 +1,7 @@
-package OneQ.OnSurvey.global.exception;
+package OneQ.OnSurvey.global.common.exception;
 
-import OneQ.OnSurvey.global.response.ErrorResponse;
-import OneQ.OnSurvey.global.response.result.ExceptionResult;
+import OneQ.OnSurvey.global.common.response.ErrorResponse;
+import OneQ.OnSurvey.global.common.response.result.ExceptionResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.ArrayList;
 import java.util.List;
 
-import static OneQ.OnSurvey.global.exception.ErrorCode.PARAMETER_GRAMMAR_ERROR;
-import static OneQ.OnSurvey.global.exception.ErrorCode.PARAMETER_VALIDATION_ERROR;
+import static OneQ.OnSurvey.global.common.exception.ErrorCode.PARAMETER_GRAMMAR_ERROR;
+import static OneQ.OnSurvey.global.common.exception.ErrorCode.PARAMETER_VALIDATION_ERROR;
 
 @RequiredArgsConstructor
 @RestControllerAdvice

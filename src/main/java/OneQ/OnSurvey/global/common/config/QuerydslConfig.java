@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.config;
+package OneQ.OnSurvey.global.common.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

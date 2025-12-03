@@ -8,7 +8,7 @@ import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.global.auth.dto.DecryptedLoginMeResponse;
-import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

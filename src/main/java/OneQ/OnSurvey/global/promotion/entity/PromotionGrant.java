@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.promotion.entity;
 
-import OneQ.OnSurvey.global.entity.BaseEntity;
+import OneQ.OnSurvey.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

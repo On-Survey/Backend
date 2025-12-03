@@ -5,7 +5,7 @@ import OneQ.OnSurvey.domain.survey.model.request.*;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.service.form.SurveyFormFacade;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
-import OneQ.OnSurvey.global.response.SuccessResponse;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

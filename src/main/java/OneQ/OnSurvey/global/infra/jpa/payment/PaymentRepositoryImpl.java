@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-import static OneQ.OnSurvey.global.infra.toss.iap.QPayment.payment;
+import static OneQ.OnSurvey.global.payment.entity.QPayment.payment;
 
 @Repository
 @RequiredArgsConstructor

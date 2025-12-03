@@ -3,7 +3,7 @@ package OneQ.OnSurvey.domain.survey.controller;
 import OneQ.OnSurvey.domain.survey.entity.SurveyGlobalStats;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyGlobalStatsResponse;
 import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
-import OneQ.OnSurvey.global.response.SuccessResponse;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

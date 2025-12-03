@@ -1,8 +1,8 @@
 package OneQ.OnSurvey.global.promotion.application;
 
-import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.promotion.entity.PromotionGrant;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
+import OneQ.OnSurvey.global.promotion.entity.PromotionGrant;
 import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

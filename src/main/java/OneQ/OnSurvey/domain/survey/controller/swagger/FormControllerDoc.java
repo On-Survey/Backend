@@ -2,7 +2,7 @@ package OneQ.OnSurvey.domain.survey.controller.swagger;
 
 import OneQ.OnSurvey.domain.survey.model.request.QuestionRequest;
 import OneQ.OnSurvey.domain.survey.model.response.CreateQuestionResponse;
-import OneQ.OnSurvey.global.response.SuccessResponse;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;

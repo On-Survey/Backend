@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.config;
+package OneQ.OnSurvey.global.common.config;
 
 import OneQ.OnSurvey.global.infra.ncp.NcpCredentialsProvider;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.NcpS3Props;

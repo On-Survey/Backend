@@ -1,7 +1,7 @@
 package OneQ.OnSurvey.domain.survey.model.response;
 
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
-import OneQ.OnSurvey.global.annotation.DateFormat;
+import OneQ.OnSurvey.global.common.annotation.DateFormat;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

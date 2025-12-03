@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.config;
+package OneQ.OnSurvey.global.common.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

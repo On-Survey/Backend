@@ -5,7 +5,7 @@ import OneQ.OnSurvey.domain.member.service.MemberModifyService;
 import OneQ.OnSurvey.domain.member.service.MemberQueryService;
 import OneQ.OnSurvey.global.auth.dto.DecryptedLoginMeResponse;
 import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
-import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.auth.TossMemberInfoDecryptService;
 import OneQ.OnSurvey.global.infra.toss.auth.TossUnlinkValue;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.*;
@@ -22,7 +22,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 
 import static OneQ.OnSurvey.global.auth.AuthErrorCode.INVALID_REFRESH_TOKEN;
-import static OneQ.OnSurvey.global.exception.ErrorCode.UNAUTHORIZED;
+import static OneQ.OnSurvey.global.common.exception.ErrorCode.UNAUTHORIZED;
 import static OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode.*;
 
 @Service

@@ -10,7 +10,7 @@ import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.model.request.*;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
-import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

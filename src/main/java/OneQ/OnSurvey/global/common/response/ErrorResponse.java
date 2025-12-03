@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.response;
+package OneQ.OnSurvey.global.common.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

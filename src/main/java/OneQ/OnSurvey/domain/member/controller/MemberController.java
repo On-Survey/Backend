@@ -6,7 +6,7 @@ import OneQ.OnSurvey.domain.member.dto.ProfileImageUpdateRequest;
 import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.member.service.MemberUpdater;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
-import OneQ.OnSurvey.global.response.SuccessResponse;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

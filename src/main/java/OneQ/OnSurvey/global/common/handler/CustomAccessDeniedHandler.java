@@ -1,13 +1,13 @@
-package OneQ.OnSurvey.global.handler;
+package OneQ.OnSurvey.global.common.handler;
 
-import OneQ.OnSurvey.global.exception.ErrorCode;
-import OneQ.OnSurvey.global.response.ErrorResponse;
+import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import OneQ.OnSurvey.global.common.response.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -15,26 +15,27 @@ import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
-public class JWTAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(HttpServletRequest request,
-                         HttpServletResponse response,
-                         AuthenticationException ex) throws IOException {
+    public void handle(HttpServletRequest request,
+                       HttpServletResponse response,
+                       AccessDeniedException ex) throws IOException {
 
         if (response.isCommitted()) return;
 
         ErrorResponse<Object> body = ErrorResponse.of(
-                ErrorCode.UNAUTHORIZED.getErrorCode(),
-                ErrorCode.UNAUTHORIZED.getMessage()
+                ErrorCode.FORBIDDEN.getErrorCode(),
+                ErrorCode.FORBIDDEN.getMessage()
         );
 
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType("application/json;charset=UTF-8");
 
         objectMapper.writeValue(response.getWriter(), body);
     }
 }
+

@@ -1,10 +1,10 @@
 package OneQ.OnSurvey.global.infra.toss.api.promotion;
 
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutionResultResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.PromotionIssueRequest;
 import OneQ.OnSurvey.global.promotion.application.PromotionUseCase;
-import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

@@ -1,17 +1,17 @@
 package OneQ.OnSurvey.global.infra.toss.client;
 
 import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
-import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginRequest;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossTokenResponse;
-import OneQ.OnSurvey.global.infra.toss.common.exception.TossApiException;
-import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
 import OneQ.OnSurvey.global.infra.toss.common.dto.iap.GetOrderStatusRequest;
 import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutePromotionResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutionResultResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.PromotionKeyResponse;
+import OneQ.OnSurvey.global.infra.toss.common.exception.TossApiException;
+import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
 import OneQ.OnSurvey.global.payment.port.out.TossIapPort;
 import OneQ.OnSurvey.global.promotion.port.out.TossPromotionPort;
 import com.fasterxml.jackson.databind.JsonNode;
