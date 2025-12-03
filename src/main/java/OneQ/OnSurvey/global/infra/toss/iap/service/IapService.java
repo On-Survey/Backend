@@ -5,7 +5,7 @@ import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.infra.toss.adapter.TossApiClient;
+import OneQ.OnSurvey.global.infra.toss.client.TossApiClient;
 import OneQ.OnSurvey.global.infra.toss.common.TossErrorCode;
 import OneQ.OnSurvey.global.infra.toss.iap.Payment;
 import OneQ.OnSurvey.global.infra.toss.iap.PaymentStatus;

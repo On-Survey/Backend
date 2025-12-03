@@ -6,7 +6,7 @@ import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.global.auth.token.TokenStore;
 import OneQ.OnSurvey.global.exception.CustomException;
-import OneQ.OnSurvey.global.infra.toss.adapter.TossApiClient;
+import OneQ.OnSurvey.global.infra.toss.client.TossApiClient;
 import OneQ.OnSurvey.global.infra.toss.common.TossApiException;
 import OneQ.OnSurvey.global.infra.toss.common.TossErrorCode;
 import OneQ.OnSurvey.global.infra.toss.common.TossErrorMapper;

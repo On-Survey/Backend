@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.infra.toss.auth.dto;
+package OneQ.OnSurvey.global.auth.dto;
 
 import OneQ.OnSurvey.domain.survey.model.Gender;
 

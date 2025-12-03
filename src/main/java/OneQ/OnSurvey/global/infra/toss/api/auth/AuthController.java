@@ -1,9 +1,9 @@
-package OneQ.OnSurvey.global.infra.toss.auth.controller;
+package OneQ.OnSurvey.global.infra.toss.api.auth;
 
+import OneQ.OnSurvey.global.auth.application.AuthUseCase;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginResponse;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.TossReissueRequest;
-import OneQ.OnSurvey.global.infra.toss.auth.service.TossAuthService;
 import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final TossAuthService tossAuthService;
+    private final AuthUseCase authUseCase;
 
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/toss/login")
@@ -27,7 +27,7 @@ public class AuthController {
             HttpServletResponse httpServletResponse,
             @RequestBody TossLoginRequest tossLoginRequest
     ) {
-        TossLoginResponse result = tossAuthService.createAccessAndRefreshToken(tossLoginRequest, httpServletResponse);
+        TossLoginResponse result = authUseCase.createAccessAndRefreshToken(tossLoginRequest, httpServletResponse);
         return ResponseEntity.ok(SuccessResponse.ok(result));
     }
 
@@ -38,7 +38,7 @@ public class AuthController {
             HttpServletResponse response,
             @RequestBody TossReissueRequest reissueRequest
     ) {
-        return ResponseEntity.ok(SuccessResponse.ok(tossAuthService.reissueToken(reissueRequest, response)));
+        return ResponseEntity.ok(SuccessResponse.ok(authUseCase.reissueToken(reissueRequest, response)));
     }
 
     @ResponseStatus(HttpStatus.OK)
@@ -47,6 +47,6 @@ public class AuthController {
     public ResponseEntity<SuccessResponse<Boolean>> logout(
             HttpServletRequest request
     ) {
-        return ResponseEntity.ok(SuccessResponse.ok(tossAuthService.logoutByAccessToken(request)));
+        return ResponseEntity.ok(SuccessResponse.ok(authUseCase.logoutByAccessToken(request)));
     }
 }

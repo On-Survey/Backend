@@ -1,7 +1,7 @@
-package OneQ.OnSurvey.global.infra.toss.auth.controller;
+package OneQ.OnSurvey.global.infra.toss.api.auth;
 
+import OneQ.OnSurvey.global.auth.application.AuthUseCase;
 import OneQ.OnSurvey.global.infra.toss.auth.TossUnlinkValue;
-import OneQ.OnSurvey.global.infra.toss.auth.service.TossUnlinkService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class UnlinkCallbackController {
 
-    private final TossUnlinkService tossUnlinkService;
+    private final AuthUseCase authUseCase;
 
     @GetMapping
     public ResponseEntity<Boolean> unlink(
@@ -25,7 +25,7 @@ public class UnlinkCallbackController {
     ) {
         log.info("[서비스 끊기 신청] : userKey=" + userKey + "referrer=" + referrer);
         TossUnlinkValue unlinkValue = TossUnlinkValue.valueOf(referrer);
-        tossUnlinkService.unlink(userKey, unlinkValue);
+        authUseCase.unlink(userKey, unlinkValue);
         return ResponseEntity.ok(true);
     }
 }

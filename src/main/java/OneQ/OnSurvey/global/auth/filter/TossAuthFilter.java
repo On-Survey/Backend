@@ -3,10 +3,10 @@ package OneQ.OnSurvey.global.auth.filter;
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
+import OneQ.OnSurvey.global.auth.application.AuthUseCase;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
-import OneQ.OnSurvey.global.infra.toss.auth.service.TossAuthService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,7 +28,7 @@ import java.io.IOException;
 @Slf4j
 public class TossAuthFilter extends OncePerRequestFilter {
 
-    private final TossAuthService tossAuthService;
+    private final AuthUseCase authUseCase;
     private final MemberRepository memberRepository;
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
@@ -56,7 +56,7 @@ public class TossAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws IOException, ServletException {
         try {
-            LoginMeResponse.Success me = tossAuthService.authenticateWithToss(req);
+            LoginMeResponse.Success me = authUseCase.authenticateWithToss(req);
 
             Member member = memberRepository.findMemberByUserKey(me.userKey())
                     .orElseThrow(() -> new BadCredentialsException("member not found"));

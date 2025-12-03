@@ -1,5 +1,6 @@
-package OneQ.OnSurvey.global.infra.toss.adapter;
+package OneQ.OnSurvey.global.infra.toss.client;
 
+import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
 import OneQ.OnSurvey.global.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.LoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.auth.dto.TossLoginRequest;
@@ -40,7 +41,7 @@ import java.util.List;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TossApiClient {
+public class TossApiClient implements TossAuthPort {
 
     private static final int CONNECT_TIMEOUT_MS = 5_000;
     private static final int READ_TIMEOUT_MS = 5_000;
@@ -79,6 +80,7 @@ public class TossApiClient {
     private final ObjectMapper objectMapper;
 
     /* ===================== SSL ===================== */
+    @Override
     public SSLContext createSSLContext(String certPath, String keyPath) throws Exception {
         X509Certificate cert = loadCertificate(certPath);
         PrivateKey key = loadPrivateKey(keyPath);
@@ -122,6 +124,7 @@ public class TossApiClient {
     }
 
     /* ===================== OAuth ===================== */
+    @Override
     public TossTokenResponse getAccessToken(SSLContext ctx, TossLoginRequest req) throws IOException {
         HttpsURLConnection conn = open(getAccessTokenUrl, ctx, "POST", true);
         try {
@@ -150,7 +153,7 @@ public class TossApiClient {
         }
     }
 
-
+    @Override
     public TossTokenResponse refreshOauth2Token(SSLContext ctx, String refreshToken) throws IOException {
         HttpsURLConnection conn = open(refreshTokenUrl, ctx, "POST", true);
         try {
@@ -173,6 +176,7 @@ public class TossApiClient {
 
 
     /* ===================== 연결 끊기 ===================== */
+    @Override
     public boolean removeByAccessToken(SSLContext ctx, String accessToken) throws IOException {
         HttpsURLConnection conn = open(removeByAccessTokenUrl, ctx, "POST", true);
         conn.setRequestProperty(HDR_AUTH, "Bearer " + accessToken);
@@ -184,7 +188,7 @@ public class TossApiClient {
         }
     }
 
-
+    @Override
     public boolean removeByUserKey(SSLContext ctx, long userKey) throws IOException {
         HttpsURLConnection conn = open(removeByUserKeyUrl, ctx, "POST", true);
         try {
@@ -197,6 +201,7 @@ public class TossApiClient {
         }
     }
 
+    @Override
     public LoginMeResponse.Success getLoginMe(SSLContext ctx, String accessToken) throws IOException {
         HttpsURLConnection conn = open(getUserInfoUrl, ctx, "GET", false);
         conn.setRequestProperty(HDR_AUTH, "Bearer " + accessToken);

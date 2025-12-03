@@ -1,11 +1,11 @@
 package OneQ.OnSurvey.global.config;
 
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
+import OneQ.OnSurvey.global.auth.application.AuthUseCase;
 import OneQ.OnSurvey.global.auth.filter.ExactBasicHeaderFilter;
 import OneQ.OnSurvey.global.auth.filter.TossAuthFilter;
 import OneQ.OnSurvey.global.handler.CustomAccessDeniedHandler;
 import OneQ.OnSurvey.global.handler.JWTAuthenticationEntryPoint;
-import OneQ.OnSurvey.global.infra.toss.auth.service.TossAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -33,7 +33,7 @@ public class SecurityConfig {
     private final JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final MemberRepository memberRepository;
-    private final TossAuthService tossAuthService;
+    private final AuthUseCase authUseCase;
 
     private final String[] allowedUrls = {
             "/",
@@ -53,7 +53,7 @@ public class SecurityConfig {
 
     @Bean
     public TossAuthFilter tossAuthFilter() {
-        return new TossAuthFilter(tossAuthService, memberRepository, jwtAuthenticationEntryPoint);
+        return new TossAuthFilter(authUseCase, memberRepository, jwtAuthenticationEntryPoint);
     }
 
     @Bean @Order(2)

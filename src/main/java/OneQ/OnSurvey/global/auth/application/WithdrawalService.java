@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.infra.toss.auth.service;
+package OneQ.OnSurvey.global.auth.application;
 
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.service.MemberModifyService;
