@@ -1,7 +1,7 @@
 package OneQ.OnSurvey.domain.question.entity;
 
 import OneQ.OnSurvey.domain.question.model.QuestionType;
-import OneQ.OnSurvey.global.entity.BaseEntity;
+import OneQ.OnSurvey.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

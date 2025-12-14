@@ -16,7 +16,7 @@ import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
-import OneQ.OnSurvey.global.response.SuccessResponse;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

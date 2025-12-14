@@ -14,8 +14,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
-import static OneQ.OnSurvey.global.exception.TokenExceptionMessage.INVALID_AUTH;
-import static OneQ.OnSurvey.global.exception.TokenExceptionMessage.INVALID_HEADER;
+import static OneQ.OnSurvey.global.common.exception.TokenExceptionMessage.INVALID_AUTH;
+import static OneQ.OnSurvey.global.common.exception.TokenExceptionMessage.INVALID_HEADER;
 
 @RequiredArgsConstructor
 @Slf4j

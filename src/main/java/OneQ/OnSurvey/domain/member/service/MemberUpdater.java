@@ -2,8 +2,8 @@ package OneQ.OnSurvey.domain.member.service;
 
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.value.Interest;
-import OneQ.OnSurvey.global.infra.toss.auth.dto.DecryptedLoginMeResponse;
 import OneQ.OnSurvey.domain.survey.model.Residence;
+import OneQ.OnSurvey.global.auth.dto.DecryptedLoginMeResponse;
 
 import java.util.Set;
 
