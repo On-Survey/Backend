@@ -53,7 +53,6 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
                 .findBySurveyIdAndMemberId(surveyId, answerInfo.getMemberId())
                 .orElseGet(() -> Response.of(surveyId, answerInfo.getMemberId()));
 
-        response.markResponded();
         responseRepository.save(response);
     }
 }
