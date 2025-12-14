@@ -5,6 +5,7 @@ import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
 import OneQ.OnSurvey.global.promotion.entity.PromotionGrant;
 import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,14 +34,15 @@ public class PromotionGrantTxService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Long getOrCreate(long userKey, long surveyId, String promotionCode) {
-        return retryOptimistic(() -> repo.findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
-                .map(PromotionGrant::getId)
-                .orElseGet(() -> {
-                    PromotionGrant created = repo.saveAndFlush(
-                            PromotionGrant.of(userKey, surveyId, promotionCode)
-                    );
-                    return created.getId();
-                }));
+        try {
+            return repo.findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
+                    .map(PromotionGrant::getId)
+                    .orElseGet(() -> repo.saveAndFlush(PromotionGrant.of(userKey, surveyId, promotionCode)).getId());
+        } catch (DataIntegrityViolationException e) {
+            return repo.findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
+                    .map(PromotionGrant::getId)
+                    .orElseThrow(() -> e);
+        }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

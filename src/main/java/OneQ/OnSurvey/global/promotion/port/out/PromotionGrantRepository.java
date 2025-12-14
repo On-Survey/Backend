@@ -9,4 +9,5 @@ public interface PromotionGrantRepository {
     Optional<PromotionGrant> findByUserKeyAndSurveyIdAndPromotionCode(Long userKey, Long surveyId, String promotionCode);
     Optional<PromotionGrant> findById(Long grantId);
     PromotionGrant saveAndFlush(PromotionGrant g);
+    int markPointGrantedIfFalse(Long grantId);
 }
