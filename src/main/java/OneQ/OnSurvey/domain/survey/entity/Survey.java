@@ -2,7 +2,7 @@ package OneQ.OnSurvey.domain.survey.entity;
 
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
-import OneQ.OnSurvey.global.entity.BaseEntity;
+import OneQ.OnSurvey.global.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;

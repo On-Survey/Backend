@@ -1,6 +1,5 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
-import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
@@ -15,9 +14,9 @@ import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
-import OneQ.OnSurvey.domain.survey.service.SurveyQuery;
+import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
-import OneQ.OnSurvey.global.response.SuccessResponse;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,11 +37,8 @@ public class ParticipationController {
 
     private final SurveyQuery surveyQueryService;
     private final QuestionQuery questionQueryService;
-
     private final AnswerCommand<ScreeningAnswer> answerCommand;
     private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
-
-    private final MemberFinder memberFinder;
     private final ResponseCommand responseCommand;
 
     @GetMapping("surveys/ongoing")
@@ -54,8 +50,6 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 노출 중 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-
         Pageable recommendedPageable = PageRequest.of(0, size, Sort.by("id"));
         Pageable impendingPageable = PageRequest.of(0, size, Sort.by(
             Sort.Order.asc("deadline"),
@@ -63,10 +57,10 @@ public class ParticipationController {
         ));
 
         SurveyParticipationResponse.SliceSurveyData recommended = surveyQueryService.getParticipationSurveyList(
-            lastSurveyId, recommendedPageable, SurveyStatus.ONGOING, memberId
+            lastSurveyId, recommendedPageable, SurveyStatus.ONGOING, principal.getMemberId()
         );
         SurveyParticipationResponse.SliceSurveyData impending = surveyQueryService.getParticipationSurveyList(
-            lastSurveyId, LocalDateTime.now(), impendingPageable, SurveyStatus.ONGOING, memberId
+            lastSurveyId, LocalDateTime.now(), impendingPageable, SurveyStatus.ONGOING, principal.getMemberId()
         );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
@@ -88,11 +82,9 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 사용자 추천 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-        
         Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
         SurveyParticipationResponse.SliceSurveyData recommended =
-            surveyQueryService.getParticipationSurveyList(lastSurveyId, pageable, SurveyStatus.ONGOING, memberId
+            surveyQueryService.getParticipationSurveyList(lastSurveyId, pageable, SurveyStatus.ONGOING, principal.getMemberId()
         );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
@@ -113,14 +105,12 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 마감 임박 설문 조회 - lastSurveyId: {}, lastDeadline: {}, size: {}", lastSurveyId, lastDeadline, size);
 
-        Long memberId = memberFinder.getMemberByUserKey(principal.getUserKey()).getId();
-
         Pageable pageable = PageRequest.of(0, size, Sort.by(
             Sort.Order.asc("deadline"),
             Sort.Order.asc("id")
         ));
         SurveyParticipationResponse.SliceSurveyData impending =
-            surveyQueryService.getParticipationSurveyList(lastSurveyId, lastDeadline, pageable, SurveyStatus.ONGOING, memberId
+            surveyQueryService.getParticipationSurveyList(lastSurveyId, lastDeadline, pageable, SurveyStatus.ONGOING, principal.getMemberId()
         );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
@@ -150,33 +140,29 @@ public class ParticipationController {
     @GetMapping("surveys/screenings")
     @Operation(summary = "관심사에 일치하는 설문의 스크리닝 문항을 조회합니다.")
     public SuccessResponse<ParticipationScreeningResponse> getRecommendedScreenings(
-        @AuthenticationPrincipal CustomUserDetails details,
+        @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size
     ) {
         log.info("[PARTICIPATION] 관심사 일치 스크리닝 문항 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
-
         Pageable pageable = PageRequest.of(0, size);
-        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, memberId));
+        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, principal.getMemberId()));
     }
 
     @PostMapping("screenings/{screeningId}")
     @Operation(summary = "스크리닝 문항에 대한 응답을 생성합니다.")
     public SuccessResponse<Boolean> createScreeningAnswer(
-        @AuthenticationPrincipal CustomUserDetails details,
+        @AuthenticationPrincipal CustomUserDetails principal,
         @RequestBody InsertScreeningAnswerRequest request,
         @PathVariable Long screeningId
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
-
         log.info("[PARTICIPATION] 스크리닝 응답 생성 - screeningId: {}, userKey: {}, content: {}",
-            screeningId, memberId, request.content());
+            screeningId, principal.getMemberId(), request.content());
 
         AnswerInsertDto.AnswerInfo answerInfo = AnswerInsertDto.AnswerInfo.builder()
             .id(screeningId)
-            .memberId(memberId)
+            .memberId(principal.getMemberId())
             .content(request.content())
             .build();
         return SuccessResponse.ok(answerCommand.insertAnswer(answerInfo));
@@ -185,17 +171,14 @@ public class ParticipationController {
     @PostMapping("surveys/{surveyId}")
     @Operation(summary = "설문에 대한 응답을 생성합니다.")
     public SuccessResponse<Boolean> createQuestionAnswer(
-        @AuthenticationPrincipal CustomUserDetails details,
+        @AuthenticationPrincipal CustomUserDetails principal,
         @PathVariable Long surveyId,
         @RequestBody InsertQuestionAnswerRequest request
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
-
         log.info("[PARTICIPATION] 설문 응답 생성 - surveyId: {}, userKey: {}, request: {}",
-            surveyId, memberId, request.toString());
+            surveyId, principal.getMemberId(), request.toString());
 
-        AnswerInsertDto answerInsertDto = request.toDto(memberId);
-
+        AnswerInsertDto answerInsertDto = request.toDto(principal.getMemberId());
         questionAnswerCommand.insertAnswers(answerInsertDto);
 
         return SuccessResponse.ok(true);
@@ -204,13 +187,12 @@ public class ParticipationController {
     @PostMapping("surveys/{surveyId}/complete")
     @Operation(summary = "설문 작성을 완료합니다.")
     public SuccessResponse<Boolean> completeSurvey(
-            @AuthenticationPrincipal CustomUserDetails details,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @PathVariable Long surveyId
     ) {
-        Long memberId = memberFinder.getMemberByUserKey(details.getUserKey()).getId();
-        log.info("[PARTICIPATION] 설문 완료 - surveyId: {}, memberId: {}", surveyId, memberId);
+        log.info("[PARTICIPATION] 설문 완료 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
 
-        Boolean result = responseCommand.createResponse(surveyId, memberId);
+        Boolean result = responseCommand.createResponse(surveyId, principal.getMemberId());
         return SuccessResponse.ok(result);
     }
 }

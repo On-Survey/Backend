@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.infra.ncp.objectStorage.image.service;
 
-import OneQ.OnSurvey.global.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.NcpS3Client;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.ImageErrorCode;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.dto.ImageUploadResponse;

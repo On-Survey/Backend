@@ -1,9 +1,9 @@
 package OneQ.OnSurvey.global.infra.ncp.objectStorage.image.controller;
 
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.dto.ImageUploadResponse;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.service.ImageModifyService;
-import OneQ.OnSurvey.global.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;

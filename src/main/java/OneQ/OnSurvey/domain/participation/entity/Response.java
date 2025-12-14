@@ -1,17 +1,9 @@
 package OneQ.OnSurvey.domain.participation.entity;
 
 import OneQ.OnSurvey.domain.participation.entity.id.ResponseId;
-import OneQ.OnSurvey.global.entity.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import OneQ.OnSurvey.global.common.entity.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
