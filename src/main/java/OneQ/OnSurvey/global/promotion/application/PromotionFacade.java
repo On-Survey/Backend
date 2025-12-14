@@ -71,7 +71,7 @@ public class PromotionFacade implements PromotionUseCase {
                 .orElseThrow(() -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
 
         if (grant.isSuccess()) {
-            grantPromotionPointIfNeeded(grant, userKey);
+            grantPromotionPointIfNeeded(grantId, userKey);
             return ExecutionResultResponse.success();
         }
 
@@ -111,7 +111,7 @@ public class PromotionFacade implements PromotionUseCase {
             switch (finalRes.status()) {
                 case "SUCCESS" -> {
                     grantTx.markSuccess(grant.getId());
-                    grantPromotionPointIfNeeded(grant, userKey);
+                    grantPromotionPointIfNeeded(grantId, userKey);
                 }
                 case "PENDING" -> grantTx.markPending(grant.getId(), execResp.key());
                 default        -> grantTx.markFail(grant.getId());
@@ -139,16 +139,14 @@ public class PromotionFacade implements PromotionUseCase {
         }
     }
 
-    protected void grantPromotionPointIfNeeded(PromotionGrant grant, long userKey) {
-        if (grant.isPointGranted()) {
-            return;
-        }
+    protected void grantPromotionPointIfNeeded(Long grantId, long userKey) {
+        int updated = promotionGrantRepository.markPointGrantedIfFalse(grantId);
+        if (updated == 0) return;
 
         Member member = memberRepository.findMemberByUserKey(userKey)
                 .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         member.increasePromotionPoint(promotionAmount);
-        grant.markPointGranted();
         surveyGlobalStatsService.addPromotionCount(1);
     }
 
@@ -159,7 +157,7 @@ public class PromotionFacade implements PromotionUseCase {
             switch (res.status()) {
                 case "SUCCESS" -> {
                     grantTx.markSuccess(grant.getId());
-                    grantPromotionPointIfNeeded(grant, userKey);
+                    grantPromotionPointIfNeeded(grant.getId(), userKey);
                 }
                 case "PENDING" -> grantTx.markPending(grant.getId(), execKey);
                 default        -> grantTx.markFail(grant.getId());
