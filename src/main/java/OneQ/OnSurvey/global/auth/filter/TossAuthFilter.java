@@ -66,7 +66,11 @@ public class TossAuthFilter extends OncePerRequestFilter {
             }
 
             CustomUserDetails principal = new CustomUserDetails(
-                    Member.builder().userKey(me.userKey()).role(member.getRole()).build()
+                    Member.builder()
+                            .id(member.getId())
+                            .userKey(me.userKey())
+                            .role(member.getRole())
+                            .build()
             );
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(auth);
