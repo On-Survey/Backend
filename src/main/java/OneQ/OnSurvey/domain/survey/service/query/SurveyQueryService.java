@@ -247,4 +247,8 @@ public class SurveyQueryService implements SurveyQuery {
     private boolean checkResidenceSegmentation(Residence surveyResidence, Residence memberResidence) {
         return Residence.ALL.equals(surveyResidence) || surveyResidence.equals(memberResidence);
     }
+
+    private boolean checkInterestSegmentation(Set<Interest> surveyInterests, Set<Interest> memberInterests) {
+        return surveyInterests.stream().anyMatch(memberInterests::contains);
+    }
 }
