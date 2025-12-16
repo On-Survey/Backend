@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.member.repository;
 
 import OneQ.OnSurvey.domain.member.Member;
+import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 
 import java.util.Optional;
 
@@ -10,4 +11,5 @@ public interface MemberRepository {
     void deleteById(Long memberId);
 
     Member findMemberInterestsById(Long memberId);
+    MemberSegmentation findMemberSegmentByUserKey(Long userKey);
 }

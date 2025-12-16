@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.domain.survey.repository.surveyInfo;
 
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveySegmentation;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -37,5 +39,18 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
     @Override
     public List<SurveyInfo> findBySurveyIdIn(List<Long> surveyIds) {
         return surveyInfoJpaRepository.findBySurveyIdIn(surveyIds);
+    }
+
+    @Override
+    public SurveySegmentation findSegmentationBySurveyId(Long surveyId) {
+        return queryFactory.select(Projections.fields(
+            SurveySegmentation.class,
+            surveyInfo.gender,
+            surveyInfo.ages,
+            surveyInfo.residence
+        ))
+        .from(surveyInfo)
+        .where(surveyInfo.surveyId.eq(surveyId))
+        .fetchOne();
     }
 }

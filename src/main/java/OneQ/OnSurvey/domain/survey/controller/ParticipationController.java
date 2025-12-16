@@ -7,6 +7,7 @@ import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseCommand;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
@@ -16,6 +17,7 @@ import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -124,11 +126,18 @@ public class ParticipationController {
     @GetMapping("surveys")
     @Operation(summary = "선택한 설문을 조회합니다.")
     public SuccessResponse<ParticipationQuestionResponse> getQuestionsOfSurveyId(
-        @RequestParam Long surveyId
+        @RequestParam Long surveyId,
+        @AuthenticationPrincipal CustomUserDetails principal
     ) {
         log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}", surveyId);
 
         Survey survey = surveyQueryService.getSurveyById(surveyId);
+
+        if (surveyQueryService.checkValidSegmentation(surveyId, principal.getUserKey())) {
+            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
+            throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
+        }
+
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
 
         ParticipationQuestionResponse body =
