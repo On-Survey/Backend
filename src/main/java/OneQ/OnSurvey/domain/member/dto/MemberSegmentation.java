@@ -4,22 +4,28 @@ import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDate;
 import java.util.Set;
 
-public record MemberSegmentation(
-    Long userKey,
+@Getter @ToString
+@NoArgsConstructor
+@AllArgsConstructor
+public class MemberSegmentation{
+    private Gender gender;
+    private String birthDay;
+    private Residence residence;
 
-    Gender gender,
-    String birthday,
-    Residence residence,
+    private Set<Interest> interests;
 
-    Set<Interest> interests
-) {
+    public AgeRange convertBirthDayIntoAgeRange() {
+        System.out.println(birthDay);
 
-    public AgeRange convertBirthdayIntoAgeRange() {
-        int birthYear = Integer.parseInt(birthday.substring(0, 4));
+        int birthYear = Integer.parseInt(birthDay.substring(0, 4));
         int currentYear = LocalDate.now().getYear();
         int age = currentYear - birthYear + 1;
 

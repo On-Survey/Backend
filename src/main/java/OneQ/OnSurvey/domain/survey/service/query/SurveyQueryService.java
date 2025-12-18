@@ -230,8 +230,8 @@ public class SurveyQueryService implements SurveyQuery {
         SurveySegmentation surveySegmentation = surveyInfoRepository.findSegmentationBySurveyId(surveyId);
         MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
 
-        return checkAgeSegmentation(surveySegmentation.ages(), memberSegmentation.convertBirthdayIntoAgeRange())
-            || checkGenderSegmentation(surveySegmentation.gender(), memberSegmentation.gender());
+        return !(checkAgeSegmentation(surveySegmentation.getAges(), memberSegmentation.convertBirthDayIntoAgeRange())
+            && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender()));
             // || checkResidenceSegmentation(surveySegmentation.residence(), memberSegmentation.residence());
             // || checkInterestSegmentation(surveySegmentation.interests, memberSegmentation.interests);
     }
