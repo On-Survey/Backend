@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.member.repository;
 
 import OneQ.OnSurvey.domain.member.Member;
+import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -38,5 +39,25 @@ public class MemberRepositoryImpl implements MemberRepository {
             .leftJoin(member.interests).fetchJoin()
             .where(member.id.eq(memberId))
             .fetchOne();
+    }
+
+    @Override
+    public MemberSegmentation findMemberSegmentByUserKey(Long userKey) {
+
+        Member info = jpaQueryFactory.selectFrom(member)
+            .leftJoin(member.interests).fetchJoin()
+            .where(member.id.eq(userKey))
+            .fetchOne();
+
+        if (info == null) {
+            return null;
+        }
+
+        return new MemberSegmentation(
+            info.getGender(),
+            info.getBirthDay(),
+            info.getResidence(),
+            info.getInterests()
+        );
     }
 }

@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.domain.survey.service.query;
 
+import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
@@ -7,7 +8,11 @@ import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import OneQ.OnSurvey.domain.survey.model.AgeRange;
+import OneQ.OnSurvey.domain.survey.model.Gender;
+import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveySegmentation;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
@@ -218,5 +223,32 @@ public class SurveyQueryService implements SurveyQuery {
     public Survey getSurveyById(Long surveyId) {
         return surveyRepository.getSurveyById(surveyId)
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+    }
+
+    @Override
+    public boolean checkValidSegmentation(Long surveyId, Long userKey) {
+        SurveySegmentation surveySegmentation = surveyInfoRepository.findSegmentationBySurveyId(surveyId);
+        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
+
+        return !(checkAgeSegmentation(surveySegmentation.getAges(), memberSegmentation.convertBirthDayIntoAgeRange())
+            && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender()));
+            // || checkResidenceSegmentation(surveySegmentation.residence(), memberSegmentation.residence());
+            // || checkInterestSegmentation(surveySegmentation.interests, memberSegmentation.interests);
+    }
+
+    private boolean checkAgeSegmentation(Set<AgeRange> surveyAges, AgeRange memberAge) {
+        return surveyAges.contains(AgeRange.ALL) || surveyAges.contains(memberAge);
+    }
+
+    private boolean checkGenderSegmentation(Gender surveyGender, Gender memberGender) {
+        return Gender.ALL.equals(surveyGender) || surveyGender.equals(memberGender);
+    }
+
+    private boolean checkResidenceSegmentation(Residence surveyResidence, Residence memberResidence) {
+        return Residence.ALL.equals(surveyResidence) || surveyResidence.equals(memberResidence);
+    }
+
+    private boolean checkInterestSegmentation(Set<Interest> surveyInterests, Set<Interest> memberInterests) {
+        return surveyInterests.stream().anyMatch(memberInterests::contains);
     }
 }
