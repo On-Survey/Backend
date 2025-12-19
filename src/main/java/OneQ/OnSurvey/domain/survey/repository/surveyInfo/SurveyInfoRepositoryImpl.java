@@ -46,23 +46,20 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
 
     @Override
     public SurveySegmentation findSegmentationBySurveyId(Long surveyId) {
-        Long infoId = queryFactory
-            .select(surveyInfo.infoId)
-            .from(surveyInfo)
-            .where(surveyInfo.surveyId.eq(surveyId))
-            .fetchOne();
-
         return queryFactory
             .from(surveyInfo)
             .leftJoin(surveyInfo.ages)
-            .where(surveyInfo.infoId.eq(infoId))
+            .leftJoin(survey)
+                .on(surveyInfo.surveyId.eq(survey.id))
+            .where(surveyInfo.surveyId.eq(surveyId))
             .transform(groupBy(surveyInfo.surveyId).as(
                 Projections.fields(
                     SurveySegmentation.class,
                     surveyInfo.surveyId,
                     surveyInfo.gender,
                     set(surveyInfo.ages).as("ages"),
-                    surveyInfo.residence
+                    surveyInfo.residence,
+                    set(survey.interests).as("interests")
                 )
             ))
             .get(surveyId);
