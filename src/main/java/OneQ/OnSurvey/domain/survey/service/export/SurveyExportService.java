@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.survey.model.export.SurveyMemberProjection;
 import OneQ.OnSurvey.domain.survey.model.export.SurveyQuestionHeader;
 import OneQ.OnSurvey.domain.survey.repository.export.SurveyExportRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,55 +29,67 @@ public class SurveyExportService implements SurveyExport {
     @Override
     @Transactional(readOnly = true)
     public SurveyExportFile exportCsv(Long surveyId) {
-        List<SurveyQuestionHeader> headers = surveyExportRepository.findQuestionHeaders(surveyId);
-        List<SurveyMemberProjection> members = surveyExportRepository.findMembersWhoAnswered(surveyId);
-        List<SurveyAnswerProjection> answers = surveyExportRepository.findAnswers(surveyId);
+        log.info("[SurveyExport] CSV export start. surveyId={}", surveyId);
 
-        // memberId -> (questionId -> content)
-        Map<Long, Map<Long, String>> answerMap = new HashMap<>();
-        for (SurveyAnswerProjection a : answers) {
-            answerMap.computeIfAbsent(a.getMemberId(), k -> new HashMap<>())
-                    .put(a.getQuestionId(), a.getContent());
-        }
+        try {
+            List<SurveyQuestionHeader> headers = surveyExportRepository.findQuestionHeaders(surveyId);
+            List<SurveyMemberProjection> members = surveyExportRepository.findMembersWhoAnswered(surveyId);
+            List<SurveyAnswerProjection> answers = surveyExportRepository.findAnswers(surveyId);
 
-        StringBuilder sb = new StringBuilder();
+            log.info("[SurveyExport] fetched. surveyId={}, questions={}, members={}, answers={}",
+                    surveyId, headers.size(), members.size(), answers.size());
 
-        // 1) 헤더
-        List<String> headerCols = new ArrayList<>();
-        headerCols.add("age");
-        headerCols.add("gender");
-        headerCols.add("residence");
-        for (SurveyQuestionHeader h : headers) {
-            headerCols.add("Q" + nvlInt(h.getOrderNo()) + ". " + nvl(h.getTitle()));
-        }
-        sb.append(String.join(",", escapeCsv(headerCols))).append("\n");
-
-        // 2) 로우: member 1명 = 1행
-        for (SurveyMemberProjection m : members) {
-            List<String> row = new ArrayList<>();
-
-            Integer age = toAge(m.getBirthDay());
-            row.add(age == null ? "" : String.valueOf(age));
-            row.add(toKoreanGender(m.getGender()));
-            row.add(nvl(m.getResidence()));
-
-            Map<Long, String> memberAnswers = answerMap.getOrDefault(m.getMemberId(), Map.of());
-            for (SurveyQuestionHeader h : headers) {
-                row.add(nvl(memberAnswers.get(h.getQuestionId())));
+            Map<Long, Map<Long, String>> answerMap = new HashMap<>();
+            for (SurveyAnswerProjection a : answers) {
+                answerMap.computeIfAbsent(a.getMemberId(), k -> new HashMap<>())
+                        .put(a.getQuestionId(), a.getContent());
             }
 
-            sb.append(String.join(",", escapeCsv(row))).append("\n");
+            StringBuilder sb = new StringBuilder();
+
+            // header
+            List<String> headerCols = new ArrayList<>();
+            headerCols.add("age");
+            headerCols.add("gender");
+            headerCols.add("residence");
+            for (SurveyQuestionHeader h : headers) {
+                headerCols.add("Q" + nvlInt(h.getOrderNo()) + ". " + nvl(h.getTitle()));
+            }
+            sb.append(String.join(",", escapeCsv(headerCols))).append("\n");
+
+            // rows
+            for (SurveyMemberProjection m : members) {
+                List<String> row = new ArrayList<>();
+
+                Integer age = toAge(m.getBirthDay());
+                row.add(age == null ? "" : String.valueOf(age));
+                row.add(toKoreanGender(m.getGender()));
+                row.add(nvl(m.getResidence()));
+
+                Map<Long, String> memberAnswers = answerMap.getOrDefault(m.getMemberId(), Map.of());
+                for (SurveyQuestionHeader h : headers) {
+                    row.add(nvl(memberAnswers.get(h.getQuestionId())));
+                }
+
+                sb.append(String.join(",", escapeCsv(row))).append("\n");
+            }
+
+            // UTF-8 BOM
+            byte[] bom = new byte[] {(byte)0xEF, (byte)0xBB, (byte)0xBF};
+            byte[] body = sb.toString().getBytes(StandardCharsets.UTF_8);
+            byte[] out = new byte[bom.length + body.length];
+            System.arraycopy(bom, 0, out, 0, bom.length);
+            System.arraycopy(body, 0, out, bom.length, body.length);
+
+            String filename = "survey-" + surveyId + "-export.csv";
+            log.info("[SurveyExport] CSV export success. surveyId={}, bytes={}, filename={}",
+                    surveyId, out.length, filename);
+
+            return new SurveyExportFile(out, filename, "text/csv; charset=UTF-8");
+        } catch (Exception e) {
+            log.error("[SurveyExport] CSV export failed. surveyId={}", surveyId, e);
+            throw e;
         }
-
-        // 3) UTF-8 BOM (엑셀 한글 깨짐 방지)
-        byte[] bom = new byte[] {(byte)0xEF, (byte)0xBB, (byte)0xBF};
-        byte[] body = sb.toString().getBytes(StandardCharsets.UTF_8);
-        byte[] out = new byte[bom.length + body.length];
-        System.arraycopy(bom, 0, out, 0, bom.length);
-        System.arraycopy(body, 0, out, bom.length, body.length);
-
-        String filename = "survey-" + surveyId + "-export.csv";
-        return new SurveyExportFile(out, filename, "text/csv; charset=UTF-8");
     }
 
     private String nvl(String s) { return s == null ? "" : s; }

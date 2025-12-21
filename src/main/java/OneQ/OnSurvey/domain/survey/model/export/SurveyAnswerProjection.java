@@ -5,7 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-// TODO record 변경
 public class SurveyAnswerProjection {
     private final Long memberId;
     private final Long questionId;
