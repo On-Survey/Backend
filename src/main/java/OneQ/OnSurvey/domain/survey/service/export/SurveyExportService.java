@@ -60,7 +60,7 @@ public class SurveyExportService implements SurveyExport {
             headerCols.add("gender");
             headerCols.add("residence");
             for (SurveyQuestionHeader h : headers) {
-                headerCols.add("Q" + nvlInt(h.getOrderNo()) + ". " + nvl(h.getTitle()));
+                headerCols.add("Q" + nvlInt(h.getOrderNo() + 1) + ". " + nvl(h.getTitle()));
             }
             sb.append(String.join(",", escapeCsv(headerCols))).append("\n");
 
