@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
 import OneQ.OnSurvey.domain.survey.model.export.SurveyMemberProjection;
 import OneQ.OnSurvey.domain.survey.model.export.SurveyQuestionHeader;
 import OneQ.OnSurvey.domain.survey.repository.export.SurveyExportRepository;
+import OneQ.OnSurvey.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.SURVEY_FORBIDDEN;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,8 +31,12 @@ public class SurveyExportService implements SurveyExport {
 
     @Override
     @Transactional(readOnly = true)
-    public SurveyExportFile exportCsv(Long surveyId) {
+    public SurveyExportFile exportCsv(Long surveyId, Long requesterMemberId) {
         log.info("[SurveyExport] CSV export start. surveyId={}", surveyId);
+
+        if (!surveyExportRepository.existsOwnedSurvey(surveyId, requesterMemberId)) {
+            throw new CustomException(SURVEY_FORBIDDEN);
+        }
 
         try {
             List<SurveyQuestionHeader> headers = surveyExportRepository.findQuestionHeaders(surveyId);

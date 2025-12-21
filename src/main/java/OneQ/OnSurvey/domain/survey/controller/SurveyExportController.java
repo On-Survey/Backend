@@ -2,12 +2,14 @@ package OneQ.OnSurvey.domain.survey.controller;
 
 import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
 import OneQ.OnSurvey.domain.survey.service.export.SurveyExport;
+import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,8 +25,11 @@ public class SurveyExportController {
     private final SurveyExport surveyExport;
 
     @GetMapping("/{surveyId}/export")
-    public ResponseEntity<ByteArrayResource> export(@PathVariable Long surveyId) {
-        SurveyExportFile file = surveyExport.exportCsv(surveyId);
+    public ResponseEntity<ByteArrayResource> export(
+            @PathVariable Long surveyId,
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        SurveyExportFile file = surveyExport.exportCsv(surveyId, principal.getMemberId());
 
         ByteArrayResource resource = new ByteArrayResource(file.bytes());
 

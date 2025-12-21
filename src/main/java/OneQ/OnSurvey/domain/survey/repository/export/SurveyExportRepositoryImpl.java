@@ -78,4 +78,18 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                 .where(survey.id.eq(surveyId))
                 .fetchOne();
     }
+
+    @Override
+    public boolean existsOwnedSurvey(Long surveyId, Long ownerMemberId) {
+        Integer found = queryFactory
+                .selectOne()
+                .from(survey)
+                .where(
+                        survey.id.eq(surveyId),
+                        survey.memberId.eq(ownerMemberId)
+                )
+                .fetchFirst();
+
+        return found != null;
+    }
 }

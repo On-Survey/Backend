@@ -11,4 +11,5 @@ public interface SurveyExportRepository {
     List<SurveyMemberProjection> findMembersWhoAnswered(Long surveyId);
     List<SurveyAnswerProjection> findAnswers(Long surveyId);
     String findSurveyTitle(Long surveyId);
+    boolean existsOwnedSurvey(Long surveyId, Long ownerMemberId);
 }
