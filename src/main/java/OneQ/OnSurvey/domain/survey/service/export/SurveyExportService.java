@@ -81,7 +81,13 @@ public class SurveyExportService implements SurveyExport {
             System.arraycopy(bom, 0, out, 0, bom.length);
             System.arraycopy(body, 0, out, bom.length, body.length);
 
-            String filename = "survey-" + surveyId + "-export.csv";
+            String title = surveyExportRepository.findSurveyTitle(surveyId);
+            String safeTitle = sanitizeFileName(title == null ? "survey" : title);
+
+            String date = java.time.LocalDate.now()
+                    .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+
+            String filename = safeTitle + "_" + date + ".csv";
             log.info("[SurveyExport] CSV export success. surveyId={}, bytes={}, filename={}",
                     surveyId, out.length, filename);
 
@@ -134,4 +140,17 @@ public class SurveyExportService implements SurveyExport {
             return null;
         }
     }
+
+    private String sanitizeFileName(String raw) {
+        String s = raw.trim();
+
+        s = s.replaceAll("[\\\\/:*?\"<>|\\r\\n\\t]", " ");
+
+        s = s.replaceAll("\\s+", " ").trim();
+
+        if (s.length() > 50) s = s.substring(0, 50).trim();
+
+        return s.isBlank() ? "survey" : s;
+    }
+
 }

@@ -10,4 +10,5 @@ public interface SurveyExportRepository {
     List<SurveyQuestionHeader> findQuestionHeaders(Long surveyId);
     List<SurveyMemberProjection> findMembersWhoAnswered(Long surveyId);
     List<SurveyAnswerProjection> findAnswers(Long surveyId);
+    String findSurveyTitle(Long surveyId);
 }
