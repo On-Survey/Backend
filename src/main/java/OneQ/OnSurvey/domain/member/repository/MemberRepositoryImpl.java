@@ -2,12 +2,15 @@ package OneQ.OnSurvey.domain.member.repository;
 
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+import static com.querydsl.core.group.GroupBy.groupBy;
+import static com.querydsl.core.group.GroupBy.set;
 import static OneQ.OnSurvey.domain.member.QMember.member;
 
 @Repository
@@ -44,20 +47,18 @@ public class MemberRepositoryImpl implements MemberRepository {
     @Override
     public MemberSegmentation findMemberSegmentByUserKey(Long userKey) {
 
-        Member info = jpaQueryFactory.selectFrom(member)
-            .leftJoin(member.interests).fetchJoin()
+        return jpaQueryFactory.selectFrom(member)
+            .leftJoin(member.interests)
             .where(member.id.eq(userKey))
-            .fetchOne();
-
-        if (info == null) {
-            return null;
-        }
-
-        return new MemberSegmentation(
-            info.getGender(),
-            info.getBirthDay(),
-            info.getResidence(),
-            info.getInterests()
-        );
+            .transform(groupBy(member.id).as(
+                Projections.fields(
+                    MemberSegmentation.class,
+                    member.gender,
+                    member.birthDay,
+                    member.residence,
+                    set(member.interests).as("interests")
+                )
+            ))
+            .get(userKey);
     }
 }

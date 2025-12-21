@@ -134,7 +134,7 @@ public class ParticipationController {
         Survey survey = surveyQueryService.getSurveyById(surveyId);
 
         if (surveyQueryService.checkValidSegmentation(surveyId, principal.getMemberId())) {
-            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getMemberId());
+            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
 
