@@ -213,12 +213,13 @@ public class SurveyQueryService implements SurveyQuery {
         if (!survey.getMemberId().equals(memberId)) {
             log.warn("[SURVEY:QUERY:VALIDATE] 접근 권한 없음 - surveyId: {}, memberId: {}, surveyMemberId: {}",
                     surveyId, memberId, survey.getMemberId());
-            throw new CustomException(ErrorCode.FORBIDDEN);
+            throw new CustomException(SurveyErrorCode.SURVEY_FORBIDDEN);
         }
 
         if (!survey.getStatus().equals(status)) {
             log.warn("[SURVEY:QUERY:VALIDATE] 설문 상태 불일치 - surveyId: {}, memberId: {}, expectedStatus: {}, actualStatus: {}",
                     surveyId, memberId, status, survey.getStatus());
+            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
         }
     }
 

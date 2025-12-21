@@ -15,7 +15,6 @@ public class QuestionRequest {
                   {
                     "questionType": "CHOICE",
                     "questionId": 0,
-                    "surveyId": 0,
                     "title": "string",
                     "description": "string",
                     "isRequired": true,
@@ -39,7 +38,6 @@ public class QuestionRequest {
                   {
                     "questionType": "CHOICE",
                     "questionId": 1,
-                    "surveyId": 0,
                     "title": "string",
                     "description": "string",
                     "isRequired": true,
@@ -63,7 +61,6 @@ public class QuestionRequest {
                   {
                     "questionType": "SHORT",
                     "questionId": 2,
-                    "surveyId": 0,
                     "title": "string",
                     "description": "string",
                     "isRequired": false,
@@ -72,7 +69,6 @@ public class QuestionRequest {
                   {
                     "questionType": "RATING",
                     "questionId": 4,
-                    "surveyId": 0,
                     "title": "string",
                     "description": "string",
                     "isRequired": false,
@@ -82,7 +78,8 @@ public class QuestionRequest {
                     "rate": 5
                   }
                 ]
-                """
+                """,
+        description = "새로운 보기는 optionId를 null로 설정"
     )
     List<DefaultQuestionDto> questions;
 }
