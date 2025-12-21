@@ -63,7 +63,7 @@ public class SurveyExportService implements SurveyExport {
 
                 Integer age = toAge(m.getBirthDay());
                 row.add(age == null ? "" : String.valueOf(age));
-                row.add(toKoreanGender(m.getGender()));
+                row.add(m.getGender());
                 row.add(nvl(m.getResidence()));
 
                 Map<Long, String> memberAnswers = answerMap.getOrDefault(m.getMemberId(), Map.of());
@@ -111,8 +111,7 @@ public class SurveyExportService implements SurveyExport {
     }
 
     /**
-     * birthDay(String) -> age(Integer)
-     * - "2003-02-22", "20030222", "2003/02/22" 등 최대한 대응
+     * birthDay 기반 age 계산
      */
     private Integer toAge(String birthDay) {
         if (birthDay == null || birthDay.isBlank()) return null;
@@ -134,15 +133,5 @@ public class SurveyExportService implements SurveyExport {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    private String toKoreanGender(String genderRaw) {
-        if (genderRaw == null) return "";
-        String g = genderRaw.trim().toUpperCase();
-        return switch (g) {
-            case "MALE", "M", "MAN" -> "남";
-            case "FEMALE", "F", "WOMAN" -> "여";
-            default -> genderRaw;
-        };
     }
 }
