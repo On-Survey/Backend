@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.survey.controller;
 import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
 import OneQ.OnSurvey.domain.survey.service.export.SurveyExport;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ContentDisposition;
@@ -25,6 +26,7 @@ public class SurveyExportController {
     private final SurveyExport surveyExport;
 
     @GetMapping("/{surveyId}/export")
+    @Operation(summary = "특정 설문의 응답 데이터를 CSV 파일로 내보냅니다.")
     public ResponseEntity<ByteArrayResource> export(
             @PathVariable Long surveyId,
             @AuthenticationPrincipal CustomUserDetails principal
