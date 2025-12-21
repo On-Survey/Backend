@@ -130,7 +130,7 @@ public class SurveyQueryService implements SurveyQuery {
 
         List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, false);
         Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId).getInterests();
-        log.info("[SURVEY:QUERY:getScreeningList] 사용자 관심사 - memberId: {}, interests: {}", memberId, interestSet);
+        log.info("[SURVEY:QUERY:getScreeningList] 사용자 관심사 - memberId: {}, interests: {}, excludedIdList: {}", memberId, interestSet, excludedIdList);
 
         Slice<Survey> surveyList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
@@ -139,7 +139,10 @@ public class SurveyQueryService implements SurveyQuery {
         List<Long> idList = surveyList.stream().map(Survey::getId).toList();
         log.info("[SURVEY:QUERY:getScreeningList] 스크리닝을 조회할 설문 IDs: {}", idList);
 
-        List<Screening> screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
+        List<Screening> screeningList = List.of();
+        if (!idList.isEmpty()) {
+            screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
+        }
 
         return ParticipationScreeningResponse.builder()
             .data(screeningList.stream().map(ParticipationScreeningResponse::fromEntity).toList())
