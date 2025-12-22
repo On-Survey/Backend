@@ -49,7 +49,6 @@ public class SecurityConfig {
 
     @Bean @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http, AuthFilter authFilter) throws Exception {
-        System.out.println("=== Production Security Filter Chain Loaded ===");
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
