@@ -1,9 +1,7 @@
 package OneQ.OnSurvey.global.common.config;
 
-import OneQ.OnSurvey.domain.member.repository.MemberRepository;
-import OneQ.OnSurvey.global.auth.application.AuthUseCase;
+import OneQ.OnSurvey.global.auth.filter.AuthFilter;
 import OneQ.OnSurvey.global.auth.filter.ExactBasicHeaderFilter;
-import OneQ.OnSurvey.global.auth.filter.TossAuthFilter;
 import OneQ.OnSurvey.global.common.handler.CustomAccessDeniedHandler;
 import OneQ.OnSurvey.global.common.handler.JWTAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +30,6 @@ public class SecurityConfig {
 
     private final JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final MemberRepository memberRepository;
-    private final AuthUseCase authUseCase;
 
     private final String[] allowedUrls = {
             "/",
@@ -51,13 +47,9 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public TossAuthFilter tossAuthFilter() {
-        return new TossAuthFilter(authUseCase, memberRepository, jwtAuthenticationEntryPoint);
-    }
-
     @Bean @Order(2)
-    public SecurityFilterChain filterChain(HttpSecurity http, TossAuthFilter tossAuthFilter) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthFilter authFilter) throws Exception {
+        System.out.println("=== Production Security Filter Chain Loaded ===");
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -66,7 +58,7 @@ public class SecurityConfig {
                         .requestMatchers(allowedUrls).permitAll()
                         .anyRequest().hasRole("MEMBER")
                 )
-                .addFilterBefore(tossAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler));
