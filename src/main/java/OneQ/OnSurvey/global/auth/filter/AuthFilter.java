@@ -1,12 +1,10 @@
 package OneQ.OnSurvey.global.auth.filter;
 
 import OneQ.OnSurvey.domain.member.Member;
-import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.MemberStatus;
-import OneQ.OnSurvey.global.auth.application.AuthUseCase;
+import OneQ.OnSurvey.global.auth.application.strategy.AuthStrategy;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.exception.CustomException;
-import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,10 +24,9 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class TossAuthFilter extends OncePerRequestFilter {
+public class AuthFilter extends OncePerRequestFilter {
 
-    private final AuthUseCase authUseCase;
-    private final MemberRepository memberRepository;
+    private final AuthStrategy authStrategy;
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
     @Override
@@ -57,22 +54,13 @@ public class TossAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws IOException, ServletException {
         try {
-            LoginMeResponse.Success me = authUseCase.authenticateWithToss(req);
-
-            Member member = memberRepository.findMemberByUserKey(me.userKey())
-                    .orElseThrow(() -> new BadCredentialsException("member not found"));
+            Member member = authStrategy.authenticate(req);
 
             if (!MemberStatus.isSameMemberStatus(member.getStatus(), MemberStatus.ACTIVE)) {
                 throw new BadCredentialsException("session expired");
             }
 
-            CustomUserDetails principal = new CustomUserDetails(
-                    Member.builder()
-                            .id(member.getId())
-                            .userKey(me.userKey())
-                            .role(member.getRole())
-                            .build()
-            );
+            CustomUserDetails principal = new CustomUserDetails(member);
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(auth);
 
