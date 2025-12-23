@@ -51,17 +51,17 @@ public class SecurityConfig {
     @Bean @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http, AuthFilter authFilter) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(allowedUrls).permitAll()
-                        .anyRequest().hasRole("MEMBER")
-                )
-                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(e -> e
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                        .accessDeniedHandler(customAccessDeniedHandler));
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(allowedUrls).permitAll()
+                .anyRequest().hasRole("MEMBER")
+            )
+            .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(e -> e
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler(customAccessDeniedHandler));
         return http.build();
     }
 

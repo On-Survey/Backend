@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.global.auth.application.strategy;
 
 import OneQ.OnSurvey.domain.member.Member;
+import OneQ.OnSurvey.domain.member.value.MemberStatus;
 import OneQ.OnSurvey.domain.member.value.Role;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,7 @@ public class LocalAuthStrategy implements AuthStrategy {
             .id(1L)
             .userKey(1234567890L)
             .role(Role.ROLE_MEMBER)
+            .status(MemberStatus.ACTIVE)
             .build();
     }
 }
