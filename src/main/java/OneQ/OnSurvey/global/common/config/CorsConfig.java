@@ -30,7 +30,7 @@ public class CorsConfig {
         ));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(Arrays.asList(
-                "Authorization", "X-Refresh-Token"
+                "Authorization", "X-Refresh-Token", "Content-Disposition", "Content-Length"
         ));
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
