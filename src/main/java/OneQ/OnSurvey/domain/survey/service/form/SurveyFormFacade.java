@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -75,7 +77,7 @@ public class SurveyFormFacade implements SurveyFormUseCase {
                 questionCommand.upsertQuestionList(requestQuestionUpsertDto);
 
         List<OptionUpsertDto> optionUpsertDtoList =
-                buildOptionUpsertDtosFromSavedQuestions(savedQuestionUpsertDto);
+                buildOptionUpsertDtosFromSavedQuestions(savedQuestionUpsertDto, requestQuestionUpsertDto);
         log.info("[FORM:updateSurvey] 문항 별 보기 리스트: {}", optionUpsertDtoList);
 
         optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
@@ -175,20 +177,31 @@ public class SurveyFormFacade implements SurveyFormUseCase {
 
     /** UPSERT된 QuestionUpsertDto에서 CHOICE 문항별 OptionUpsertDto 리스트 생성 */
     private List<OptionUpsertDto> buildOptionUpsertDtosFromSavedQuestions(
-            QuestionUpsertDto savedQuestionUpsertDto
+        QuestionUpsertDto savedQuestionUpsertDto,
+        QuestionUpsertDto requestedQuestionUpsertDto
     ) {
-        Map<Long, QuestionUpsertDto.UpsertInfo> choiceQuestionMap = buildChoiceQuestionMap(savedQuestionUpsertDto);
+        Set<Long> choiceQuestionIdSet = getChoiceQuestionIds(savedQuestionUpsertDto);
+        Map<Long, QuestionUpsertDto.UpsertInfo> requestChoiceQuestionMap = buildChoiceQuestionMap(requestedQuestionUpsertDto);
 
-        return choiceQuestionMap.entrySet().stream()
-                .map(entry -> OptionUpsertDto.builder()
-                        .questionId(entry.getKey())
-                        .optionInfoList(
-                                entry.getValue().getOptions() != null
-                                        ? entry.getValue().getOptions()
-                                        : List.of()
-                        )
-                        .build())
-                .toList();
+        return choiceQuestionIdSet.stream()
+            .map(qId -> OptionUpsertDto.builder()
+                .questionId(qId)
+                .optionInfoList(
+                    (requestChoiceQuestionMap.get(qId) != null
+                    && requestChoiceQuestionMap.get(qId).getOptions() != null)
+                        ? requestChoiceQuestionMap.get(qId).getOptions()
+                        : List.of()
+                )
+                .build())
+            .toList();
+    }
+
+    private Set<Long> getChoiceQuestionIds(QuestionUpsertDto questionUpsertDto) {
+        return questionUpsertDto.getUpsertInfoList().stream()
+            .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
+            .map(QuestionUpsertDto.UpsertInfo::getQuestionId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
     }
 
     /** questionId 기준 OptionUpsertDto 맵핑 */
