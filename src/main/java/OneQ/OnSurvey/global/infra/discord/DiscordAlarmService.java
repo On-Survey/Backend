@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.global.infra.discord;
 
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -31,6 +32,9 @@ public class DiscordAlarmService {
     @Value("${discord.payment-alert-url:}")
     private String paymentWebhookUrl;
 
+    @Value("${discord.survey-alert-url:}")
+    private String surveyWebhookUrl;
+
     public void sendErrorAlert(Throwable e, String method, String path, String query) {
         if (!enabled || errorWebhookUrl == null || errorWebhookUrl.isBlank()) return;
 
@@ -55,6 +59,25 @@ public class DiscordAlarmService {
                         "• amount: `" + completedAlert.amount() + "` (KRW==COIN)\n" +
                         "• paidAt: `" + safe(completedAlert.paidAt()) + "`\n" +
                         "• newBalance: `" + completedAlert.newBalance() + "`\n";
+
+        post(url, title, desc);
+    }
+
+    public void sendSurveySubmittedAlert(SurveySubmittedAlert a) {
+        if (!enabled) return;
+
+        String url = (surveyWebhookUrl != null && !surveyWebhookUrl.isBlank())
+                ? surveyWebhookUrl
+                : errorWebhookUrl;
+        if (url == null || url.isBlank()) return;
+
+        String title = "📝 설문 제출 완료";
+        String desc =
+                "• userKey: `" + a.userKey() + "`\n" +
+                        "• surveyId: `" + a.surveyId() + "`\n" +
+                        "• title: `" + safe(a.title()) + "`\n" +
+                        "• totalCoin: `" + a.totalCoin() + "`\n" +
+                        "• dueCount: `" + a.dueCount() + "`\n";
 
         post(url, title, desc);
     }

@@ -2,6 +2,7 @@ package OneQ.OnSurvey.global.infra.discord.notifier;
 
 import OneQ.OnSurvey.global.infra.discord.DiscordAlarmAsyncFacade;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -21,5 +22,10 @@ public class DiscordAlertNotifier implements AlertNotifier {
     @Override
     public void sendPaymentCompletedAsync(PaymentCompletedAlert alert) {
         discord.sendPaymentCompletedAsync(alert);
+    }
+
+    @Override
+    public void sendSurveySubmittedAsync(SurveySubmittedAlert alert) {
+        discord.sendSurveySubmittedAsync(alert);
     }
 }

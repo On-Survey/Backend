@@ -21,10 +21,14 @@ import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.domain.survey.service.refund.SurveyRefundPolicy;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -43,6 +47,8 @@ public class SurveyCommandService implements SurveyCommand {
     private final MemberRepository memberRepository;
     private final SurveyRefundPolicy surveyRefundPolicy;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
+
+    private final AlertNotifier alertNotifier;
 
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
@@ -143,7 +149,26 @@ public class SurveyCommandService implements SurveyCommand {
 
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 
+        SurveySubmittedAlert alert = new SurveySubmittedAlert(
+                userKey,
+                surveyId,
+                survey.getTitle(),
+                request.totalCoin(),
+                info.getDueCount()
+        );
+
+        runAfterCommit(() -> alertNotifier.sendSurveySubmittedAsync(alert));
         return SurveyFormResponse.fromEntity(survey);
+    }
+
+    private void runAfterCommit(Runnable r) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override public void afterCommit() { r.run(); }
+            });
+        } else {
+            r.run();
+        }
     }
 
     @Override
