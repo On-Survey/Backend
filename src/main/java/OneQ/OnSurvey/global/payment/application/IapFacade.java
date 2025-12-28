@@ -5,6 +5,8 @@ import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
 import OneQ.OnSurvey.global.infra.toss.client.TossApiClient;
 import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
@@ -31,6 +33,8 @@ public class IapFacade implements IapUseCase {
     private final TossApiClient tossApiClient;
     private final PaymentRepository paymentRepository;
     private final MemberRepository memberRepository;
+
+    private final AlertNotifier alertNotifier;
 
     @Value("${toss.secret.private-key}")
     private String privateKey;
@@ -105,7 +109,27 @@ public class IapFacade implements IapUseCase {
 
         log.info("[IAP] coin granted: userKey={}, +{}(KRW==COIN), orderId={}",
                 userKey, price, orderId);
+
+        // 결제 완료 알림 (Discord)
+        PaymentCompletedAlert alert = new PaymentCompletedAlert(
+                userKey, orderId, price,
+                String.valueOf(parseOsTime(os.statusDeterminedAt())),
+                member.getCoin()
+        );
+        runAfterCommit(() -> alertNotifier.sendPaymentCompletedAsync(alert));
         return true;
+    }
+
+    private void runAfterCommit(Runnable r) {
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override public void afterCommit() { r.run(); }
+                    }
+            );
+        } else {
+            r.run();
+        }
     }
 
     @Override
