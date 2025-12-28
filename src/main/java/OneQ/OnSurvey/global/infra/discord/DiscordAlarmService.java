@@ -1,12 +1,11 @@
 package OneQ.OnSurvey.global.infra.discord;
 
+import OneQ.OnSurvey.global.infra.discord.client.DiscordWebhookClient;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DiscordAlarmService {
 
-    private final WebClient webClient;
+    private final DiscordWebhookClient discordClient;
 
     private static final String APP_PKG_PREFIX = "OneQ.Onsurvey";
     private static final int APP_FRAMES = 12;
@@ -83,21 +82,10 @@ public class DiscordAlarmService {
     }
 
     private void post(String url, String title, String desc) {
-        DiscordWebhookPayload payload = new DiscordWebhookPayload(
-                java.util.List.of(new DiscordWebhookPayload.Embed(title, desc))
-        );
+        DiscordWebhookPayload payload =
+                new DiscordWebhookPayload(List.of(new DiscordWebhookPayload.Embed(title, desc)));
 
-        webClient.post()
-                .uri(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(payload)
-                .retrieve()
-                .toBodilessEntity()
-                .retryWhen(reactor.util.retry.Retry
-                        .fixedDelay(3, java.time.Duration.ofSeconds(2))
-                        .filter(ex -> ex instanceof org.springframework.web.reactive.function.client.WebClientResponseException.TooManyRequests))
-                .onErrorResume(ex -> reactor.core.publisher.Mono.empty())
-                .subscribe();
+        discordClient.post(url, payload).subscribe();
     }
 
     private String buildDescription(Throwable e, String method, String path, String query) {
