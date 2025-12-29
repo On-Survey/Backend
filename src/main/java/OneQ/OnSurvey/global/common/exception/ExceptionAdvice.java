@@ -2,6 +2,7 @@ package OneQ.OnSurvey.global.common.exception;
 
 import OneQ.OnSurvey.global.common.response.ErrorResponse;
 import OneQ.OnSurvey.global.common.response.result.ExceptionResult;
+import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,8 @@ import static OneQ.OnSurvey.global.common.exception.ErrorCode.PARAMETER_VALIDATI
 @RestControllerAdvice
 public class ExceptionAdvice {
 
+    private final AlertNotifier alertNotifier;
+
     /**
      * 등록되지 않은 에러
      */
@@ -33,6 +36,7 @@ public class ExceptionAdvice {
     protected ErrorResponse<ExceptionResult.ServerErrorData> handleUntrackedException(
             Exception e, HttpServletRequest req
     ) {
+        alertNotifier.sendErrorAlertAsync(e, req.getMethod(), req.getRequestURI(), req.getQueryString());
         ExceptionResult.ServerErrorData serverErrorData = ExceptionResult.ServerErrorData.builder()
                 .errorClass(e.getClass().toString())
                 .errorMessage(e.getMessage())

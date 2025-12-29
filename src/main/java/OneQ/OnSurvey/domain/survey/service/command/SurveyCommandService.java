@@ -21,6 +21,9 @@ import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.domain.survey.service.refund.SurveyRefundPolicy;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
+import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -43,6 +46,9 @@ public class SurveyCommandService implements SurveyCommand {
     private final MemberRepository memberRepository;
     private final SurveyRefundPolicy surveyRefundPolicy;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
+
+    private final AlertNotifier alertNotifier;
+    private final AfterCommitExecutor afterCommitExecutor;
 
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
@@ -143,6 +149,15 @@ public class SurveyCommandService implements SurveyCommand {
 
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 
+        SurveySubmittedAlert alert = new SurveySubmittedAlert(
+                userKey,
+                surveyId,
+                survey.getTitle(),
+                request.totalCoin(),
+                info.getDueCount()
+        );
+
+        afterCommitExecutor.run(() -> alertNotifier.sendSurveySubmittedAsync(alert));
         return SurveyFormResponse.fromEntity(survey);
     }
 

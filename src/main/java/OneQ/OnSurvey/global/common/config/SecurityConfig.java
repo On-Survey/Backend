@@ -43,7 +43,7 @@ public class SecurityConfig {
             "/auth/toss/login",
             "/auth/reissue",
             "/connect-out",
-            "/test/ok"
+            "/sentry-test/**"
     };
 
     @Bean
