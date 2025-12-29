@@ -10,6 +10,7 @@ import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
 import OneQ.OnSurvey.global.infra.toss.client.TossApiClient;
 import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
+import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import OneQ.OnSurvey.global.payment.entity.Payment;
 import OneQ.OnSurvey.global.payment.entity.PaymentStatus;
 import OneQ.OnSurvey.global.payment.port.out.PaymentRepository;
@@ -35,6 +36,7 @@ public class IapFacade implements IapUseCase {
     private final MemberRepository memberRepository;
 
     private final AlertNotifier alertNotifier;
+    private final AfterCommitExecutor afterCommitExecutor;
 
     @Value("${toss.secret.private-key}")
     private String privateKey;
@@ -116,20 +118,8 @@ public class IapFacade implements IapUseCase {
                 String.valueOf(parseOsTime(os.statusDeterminedAt())),
                 member.getCoin()
         );
-        runAfterCommit(() -> alertNotifier.sendPaymentCompletedAsync(alert));
+        afterCommitExecutor.run(() -> alertNotifier.sendPaymentCompletedAsync(alert));
         return true;
-    }
-
-    private void runAfterCommit(Runnable r) {
-        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
-            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                    new org.springframework.transaction.support.TransactionSynchronization() {
-                        @Override public void afterCommit() { r.run(); }
-                    }
-            );
-        } else {
-            r.run();
-        }
     }
 
     @Override
