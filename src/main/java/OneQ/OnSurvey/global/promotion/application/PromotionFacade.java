@@ -19,6 +19,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,7 +67,14 @@ public class PromotionFacade implements PromotionUseCase {
     @Override
     @Transactional
     public ExecutionResultResponse issueAndConfirm(long userKey, long surveyId) {
-        Long grantId = grantTx.getOrCreate(userKey, surveyId, promotionCode);
+        Long grantId;
+        try {
+            grantId = grantTx.createOnly(userKey, surveyId, promotionCode);
+        } catch (DataIntegrityViolationException e) {
+            grantId = grantTx.findId(userKey, surveyId, promotionCode);
+            if (grantId == null) throw e;
+        }
+
         PromotionGrant grant = promotionGrantRepository.findById(grantId)
                 .orElseThrow(() -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
 
