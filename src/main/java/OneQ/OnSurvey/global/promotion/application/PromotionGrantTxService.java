@@ -34,10 +34,13 @@ public class PromotionGrantTxService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Long getOrCreate(long userKey, long surveyId, String promotionCode) {
+        Long existing = repo.findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
+                .map(PromotionGrant::getId)
+                .orElse(null);
+        if (existing != null) return existing;
+
         try {
-            return repo.findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
-                    .map(PromotionGrant::getId)
-                    .orElseGet(() -> repo.saveAndFlush(PromotionGrant.of(userKey, surveyId, promotionCode)).getId());
+            return repo.saveAndFlush(PromotionGrant.of(userKey, surveyId, promotionCode)).getId();
         } catch (DataIntegrityViolationException e) {
             return repo.findByUserKeyAndSurveyIdAndPromotionCode(userKey, surveyId, promotionCode)
                     .map(PromotionGrant::getId)
