@@ -2,12 +2,14 @@ package OneQ.OnSurvey.domain.survey.service.refund;
 
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DefaultSurveyRefundPolicy implements SurveyRefundPolicy {
 
-    private static final int REWARD_PER_RESPONSE = 300;
+    @Value("${toss.api.promotion.amount}")
+    private int rewardPerResponse;
 
     @Override
     public int calculateRefundAmount(Survey survey, SurveyInfo surveyInfo) {
@@ -23,7 +25,7 @@ public class DefaultSurveyRefundPolicy implements SurveyRefundPolicy {
         }
 
         int totalCoin  = survey.getTotalCoin();
-        int paidReward = completedCount * REWARD_PER_RESPONSE;
+        int paidReward = completedCount * rewardPerResponse;
 
         int refundBase = Math.max(totalCoin - paidReward, 0);
 
