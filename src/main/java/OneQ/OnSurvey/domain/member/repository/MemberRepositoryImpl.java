@@ -9,9 +9,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+import static OneQ.OnSurvey.domain.member.QMember.member;
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
-import static OneQ.OnSurvey.domain.member.QMember.member;
 
 @Repository
 @RequiredArgsConstructor
@@ -49,8 +49,8 @@ public class MemberRepositoryImpl implements MemberRepository {
 
         return jpaQueryFactory.selectFrom(member)
             .leftJoin(member.interests)
-            .where(member.id.eq(userKey))
-            .transform(groupBy(member.id).as(
+            .where(member.userKey.eq(userKey))
+            .transform(groupBy(member.userKey).as(
                 Projections.fields(
                     MemberSegmentation.class,
                     member.gender,
