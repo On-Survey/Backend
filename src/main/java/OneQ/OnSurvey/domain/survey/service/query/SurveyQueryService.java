@@ -3,7 +3,7 @@ package OneQ.OnSurvey.domain.survey.service.query;
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
-import OneQ.OnSurvey.domain.participation.repository.answer.ScreeningAnswerRepositoryImpl;
+import OneQ.OnSurvey.domain.participation.repository.answer.ScreeningAnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
@@ -47,7 +47,7 @@ public class SurveyQueryService implements SurveyQuery {
     private final ScreeningRepository screeningRepository;
     private final ResponseRepository responseRepository;
     private final MemberRepository memberRepository;
-    private final ScreeningAnswerRepositoryImpl screeningAnswerRepository;
+    private final ScreeningAnswerRepository screeningAnswerRepository;
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {

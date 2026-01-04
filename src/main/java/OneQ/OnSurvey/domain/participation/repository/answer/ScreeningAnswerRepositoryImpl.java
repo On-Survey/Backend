@@ -12,7 +12,10 @@ import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeni
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 
 @Repository
-public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<ScreeningAnswer> {
+public class ScreeningAnswerRepositoryImpl
+        extends AbstractAnswerRepository<ScreeningAnswer>
+        implements ScreeningAnswerRepository {
+
     private final JPAQueryFactory jpaQueryFactory;
 
     public ScreeningAnswerRepositoryImpl(
@@ -61,6 +64,7 @@ public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<Scre
             .fetch();
     }
 
+    @Override
     public List<Long> findAnsweredSurveyIds(Long memberId) {
         return jpaQueryFactory
                 .select(screening.surveyId)
