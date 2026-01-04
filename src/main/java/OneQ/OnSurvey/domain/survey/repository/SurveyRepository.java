@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
-import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +16,7 @@ public interface SurveyRepository {
     List<Survey> getSurveyListByMemberId(Long memberId);
     Slice<Survey> getSurveyListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
-        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, Collection<Interest> interests);
+        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation);
 
     Survey save(Survey survey);
 }

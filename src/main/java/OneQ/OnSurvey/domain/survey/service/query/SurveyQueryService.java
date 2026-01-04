@@ -81,18 +81,21 @@ public class SurveyQueryService implements SurveyQuery {
 
     @Override
     public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId
+        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     ) {
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 스크리닝, 관심사, 마감기한 기반 설문 조회 - "
-            + "lastSurveyId: {}, size: {}, status: {}, memberId: {}",
-            lastSurveyId, pageable.getPageSize(), status.name(), memberId
+            + "lastSurveyId: {}, size: {}, status: {}, userKey: {}",
+            lastSurveyId, pageable.getPageSize(), status.name(), userKey
         );
 
         List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
+        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
+            userKey, memberSegmentation, excludedIdList);
 
         Slice<Survey> recommendedList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
-            status, memberId, excludedIdList, Collections.emptyList()
+            status, memberId, excludedIdList, memberSegmentation
         );
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 추천 설문 조회 결과 - recommended: {}", recommendedList);
 
@@ -103,17 +106,21 @@ public class SurveyQueryService implements SurveyQuery {
 
     @Override
     public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId
+        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     ) {
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 마감기한 기반 설문 조회 - "
-            + "lastSurveyId: {}, lastDateTime: {}, size: {}, status: {}, memberId: {}",
-            lastSurveyId, lastDeadline, pageable.getPageSize(), status.name(), memberId
+            + "lastSurveyId: {}, lastDateTime: {}, size: {}, status: {}, userKey: {}",
+            lastSurveyId, lastDeadline, pageable.getPageSize(), status.name(), userKey
         );
 
         List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
+        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
+            userKey, memberSegmentation, excludedIdList);
+
         Slice<Survey> impendingList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, lastDeadline, pageable,
-            status, memberId, excludedIdList, Set.of()
+            status, memberId, excludedIdList, memberSegmentation
         );
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 마감임박 설문 조회 결과 - impending: {}", impendingList);
 
@@ -124,11 +131,11 @@ public class SurveyQueryService implements SurveyQuery {
 
     @Override
     public ParticipationScreeningResponse getScreeningList(
-        Long lastSurveyId, Pageable pageable, Long memberId
+        Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     ) {
-        log.info("[SURVEY:QUERY:getScreeningList] 본인 제작 제외 관심사 기반 설문의 스크리닝 문항 조회 - "
-            + "lastSurveyId: {}, size: {}, memberId: {}",
-            lastSurveyId, pageable.getPageSize(), memberId
+        log.info("[SURVEY:QUERY:getScreeningList] 본인 제작 제외 세그멘테이션 기반 설문의 스크리닝 문항 조회 - "
+            + "lastSurveyId: {}, size: {}, userKey: {}",
+            lastSurveyId, pageable.getPageSize(), userKey
         );
 
         List<Long> respondedSurveyIds = responseRepository.getExcludedSurveyIdList(memberId, false);
@@ -137,12 +144,13 @@ public class SurveyQueryService implements SurveyQuery {
                 .distinct()
                 .toList();
 
-        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId).getInterests();
-        log.info("[SURVEY:QUERY:getScreeningList] 사용자 관심사 - memberId: {}, interests: {}, excludedIdList: {}", memberId, interestSet, excludedIdList);
+        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
+        log.info("[SURVEY:QUERY:getScreeningList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
+            userKey, memberSegmentation, excludedIdList);
 
         Slice<Survey> surveyList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
-            SurveyStatus.ONGOING, memberId, excludedIdList, interestSet
+            SurveyStatus.ONGOING, memberId, excludedIdList, memberSegmentation
         );
         List<Long> idList = surveyList.stream().map(Survey::getId).toList();
         log.info("[SURVEY:QUERY:getScreeningList] 스크리닝을 조회할 설문 IDs: {}", idList);

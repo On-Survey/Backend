@@ -29,7 +29,7 @@ public enum QuestionType {
     }
 
     public boolean isText() {
-        return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || TEXT.equals(this);
+        return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || TEXT.equals(this) || NUMBER.equals(this);
     }
 
     public boolean isChoice() {

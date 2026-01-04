@@ -47,22 +47,22 @@ public class ParticipationController {
     @Operation(summary = "노출 중인 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getSurveyListOnGoing(
         @AuthenticationPrincipal CustomUserDetails principal,
-        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
         log.info("[PARTICIPATION] 노출 중 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
         Pageable recommendedPageable = PageRequest.of(0, size, Sort.by("id"));
         Pageable impendingPageable = PageRequest.of(0, size, Sort.by(
-            Sort.Order.asc("deadline"),
+            Sort.Order.desc("deadline"),
             Sort.Order.asc("id")
         ));
 
         SurveyParticipationResponse.SliceSurveyData recommended = surveyQueryService.getParticipationSurveyList(
-            lastSurveyId, recommendedPageable, SurveyStatus.ONGOING, principal.getMemberId()
+            lastSurveyId, recommendedPageable, SurveyStatus.ONGOING, principal.getMemberId(), principal.getUserKey()
         );
         SurveyParticipationResponse.SliceSurveyData impending = surveyQueryService.getParticipationSurveyList(
-            lastSurveyId, LocalDateTime.now(), impendingPageable, SurveyStatus.ONGOING, principal.getMemberId()
+            lastSurveyId, LocalDateTime.now(), impendingPageable, SurveyStatus.ONGOING, principal.getMemberId(), principal.getUserKey()
         );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
@@ -79,14 +79,14 @@ public class ParticipationController {
     @Operation(summary = "사용자 추천 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getRecommendedSurveyList(
         @AuthenticationPrincipal CustomUserDetails principal,
-        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "15") Integer size
     ) {
         log.info("[PARTICIPATION] 사용자 추천 설문 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
         Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
         SurveyParticipationResponse.SliceSurveyData recommended =
-            surveyQueryService.getParticipationSurveyList(lastSurveyId, pageable, SurveyStatus.ONGOING, principal.getMemberId()
+            surveyQueryService.getParticipationSurveyList(lastSurveyId, pageable, SurveyStatus.ONGOING, principal.getMemberId(), principal.getUserKey()
         );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
@@ -101,7 +101,7 @@ public class ParticipationController {
     @Operation(summary = "마감 임박 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getImpendingSurveyList(
         @AuthenticationPrincipal CustomUserDetails principal,
-        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(required = false) LocalDateTime lastDeadline,
         @RequestParam(defaultValue = "15") Integer size
     ) {
@@ -112,7 +112,7 @@ public class ParticipationController {
             Sort.Order.asc("id")
         ));
         SurveyParticipationResponse.SliceSurveyData impending =
-            surveyQueryService.getParticipationSurveyList(lastSurveyId, lastDeadline, pageable, SurveyStatus.ONGOING, principal.getMemberId()
+            surveyQueryService.getParticipationSurveyList(lastSurveyId, lastDeadline, pageable, SurveyStatus.ONGOING, principal.getMemberId(), principal.getUserKey()
         );
 
         SurveyParticipationResponse response = SurveyParticipationResponse.builder()
@@ -147,16 +147,16 @@ public class ParticipationController {
     }
 
     @GetMapping("surveys/screenings")
-    @Operation(summary = "관심사에 일치하는 설문의 스크리닝 문항을 조회합니다.")
+    @Operation(summary = "세그멘테이션에 일치하는 설문의 스크리닝 문항을 조회합니다.")
     public SuccessResponse<ParticipationScreeningResponse> getRecommendedScreenings(
         @AuthenticationPrincipal CustomUserDetails principal,
-        @RequestParam(required = false, defaultValue = "-1") Long lastSurveyId,
+        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size
     ) {
-        log.info("[PARTICIPATION] 관심사 일치 스크리닝 문항 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
+        log.info("[PARTICIPATION] 세그멘테이션 일치 스크리닝 문항 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
         Pageable pageable = PageRequest.of(0, size);
-        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, principal.getMemberId()));
+        return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, principal.getMemberId(), principal.getUserKey()));
     }
 
     @PostMapping("screenings/{screeningId}")
