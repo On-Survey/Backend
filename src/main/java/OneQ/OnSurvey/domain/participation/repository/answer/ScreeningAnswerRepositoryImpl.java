@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
+import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 
 @Repository
 public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<ScreeningAnswer> {
@@ -58,5 +59,17 @@ public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<Scre
             .groupBy(screeningAnswer.screeningId, screeningAnswer.content)
             .orderBy(screeningAnswer.screeningId.asc())
             .fetch();
+    }
+
+    public List<Long> findAnsweredSurveyIds(Long memberId) {
+        return jpaQueryFactory
+                .select(screening.surveyId)
+                .distinct()
+                .from(screeningAnswer)
+                .join(screening).on(screeningAnswer.screeningId.eq(screening.id))
+                .where(
+                        screeningAnswer.memberId.eq(memberId)
+                )
+                .fetch();
     }
 }

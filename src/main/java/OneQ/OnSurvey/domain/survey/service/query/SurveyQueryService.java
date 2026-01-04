@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.survey.service.query;
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.participation.repository.answer.ScreeningAnswerRepositoryImpl;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
@@ -30,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.ONGOING;
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
@@ -45,6 +47,7 @@ public class SurveyQueryService implements SurveyQuery {
     private final ScreeningRepository screeningRepository;
     private final ResponseRepository responseRepository;
     private final MemberRepository memberRepository;
+    private final ScreeningAnswerRepositoryImpl screeningAnswerRepository;
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
@@ -128,7 +131,12 @@ public class SurveyQueryService implements SurveyQuery {
             lastSurveyId, pageable.getPageSize(), memberId
         );
 
-        List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, false);
+        List<Long> respondedSurveyIds = responseRepository.getExcludedSurveyIdList(memberId, false);
+        List<Long> screenedSurveyIds = screeningAnswerRepository.findAnsweredSurveyIds(memberId);
+        List<Long> excludedIdList = Stream.concat(respondedSurveyIds.stream(), screenedSurveyIds.stream())
+                .distinct()
+                .toList();
+
         Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId).getInterests();
         log.info("[SURVEY:QUERY:getScreeningList] 사용자 관심사 - memberId: {}, interests: {}, excludedIdList: {}", memberId, interestSet, excludedIdList);
 
