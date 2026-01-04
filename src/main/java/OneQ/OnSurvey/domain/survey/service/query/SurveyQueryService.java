@@ -144,7 +144,6 @@ public class SurveyQueryService implements SurveyQuery {
                 .distinct()
                 .toList();
 
-        Set<Interest> interestSet = memberRepository.findMemberInterestsById(memberId).getInterests();
         MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
         log.info("[SURVEY:QUERY:getScreeningList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
             userKey, memberSegmentation, excludedIdList);
