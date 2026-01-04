@@ -12,13 +12,13 @@ public interface SurveyQuery {
     SurveyManagementDetailResponse getSurvey(Long surveyId);
     List<SurveyManagementResponse.SurveyInformation> getSurveyListByMemberId(Long memberId);
     SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId
+        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     );
     SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId
+        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     );
     ParticipationScreeningResponse getScreeningList(
-        Long lastSurveyId, Pageable pageable, Long memberId
+        Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     );
     MySurveyListResponse getMySurveys(Long memberId);
     SurveyDetailResponse getMySurveyDetail(Long memberId, Long surveyId);

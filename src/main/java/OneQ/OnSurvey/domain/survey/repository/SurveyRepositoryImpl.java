@@ -1,7 +1,10 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
+import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.Gender;
+import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.common.util.QuerydslUtils;
 import com.querydsl.core.BooleanBuilder;
@@ -18,6 +21,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
+import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
+import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
 
 @Repository
 @RequiredArgsConstructor
@@ -46,7 +51,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     @Override
     public Slice<Survey> getSurveyListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
-        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, Collection<Interest> memberInterests
+        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation
     ) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(
@@ -76,8 +81,15 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             builder.and(survey.memberId.ne(creatorId));
         }
 
+        builder.and(surveyInfo.ages.contains(memberSegmentation.convertBirthDayIntoAgeRange()));
+        builder.and(
+            surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
+        );
+
         List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
             .leftJoin(survey.interests).fetchJoin()
+            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId)).fetchJoin()
+            .leftJoin(surveyInfo.ages)
             .where(builder)
             .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)
