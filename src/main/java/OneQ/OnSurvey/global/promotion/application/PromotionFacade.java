@@ -67,6 +67,12 @@ public class PromotionFacade implements PromotionUseCase {
     @Override
     @Transactional
     public ExecutionResultResponse issueAndConfirm(long userKey, long surveyId) {
+        // 최초 실행 / 재시도 실행 경로
+        String lockKey = buildLockKey(userKey, surveyId);
+        if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
+            return ExecutionResultResponse.pending();
+        }
+
         Long grantId;
         try {
             grantId = grantTx.createOnly(userKey, surveyId, promotionCode);
@@ -84,7 +90,6 @@ public class PromotionFacade implements PromotionUseCase {
         }
 
         if (grant.isPending() && grant.getExecKey() != null) {
-            String lockKey = buildLockKey(userKey, surveyId);
             if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
                 return ExecutionResultResponse.pending();
             }
@@ -93,12 +98,6 @@ public class PromotionFacade implements PromotionUseCase {
             } finally {
                 tokenStore.releaseLock(lockKey);
             }
-        }
-
-        // 최초 실행 / 재시도 실행 경로
-        String lockKey = buildLockKey(userKey, surveyId);
-        if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
-            return ExecutionResultResponse.pending();
         }
 
         try {
