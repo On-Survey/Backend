@@ -9,9 +9,13 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
+import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 
 @Repository
-public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<ScreeningAnswer> {
+public class ScreeningAnswerRepositoryImpl
+        extends AbstractAnswerRepository<ScreeningAnswer>
+        implements ScreeningAnswerRepository {
+
     private final JPAQueryFactory jpaQueryFactory;
 
     public ScreeningAnswerRepositoryImpl(
@@ -20,26 +24,6 @@ public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<Scre
     ) {
         super(answerJpaRepository);
         this.jpaQueryFactory = jpaQueryFactory;
-    }
-
-    @Override
-    public ScreeningAnswer getAnswerByQuestionIdAndMemberId(Long screeningId, Long memberId) {
-        return jpaQueryFactory.selectFrom(screeningAnswer)
-            .where(
-                screeningAnswer.screeningId.eq(screeningId),
-                screeningAnswer.memberId.eq(memberId)
-            )
-            .fetchOne();
-    }
-
-    @Override
-    public List<ScreeningAnswer> getAnswersByQuestionIdListAndMemberId(List<Long> screeningIdList, Long memberId) {
-        return jpaQueryFactory.selectFrom(screeningAnswer)
-            .where(
-                screeningAnswer.screeningId.in(screeningIdList),
-                screeningAnswer.memberId.eq(memberId)
-            )
-            .fetch();
     }
 
     public ScreeningAnswer save(ScreeningAnswer answer) {
@@ -58,5 +42,18 @@ public class ScreeningAnswerRepositoryImpl extends AbstractAnswerRepository<Scre
             .groupBy(screeningAnswer.screeningId, screeningAnswer.content)
             .orderBy(screeningAnswer.screeningId.asc())
             .fetch();
+    }
+
+    @Override
+    public List<Long> findAnsweredSurveyIds(Long memberId) {
+        return jpaQueryFactory
+                .select(screening.surveyId)
+                .distinct()
+                .from(screeningAnswer)
+                .join(screening).on(screeningAnswer.screeningId.eq(screening.id))
+                .where(
+                        screeningAnswer.memberId.eq(memberId)
+                )
+                .fetch();
     }
 }
