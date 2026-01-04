@@ -32,16 +32,6 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
     }
 
     @Override
-    public List<QuestionAnswer> getAnswersByQuestionIdListAndMemberId(List<Long> questionIdList, Long memberId) {
-        return jpaQueryFactory.selectFrom(questionAnswer)
-            .where(
-                questionAnswer.questionId.in(questionIdList),
-                questionAnswer.memberId.eq(memberId)
-            )
-            .fetch();
-    }
-
-    @Override
     public List<AnswerStats> getAggregatedAnswersByQuestionIds(List<Long> questionIdList) {
         return jpaQueryFactory.select(Projections.constructor(AnswerStats.class,
                 questionAnswer.questionId,
