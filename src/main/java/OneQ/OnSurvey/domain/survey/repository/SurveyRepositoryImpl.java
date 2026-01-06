@@ -20,6 +20,9 @@ import java.util.Optional;
 
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
+import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
+
+import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 
 @Repository
 @RequiredArgsConstructor
@@ -82,11 +85,18 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         builder.and(
             surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
         );
+        builder.and(
+            screening.id.isNull().or(
+                screeningAnswer.answerId.isNotNull().and(screeningAnswer.content.eq(screening.answer))
+            )
+        );
 
         List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
             .leftJoin(survey.interests).fetchJoin()
             .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId)).fetchJoin()
             .leftJoin(surveyInfo.ages)
+            .leftJoin(screening).on(survey.id.eq(screening.surveyId)).fetchJoin()
+            .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId)).fetchJoin()
             .where(builder)
             .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)
