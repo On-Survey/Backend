@@ -51,7 +51,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     @Override
     public Slice<Survey> getSurveyListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
-        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation
+        SurveyStatus status, Long memberId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation
     ) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(
@@ -77,8 +77,8 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         if (!excludedIds.isEmpty()) {
             builder.and(survey.id.notIn(excludedIds));
         }
-        if (creatorId != null) {
-            builder.and(survey.memberId.ne(creatorId));
+        if (memberId != null) {
+            builder.and(survey.memberId.ne(memberId));
         }
 
         builder.and(surveyInfo.ages.contains(memberSegmentation.convertBirthDayIntoAgeRange()));
@@ -86,17 +86,20 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
         );
         builder.and(
-            screening.id.isNull().or(
-                screeningAnswer.answerId.isNotNull().and(screeningAnswer.content.eq(screening.answer))
+            screening.id.isNull()
+            .or(
+                screeningAnswer.answerId.isNotNull().and(
+                screeningAnswer.content.eq(screening.answer))
             )
         );
 
         List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
+            .distinct()
             .leftJoin(survey.interests).fetchJoin()
-            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId)).fetchJoin()
-            .leftJoin(surveyInfo.ages)
-            .leftJoin(screening).on(survey.id.eq(screening.surveyId)).fetchJoin()
-            .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId)).fetchJoin()
+            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId))
+            .leftJoin(screening).on(survey.id.eq(screening.surveyId))
+            .leftJoin(screeningAnswer).on(
+                screeningAnswer.memberId.eq(memberId).and(screening.id.eq(screeningAnswer.screeningId)))
             .where(builder)
             .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)
