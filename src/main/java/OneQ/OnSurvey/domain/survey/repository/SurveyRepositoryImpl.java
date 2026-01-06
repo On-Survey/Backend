@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.survey.repository;
 
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.common.util.QuerydslUtils;
@@ -78,7 +79,12 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             builder.and(survey.memberId.ne(creatorId));
         }
 
-        builder.and(surveyInfo.ages.contains(memberSegmentation.convertBirthDayIntoAgeRange()));
+        AgeRange memberAgeRange = memberSegmentation.convertBirthDayIntoAgeRange();
+
+        builder.and(
+                surveyInfo.ages.contains(AgeRange.ALL)
+                        .or(surveyInfo.ages.contains(memberAgeRange))
+        );
         builder.and(
             surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
         );
