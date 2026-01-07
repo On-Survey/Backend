@@ -16,7 +16,8 @@ public interface SurveyRepository {
     List<Survey> getSurveyListByMemberId(Long memberId);
     Slice<Survey> getSurveyListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
-        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation);
+        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation,
+        boolean filterByScreeningAnswer);
 
     Survey save(Survey survey);
 }

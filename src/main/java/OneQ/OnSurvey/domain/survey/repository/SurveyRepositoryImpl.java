@@ -21,6 +21,9 @@ import java.util.Optional;
 
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
+import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
+
+import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 
 @Repository
 @RequiredArgsConstructor
@@ -49,7 +52,8 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     @Override
     public Slice<Survey> getSurveyListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
-        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation
+        SurveyStatus status, Long memberId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation,
+        boolean filterByScreeningAnswer
     ) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(
@@ -57,12 +61,10 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         );
 
         if (lastDeadline == null) {
-            // StringTemplate deadlineTemplate = QuerydslUtils.convertLocalDateTimeIntoStringTemplate(LocalDateTime.now());
             builder
                 .and(survey.id.gt(lastSurveyId))
                 .and(survey.deadline.goe(LocalDateTime.now()));
         } else {
-            // StringTemplate deadlineTemplate = QuerydslUtils.convertLocalDateTimeIntoStringTemplate(lastDeadline);
             builder.and(
                 survey.deadline.gt(lastDeadline)
                 .or(survey.deadline.eq(lastDeadline)
@@ -75,24 +77,37 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         if (!excludedIds.isEmpty()) {
             builder.and(survey.id.notIn(excludedIds));
         }
-        if (creatorId != null) {
-            builder.and(survey.memberId.ne(creatorId));
+        if (memberId != null) {
+            builder.and(survey.memberId.ne(memberId));
         }
 
         AgeRange memberAgeRange = memberSegmentation.convertBirthDayIntoAgeRange();
 
         builder.and(
-                surveyInfo.ages.contains(AgeRange.ALL)
-                        .or(surveyInfo.ages.contains(memberAgeRange))
+            surveyInfo.ages.contains(AgeRange.ALL)
+            .or(surveyInfo.ages.contains(memberAgeRange))
         );
         builder.and(
-            surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
+            surveyInfo.gender.eq(Gender.ALL)
+            .or(surveyInfo.gender.eq(memberSegmentation.getGender()))
         );
+        if (filterByScreeningAnswer) {
+            builder.and(
+                screening.id.isNull()
+                .or(
+                    screeningAnswer.answerId.isNotNull()
+                    .and(screeningAnswer.content.eq(screening.answer))
+                )
+            );
+        }
 
         List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
+            .distinct()
             .leftJoin(survey.interests).fetchJoin()
-            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId)).fetchJoin()
-            .leftJoin(surveyInfo.ages)
+            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId))
+            .leftJoin(screening).on(survey.id.eq(screening.surveyId))
+            .leftJoin(screeningAnswer).on(
+                screeningAnswer.memberId.eq(memberId).and(screening.id.eq(screeningAnswer.screeningId)))
             .where(builder)
             .orderBy(QuerydslUtils.getSort(pageable, survey))
             .limit(pageable.getPageSize() + 1)

@@ -95,7 +95,7 @@ public class SurveyQueryService implements SurveyQuery {
 
         Slice<Survey> recommendedList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
-            status, memberId, excludedIdList, memberSegmentation
+            status, memberId, excludedIdList, memberSegmentation, true
         );
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 추천 설문 조회 결과 - recommended: {}", recommendedList);
 
@@ -120,7 +120,7 @@ public class SurveyQueryService implements SurveyQuery {
 
         Slice<Survey> impendingList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, lastDeadline, pageable,
-            status, memberId, excludedIdList, memberSegmentation
+            status, memberId, excludedIdList, memberSegmentation, true
         );
         log.info("[SURVEY:QUERY:getParticipationSurveyList] 마감임박 설문 조회 결과 - impending: {}", impendingList);
 
@@ -150,7 +150,7 @@ public class SurveyQueryService implements SurveyQuery {
 
         Slice<Survey> surveyList = surveyRepository.getSurveyListByFilters(
             lastSurveyId, null, pageable,
-            SurveyStatus.ONGOING, memberId, excludedIdList, memberSegmentation
+            SurveyStatus.ONGOING, memberId, excludedIdList, memberSegmentation, false
         );
         List<Long> idList = surveyList.stream().map(Survey::getId).toList();
         log.info("[SURVEY:QUERY:getScreeningList] 스크리닝을 조회할 설문 IDs: {}", idList);
