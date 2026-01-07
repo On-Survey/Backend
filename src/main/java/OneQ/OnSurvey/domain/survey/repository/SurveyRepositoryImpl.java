@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.survey.repository;
 
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.common.util.QuerydslUtils;
@@ -51,7 +52,8 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     @Override
     public Slice<Survey> getSurveyListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
-        SurveyStatus status, Long memberId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation
+        SurveyStatus status, Long memberId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation,
+        boolean filterByScreeningAnswer
     ) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(
@@ -59,12 +61,10 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         );
 
         if (lastDeadline == null) {
-            // StringTemplate deadlineTemplate = QuerydslUtils.convertLocalDateTimeIntoStringTemplate(LocalDateTime.now());
             builder
                 .and(survey.id.gt(lastSurveyId))
                 .and(survey.deadline.goe(LocalDateTime.now()));
         } else {
-            // StringTemplate deadlineTemplate = QuerydslUtils.convertLocalDateTimeIntoStringTemplate(lastDeadline);
             builder.and(
                 survey.deadline.gt(lastDeadline)
                 .or(survey.deadline.eq(lastDeadline)
@@ -81,17 +81,21 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             builder.and(survey.memberId.ne(memberId));
         }
 
-        builder.and(surveyInfo.ages.contains(memberSegmentation.convertBirthDayIntoAgeRange()));
+        builder.and(
+            surveyInfo.ages.contains(AgeRange.ALL).or(surveyInfo.ages.contains(memberSegmentation.convertBirthDayIntoAgeRange()))
+        );
         builder.and(
             surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
         );
-        builder.and(
-            screening.id.isNull()
-            .or(
-                screeningAnswer.answerId.isNotNull().and(
-                screeningAnswer.content.eq(screening.answer))
-            )
-        );
+        if (filterByScreeningAnswer) {
+            builder.and(
+                screening.id.isNull()
+                .or(
+                    screeningAnswer.answerId.isNotNull()
+                    .and(screeningAnswer.content.eq(screening.answer))
+                )
+            );
+        }
 
         List<Survey> surveyList = jpaQueryFactory.selectFrom(survey)
             .distinct()
