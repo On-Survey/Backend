@@ -54,7 +54,7 @@ public class ParticipationController {
 
         Pageable recommendedPageable = PageRequest.of(0, size, Sort.by("id"));
         Pageable impendingPageable = PageRequest.of(0, size, Sort.by(
-            Sort.Order.desc("deadline"),
+            Sort.Order.asc("deadline"),
             Sort.Order.asc("id")
         ));
 
