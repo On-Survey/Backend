@@ -81,11 +81,15 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             builder.and(survey.memberId.ne(memberId));
         }
 
+        AgeRange memberAgeRange = memberSegmentation.convertBirthDayIntoAgeRange();
+
         builder.and(
-            surveyInfo.ages.contains(AgeRange.ALL).or(surveyInfo.ages.contains(memberSegmentation.convertBirthDayIntoAgeRange()))
+            surveyInfo.ages.contains(AgeRange.ALL)
+            .or(surveyInfo.ages.contains(memberAgeRange))
         );
         builder.and(
-            surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
+            surveyInfo.gender.eq(Gender.ALL)
+            .or(surveyInfo.gender.eq(memberSegmentation.getGender()))
         );
         if (filterByScreeningAnswer) {
             builder.and(
