@@ -11,7 +11,7 @@ public enum AgeRange {
     FOURTY("40대", 40, 49),
     FIFTY("50대", 50, 59),
     SIXTY("60대", 60, 69),
-    OVER("70세 이상", 70, null);
+    OVER("70세 이상", 70, 150);
 
     private final String value;
     private final Integer minAge;
