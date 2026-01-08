@@ -67,6 +67,8 @@ public class PromotionFacade implements PromotionUseCase {
     @Override
     @Transactional
     public ExecutionResultResponse issueAndConfirm(long userKey, long surveyId) {
+        log.info("[PROMO] 프로모션 지급 시도 userKey={} surveyId={}", userKey, surveyId);
+
         // 최초 실행 / 재시도 실행 경로
         String lockKey = buildLockKey(userKey, surveyId);
         if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
