@@ -21,8 +21,6 @@ public class MemberSegmentation{
     private Set<Interest> interests;
 
     public AgeRange convertBirthDayIntoAgeRange() {
-        System.out.println(birthDay);
-
         int birthYear = Integer.parseInt(birthDay.substring(0, 4));
         int currentYear = LocalDate.now().getYear();
         int age = currentYear - birthYear + 1;

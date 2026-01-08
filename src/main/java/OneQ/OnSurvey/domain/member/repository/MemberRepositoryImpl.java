@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -13,6 +14,7 @@ import static OneQ.OnSurvey.domain.member.QMember.member;
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class MemberRepositoryImpl implements MemberRepository {
@@ -46,8 +48,7 @@ public class MemberRepositoryImpl implements MemberRepository {
 
     @Override
     public MemberSegmentation findMemberSegmentByUserKey(Long userKey) {
-
-        return jpaQueryFactory.selectFrom(member)
+        MemberSegmentation memberSegmentation = jpaQueryFactory.selectFrom(member)
             .leftJoin(member.interests)
             .where(member.userKey.eq(userKey))
             .transform(groupBy(member.userKey).as(
@@ -60,5 +61,21 @@ public class MemberRepositoryImpl implements MemberRepository {
                 )
             ))
             .get(userKey);
+
+        if (memberSegmentation == null) {
+            log.warn("[MEMBER:REPOSITORY:findMemberSegmentByUserKey] 해당 유저의 관심사가 등록되지 않았습니다. userKey = {}", userKey);
+            return jpaQueryFactory.select(
+                Projections.fields(
+                    MemberSegmentation.class,
+                    member.gender,
+                    member.birthDay,
+                    member.residence
+                ))
+                .from(member)
+                .where(member.userKey.eq(userKey))
+                .fetchOne();
+        }
+
+        return memberSegmentation;
     }
 }
