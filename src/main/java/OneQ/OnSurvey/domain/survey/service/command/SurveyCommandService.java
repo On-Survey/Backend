@@ -54,6 +54,7 @@ public class SurveyCommandService implements SurveyCommand {
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
 
+    private static final String POTENTIAL_KEY = "survey:potential:";
     private static final String COMPLETED_KEY = "survey:completed:";
     private static final String DUE_COUNT_KEY = "survey:dueCount:";
 
@@ -164,6 +165,7 @@ public class SurveyCommandService implements SurveyCommand {
         redisTemplate.opsForValue().set(
             COMPLETED_KEY + surveyId, "0", duration
         );
+        redisTemplate.opsForZSet().remove(POTENTIAL_KEY + surveyId, String.valueOf(userKey));
 
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 

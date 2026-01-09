@@ -58,6 +58,7 @@ public class ResponseCommandService implements ResponseCommand {
             survey.updateSurveyStatus(SurveyStatus.CLOSED);
             redisTemplate.delete(DUE_COUNT_KEY + surveyId);
             redisTemplate.delete(COMPLETED_KEY + surveyId);
+            redisTemplate.delete(POTENTIAL_KEY + surveyId);
         }
 
         return true;
@@ -66,12 +67,11 @@ public class ResponseCommandService implements ResponseCommand {
     private void completeSurvey(Long surveyId, Long userKey) {
         String potentialKey = POTENTIAL_KEY + surveyId;
         String completedKey = COMPLETED_KEY + surveyId;
-        String memberKey = potentialKey + ":userKey:" + userKey;
+        String memberValue = String.valueOf(userKey);
 
         // 완료 인원 추가
         redisTemplate.opsForValue().increment(completedKey);
-        // 잠재 응답자 목록에서 제거
-        redisTemplate.delete(memberKey);
-        redisTemplate.opsForValue().decrement(potentialKey);
+        // 잠재 응답자 Sorted Set에서 제거
+        redisTemplate.opsForZSet().remove(potentialKey, memberValue);
     }
 }

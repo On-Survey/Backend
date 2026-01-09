@@ -131,9 +131,10 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}", surveyId);
 
-        Survey survey = surveyQueryService.getSurveyById(surveyId);
+        Survey survey = surveyQueryService.getSurveyById(surveyId, principal.getUserKey());
 
-        if (surveyQueryService.checkValidSegmentation(surveyId, principal.getUserKey())) {
+        // TODO: 설문 참여가능 인원 초과 시에 대한 프론트엔드 예외처리 추가 필요
+        if (survey == null || surveyQueryService.checkValidSegmentation(surveyId, principal.getUserKey())) {
             log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
@@ -201,7 +202,7 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 설문 완료 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
 
-        Boolean result = responseCommand.createResponse(surveyId, principal.getMemberId());
+        Boolean result = responseCommand.createResponse(surveyId, principal.getMemberId(), principal.getUserKey());
         return SuccessResponse.ok(result);
     }
 }

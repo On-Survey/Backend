@@ -24,9 +24,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -42,12 +44,19 @@ import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 @Transactional(readOnly = true)
 public class SurveyQueryService implements SurveyQuery {
 
+    private final StringRedisTemplate redisTemplate;
+
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final ScreeningRepository screeningRepository;
     private final ResponseRepository responseRepository;
     private final MemberRepository memberRepository;
     private final ScreeningAnswerRepository screeningAnswerRepository;
+
+    private static final String DUE_COUNT_KEY = "survey:dueCount:";
+    private static final String POTENTIAL_KEY = "survey:potential:";
+    private static final String COMPLETED_KEY = "survey:completed:";
+    private static final Duration PARTICIPATION_TIMEOUT = Duration.ofMinutes(9);
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
@@ -240,9 +249,76 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public Survey getSurveyById(Long surveyId) {
+    public Survey getSurveyById(Long surveyId, Long userKey) {
+        log.info("[SURVEY:QUERY] 설문 참여 가능 여부 확인 및 설문 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
+        String potentialKey = POTENTIAL_KEY + surveyId;
+        String memberValue = String.valueOf(userKey);
+
+        // 만료된 참여자 정리 (타임아웃 지난 사용자 제거)
+        cleanupExpiredPotentials(potentialKey);
+
+        Double existingScore = redisTemplate.opsForZSet().score(potentialKey, memberValue);
+        // 새로운 참여자인 경우
+        if (existingScore == null) {
+            Integer dueCount = getIntValue(surveyId, DUE_COUNT_KEY);
+            if (dueCount == 0) {
+                SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
+                    .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
+
+                dueCount = surveyInfo.getDueCount();
+            }
+
+            if (!isAvailable(surveyId, dueCount)) {
+                return null;
+            }
+
+            // Sorted Set에 현재 시간을 score로 사용자 추가
+            redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
+        } else {
+            // 기존 참여자 - 타임스탬프 갱신
+            redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
+        }
+
         return surveyRepository.getSurveyById(surveyId)
-                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+    }
+
+    /* 타임아웃된 참여자를 Sorted Set에서 제거 */
+    private void cleanupExpiredPotentials(String potentialKey) {
+        long expirationTime = System.currentTimeMillis() - PARTICIPATION_TIMEOUT.toMillis();
+
+        // score가 expirationTime 이전인 모든 멤버 제거
+        Long removedCount = redisTemplate.opsForZSet().removeRangeByScore(potentialKey, 0, expirationTime);
+        if (removedCount != null && removedCount > 0) {
+            log.info("[SURVEY:QUERY] {}에서 만료된 사용자 {}명 제거", potentialKey, removedCount);
+        }
+    }
+
+    private boolean isAvailable(Long surveyId, int maxParticipants) {
+        // 현재 활성 참여자 수 (Sorted Set 크기)
+        long potential = getZSetLongValue(surveyId, POTENTIAL_KEY);
+        // 현재 완료된 참여자 수
+        long completed = getLongValue(surveyId, COMPLETED_KEY);
+
+        log.info("[SURVEY:QUERY] 설문 조회 가능 여부 판단 - surveyId: {}, potential: {}, completed: {}, dueCount: {}",
+            surveyId, potential, completed, maxParticipants);
+
+        return potential + completed <= maxParticipants;
+    }
+
+    private long getZSetLongValue(Long surveyId, String keyPrefix) {
+        Long potentialCount = redisTemplate.opsForZSet().zCard(keyPrefix + surveyId);
+        return (potentialCount != null ? potentialCount : 0) + 1;
+    }
+
+    private long getLongValue(Long surveyId, String keyPrefix) {
+        String value = redisTemplate.opsForValue().get(keyPrefix + surveyId);
+        return value != null ? Long.parseLong(value) : 0;
+    }
+
+    private int getIntValue(Long surveyId, String keyPrefix) {
+        String value = redisTemplate.opsForValue().get(keyPrefix + surveyId);
+        return value != null ? Integer.parseInt(value) : 0;
     }
 
     @Override

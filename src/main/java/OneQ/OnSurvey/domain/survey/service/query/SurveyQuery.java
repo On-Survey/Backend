@@ -24,6 +24,6 @@ public interface SurveyQuery {
     SurveyDetailResponse getMySurveyDetail(Long memberId, Long surveyId);
 
     void validateSurveyRequest(Long surveyId, Long memberId, SurveyStatus status);
-    Survey getSurveyById(Long surveyId);
+    Survey getSurveyById(Long surveyId, Long userKey);
     boolean checkValidSegmentation(Long surveyId, Long userKey);
 }
