@@ -26,9 +26,11 @@ import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,6 +42,8 @@ import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 @Transactional
 public class SurveyCommandService implements SurveyCommand {
 
+    private final StringRedisTemplate redisTemplate;
+
     private final SurveyRepository surveyRepository;
     private final ScreeningRepository screeningRepository;
     private final SurveyInfoRepository surveyInfoRepository;
@@ -49,6 +53,9 @@ public class SurveyCommandService implements SurveyCommand {
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
+
+    private static final String COMPLETED_KEY = "survey:completed:";
+    private static final String DUE_COUNT_KEY = "survey:dueCount:";
 
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
@@ -146,6 +153,17 @@ public class SurveyCommandService implements SurveyCommand {
         surveyGlobalStatsService.addDueCount(info.getDueCount());
 
         member.decreaseCoin(request.totalCoin());
+
+        Duration duration = Duration.between(
+                survey.getCreatedAt(),
+                request.deadline()
+        );
+        redisTemplate.opsForValue().set(
+            DUE_COUNT_KEY + surveyId, String.valueOf(request.dueCount()), duration
+        );
+        redisTemplate.opsForValue().set(
+            COMPLETED_KEY + surveyId, "0", duration
+        );
 
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 
