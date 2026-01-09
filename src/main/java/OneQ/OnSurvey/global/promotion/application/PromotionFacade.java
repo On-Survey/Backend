@@ -19,7 +19,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,81 +69,82 @@ public class PromotionFacade implements PromotionUseCase {
         log.info("[PROMO] 프로모션 지급 시도 userKey={} surveyId={}", userKey, surveyId);
 
         // 최초 실행 / 재시도 실행 경로
+        Long grantId = upsertGrantId(userKey, surveyId, promotionCode);
+
         String lockKey = buildLockKey(userKey, surveyId);
         if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
             return ExecutionResultResponse.pending();
         }
 
-        Long grantId;
         try {
-            grantId = grantTx.createOnly(userKey, surveyId, promotionCode);
-        } catch (DataIntegrityViolationException e) {
-            grantId = grantTx.findId(userKey, surveyId, promotionCode);
-            if (grantId == null) throw e;
-        }
+            PromotionGrant grant = promotionGrantRepository.findById(grantId)
+                    .orElseThrow(() -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
 
-        PromotionGrant grant = promotionGrantRepository.findById(grantId)
-                .orElseThrow(() -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
-
-        if (grant.isSuccess()) {
-            grantPromotionPointIfNeeded(grantId, userKey);
-            return ExecutionResultResponse.success();
-        }
-
-        if (grant.isPending() && grant.getExecKey() != null) {
-            if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
-                return ExecutionResultResponse.pending();
+            if (grant.isSuccess()) {
+                grantPromotionPointIfNeeded(grantId, userKey);
+                return ExecutionResultResponse.success();
             }
-            try {
+
+            if (grant.isPending() && grant.getExecKey() != null) {
                 return pollWithRecoveryAndPersist(grant, userKey, grant.getExecKey());
-            } finally {
-                tokenStore.releaseLock(lockKey);
-            }
-        }
-
-        try {
-            String execKey = grant.getExecKey();
-            if (execKey == null || isKeyExpired(grant)) {
-                PromotionKeyResponse keyResp = tossPromotionPort.getPromotionKey(userKey, tossSslContext);
-                execKey = keyResp.key();
-                grantTx.markPending(grant.getId(), execKey);
             }
 
-            ExecutePromotionResponse execResp = tossPromotionPort.executePromotionWithRetry(
-                    userKey, promotionCode, execKey, promotionAmount, 2, tossSslContext);
-            grantTx.saveExecKey(grant.getId(), execResp.key());
-
-            ExecutionResultResponse finalRes = waitResultUntilFinalWithRecovery(
-                    grant, userKey, promotionCode, execResp.key(), confirmWaitMs);
-
-            switch (finalRes.status()) {
-                case "SUCCESS" -> {
-                    grantTx.markSuccess(grant.getId());
-                    grantPromotionPointIfNeeded(grantId, userKey);
+            try {
+                String execKey = grant.getExecKey();
+                if (execKey == null || isKeyExpired(grant)) {
+                    PromotionKeyResponse keyResp = tossPromotionPort.getPromotionKey(userKey, tossSslContext);
+                    execKey = keyResp.key();
+                    grantTx.markPending(grant.getId(), execKey);
                 }
-                case "PENDING" -> grantTx.markPending(grant.getId(), execResp.key());
-                default        -> grantTx.markFail(grant.getId());
+
+                ExecutePromotionResponse execResp = tossPromotionPort.executePromotionWithRetry(
+                        userKey, promotionCode, execKey, promotionAmount, 2, tossSslContext);
+                grantTx.saveExecKey(grant.getId(), execResp.key());
+
+                ExecutionResultResponse finalRes = waitResultUntilFinalWithRecovery(
+                        grant, userKey, promotionCode, execResp.key(), confirmWaitMs);
+
+                switch (finalRes.status()) {
+                    case "SUCCESS" -> {
+                        grantTx.markSuccess(grant.getId());
+                        grantPromotionPointIfNeeded(grantId, userKey);
+                    }
+                    case "PENDING" -> grantTx.markPending(grant.getId(), execResp.key());
+                    default        -> grantTx.markFail(grant.getId());
+                }
+
+                log.info("[PROMO] userKey={} surveyId={} code={} amount={} execKey={} status={}",
+                        userKey, surveyId, maskKey(promotionCode), promotionAmount, maskKey(execResp.key()), finalRes.status());
+
+                if ("FAILED".equals(finalRes.status())) {
+                    throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
+                }
+                return finalRes;
+
+            } catch (TossApiException te) {
+                log.warn("[PROMO] tossCode={} msg={}", te.getCode(), te.getMessage());
+                grantTx.markFail(grant.getId());
+                throw new CustomException(TossErrorMapper.map(te.getCode()));
+            } catch (CustomException ce) {
+                throw ce;
+            } catch (Exception e) {
+                log.error("[PROMO] err={}", e.toString());
+                grantTx.markFail(grant.getId());
+                throw new CustomException(TossErrorCode.TOSS_API_CONNECTION_ERROR);
             }
 
-            log.info("[PROMO] userKey={} surveyId={} code={} amount={} execKey={} status={}",
-                    userKey, surveyId, maskKey(promotionCode), promotionAmount, maskKey(execResp.key()), finalRes.status());
-
-            if ("FAILED".equals(finalRes.status()))
-                throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
-            return finalRes;
-
-        } catch (TossApiException te) {
-            log.warn("[PROMO] tossCode={} msg={}", te.getCode(), te.getMessage());
-            grantTx.markFail(grant.getId());
-            throw new CustomException(TossErrorMapper.map(te.getCode()));
-        } catch (CustomException ce) {
-            throw ce;
-        } catch (Exception e) {
-            log.error("[PROMO] err={}", e.toString());
-            grantTx.markFail(grant.getId());
-            throw new CustomException(TossErrorCode.TOSS_API_CONNECTION_ERROR);
         } finally {
             tokenStore.releaseLock(lockKey);
+        }
+    }
+
+    private Long upsertGrantId(long userKey, long surveyId, String promotionCode) {
+        try {
+            return grantTx.createOnly(userKey, surveyId, promotionCode);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            Long id = grantTx.findId(userKey, surveyId, promotionCode);
+            if (id == null) throw e;
+            return id;
         }
     }
 
