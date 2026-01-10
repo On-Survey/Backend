@@ -15,6 +15,7 @@ import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
+import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.exception.CustomException;
@@ -42,6 +43,7 @@ public class ParticipationController {
     private final AnswerCommand<ScreeningAnswer> answerCommand;
     private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
     private final ResponseCommand responseCommand;
+    private final SurveyCommandService surveyCommandService;
 
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
@@ -204,5 +206,14 @@ public class ParticipationController {
 
         Boolean result = responseCommand.createResponse(surveyId, principal.getMemberId(), principal.getUserKey());
         return SuccessResponse.ok(result);
+    }
+
+    @PostMapping("surveys/{surveyId}/heartbeat")
+    @Operation(summary = "설문 참여 중임을 알립니다.")
+    public SuccessResponse<Boolean> sendHeartbeat(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @PathVariable Long surveyId
+    ) {
+        return SuccessResponse.ok(surveyCommandService.sendSurveyHeartbeat(surveyId, principal.getUserKey()));
     }
 }

@@ -20,8 +20,10 @@ import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -53,10 +55,23 @@ public class SurveyQueryService implements SurveyQuery {
     private final MemberRepository memberRepository;
     private final ScreeningAnswerRepository screeningAnswerRepository;
 
-    private static final String DUE_COUNT_KEY = "survey:dueCount:";
-    private static final String POTENTIAL_KEY = "survey:potential:";
-    private static final String COMPLETED_KEY = "survey:completed:";
-    private static final Duration PARTICIPATION_TIMEOUT = Duration.ofMinutes(9);
+    @Value("${redis.survey-key-prefix.potential-count}")
+    private static String potentialKey;
+
+    @Value("${redis.survey-key-prefix.completed-count}")
+    private static String completedKey;
+
+    @Value("${redis.survey-key-prefix.due-count}")
+    private static String dueCountKey;
+
+    @Value("${redis.survey-potential-expiration-seconds}")
+    private static Integer potentialTimeout;
+
+    private static Duration potentialDuration;
+    @PostConstruct
+    public void init() {
+        potentialDuration = Duration.ofSeconds(potentialTimeout);
+    }
 
     @Override
     public SurveyManagementDetailResponse getSurvey(Long surveyId) {
@@ -251,7 +266,7 @@ public class SurveyQueryService implements SurveyQuery {
     @Override
     public Survey getSurveyById(Long surveyId, Long userKey) {
         log.info("[SURVEY:QUERY] 설문 참여 가능 여부 확인 및 설문 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
-        String potentialKey = POTENTIAL_KEY + surveyId;
+        String potentialKey = SurveyQueryService.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
         // 만료된 참여자 정리 (타임아웃 지난 사용자 제거)
@@ -260,7 +275,7 @@ public class SurveyQueryService implements SurveyQuery {
         Double existingScore = redisTemplate.opsForZSet().score(potentialKey, memberValue);
         // 새로운 참여자인 경우
         if (existingScore == null) {
-            Integer dueCount = getIntValue(surveyId, DUE_COUNT_KEY);
+            Integer dueCount = getIntValue(surveyId, dueCountKey);
             if (dueCount == 0) {
                 SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
                     .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
@@ -285,7 +300,7 @@ public class SurveyQueryService implements SurveyQuery {
 
     /* 타임아웃된 참여자를 Sorted Set에서 제거 */
     private void cleanupExpiredPotentials(String potentialKey) {
-        long expirationTime = System.currentTimeMillis() - PARTICIPATION_TIMEOUT.toMillis();
+        long expirationTime = System.currentTimeMillis() - potentialDuration.toMillis();
 
         // score가 expirationTime 이전인 모든 멤버 제거
         Long removedCount = redisTemplate.opsForZSet().removeRangeByScore(potentialKey, 0, expirationTime);
@@ -296,9 +311,9 @@ public class SurveyQueryService implements SurveyQuery {
 
     private boolean isAvailable(Long surveyId, int maxParticipants) {
         // 현재 활성 참여자 수 (Sorted Set 크기)
-        long potential = getZSetLongValue(surveyId, POTENTIAL_KEY);
+        long potential = getZSetLongValue(surveyId, potentialKey);
         // 현재 완료된 참여자 수
-        long completed = getLongValue(surveyId, COMPLETED_KEY);
+        long completed = getLongValue(surveyId, completedKey);
 
         log.info("[SURVEY:QUERY] 설문 조회 가능 여부 판단 - surveyId: {}, potential: {}, completed: {}, dueCount: {}",
             surveyId, potential, completed, maxParticipants);

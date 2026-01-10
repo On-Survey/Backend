@@ -26,6 +26,7 @@ import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,9 +55,14 @@ public class SurveyCommandService implements SurveyCommand {
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
 
-    private static final String POTENTIAL_KEY = "survey:potential:";
-    private static final String COMPLETED_KEY = "survey:completed:";
-    private static final String DUE_COUNT_KEY = "survey:dueCount:";
+    @Value("${redis.survey-key-prefix.potential-count}")
+    private static String potentialKey;
+
+    @Value("${redis.survey-key-prefix.completed-count}")
+    private static String completedKey;
+
+    @Value("${redis.survey-key-prefix.due-count}")
+    private static String dueCountKey;
 
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
@@ -160,12 +166,14 @@ public class SurveyCommandService implements SurveyCommand {
                 request.deadline()
         );
         redisTemplate.opsForValue().set(
-            DUE_COUNT_KEY + surveyId, String.valueOf(request.dueCount()), duration
+            dueCountKey + surveyId, String.valueOf(request.dueCount()), duration
         );
         redisTemplate.opsForValue().set(
-            COMPLETED_KEY + surveyId, "0", duration
+            completedKey + surveyId, "0", duration
         );
-        redisTemplate.opsForZSet().remove(POTENTIAL_KEY + surveyId, String.valueOf(userKey));
+        redisTemplate.opsForZSet().remove(
+            potentialKey + surveyId, String.valueOf(userKey)
+        );
 
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 
@@ -247,5 +255,14 @@ public class SurveyCommandService implements SurveyCommand {
         surveyInfo.markNonRefundable();
 
         return true;
+    }
+
+    @Override
+    public boolean sendSurveyHeartbeat(Long surveyId, Long userKey) {
+        String potentialKey = SurveyCommandService.potentialKey + surveyId;
+        String memberValue = String.valueOf(userKey);
+
+        // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신
+        return Boolean.TRUE.equals(redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis()));
     }
 }

@@ -11,6 +11,7 @@ import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,9 +28,14 @@ public class ResponseCommandService implements ResponseCommand {
     private final SurveyInfoRepository surveyInfoRepository;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
 
-    private static final String POTENTIAL_KEY = "survey:potential:";
-    private static final String COMPLETED_KEY = "survey:completed:";
-    private static final String DUE_COUNT_KEY = "survey:dueCount:";
+    @Value("${redis.survey-key-prefix.potential-count}")
+    private static String potentialKey;
+
+    @Value("${redis.survey-key-prefix.completed-count}")
+    private static String completedKey;
+
+    @Value("${redis.survey-key-prefix.due-count}")
+    private static String dueCountKey;
 
     @Override
     public Boolean createResponse(Long surveyId, Long memberId, Long userKey) {
@@ -56,17 +62,17 @@ public class ResponseCommandService implements ResponseCommand {
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
             survey.updateSurveyStatus(SurveyStatus.CLOSED);
-            redisTemplate.delete(DUE_COUNT_KEY + surveyId);
-            redisTemplate.delete(COMPLETED_KEY + surveyId);
-            redisTemplate.delete(POTENTIAL_KEY + surveyId);
+            redisTemplate.delete(dueCountKey + surveyId);
+            redisTemplate.delete(completedKey + surveyId);
+            redisTemplate.delete(potentialKey + surveyId);
         }
 
         return true;
     }
 
     private void completeSurvey(Long surveyId, Long userKey) {
-        String potentialKey = POTENTIAL_KEY + surveyId;
-        String completedKey = COMPLETED_KEY + surveyId;
+        String potentialKey = ResponseCommandService.potentialKey + surveyId;
+        String completedKey = ResponseCommandService.completedKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
         // 완료 인원 추가
