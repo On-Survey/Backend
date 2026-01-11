@@ -202,7 +202,7 @@ public class SurveyQueryService implements SurveyQuery {
         log.info("[SURVEY:QUERY:getParticipationInfo] 설문 기본정보 조회 - surveyId: {}", surveyId);
 
         if (checkValidSegmentation(surveyId, userKey)) {
-            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            log.warn("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
 
@@ -381,7 +381,7 @@ public class SurveyQueryService implements SurveyQuery {
 
         boolean result = potential + completed <= maxParticipants;
 
-        log.info("[SURVEY:QUERY] 활성 사용자 등록 가능 여부 판단 - surveyId: {}, potential: {}, completed: {}, dueCount: {}, isEnough: {}",
+        log.info("[SURVEY:QUERY] 활성 사용자 등록가능 여부 판단 - surveyId: {}, potential: {}, completed: {}, dueCount: {}, isEnough: {}",
             surveyId, potential, completed, maxParticipants, result);
 
         return result;

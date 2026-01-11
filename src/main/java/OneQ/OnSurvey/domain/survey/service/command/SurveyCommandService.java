@@ -261,12 +261,9 @@ public class SurveyCommandService implements SurveyCommand {
         String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
-        log.info("potential: {}", redisTemplate.opsForZSet().score(potentialKey, memberValue));
-
         if (redisTemplate.opsForZSet().score(potentialKey, memberValue) == null) {
             return false;
         }
-
         // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신
         redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
         return true;
