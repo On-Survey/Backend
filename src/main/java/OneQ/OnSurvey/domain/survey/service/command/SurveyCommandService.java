@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -162,7 +163,7 @@ public class SurveyCommandService implements SurveyCommand {
         member.decreaseCoin(request.totalCoin());
 
         Duration duration = Duration.between(
-                survey.getCreatedAt(),
+                LocalDateTime.now(),
                 request.deadline()
         );
         redisTemplate.opsForValue().set(

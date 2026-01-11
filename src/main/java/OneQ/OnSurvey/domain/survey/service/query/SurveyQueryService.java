@@ -206,7 +206,7 @@ public class SurveyQueryService implements SurveyQuery {
         Survey survey = surveyRepository.getSurveyById(surveyId)
             .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
-        if (SurveyStatus.CLOSED.equals(survey.getStatus()) || SurveyStatus.REFUNDED.equals(survey.getStatus())) {
+        if (!isSurveyAccessible(survey.getStatus())) {
             log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
             throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
         }
@@ -214,6 +214,34 @@ public class SurveyQueryService implements SurveyQuery {
         int completedCount = getIntValue(surveyId, this.completedKey);
 
         return ParticipationInfoResponse.from(survey, completedCount);
+    }
+
+    @Override
+    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey, Long memberId) {
+        log.info("[SURVEY:QUERY] 설문 문항정보 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
+
+        cleanupExpiredPotentials(surveyId);
+
+        if (!checkActivateUser(surveyId, userKey)) {
+            log.warn("[SURVEY:QUERY] 일시적 설문 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
+        }
+
+        Survey survey = surveyRepository.getSurveyById(surveyId)
+            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+        if (!isSurveyAccessible(survey.getStatus())) {
+            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
+            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
+        }
+
+        if (memberId.equals(survey.getMemberId())) {
+            log.warn("[SURVEY:QUERY] 설문 제작자는 참여 불가 - surveyId: {}, memberId: {}", surveyId, memberId);
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
+        }
+
+        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
+        return ParticipationQuestionResponse.of(questionDtoList);
     }
 
     @Override
@@ -289,32 +317,10 @@ public class SurveyQueryService implements SurveyQuery {
         }
     }
 
-    @Override
-    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey, Long memberId) {
-        log.info("[SURVEY:QUERY] 설문 문항정보 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
-
-        cleanupExpiredPotentials(surveyId);
-
-        if (!checkActivateUser(surveyId, userKey)) {
-            log.warn("[SURVEY:QUERY] 일시적 설문 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
-            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
-        }
-
-        Survey survey = surveyRepository.getSurveyById(surveyId)
-            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
-
-        if (SurveyStatus.CLOSED.equals(survey.getStatus()) || SurveyStatus.REFUNDED.equals(survey.getStatus())) {
-            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
-            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
-        }
-
-        if (memberId.equals(survey.getMemberId())) {
-            log.warn("[SURVEY:QUERY] 설문 제작자는 참여 불가 - surveyId: {}, memberId: {}", surveyId, memberId);
-            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
-        }
-
-        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
-        return ParticipationQuestionResponse.of(questionDtoList);
+    private boolean isSurveyAccessible(SurveyStatus status) {
+        return SurveyStatus.CLOSED.equals(status)
+            || SurveyStatus.REFUNDED.equals(status)
+            || SurveyStatus.WRITING.equals(status);
     }
 
     /* 활성 사용자 등록 및 등록가능 여부 판단 (true: 불가능, false: 가능) */
@@ -331,6 +337,14 @@ public class SurveyQueryService implements SurveyQuery {
                 SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
                     .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
 
+                Survey survey = surveyRepository.getSurveyById(surveyId)
+                    .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+                Duration duration = Duration.between(
+                    LocalDateTime.now(),
+                    survey.getDeadline()
+                );
+                redisTemplate.opsForValue().set(this.dueCountKey + surveyId, String.valueOf(surveyInfo.getDueCount()), duration);
                 dueCount = surveyInfo.getDueCount();
             }
             if (!isAvailable(surveyId, dueCount)) {
@@ -384,6 +398,12 @@ public class SurveyQueryService implements SurveyQuery {
     public boolean checkValidSegmentation(Long surveyId, Long userKey) {
         SurveySegmentation surveySegmentation = surveyInfoRepository.findSegmentationBySurveyId(surveyId);
         MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
+
+        if (surveySegmentation == null || memberSegmentation == null) {
+            log.warn("[SURVEY:QUERY:checkValidSegmentation] 세그멘테이션 정보 없음 - surveyId: {}, userKey: {}",
+                surveyId, userKey);
+            throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
+        }
 
         return !(checkAgeSegmentation(surveySegmentation.getAges(), memberSegmentation.convertBirthDayIntoAgeRange())
             && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender()));
