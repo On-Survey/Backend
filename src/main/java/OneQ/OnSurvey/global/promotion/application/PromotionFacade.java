@@ -267,12 +267,10 @@ public class PromotionFacade implements PromotionUseCase {
         // 이미 성공이면 포인트만 보정하고 종료
         if (grant.isSuccess()) {
             grantPromotionPointIfNeeded(grantId, grant.getUserKey());
-            ExecutionResultResponse.success();
             return;
         }
 
         if (!grant.isPending() || grant.getExecKey() == null) {
-            ExecutionResultResponse.pending();
             return;
         }
 
