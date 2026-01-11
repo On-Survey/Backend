@@ -32,15 +32,15 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     private final String[] allowedUrls = {
-            "/",
-            "/swagger-ui/**",
-            "/v3/api-docs/**",
-            "/actuator/health",
-            "/auth/toss/login",
-            "/auth/reissue",
-            "/connect-out",
-            "/sentry-test/**",
-            "/toss/promotion/recheck-pending"
+        "/",
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
+        "/actuator/health",
+        "/auth/toss/login",
+        "/auth/reissue",
+        "/connect-out",
+        "/sentry-test/**",
+        "/toss/promotion/recheck-pending"
     };
 
     @Bean
@@ -66,19 +66,18 @@ public class SecurityConfig {
     }
 
     @Bean @Order(1)
-    public SecurityFilterChain tossUnlinkChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain tossUnlinkChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/connect-out")
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().permitAll())
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .addFilterBefore(new ExactBasicHeaderFilter(expectedHeader), UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(e -> e
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                        .accessDeniedHandler(customAccessDeniedHandler));
+            .securityMatcher("/connect-out")
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .anyRequest().permitAll())
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .addFilterBefore(new ExactBasicHeaderFilter(expectedHeader), UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(e -> e
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler(customAccessDeniedHandler));
         return http.build();
     }
 }
