@@ -5,7 +5,6 @@ import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseCommand;
-import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
@@ -35,7 +34,6 @@ import java.time.LocalDateTime;
 public class ParticipationController {
 
     private final SurveyQuery surveyQueryService;
-    private final QuestionQuery questionQueryService;
     private final AnswerCommand<ScreeningAnswer> answerCommand;
     private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
     private final ResponseCommand responseCommand;
@@ -121,7 +119,7 @@ public class ParticipationController {
         return SuccessResponse.ok(response);
     }
 
-    @GetMapping("survey/info")
+    @GetMapping("surveys/info")
     @Operation(summary = "선택한 설문의 기본 정보를 조회합니다.")
     public SuccessResponse<ParticipationInfoResponse> getSurveyInfo(
         @RequestParam Long surveyId,
@@ -132,7 +130,7 @@ public class ParticipationController {
         return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId, principal.getUserKey()));
     }
 
-    @GetMapping("surveys")
+    @GetMapping("surveys/questions")
     @Operation(summary = "선택한 설문의 문항 정보을 조회합니다.")
     public SuccessResponse<ParticipationQuestionResponse> getQuestionsOfSurveyId(
         @RequestParam Long surveyId,

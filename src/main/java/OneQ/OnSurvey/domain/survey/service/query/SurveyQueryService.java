@@ -318,9 +318,7 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     private boolean isSurveyAccessible(SurveyStatus status) {
-        return SurveyStatus.CLOSED.equals(status)
-            || SurveyStatus.REFUNDED.equals(status)
-            || SurveyStatus.WRITING.equals(status);
+        return ONGOING.equals(status);
     }
 
     /* 활성 사용자 등록 및 등록가능 여부 판단 (true: 불가능, false: 가능) */
