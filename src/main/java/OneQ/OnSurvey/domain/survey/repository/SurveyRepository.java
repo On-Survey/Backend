@@ -20,4 +20,6 @@ public interface SurveyRepository {
         boolean filterByScreeningAnswer);
 
     Survey save(Survey survey);
+
+    SurveyStatus getSurveyStatusById(Long surveyId);
 }

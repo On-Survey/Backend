@@ -5,6 +5,8 @@ import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.participation.repository.answer.ScreeningAnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
+import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
@@ -54,6 +56,8 @@ public class SurveyQueryService implements SurveyQuery {
     private final ResponseRepository responseRepository;
     private final MemberRepository memberRepository;
     private final ScreeningAnswerRepository screeningAnswerRepository;
+
+    private final QuestionQueryService questionQueryService;
 
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
@@ -191,14 +195,19 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public ParticipationInfoResponse getParticipationInfo(Long surveyId) {
+    public ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey) {
         log.info("[SURVEY:QUERY:getParticipationInfo] 설문 기본정보 조회 - surveyId: {}", surveyId);
+
+        if (checkValidSegmentation(surveyId, userKey)) {
+            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
+        }
 
         Survey survey = surveyRepository.getSurveyById(surveyId)
             .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
         if (SurveyStatus.CLOSED.equals(survey.getStatus()) || SurveyStatus.REFUNDED.equals(survey.getStatus())) {
-            log.warn("[SURVEY:QUERY:getParticipationInfo] 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
+            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
             throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
         }
 
@@ -281,15 +290,40 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public Survey getSurveyById(Long surveyId, Long userKey) {
-        log.info("[SURVEY:QUERY] 설문 참여 가능 여부 확인 및 설문 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
+    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey, Long memberId) {
+        log.info("[SURVEY:QUERY] 설문 문항정보 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
+
+        cleanupExpiredPotentials(surveyId);
+
+        if (!checkActivateUser(surveyId, userKey)) {
+            log.warn("[SURVEY:QUERY] 일시적 설문 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
+        }
+
+        Survey survey = surveyRepository.getSurveyById(surveyId)
+            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+        if (SurveyStatus.CLOSED.equals(survey.getStatus()) || SurveyStatus.REFUNDED.equals(survey.getStatus())) {
+            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
+            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
+        }
+
+        if (memberId.equals(survey.getMemberId())) {
+            log.warn("[SURVEY:QUERY] 설문 제작자는 참여 불가 - surveyId: {}, memberId: {}", surveyId, memberId);
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
+        }
+
+        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
+        return ParticipationQuestionResponse.of(questionDtoList);
+    }
+
+    /* 활성 사용자 등록 및 등록가능 여부 판단 (true: 불가능, false: 가능) */
+    private boolean checkActivateUser(Long surveyId, Long userKey) {
         String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
-        // 만료된 참여자 정리 (타임아웃 지난 사용자 제거)
-        cleanupExpiredPotentials(potentialKey);
-
         Double existingScore = redisTemplate.opsForZSet().score(potentialKey, memberValue);
+
         // 새로운 참여자인 경우
         if (existingScore == null) {
             Integer dueCount = getIntValue(surveyId, this.dueCountKey);
@@ -299,30 +333,28 @@ public class SurveyQueryService implements SurveyQuery {
 
                 dueCount = surveyInfo.getDueCount();
             }
-
             if (!isAvailable(surveyId, dueCount)) {
-                return null;
+                return true;
             }
 
             // Sorted Set에 현재 시간을 score로 사용자 추가
             redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
         } else {
-            // 기존 참여자 - 타임스탬프 갱신
+            // 기존 참여자 - score 갱신
             redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
         }
 
-        return surveyRepository.getSurveyById(surveyId)
-            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+        return false;
     }
 
     /* 타임아웃된 참여자를 Sorted Set에서 제거 */
-    private void cleanupExpiredPotentials(String potentialKey) {
+    private void cleanupExpiredPotentials(Long surveyId) {
         long expirationTime = System.currentTimeMillis() - potentialDuration.toMillis();
 
         // score가 expirationTime 이전인 모든 멤버 제거
-        Long removedCount = redisTemplate.opsForZSet().removeRangeByScore(potentialKey, 0, expirationTime);
+        Long removedCount = redisTemplate.opsForZSet().removeRangeByScore(this.potentialKey + surveyId, 0, expirationTime);
         if (removedCount != null && removedCount > 0) {
-            log.info("[SURVEY:QUERY] {}에서 만료된 사용자 {}명 제거", potentialKey, removedCount);
+            log.info("[SURVEY:QUERY] {}에서 만료된 사용자 {}명 제거", this.potentialKey + surveyId, removedCount);
         }
     }
 

@@ -20,11 +20,12 @@ public interface SurveyQuery {
     ParticipationScreeningResponse getScreeningList(
         Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     );
-    ParticipationInfoResponse getParticipationInfo(Long surveyId);
+    ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey);
+    ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey, Long memberId);
+
     MySurveyListResponse getMySurveys(Long memberId);
     SurveyDetailResponse getMySurveyDetail(Long memberId, Long surveyId);
 
     void validateSurveyRequest(Long surveyId, Long memberId, SurveyStatus status);
-    Survey getSurveyById(Long surveyId, Long userKey);
     boolean checkValidSegmentation(Long surveyId, Long userKey);
 }

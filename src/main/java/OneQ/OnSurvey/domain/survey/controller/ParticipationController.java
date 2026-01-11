@@ -8,7 +8,6 @@ import OneQ.OnSurvey.domain.participation.service.response.ResponseCommand;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
-import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
@@ -129,35 +128,23 @@ public class ParticipationController {
     @GetMapping("survey/info")
     @Operation(summary = "선택한 설문의 기본 정보를 조회합니다.")
     public SuccessResponse<ParticipationInfoResponse> getSurveyInfo(
-        @RequestParam Long surveyId
+        @RequestParam Long surveyId,
+        @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        log.info("[PARTICIPATION] 설문 기본정보 조회 - surveyId: {}", surveyId);
+        log.info("[PARTICIPATION] 설문 기본정보 조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
 
-        return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId));
+        return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId, principal.getUserKey()));
     }
 
     @GetMapping("surveys")
-    @Operation(summary = "선택한 설문을 조회합니다.")
+    @Operation(summary = "선택한 설문의 문항 정보을 조회합니다.")
     public SuccessResponse<ParticipationQuestionResponse> getQuestionsOfSurveyId(
         @RequestParam Long surveyId,
         @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}", surveyId);
+        log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
 
-        Survey survey = surveyQueryService.getSurveyById(surveyId, principal.getUserKey());
-
-        // TODO: 설문 참여가능 인원 초과 시에 대한 프론트엔드 예외처리 추가 필요
-        if (survey == null || surveyQueryService.checkValidSegmentation(surveyId, principal.getUserKey())) {
-            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
-            throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
-        }
-
-        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
-
-        ParticipationQuestionResponse body =
-                ParticipationQuestionResponse.of(survey, questionDtoList);
-
-        return SuccessResponse.ok(body);
+        return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, principal.getUserKey(), principal.getMemberId()));
     }
 
     @GetMapping("surveys/screenings")
