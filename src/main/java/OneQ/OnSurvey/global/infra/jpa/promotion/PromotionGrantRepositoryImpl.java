@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.global.infra.jpa.promotion;
 
+import OneQ.OnSurvey.global.promotion.entity.GrantStatus;
 import OneQ.OnSurvey.global.promotion.entity.PromotionGrant;
 import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -8,6 +9,7 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import static OneQ.OnSurvey.global.promotion.entity.QPromotionGrant.promotionGrant;
@@ -58,5 +60,18 @@ public class PromotionGrantRepositoryImpl implements PromotionGrantRepository {
         em.clear();
 
         return (int) updated;
+    }
+
+    @Override
+    public List<PromotionGrant> findPendingWithExecKey(int limit) {
+        return queryFactory
+                .selectFrom(promotionGrant)
+                .where(
+                        promotionGrant.status.eq(GrantStatus.PENDING),
+                        promotionGrant.execKey.isNotNull()
+                )
+                .orderBy(promotionGrant.updatedAt.asc(), promotionGrant.id.asc())
+                .limit(limit)
+                .fetch();
     }
 }

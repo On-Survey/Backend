@@ -4,6 +4,9 @@ import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutionResultResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.PromotionIssueRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.recheck.PromotionRecheckPendingRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.recheck.PromotionRecheckPendingResponse;
+import OneQ.OnSurvey.global.promotion.application.PromotionRecheckService;
 import OneQ.OnSurvey.global.promotion.application.PromotionUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PromotionController {
 
     private final PromotionUseCase promotionUseCase;
+    private final PromotionRecheckService promotionRecheckService;
 
     @PostMapping("/issue")
     @Operation(
@@ -35,5 +39,19 @@ public class PromotionController {
         ExecutionResultResponse res = promotionUseCase.issueAndConfirm(principal.getUserKey(), request.surveyId());
         return SuccessResponse.ok(res);
     }
+
+    @PostMapping("/recheck-pending")
+    @Operation(
+            summary = "[호출 유의] PENDING 프로모션 재조회",
+            description = "PENDING 상태로 남아있는 프로모션들을 재조회하여 최신 상태로 갱신합니다."
+    )
+    public SuccessResponse<PromotionRecheckPendingResponse> recheckPending(
+            @RequestBody(required = false) PromotionRecheckPendingRequest request
+    ) {
+        Integer limit = (request == null) ? null : request.limit();
+        PromotionRecheckPendingResponse res = promotionRecheckService.recheckPending(limit);
+        return SuccessResponse.ok(res);
+    }
+
 }
 
