@@ -258,4 +258,35 @@ public class PromotionFacade implements PromotionUseCase {
         return prefix + "****" + suffix;
     }
 
+    @Transactional
+    public void recheckPendingGrant(long grantId) {
+
+        PromotionGrant grant = promotionGrantRepository.findById(grantId)
+                .orElseThrow(() -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
+
+        // 이미 성공이면 포인트만 보정하고 종료
+        if (grant.isSuccess()) {
+            grantPromotionPointIfNeeded(grantId, grant.getUserKey());
+            ExecutionResultResponse.success();
+            return;
+        }
+
+        if (!grant.isPending() || grant.getExecKey() == null) {
+            ExecutionResultResponse.pending();
+            return;
+        }
+
+        ExecutionResultResponse res =
+                pollWithRecoveryAndPersist(grant, grant.getUserKey(), grant.getExecKey());
+
+        switch (res.status()) {
+            case "SUCCESS" -> {
+                grantTx.markSuccess(grantId);
+                grantPromotionPointIfNeeded(grantId, grant.getUserKey());
+            }
+            case "PENDING" -> grantTx.markPending(grantId, grant.getExecKey());
+            default        -> grantTx.markFail(grantId);
+        }
+
+    }
 }
