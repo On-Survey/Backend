@@ -20,6 +20,7 @@ public interface SurveyQuery {
     ParticipationScreeningResponse getScreeningList(
         Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     );
+    ParticipationInfoResponse getParticipationInfo(Long surveyId);
     MySurveyListResponse getMySurveys(Long memberId);
     SurveyDetailResponse getMySurveyDetail(Long memberId, Long surveyId);
 

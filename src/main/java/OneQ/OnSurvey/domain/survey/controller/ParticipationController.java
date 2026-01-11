@@ -14,6 +14,7 @@ import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
+import OneQ.OnSurvey.domain.survey.model.response.ParticipationInfoResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
@@ -123,6 +124,16 @@ public class ParticipationController {
             .build();
         
         return SuccessResponse.ok(response);
+    }
+
+    @GetMapping("survey/info")
+    @Operation(summary = "선택한 설문의 기본 정보를 조회합니다.")
+    public SuccessResponse<ParticipationInfoResponse> getSurveyInfo(
+        @RequestParam Long surveyId
+    ) {
+        log.info("[PARTICIPATION] 설문 기본정보 조회 - surveyId: {}", surveyId);
+
+        return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId));
     }
 
     @GetMapping("surveys")

@@ -56,13 +56,13 @@ public class SurveyCommandService implements SurveyCommand {
     private final AfterCommitExecutor afterCommitExecutor;
 
     @Value("${redis.survey-key-prefix.potential-count}")
-    private static String potentialKey;
+    private String potentialKey;
 
     @Value("${redis.survey-key-prefix.completed-count}")
-    private static String completedKey;
+    private String completedKey;
 
     @Value("${redis.survey-key-prefix.due-count}")
-    private static String dueCountKey;
+    private String dueCountKey;
 
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
@@ -166,13 +166,13 @@ public class SurveyCommandService implements SurveyCommand {
                 request.deadline()
         );
         redisTemplate.opsForValue().set(
-            dueCountKey + surveyId, String.valueOf(request.dueCount()), duration
+            this.dueCountKey + surveyId, String.valueOf(request.dueCount()), duration
         );
         redisTemplate.opsForValue().set(
-            completedKey + surveyId, "0", duration
+            this.completedKey + surveyId, "0", duration
         );
         redisTemplate.opsForZSet().remove(
-            potentialKey + surveyId, String.valueOf(userKey)
+            this.potentialKey + surveyId, String.valueOf(userKey)
         );
 
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
@@ -259,7 +259,7 @@ public class SurveyCommandService implements SurveyCommand {
 
     @Override
     public boolean sendSurveyHeartbeat(Long surveyId, Long userKey) {
-        String potentialKey = SurveyCommandService.potentialKey + surveyId;
+        String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
         // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신

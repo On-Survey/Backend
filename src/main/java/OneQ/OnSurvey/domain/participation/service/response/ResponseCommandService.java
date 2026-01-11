@@ -29,13 +29,13 @@ public class ResponseCommandService implements ResponseCommand {
     private final SurveyGlobalStatsService surveyGlobalStatsService;
 
     @Value("${redis.survey-key-prefix.potential-count}")
-    private static String potentialKey;
+    private String potentialKey;
 
     @Value("${redis.survey-key-prefix.completed-count}")
-    private static String completedKey;
+    private String completedKey;
 
     @Value("${redis.survey-key-prefix.due-count}")
-    private static String dueCountKey;
+    private String dueCountKey;
 
     @Override
     public Boolean createResponse(Long surveyId, Long memberId, Long userKey) {
@@ -62,17 +62,17 @@ public class ResponseCommandService implements ResponseCommand {
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
             survey.updateSurveyStatus(SurveyStatus.CLOSED);
-            redisTemplate.delete(dueCountKey + surveyId);
-            redisTemplate.delete(completedKey + surveyId);
-            redisTemplate.delete(potentialKey + surveyId);
+            redisTemplate.delete(this.dueCountKey + surveyId);
+            redisTemplate.delete(this.completedKey + surveyId);
+            redisTemplate.delete(this.potentialKey + surveyId);
         }
 
         return true;
     }
 
     private void completeSurvey(Long surveyId, Long userKey) {
-        String potentialKey = ResponseCommandService.potentialKey + surveyId;
-        String completedKey = ResponseCommandService.completedKey + surveyId;
+        String potentialKey = this.potentialKey + surveyId;
+        String completedKey = this.completedKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
         // 완료 인원 추가

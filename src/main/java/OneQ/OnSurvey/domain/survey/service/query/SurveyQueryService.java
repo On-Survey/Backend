@@ -56,21 +56,21 @@ public class SurveyQueryService implements SurveyQuery {
     private final ScreeningAnswerRepository screeningAnswerRepository;
 
     @Value("${redis.survey-key-prefix.potential-count}")
-    private static String potentialKey;
+    private String potentialKey;
 
     @Value("${redis.survey-key-prefix.completed-count}")
-    private static String completedKey;
+    private String completedKey;
 
     @Value("${redis.survey-key-prefix.due-count}")
-    private static String dueCountKey;
+    private String dueCountKey;
 
     @Value("${redis.survey-potential-expiration-seconds}")
-    private static Integer potentialTimeout;
+    private Integer potentialTimeout;
 
-    private static Duration potentialDuration;
+    private Duration potentialDuration;
     @PostConstruct
     public void init() {
-        potentialDuration = Duration.ofSeconds(potentialTimeout);
+        potentialDuration = Duration.ofSeconds(this.potentialTimeout);
     }
 
     @Override
@@ -191,6 +191,23 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
+    public ParticipationInfoResponse getParticipationInfo(Long surveyId) {
+        log.info("[SURVEY:QUERY:getParticipationInfo] 설문 기본정보 조회 - surveyId: {}", surveyId);
+
+        Survey survey = surveyRepository.getSurveyById(surveyId)
+            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+        if (SurveyStatus.CLOSED.equals(survey.getStatus()) || SurveyStatus.REFUNDED.equals(survey.getStatus())) {
+            log.warn("[SURVEY:QUERY:getParticipationInfo] 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
+            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
+        }
+
+        int completedCount = getIntValue(surveyId, this.completedKey);
+
+        return ParticipationInfoResponse.from(survey, completedCount);
+    }
+
+    @Override
     public MySurveyListResponse getMySurveys(Long memberId) {
         List<Survey> surveys = surveyRepository.getSurveyListByMemberId(memberId);
 
@@ -266,7 +283,7 @@ public class SurveyQueryService implements SurveyQuery {
     @Override
     public Survey getSurveyById(Long surveyId, Long userKey) {
         log.info("[SURVEY:QUERY] 설문 참여 가능 여부 확인 및 설문 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
-        String potentialKey = SurveyQueryService.potentialKey + surveyId;
+        String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
         // 만료된 참여자 정리 (타임아웃 지난 사용자 제거)
@@ -275,7 +292,7 @@ public class SurveyQueryService implements SurveyQuery {
         Double existingScore = redisTemplate.opsForZSet().score(potentialKey, memberValue);
         // 새로운 참여자인 경우
         if (existingScore == null) {
-            Integer dueCount = getIntValue(surveyId, dueCountKey);
+            Integer dueCount = getIntValue(surveyId, this.dueCountKey);
             if (dueCount == 0) {
                 SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
                     .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
@@ -311,9 +328,9 @@ public class SurveyQueryService implements SurveyQuery {
 
     private boolean isAvailable(Long surveyId, int maxParticipants) {
         // 현재 활성 참여자 수 (Sorted Set 크기)
-        long potential = getZSetLongValue(surveyId, potentialKey);
+        int potential = getZSetValue(surveyId, this.potentialKey);
         // 현재 완료된 참여자 수
-        long completed = getLongValue(surveyId, completedKey);
+        int completed = getIntValue(surveyId, this.completedKey);
 
         log.info("[SURVEY:QUERY] 설문 조회 가능 여부 판단 - surveyId: {}, potential: {}, completed: {}, dueCount: {}",
             surveyId, potential, completed, maxParticipants);
@@ -321,14 +338,9 @@ public class SurveyQueryService implements SurveyQuery {
         return potential + completed <= maxParticipants;
     }
 
-    private long getZSetLongValue(Long surveyId, String keyPrefix) {
+    private int getZSetValue(Long surveyId, String keyPrefix) {
         Long potentialCount = redisTemplate.opsForZSet().zCard(keyPrefix + surveyId);
-        return (potentialCount != null ? potentialCount : 0) + 1;
-    }
-
-    private long getLongValue(Long surveyId, String keyPrefix) {
-        String value = redisTemplate.opsForValue().get(keyPrefix + surveyId);
-        return value != null ? Long.parseLong(value) : 0;
+        return (potentialCount != null ? potentialCount.intValue() : 0) + 1;
     }
 
     private int getIntValue(Long surveyId, String keyPrefix) {
