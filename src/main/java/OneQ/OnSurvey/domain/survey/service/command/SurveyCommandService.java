@@ -65,6 +65,9 @@ public class SurveyCommandService implements SurveyCommand {
     @Value("${redis.survey-key-prefix.due-count}")
     private String dueCountKey;
 
+    @Value("${redis.survey-key-prefix.creator-userkey}")
+    private String creatorKey;
+
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
 
@@ -166,15 +169,10 @@ public class SurveyCommandService implements SurveyCommand {
                 LocalDateTime.now(),
                 request.deadline()
         );
-        redisTemplate.opsForValue().set(
-            this.dueCountKey + surveyId, String.valueOf(request.dueCount()), duration
-        );
-        redisTemplate.opsForValue().set(
-            this.completedKey + surveyId, "0", duration
-        );
-        redisTemplate.opsForZSet().remove(
-            this.potentialKey + surveyId, String.valueOf(userKey)
-        );
+        setValue(this.dueCountKey, surveyId, String.valueOf(request.dueCount()), duration);
+        setValue(this.completedKey, surveyId, "0", duration);
+        addZSetValue(this.potentialKey, surveyId, String.valueOf(userKey));
+        setValue(this.creatorKey, surveyId, String.valueOf(userKey), duration);
 
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 
@@ -263,7 +261,26 @@ public class SurveyCommandService implements SurveyCommand {
         String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
+        log.info("potential: {}", redisTemplate.opsForZSet().score(potentialKey, memberValue));
+
+        if (redisTemplate.opsForZSet().score(potentialKey, memberValue) == null) {
+            return false;
+        }
+
         // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신
-        return Boolean.TRUE.equals(redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis()));
+        redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
+        return true;
+    }
+
+    private void setValue(String keyPrefix, Long surveyId, String value, Duration duration) {
+        redisTemplate.opsForValue().set(
+            keyPrefix + surveyId, value, duration
+        );
+    }
+
+    private void addZSetValue(String keyPrefix, Long surveyId, String value) {
+        redisTemplate.opsForZSet().add(
+            keyPrefix + surveyId, value, System.currentTimeMillis()
+        );
     }
 }

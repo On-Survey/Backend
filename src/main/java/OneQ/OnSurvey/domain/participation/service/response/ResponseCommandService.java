@@ -37,6 +37,9 @@ public class ResponseCommandService implements ResponseCommand {
     @Value("${redis.survey-key-prefix.due-count}")
     private String dueCountKey;
 
+    @Value("${redis.survey-key-prefix.creator-userkey}")
+    private String creatorKey;
+
     @Override
     public Boolean createResponse(Long surveyId, Long memberId, Long userKey) {
         Response response = responseRepository
@@ -62,12 +65,17 @@ public class ResponseCommandService implements ResponseCommand {
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
             survey.updateSurveyStatus(SurveyStatus.CLOSED);
-            redisTemplate.delete(this.dueCountKey + surveyId);
-            redisTemplate.delete(this.completedKey + surveyId);
-            redisTemplate.delete(this.potentialKey + surveyId);
+            deleteAllRedisKeys(surveyId);
         }
 
         return true;
+    }
+
+    private void deleteAllRedisKeys(Long surveyId) {
+        redisTemplate.delete(this.dueCountKey + surveyId);
+        redisTemplate.delete(this.completedKey + surveyId);
+        redisTemplate.delete(this.potentialKey + surveyId);
+        redisTemplate.delete(this.creatorKey + surveyId);
     }
 
     private void completeSurvey(Long surveyId, Long userKey) {

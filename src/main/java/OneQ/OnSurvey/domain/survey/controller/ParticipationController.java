@@ -138,7 +138,7 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
 
-        return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, principal.getUserKey(), principal.getMemberId()));
+        return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, principal.getUserKey()));
     }
 
     @GetMapping("surveys/screenings")

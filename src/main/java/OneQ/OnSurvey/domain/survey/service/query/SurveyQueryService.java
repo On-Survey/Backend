@@ -68,6 +68,9 @@ public class SurveyQueryService implements SurveyQuery {
     @Value("${redis.survey-key-prefix.due-count}")
     private String dueCountKey;
 
+    @Value("${redis.survey-key-prefix.creator-userkey}")
+    private String creatorKey;
+
     @Value("${redis.survey-potential-expiration-seconds}")
     private Integer potentialTimeout;
 
@@ -217,27 +220,25 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey, Long memberId) {
+    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey) {
         log.info("[SURVEY:QUERY] 설문 문항정보 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
 
         cleanupExpiredPotentials(surveyId);
 
-        if (!checkActivateUser(surveyId, userKey)) {
+        if (userKey.equals(getLongValue(surveyId, this.creatorKey))) {
+            log.warn("[SURVEY:QUERY] 설문 제작자는 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
+        }
+
+        if (!isActivationAvailable(surveyId, userKey)) {
             log.warn("[SURVEY:QUERY] 일시적 설문 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
             throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
         }
 
-        Survey survey = surveyRepository.getSurveyById(surveyId)
-            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
-
-        if (!isSurveyAccessible(survey.getStatus())) {
-            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
+        SurveyStatus status = surveyRepository.getSurveyStatusById(surveyId);
+        if (!isSurveyAccessible(status)) {
+            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, status);
             throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
-        }
-
-        if (memberId.equals(survey.getMemberId())) {
-            log.warn("[SURVEY:QUERY] 설문 제작자는 참여 불가 - surveyId: {}, memberId: {}", surveyId, memberId);
-            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
         }
 
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
@@ -322,7 +323,9 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     /* 활성 사용자 등록 및 등록가능 여부 판단 (true: 불가능, false: 가능) */
-    private boolean checkActivateUser(Long surveyId, Long userKey) {
+    private boolean isActivationAvailable(Long surveyId, Long userKey) {
+        log.info("[SURVEY:QUERY] 활성 참여자 등록 및 등록가능 여부 판단 - surveyId: {}, userKey: {}", surveyId, userKey);
+
         String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
@@ -345,8 +348,8 @@ public class SurveyQueryService implements SurveyQuery {
                 redisTemplate.opsForValue().set(this.dueCountKey + surveyId, String.valueOf(surveyInfo.getDueCount()), duration);
                 dueCount = surveyInfo.getDueCount();
             }
-            if (!isAvailable(surveyId, dueCount)) {
-                return true;
+            if (!isEnough(surveyId, dueCount)) {
+                return false;
             }
 
             // Sorted Set에 현재 시간을 score로 사용자 추가
@@ -356,7 +359,7 @@ public class SurveyQueryService implements SurveyQuery {
             redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
         }
 
-        return false;
+        return true;
     }
 
     /* 타임아웃된 참여자를 Sorted Set에서 제거 */
@@ -366,25 +369,32 @@ public class SurveyQueryService implements SurveyQuery {
         // score가 expirationTime 이전인 모든 멤버 제거
         Long removedCount = redisTemplate.opsForZSet().removeRangeByScore(this.potentialKey + surveyId, 0, expirationTime);
         if (removedCount != null && removedCount > 0) {
-            log.info("[SURVEY:QUERY] {}에서 만료된 사용자 {}명 제거", this.potentialKey + surveyId, removedCount);
+            log.debug("[SURVEY:QUERY] {}에서 만료된 사용자 {}명 제거", this.potentialKey + surveyId, removedCount);
         }
     }
 
-    private boolean isAvailable(Long surveyId, int maxParticipants) {
-        // 현재 활성 참여자 수 (Sorted Set 크기)
-        int potential = getZSetValue(surveyId, this.potentialKey);
+    private boolean isEnough(Long surveyId, int maxParticipants) {
+        // 현재 활성 참여자 수 (Sorted Set 크기 + 현재 사용자)
+        int potential = getZSetIntValue(surveyId, this.potentialKey) + 1;
         // 현재 완료된 참여자 수
         int completed = getIntValue(surveyId, this.completedKey);
 
-        log.info("[SURVEY:QUERY] 설문 조회 가능 여부 판단 - surveyId: {}, potential: {}, completed: {}, dueCount: {}",
-            surveyId, potential, completed, maxParticipants);
+        boolean result = potential + completed <= maxParticipants;
 
-        return potential + completed <= maxParticipants;
+        log.info("[SURVEY:QUERY] 활성 사용자 등록 가능 여부 판단 - surveyId: {}, potential: {}, completed: {}, dueCount: {}, isEnough: {}",
+            surveyId, potential, completed, maxParticipants, result);
+
+        return result;
     }
 
-    private int getZSetValue(Long surveyId, String keyPrefix) {
-        Long potentialCount = redisTemplate.opsForZSet().zCard(keyPrefix + surveyId);
-        return (potentialCount != null ? potentialCount.intValue() : 0) + 1;
+    private int getZSetIntValue(Long surveyId, String keyPrefix) {
+        Long value = redisTemplate.opsForZSet().zCard(keyPrefix + surveyId);
+        return value != null ? value.intValue() : 0;
+    }
+
+    private long getLongValue(Long surveyId, String keyPrefix) {
+        String value = redisTemplate.opsForValue().get(keyPrefix + surveyId);
+        return value != null ? Long.parseLong(value) : 0;
     }
 
     private int getIntValue(Long surveyId, String keyPrefix) {
