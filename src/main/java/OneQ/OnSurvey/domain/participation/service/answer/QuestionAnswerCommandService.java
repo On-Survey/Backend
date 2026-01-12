@@ -6,9 +6,17 @@ import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Slf4j
 @Service
 @Transactional
 public class QuestionAnswerCommandService extends AnswerCommandService<QuestionAnswer> {
@@ -31,14 +39,52 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
 
     @Override
     public Boolean insertAnswers(AnswerInsertDto insertDto) {
-        Boolean result = super.insertAnswers(insertDto);
+        Long memberId = insertDto.getAnswerInfoList().getFirst().getMemberId();
+        log.info("[QUESTION_ANSWER:COMMAND] 문항 응답 생성 - memberId: {}", memberId);
+
+        Map<Long, QuestionAnswer> newQuestionAnswerMap = insertDto.getAnswerInfoList().stream()
+            .map(this::createAnswerFromDto)
+            .collect(Collectors.toMap(
+                QuestionAnswer::getQuestionId, Function.identity(),
+                (existing, replacement) -> existing
+            ));
+        List<Long> questionIdList = insertDto.getAnswerInfoList().stream().map(AnswerInsertDto.AnswerInfo::getId).toList();
+
+        Map<Long, QuestionAnswer> existingQuestionAnswerMap =
+            answerRepository.getAnswerListByQuestionIdsAndMemberId(questionIdList, memberId)
+                .stream()
+                .collect(Collectors.toMap(
+                    QuestionAnswer::getQuestionId, Function.identity(),
+                    (existing, replacement) -> existing
+                ));
+
+        List<QuestionAnswer> upsertQuestionList = questionIdList.stream()
+            .map(questionId -> {
+                QuestionAnswer newAnswer = newQuestionAnswerMap.get(questionId);
+                if (existingQuestionAnswerMap.get(questionId) != null) {
+                    QuestionAnswer existing = existingQuestionAnswerMap.get(questionId);
+
+                    if (!newAnswer.getContent().equals(existing.getContent())) {
+                        existing.updateContent(newAnswer.getContent());
+                        return existing;
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return newAnswer;
+                }
+            })
+            .filter(Objects::nonNull)
+            .toList();
+
+        answerRepository.saveAll(upsertQuestionList);
 
         AnswerInsertDto.AnswerInfo first = insertDto.getAnswerInfoList().getFirst();
         Long surveyId = getSurveyIdFromQuestion(first.getId());
 
         updateResponseAfterQuestionAnswers(surveyId, first);
 
-        return result;
+        return true;
     }
 
     private Long getSurveyIdFromQuestion(Long questionId) {

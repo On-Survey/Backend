@@ -16,7 +16,7 @@ public class AnswerInsertDto {
         private String content;
 
         public Boolean getBooleanContent() {
-            return content.equals("true");
+            return "true".equals(content);
         }
     }
 }

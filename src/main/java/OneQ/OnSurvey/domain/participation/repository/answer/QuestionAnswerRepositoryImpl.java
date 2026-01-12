@@ -14,6 +14,7 @@ import com.querydsl.core.types.dsl.StringPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import static OneQ.OnSurvey.domain.member.QMember.member;
@@ -29,6 +30,16 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
     ) {
         super(answerJpaRepository);
         this.jpaQueryFactory = jpaQueryFactory;
+    }
+
+    @Override
+    public List<QuestionAnswer> getAnswerListByQuestionIdsAndMemberId(Collection<Long> ids, Long memberId) {
+        return jpaQueryFactory.selectFrom(questionAnswer)
+            .where(
+                questionAnswer.memberId.eq(memberId),
+                questionAnswer.questionId.in(ids)
+            )
+            .fetch();
     }
 
     @Override

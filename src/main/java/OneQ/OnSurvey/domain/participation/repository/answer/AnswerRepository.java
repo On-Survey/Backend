@@ -10,6 +10,10 @@ public interface AnswerRepository<E> {
     E save(E answer);
     List<E> saveAll(Collection<E> answers);
 
+    default List<E> getAnswerListByQuestionIdsAndMemberId(Collection<Long> questionIds, Long memberId) {
+        return List.of();
+    }
+
     List<AnswerStats> getAggregatedAnswersByQuestionIds(List<Long> questionIdList);
     default List<AnswerStats> getAnswersByQuestionIds(List<Long> questionIdList){
         return List.of();
