@@ -3,16 +3,14 @@ package OneQ.OnSurvey.global.infra.toss.api.iap;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.iap.IapGrantRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.IapStatsResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 import OneQ.OnSurvey.global.payment.application.IapUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/toss/iap")
@@ -40,5 +38,14 @@ public class IapController {
     ) {
         long userKey = principal.getUserKey();
         return SuccessResponse.ok(iapUseCase.getStatus(userKey, body.orderId()));
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "내 IAP 결제 통계", description = "현재 로그인 유저의 IAP 결제 총 횟수/총 금액(성공 결제 기준)")
+    public SuccessResponse<IapStatsResponse> stats(
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        long userKey = principal.getUserKey();
+        return SuccessResponse.ok(iapUseCase.getMyIapStats(userKey));
     }
 }

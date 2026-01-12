@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.global.infra.jpa.payment;
 
 import OneQ.OnSurvey.global.payment.entity.Payment;
+import OneQ.OnSurvey.global.payment.entity.PaymentStatus;
 import OneQ.OnSurvey.global.payment.port.out.PaymentRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -38,5 +39,16 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     @Override
     public void save(Payment payment) {
         paymentJpaRepository.save(payment);
+    }
+
+    @Override
+    public List<Payment> findPaidPaymentsByUserKey(long userKey) {
+        return queryFactory
+                .selectFrom(payment)
+                .where(
+                        payment.userKey.eq(userKey),
+                        payment.status.eq(PaymentStatus.PAID)
+                )
+                .fetch();
     }
 }

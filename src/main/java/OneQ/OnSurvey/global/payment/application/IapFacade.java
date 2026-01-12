@@ -8,6 +8,7 @@ import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
 import OneQ.OnSurvey.global.infra.toss.client.TossApiClient;
+import OneQ.OnSurvey.global.infra.toss.common.dto.iap.IapStatsResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.net.ssl.SSLContext;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -132,6 +134,21 @@ public class IapFacade implements IapUseCase {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public IapStatsResponse getMyIapStats(long userKey) {
+        List<Payment> payments = paymentRepository.findPaidPaymentsByUserKey(userKey);
+
+        long totalCount = payments.size();
+
+        long totalAmount = 0L;
+        for (Payment p : payments) {
+            Integer amt = p.getTotalAmount();
+            if (amt != null) totalAmount += amt.longValue();
+        }
+
+        return new IapStatsResponse(totalCount, totalAmount);
+    }
 
     private LocalDateTime parseOsTime(String iso) {
         try {
