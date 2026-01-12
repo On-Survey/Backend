@@ -64,7 +64,7 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
                 if (existingQuestionAnswerMap.get(questionId) != null) {
                     QuestionAnswer existing = existingQuestionAnswerMap.get(questionId);
 
-                    if (!newAnswer.getContent().equals(existing.getContent())) {
+                    if (!Objects.equals(newAnswer.getContent(), existing.getContent())) {
                         existing.updateContent(newAnswer.getContent());
                         return existing;
                     } else {
