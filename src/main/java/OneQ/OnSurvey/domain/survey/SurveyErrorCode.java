@@ -20,7 +20,9 @@ public enum SurveyErrorCode implements ApiErrorCode {
     SURVEY_FORM_EMPTY_REQUEST("SURVEY_FORM_400", "설문 요청이 비어있습니다.", HttpStatus.BAD_REQUEST),
     SURVEY_FORM_DUPLICATE_POST("SURVEY_FROM_DUPLICATE_400", "중복된 문항 생성 요청입니다.", HttpStatus.BAD_REQUEST),
 
-    SURVEY_FORBIDDEN("SURVEY_403", "설문에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN);
+    SURVEY_FORBIDDEN("SURVEY_403", "설문에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
+
+    SURVEY_ANSWER_INVALID("SURVEY_ANSWER_400", "설문 답변이 올바르지 않습니다.", HttpStatus.BAD_REQUEST);
 
     private final String errorCode;
     private final String message;

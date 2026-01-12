@@ -13,7 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public abstract class AnswerCommandService<E extends AbstractAnswer> implements AnswerCommand<E> {
 
-    private final AnswerRepository<E> answerRepository;
+    protected final AnswerRepository<E> answerRepository;
     protected final ResponseRepository responseRepository;
 
     public Boolean insertAnswers(AnswerInsertDto insertDto) {

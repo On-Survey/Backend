@@ -35,4 +35,8 @@ public class QuestionAnswer extends AbstractAnswer {
                 .content(info.getContent())
                 .build();
     }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }

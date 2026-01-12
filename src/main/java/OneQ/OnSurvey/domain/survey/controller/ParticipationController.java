@@ -187,10 +187,14 @@ public class ParticipationController {
         log.info("[PARTICIPATION] 설문 응답 생성 - surveyId: {}, userKey: {}, request: {}",
             surveyId, principal.getMemberId(), request.toString());
 
-        AnswerInsertDto answerInsertDto = request.toDto(principal.getMemberId());
-        questionAnswerCommand.insertAnswers(answerInsertDto);
+        if (request.isEmpty()) {
+            log.warn("[PARTICIPATION] 빈 응답 생성 요청 - surveyId: {}, userKey: {}", surveyId, principal.getMemberId());
+            throw new CustomException(SurveyErrorCode.SURVEY_ANSWER_INVALID);
+        }
 
-        return SuccessResponse.ok(true);
+        AnswerInsertDto answerInsertDto = request.toDto(principal.getMemberId());
+
+        return SuccessResponse.ok(questionAnswerCommand.insertAnswers(answerInsertDto));
     }
 
     @PostMapping("surveys/{surveyId}/complete")

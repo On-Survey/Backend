@@ -28,4 +28,8 @@ public class InsertQuestionAnswerRequest {
                 .toList())
             .build();
     }
+
+    public boolean isEmpty() {
+        return infoList == null || infoList.isEmpty();
+    }
 }
