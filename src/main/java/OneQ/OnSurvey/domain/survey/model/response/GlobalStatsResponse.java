@@ -6,7 +6,7 @@ public record GlobalStatsResponse(
         Long totalDueCount,
         Long totalCompletedCount,
         Long totalPromotionCount,
-        Integer dailyUserCount
+        Long dailyUserCount
 ) {
     public static GlobalStatsResponse from(GlobalStats stats) {
         return new GlobalStatsResponse(

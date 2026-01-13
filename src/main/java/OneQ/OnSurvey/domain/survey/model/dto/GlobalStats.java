@@ -4,13 +4,13 @@ public record GlobalStats (
     Long totalDueCount,
     Long totalCompletedCount,
     Long totalPromotionCount,
-    Integer dailyUserCount
+    Long dailyUserCount
 ){
     public static GlobalStats of(
         Long totalDueCount,
         Long totalCompletedCount,
         Long totalPromotionCount,
-        Integer dailyUserCount
+        Long dailyUserCount
     ) {
         return new GlobalStats(
             totalDueCount,

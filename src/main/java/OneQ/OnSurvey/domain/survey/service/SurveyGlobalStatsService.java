@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.survey.repository.SurveyGlobalStatsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +19,7 @@ public class SurveyGlobalStatsService {
     private final SurveyGlobalStatsRepository statsRepository;
 
     @Value("${redis.global-key-prefix.daily-user}")
-    private String DAILY_USER_KEY_PREFIX;
+    private String dailyUserKeyPrefix;
 
     private SurveyGlobalStats getOrInit() {
         return statsRepository.findById(1L)
@@ -45,14 +46,18 @@ public class SurveyGlobalStatsService {
         SurveyGlobalStats surveyGlobalStats = statsRepository.findById(1L)
             .orElse(SurveyGlobalStats.init());
 
-        String value = redisTemplate.opsForValue().get(DAILY_USER_KEY_PREFIX);
-        Integer dailyUserCount = (value != null) ? Integer.parseInt(value) : 0;
-
+        Long dailyUserCount = redisTemplate.opsForZSet().zCard(dailyUserKeyPrefix);
         return GlobalStats.of(
             surveyGlobalStats.getTotalDueCount(),
             surveyGlobalStats.getTotalCompletedCount(),
             surveyGlobalStats.getTotalPromotionCount(),
             dailyUserCount
         );
+    }
+
+    @Scheduled(fixedRate = 3600000) // 매 시간 실행
+    public void removeOldDailyUsers() {
+        long dailyRange = System.currentTimeMillis() - (24 * 60 * 60 * 1000L);
+        redisTemplate.opsForZSet().removeRangeByScore(dailyUserKeyPrefix, 0, dailyRange);
     }
 }

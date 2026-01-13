@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,10 @@ public class TossAuthFacade implements AuthUseCase {
     @Value("${toss.secret.public-crt}")
     private String publicCrt;
 
+    @Value("${redis.global-key-prefix.daily-user}")
+    private String dailyUserKeyPrefix;
+
+    private final StringRedisTemplate redisTemplate;
     private final TossAuthPort tossAuthPort;
     private final MemberModifyService memberModifyService;
     private final TossMemberInfoDecryptService tossMemberInfoDecryptService;
@@ -56,6 +61,7 @@ public class TossAuthFacade implements AuthUseCase {
                 response.setHeader("X-Refresh-Token", "Bearer " + token.refreshToken());
             }
 
+            updateDailyUser(member.getUserKey());
             return TossLoginResponse.of(member.isOnboardingCompleted());
         } catch (Exception e) {
             log.error("[TossAuthService-login] {}", e.getMessage(), e);
@@ -142,6 +148,10 @@ public class TossAuthFacade implements AuthUseCase {
             case WITHDRAWAL_TOSS, WITHDRAWAL_TERMS -> withdrawalService.deleteAllInfo(userKey);
             default -> throw new CustomException(INVALID_REFERRER);
         }
+    }
+
+    private void updateDailyUser(Long userKey) {
+        redisTemplate.opsForZSet().addIfAbsent(dailyUserKeyPrefix, String.valueOf(userKey), System.currentTimeMillis());
     }
 
     private String resolveBearer(HttpServletRequest request) {
