@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -56,6 +57,7 @@ public class SurveyGlobalStatsService {
     }
 
     @Scheduled(fixedRate = 3600000) // 매 시간 실행
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void removeOldDailyUsers() {
         long dailyRange = System.currentTimeMillis() - (24 * 60 * 60 * 1000L);
         redisTemplate.opsForZSet().removeRangeByScore(dailyUserKeyPrefix, 0, dailyRange);

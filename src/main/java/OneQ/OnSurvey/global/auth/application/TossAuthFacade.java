@@ -151,7 +151,11 @@ public class TossAuthFacade implements AuthUseCase {
     }
 
     private void updateDailyUser(Long userKey) {
-        redisTemplate.opsForZSet().addIfAbsent(dailyUserKeyPrefix, String.valueOf(userKey), System.currentTimeMillis());
+        try {
+            redisTemplate.opsForZSet().addIfAbsent(dailyUserKeyPrefix, String.valueOf(userKey), System.currentTimeMillis());
+        } catch (Exception e) {
+            log.warn("[TossAuthFacade] 일간 활성 사용자 업데이트 실패 - userKey: {}", userKey, e);
+        }
     }
 
     private String resolveBearer(HttpServletRequest request) {
