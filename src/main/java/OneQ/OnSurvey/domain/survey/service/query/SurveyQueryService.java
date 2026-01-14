@@ -6,13 +6,13 @@ import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.participation.repository.answer.ScreeningAnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
-import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySegmentation;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
@@ -155,13 +155,13 @@ public class SurveyQueryService implements SurveyQuery {
         List<Long> idList = surveyList.stream().map(Survey::getId).toList();
         log.info("[SURVEY:QUERY:getScreeningList] 스크리닝을 조회할 설문 IDs: {}", idList);
 
-        List<Screening> screeningList = List.of();
+        List<ScreeningIntroData> screeningList = List.of();
         if (!idList.isEmpty()) {
             screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
         }
 
         return ParticipationScreeningResponse.builder()
-            .data(screeningList.stream().map(ParticipationScreeningResponse::fromEntity).toList())
+            .data(screeningList)
             .hasNext(surveyList.hasNext())
             .build();
     }

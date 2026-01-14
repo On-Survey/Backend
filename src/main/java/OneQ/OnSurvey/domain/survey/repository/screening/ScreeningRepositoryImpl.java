@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.domain.survey.repository.screening;
 
 import OneQ.OnSurvey.domain.survey.entity.Screening;
+import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
+import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 
 @Repository
 @RequiredArgsConstructor
@@ -22,8 +25,26 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
     }
 
     @Override
-    public List<Screening> getScreeningListBySurveyIdList(List<Long> surveyIdList) {
-        return screeningJpaRepository.getScreeningBySurveyIdGreaterThanEqualAndSurveyIdIsIn(surveyIdList.getFirst(), surveyIdList);
+    public List<ScreeningIntroData> getScreeningListBySurveyIdList(List<Long> surveyIdList) {
+
+        return jpaQueryFactory.select(Projections.constructor(ScreeningIntroData.class,
+            screening.id,
+            screening.surveyId,
+            screening.content,
+            screening.answer,
+            screeningAnswer.answerId.count()
+        ))
+            .from(screening)
+            .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId))
+            .where(
+                screening.surveyId.goe(surveyIdList.getFirst()),
+                screening.surveyId.in(surveyIdList)
+            )
+            .groupBy(screening.id)
+            .orderBy(screening.surveyId.asc())
+            .fetch();
+
+//        return screeningJpaRepository.getScreeningBySurveyIdGreaterThanEqualAndSurveyIdIsIn(surveyIdList.getFirst(), surveyIdList);
     }
 
     @Override
