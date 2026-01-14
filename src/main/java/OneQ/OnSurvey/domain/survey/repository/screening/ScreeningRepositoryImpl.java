@@ -26,6 +26,9 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
 
     @Override
     public List<ScreeningIntroData> getScreeningListBySurveyIdList(List<Long> surveyIdList) {
+        if (surveyIdList == null || surveyIdList.isEmpty()) {
+            return List.of();
+        }
 
         return jpaQueryFactory.select(Projections.constructor(ScreeningIntroData.class,
             screening.id,
@@ -43,8 +46,6 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             .groupBy(screening.id)
             .orderBy(screening.surveyId.asc())
             .fetch();
-
-//        return screeningJpaRepository.getScreeningBySurveyIdGreaterThanEqualAndSurveyIdIsIn(surveyIdList.getFirst(), surveyIdList);
     }
 
     @Override

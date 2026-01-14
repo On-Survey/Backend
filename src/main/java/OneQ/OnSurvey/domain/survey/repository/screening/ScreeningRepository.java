@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface ScreeningRepository {
     Screening getScreeningBySurveyId(Long surveyId);
-    List<ScreeningIntroData> getScreeningListBySurveyIdList(List<Long> surveyId);
+    List<ScreeningIntroData> getScreeningListBySurveyIdList(List<Long> surveyIdList);
 
     Boolean getScreeningAnswer(Long screeningId);
     Long getSurveyId(Long screeningId);

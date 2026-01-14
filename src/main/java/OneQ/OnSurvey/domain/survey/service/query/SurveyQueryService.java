@@ -155,10 +155,7 @@ public class SurveyQueryService implements SurveyQuery {
         List<Long> idList = surveyList.stream().map(Survey::getId).toList();
         log.info("[SURVEY:QUERY:getScreeningList] 스크리닝을 조회할 설문 IDs: {}", idList);
 
-        List<ScreeningIntroData> screeningList = List.of();
-        if (!idList.isEmpty()) {
-            screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
-        }
+        List<ScreeningIntroData> screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
 
         return ParticipationScreeningResponse.builder()
             .data(screeningList)
