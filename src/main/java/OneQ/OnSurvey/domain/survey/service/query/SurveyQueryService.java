@@ -434,4 +434,10 @@ public class SurveyQueryService implements SurveyQuery {
     private boolean checkInterestSegmentation(Set<Interest> surveyInterests, Set<Interest> memberInterests) {
         return surveyInterests.stream().anyMatch(memberInterests::contains);
     }
+
+    @Override
+    public Survey getSurveyById(Long surveyId) {
+        return surveyRepository.getSurveyById(surveyId)
+            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+    }
 }
