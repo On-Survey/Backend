@@ -17,4 +17,6 @@ public interface SurveyCommand {
     Boolean refundSurvey(Long memberId, Long surveyId);
 
     InterestResponse upsertInterest(Long surveyId, Set<Interest> interestSet);
+
+    boolean sendSurveyHeartbeat(Long surveyId, Long userKey);
 }

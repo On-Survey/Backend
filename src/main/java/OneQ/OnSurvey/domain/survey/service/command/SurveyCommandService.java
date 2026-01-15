@@ -26,9 +26,13 @@ import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,6 +44,8 @@ import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 @Transactional
 public class SurveyCommandService implements SurveyCommand {
 
+    private final StringRedisTemplate redisTemplate;
+
     private final SurveyRepository surveyRepository;
     private final ScreeningRepository screeningRepository;
     private final SurveyInfoRepository surveyInfoRepository;
@@ -49,6 +55,18 @@ public class SurveyCommandService implements SurveyCommand {
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
+
+    @Value("${redis.survey-key-prefix.potential-count}")
+    private String potentialKey;
+
+    @Value("${redis.survey-key-prefix.completed-count}")
+    private String completedKey;
+
+    @Value("${redis.survey-key-prefix.due-count}")
+    private String dueCountKey;
+
+    @Value("${redis.survey-key-prefix.creator-userkey}")
+    private String creatorKey;
 
     @Override
     public SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request){
@@ -147,6 +165,15 @@ public class SurveyCommandService implements SurveyCommand {
 
         member.decreaseCoin(request.totalCoin());
 
+        Duration duration = Duration.between(
+                LocalDateTime.now(),
+                request.deadline()
+        );
+        setValue(this.dueCountKey, surveyId, String.valueOf(request.dueCount()), duration);
+        setValue(this.completedKey, surveyId, "0", duration);
+        addZSetValue(this.potentialKey, surveyId, String.valueOf(userKey));
+        setValue(this.creatorKey, surveyId, String.valueOf(userKey), duration);
+
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
 
         SurveySubmittedAlert alert = new SurveySubmittedAlert(
@@ -227,5 +254,30 @@ public class SurveyCommandService implements SurveyCommand {
         surveyInfo.markNonRefundable();
 
         return true;
+    }
+
+    @Override
+    public boolean sendSurveyHeartbeat(Long surveyId, Long userKey) {
+        String potentialKey = this.potentialKey + surveyId;
+        String memberValue = String.valueOf(userKey);
+
+        if (redisTemplate.opsForZSet().score(potentialKey, memberValue) == null) {
+            return false;
+        }
+        // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신
+        redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
+        return true;
+    }
+
+    private void setValue(String keyPrefix, Long surveyId, String value, Duration duration) {
+        redisTemplate.opsForValue().set(
+            keyPrefix + surveyId, value, duration
+        );
+    }
+
+    private void addZSetValue(String keyPrefix, Long surveyId, String value) {
+        redisTemplate.opsForZSet().add(
+            keyPrefix + surveyId, value, System.currentTimeMillis()
+        );
     }
 }

@@ -132,4 +132,13 @@ public class SurveyRepositoryImpl implements SurveyRepository {
 
         return new SliceImpl<>(surveyList, pageable, hasNext);
     }
+
+    @Override
+    public SurveyStatus getSurveyStatusById(Long surveyId) {
+        return jpaQueryFactory
+            .select(survey.status)
+            .from(survey)
+            .where(survey.id.eq(surveyId))
+            .fetchOne();
+    }
 }

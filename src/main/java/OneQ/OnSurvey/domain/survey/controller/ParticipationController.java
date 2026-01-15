@@ -12,9 +12,12 @@ import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
+import OneQ.OnSurvey.domain.survey.model.response.DeprecatedQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
+import OneQ.OnSurvey.domain.survey.model.response.ParticipationInfoResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
+import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.exception.CustomException;
@@ -38,10 +41,12 @@ import java.util.List;
 public class ParticipationController {
 
     private final SurveyQuery surveyQueryService;
-    private final QuestionQuery questionQueryService;
     private final AnswerCommand<ScreeningAnswer> answerCommand;
     private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
     private final ResponseCommand responseCommand;
+    private final SurveyCommandService surveyCommandService;
+
+    private final QuestionQuery questionQueryService;
 
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
@@ -123,9 +128,37 @@ public class ParticipationController {
         return SuccessResponse.ok(response);
     }
 
+    @GetMapping("surveys/info")
+    @Operation(summary = "선택한 설문의 기본 정보를 조회합니다.")
+    public SuccessResponse<ParticipationInfoResponse> getSurveyInfo(
+        @RequestParam Long surveyId,
+        @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        log.info("[PARTICIPATION] 설문 기본정보 조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
+
+        return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId, principal.getUserKey()));
+    }
+
+    @GetMapping("surveys/questions")
+    @Operation(summary = "선택한 설문의 문항 정보를 조회합니다.")
+    public SuccessResponse<ParticipationQuestionResponse> getQuestionsOfSurveyId(
+        @RequestParam Long surveyId,
+        @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
+
+        return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, principal.getUserKey()));
+    }
+
+    /**
+     *  @deprecated
+     *  @code GET /surveys/info
+     *  @code GET /surveys/questions
+    */
+    @Deprecated(forRemoval = true)
     @GetMapping("surveys")
     @Operation(summary = "선택한 설문을 조회합니다.")
-    public SuccessResponse<ParticipationQuestionResponse> getQuestionsOfSurveyId(
+    public SuccessResponse<DeprecatedQuestionResponse> getTotalSurveyInfoOfSurveyId(
         @RequestParam Long surveyId,
         @AuthenticationPrincipal CustomUserDetails principal
     ) {
@@ -140,8 +173,8 @@ public class ParticipationController {
 
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
 
-        ParticipationQuestionResponse body =
-                ParticipationQuestionResponse.of(survey, questionDtoList);
+        DeprecatedQuestionResponse body =
+            DeprecatedQuestionResponse.of(survey, questionDtoList);
 
         return SuccessResponse.ok(body);
     }
@@ -205,7 +238,16 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 설문 완료 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
 
-        Boolean result = responseCommand.createResponse(surveyId, principal.getMemberId());
+        Boolean result = responseCommand.createResponse(surveyId, principal.getMemberId(), principal.getUserKey());
         return SuccessResponse.ok(result);
+    }
+
+    @PostMapping("surveys/{surveyId}/heartbeat")
+    @Operation(summary = "설문 참여 중임을 알립니다.")
+    public SuccessResponse<Boolean> sendHeartbeat(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @PathVariable Long surveyId
+    ) {
+        return SuccessResponse.ok(surveyCommandService.sendSurveyHeartbeat(surveyId, principal.getUserKey()));
     }
 }
