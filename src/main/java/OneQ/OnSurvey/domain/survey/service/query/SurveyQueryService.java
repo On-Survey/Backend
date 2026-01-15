@@ -322,7 +322,7 @@ public class SurveyQueryService implements SurveyQuery {
         return ONGOING.equals(status);
     }
 
-    /* 활성 사용자 등록 및 등록가능 여부 판단 (true: 불가능, false: 가능) */
+    /* 활성 사용자 등록 및 등록가능 여부 판단 (true: 가능, false: 불가능) */
     private boolean isActivationAvailable(Long surveyId, Long userKey) {
         log.info("[SURVEY:QUERY] 활성 참여자 등록 및 등록가능 여부 판단 - surveyId: {}, userKey: {}", surveyId, userKey);
 
@@ -332,6 +332,7 @@ public class SurveyQueryService implements SurveyQuery {
         Double existingScore = redisTemplate.opsForZSet().score(potentialKey, memberValue);
 
         // 새로운 참여자인 경우
+        // TODO : 원자성을 유지하도록 수정 필요
         if (existingScore == null) {
             Integer dueCount = getIntValue(surveyId, this.dueCountKey);
             if (dueCount == 0) {

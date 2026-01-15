@@ -16,6 +16,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -59,8 +61,8 @@ public class ResponseCommandService implements ResponseCommand {
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
 
         surveyInfo.increaseCompletedCount();
-        completeSurvey(surveyId, userKey);
-        if (surveyInfo.getCompletedCount().equals(surveyInfo.getDueCount())) {
+        Integer currCompleted = updateCounter(surveyId, userKey);
+        if (currCompleted != null && currCompleted.equals(surveyInfo.getDueCount())) {
             Survey survey = surveyRepository.getSurveyById(surveyId)
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
@@ -72,20 +74,23 @@ public class ResponseCommandService implements ResponseCommand {
     }
 
     private void deleteAllRedisKeys(Long surveyId) {
-        redisTemplate.delete(this.dueCountKey + surveyId);
-        redisTemplate.delete(this.completedKey + surveyId);
-        redisTemplate.delete(this.potentialKey + surveyId);
-        redisTemplate.delete(this.creatorKey + surveyId);
+        redisTemplate.delete(List.of(
+            this.dueCountKey + surveyId,
+            this.completedKey + surveyId,
+            this.potentialKey + surveyId,
+            this.creatorKey + surveyId
+        ));
     }
 
-    private void completeSurvey(Long surveyId, Long userKey) {
+    private Integer updateCounter(Long surveyId, Long userKey) {
         String potentialKey = this.potentialKey + surveyId;
         String completedKey = this.completedKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
         // 완료 인원 추가
-        redisTemplate.opsForValue().increment(completedKey);
+        Long currCompleted = redisTemplate.opsForValue().increment(completedKey);
         // 잠재 응답자 Sorted Set에서 제거
         redisTemplate.opsForZSet().remove(potentialKey, memberValue);
+        return currCompleted != null ? currCompleted.intValue() : null;
     }
 }

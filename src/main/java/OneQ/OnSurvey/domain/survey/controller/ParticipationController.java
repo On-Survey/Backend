@@ -140,7 +140,7 @@ public class ParticipationController {
     }
 
     @GetMapping("surveys/questions")
-    @Operation(summary = "선택한 설문의 문항 정보을 조회합니다.")
+    @Operation(summary = "선택한 설문의 문항 정보를 조회합니다.")
     public SuccessResponse<ParticipationQuestionResponse> getQuestionsOfSurveyId(
         @RequestParam Long surveyId,
         @AuthenticationPrincipal CustomUserDetails principal
@@ -150,7 +150,12 @@ public class ParticipationController {
         return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, principal.getUserKey()));
     }
 
-    @Deprecated
+    /**
+     *  @deprecated
+     *  @code GET /surveys/info
+     *  @code GET /surveys/questions
+    */
+    @Deprecated(forRemoval = true)
     @GetMapping("surveys")
     @Operation(summary = "선택한 설문을 조회합니다.")
     public SuccessResponse<DeprecatedQuestionResponse> getTotalSurveyInfoOfSurveyId(
