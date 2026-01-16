@@ -190,16 +190,14 @@ public class SurveyCommandService implements SurveyCommand {
 
     @Override
     public ScreeningResponse upsertScreening(Long screeningId, Long surveyId, String content, Boolean answer) {
-        Screening screening;
-        if (screeningId == null) {
+        Screening screening = screeningRepository.getScreeningBySurveyId(surveyId);
+        if (screening == null) {
             screening = Screening.of(surveyId, content, answer);
-            screening = screeningRepository.save(screening);
         } else {
-            screening = screeningRepository.getScreeningBySurveyId(surveyId);
             screening.updateScreening(content, answer);
-
-            screeningRepository.save(screening);
         }
+        screening = screeningRepository.save(screening);
+
         return ScreeningResponse.builder()
             .screeningId(screening.getId())
             .surveyId(screening.getSurveyId())
