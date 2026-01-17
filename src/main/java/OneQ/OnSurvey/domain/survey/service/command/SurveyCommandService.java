@@ -189,7 +189,8 @@ public class SurveyCommandService implements SurveyCommand {
     }
 
     @Override
-    public ScreeningResponse upsertScreening(Long screeningId, Long surveyId, String content, Boolean answer) {
+    public ScreeningResponse upsertScreening(Long surveyId, String content, Boolean answer) {
+        // TODO : 설문ID로 조회할 경우 풀스캔이 발생할 수 있으므로, 프론트와 조율하여 screeningId를 받도록 API 변경 필요
         Screening screening = screeningRepository.getScreeningBySurveyId(surveyId);
         if (screening == null) {
             screening = Screening.of(surveyId, content, answer);

@@ -13,7 +13,7 @@ public interface SurveyCommand {
     SurveyFormResponse upsertSurvey(Long memberId, Long surveyId, SurveyFormCreateRequest request);
     SurveyFormResponse submitSurvey(Long userKey, Long surveyId, SurveyFormRequest request);
 
-    ScreeningResponse upsertScreening(Long screeningId, Long surveyId, String content, Boolean answer);
+    ScreeningResponse upsertScreening(Long surveyId, String content, Boolean answer);
     Boolean refundSurvey(Long memberId, Long surveyId);
 
     InterestResponse upsertInterest(Long surveyId, Set<Interest> interestSet);
