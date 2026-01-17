@@ -19,11 +19,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
+import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
-import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
-
-import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 
 @Repository
 @RequiredArgsConstructor
@@ -109,7 +108,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .leftJoin(screeningAnswer).on(
                 screeningAnswer.memberId.eq(memberId).and(screening.id.eq(screeningAnswer.screeningId)))
             .where(builder)
-            .orderBy(QuerydslUtils.getSort(pageable, survey))
+            .orderBy(QuerydslUtils.getSortPaidFirst(pageable, survey, survey.isFree))
             .limit(pageable.getPageSize() + 1)
             .fetch();
 

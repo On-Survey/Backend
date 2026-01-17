@@ -54,6 +54,11 @@ public class Survey extends BaseEntity {
     @Builder.Default
     private Set<Interest> interests = new HashSet<>();
 
+    @Column(name = "is_free", nullable = false)
+    @ColumnDefault("FALSE")
+    @Builder.Default
+    private Boolean isFree = false;
+
     public static Survey of(
         Long memberId,
         String title,
@@ -89,5 +94,9 @@ public class Survey extends BaseEntity {
 
     public void updateInterests(Set<Interest> interests) {
         this.interests = interests;
+    }
+
+    public void markFree() {
+        this.isFree = true;
     }
 }
