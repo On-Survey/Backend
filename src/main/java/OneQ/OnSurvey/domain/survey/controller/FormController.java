@@ -23,10 +23,11 @@ public class FormController implements FormControllerDoc {
     @PostMapping("/surveys")
     @Operation(summary = "설문 폼을 생성합니다.")
     public SuccessResponse<SurveyFormResponse> createSurvey(
-        @AuthenticationPrincipal CustomUserDetails principal,
+        //@AuthenticationPrincipal CustomUserDetails principal,
         @RequestBody SurveyFormCreateRequest request
     ) {
-        return SuccessResponse.ok(surveyFormFacade.createSurvey(principal.getMemberId(), request));
+        //return SuccessResponse.ok(surveyFormFacade.createSurvey(principal.getMemberId(), request));
+        return SuccessResponse.ok(surveyFormFacade.createSurvey(10000001L, request));
     }
 
     @PatchMapping("/surveys/{surveyId}/display")
@@ -60,11 +61,23 @@ public class FormController implements FormControllerDoc {
     @PatchMapping("/surveys/{surveyId}")
     @Operation(summary = "폼을 완성합니다.")
     public SuccessResponse<SurveyFormResponse> completeSurvey(
-        @AuthenticationPrincipal CustomUserDetails details,
+        //@AuthenticationPrincipal CustomUserDetails details,
         @PathVariable Long surveyId,
         @RequestBody SurveyFormRequest request
     ) {
-        return SuccessResponse.ok(surveyFormFacade.completeSurvey(details.getUserKey(), surveyId, request));
+        //return SuccessResponse.ok(surveyFormFacade.completeSurvey(details.getUserKey(), surveyId, request));
+        return SuccessResponse.ok(surveyFormFacade.completeSurvey(10000001L, surveyId, request));
+    }
+
+    @PatchMapping("/surveys/{surveyId}/free")
+    @Operation(summary = "무료 설문 폼을 완성합니다.")
+    public SuccessResponse<SurveyFormResponse> completeFreeSurvey(
+            //@AuthenticationPrincipal CustomUserDetails details,
+            @PathVariable Long surveyId,
+            @RequestBody FreeSurveyFormRequest request
+    ) {
+        //return SuccessResponse.ok(surveyFormFacade.completeFreeSurvey(details.getUserKey(), surveyId, request));
+        return SuccessResponse.ok(surveyFormFacade.completeFreeSurvey(10000001L, surveyId, request));
     }
 
     @PatchMapping("/surveys/{surveyId}/interests")

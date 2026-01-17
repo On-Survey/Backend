@@ -50,6 +50,7 @@ public class TossAuthFilter extends OncePerRequestFilter {
                 || path.startsWith("/swagger-ui/")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/sentry-test/")
+                || path.startsWith("/v1/survey-form")
                 || path.equals("/toss/promotion/recheck-pending");
     }
 

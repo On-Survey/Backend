@@ -9,6 +9,7 @@ public interface SurveyFormUseCase {
     CreateQuestionResponse createQuestion(Long surveyId, QuestionRequest request);
     UpdateQuestionResponse upsertQuestions(Long surveyId, QuestionRequest request);
     SurveyFormResponse completeSurvey(Long userKey, Long surveyId, SurveyFormRequest request);
+    SurveyFormResponse completeFreeSurvey(Long userKey, Long surveyId, FreeSurveyFormRequest request);
     InterestResponse updateInterest(Long surveyId, SurveyInterestRequest request);
     ScreeningResponse createScreening(Long surveyId, ScreeningRequest request);
 }
