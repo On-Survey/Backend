@@ -13,6 +13,7 @@ public record DeprecatedQuestionResponse(
     Long memberId,
     String title,
     String description,
+    Boolean isFree,
     Set<Interest> interests,
     LocalDateTime deadline,
     List<DefaultQuestionDto> info
@@ -31,6 +32,7 @@ public record DeprecatedQuestionResponse(
             survey.getMemberId(),
             survey.getTitle(),
             survey.getDescription(),
+            survey.getIsFree(),
             interestsSet,
             survey.getDeadline(),
             info
