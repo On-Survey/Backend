@@ -14,7 +14,7 @@ import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.response.DeprecatedQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
-import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
+import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningListResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationInfoResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
@@ -181,7 +181,7 @@ public class ParticipationController {
 
     @GetMapping("surveys/screenings")
     @Operation(summary = "세그멘테이션에 일치하는 설문의 스크리닝 문항을 조회합니다.")
-    public SuccessResponse<ParticipationScreeningResponse> getRecommendedScreenings(
+    public SuccessResponse<ParticipationScreeningListResponse> getRecommendedScreenings(
         @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size

@@ -161,7 +161,7 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public ParticipationScreeningResponse getScreeningList(
+    public ParticipationScreeningListResponse getScreeningList(
         Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     ) {
         log.info("[SURVEY:QUERY:getScreeningList] 본인 제작 제외 세그멘테이션 기반 설문의 스크리닝 문항 조회 - "
@@ -188,7 +188,7 @@ public class SurveyQueryService implements SurveyQuery {
 
         List<ScreeningIntroData> screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
 
-        return ParticipationScreeningResponse.builder()
+        return ParticipationScreeningListResponse.builder()
             .data(screeningList)
             .hasNext(surveyList.hasNext())
             .build();

@@ -8,7 +8,7 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter @Builder
-public class ParticipationScreeningResponse {
+public class ParticipationScreeningListResponse {
     private List<ScreeningIntroData> data;
 
     @Schema(description = "다음 문항 존재 여부")

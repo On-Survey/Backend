@@ -17,7 +17,7 @@ public interface SurveyQuery {
     SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     );
-    ParticipationScreeningResponse getScreeningList(
+    ParticipationScreeningListResponse getScreeningList(
         Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     );
     ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey);
