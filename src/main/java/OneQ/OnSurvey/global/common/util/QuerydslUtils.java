@@ -2,13 +2,10 @@ package OneQ.OnSurvey.global.common.util;
 
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanPath;
 import com.querydsl.core.types.dsl.EntityPathBase;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.StringTemplate;
 import org.springframework.data.domain.Pageable;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public abstract class QuerydslUtils {
 
@@ -21,9 +18,17 @@ public abstract class QuerydslUtils {
             .toArray(new OrderSpecifier[0]);
     }
 
-    public static StringTemplate convertLocalDateTimeIntoStringTemplate(LocalDateTime dateTime) {
-        String dateFormat = dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    public static <T> OrderSpecifier<?>[] getSortPaidFirst(
+            Pageable pageable,
+            EntityPathBase<T> qClass,
+            BooleanPath isFreePath
+    ) {
+        OrderSpecifier<?>[] baseSort = getSort(pageable, qClass);
 
-        return Expressions.stringTemplate("datetime({0})", dateFormat);
+        OrderSpecifier<?>[] result = new OrderSpecifier<?>[baseSort.length + 1];
+        result[0] = isFreePath.asc();
+
+        System.arraycopy(baseSort, 0, result, 1, baseSort.length);
+        return result;
     }
 }

@@ -29,6 +29,7 @@ public class SurveyParticipationResponse {
         private Long memberId;
         private String title;
         private String description;
+        private Boolean isFree;
 
         private Set<Interest> interests;
 
@@ -41,6 +42,7 @@ public class SurveyParticipationResponse {
             .memberId(survey.getMemberId())
             .title(survey.getTitle())
             .description(survey.getDescription())
+            .isFree(survey.getIsFree())
             .interests(survey.getInterests())
             .deadline(survey.getDeadline())
             .build();

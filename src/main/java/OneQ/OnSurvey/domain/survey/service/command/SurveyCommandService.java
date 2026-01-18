@@ -9,6 +9,9 @@ import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
+import OneQ.OnSurvey.domain.survey.model.Gender;
+import OneQ.OnSurvey.domain.survey.model.Residence;
+import OneQ.OnSurvey.domain.survey.model.request.FreeSurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.response.InterestResponse;
@@ -113,40 +116,15 @@ public class SurveyCommandService implements SurveyCommand {
 
     @Override
     public SurveyFormResponse submitSurvey(Long userKey, Long surveyId, SurveyFormRequest request) {
+        Survey survey = getSurvey(surveyId);
+        Member member = validateMember(userKey);
 
-        Survey survey = surveyRepository.getSurveyById(surveyId)
-                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+        Set<AgeRange> ages = (request.ages() == null) ? Set.of() : new HashSet<>(request.ages());
 
-        Member member = memberRepository.findMemberByUserKey(userKey)
-                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
 
-        log.info("[SurveySubmit] submit surveyId={}", surveyId);
-
-        Set<AgeRange> ages = (request.ages() == null)
-                ? Set.of()
-                : new HashSet<>(request.ages());
-
-        survey.updateSurvey(
-                survey.getTitle(),
-                survey.getDescription(),
-                request.deadline(),
-                request.totalCoin()
-        );
-
-        SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
-                .orElseGet(() -> SurveyInfo.createSurveyInfo(
-                        surveyId,
-                        request.dueCount(),
-                        request.gender(),
-                        ages,
-                        request.residence(),
-                        request.genderPrice(),
-                        request.agePrice(),
-                        request.residencePrice(),
-                        request.dueCountPrice()
-                ));
-
-        info.updateSurveyInfo(
+        SurveyInfo info = upsertSurveyInfo(
+                surveyId,
                 request.dueCount(),
                 request.gender(),
                 ages,
@@ -154,38 +132,36 @@ public class SurveyCommandService implements SurveyCommand {
                 request.genderPrice(),
                 request.agePrice(),
                 request.residencePrice(),
-                request.dueCountPrice()
+                request.dueCountPrice(),
+                true
         );
-
-        survey.submitSurvey();
-
-        surveyRepository.save(survey);
-        surveyInfoRepository.save(info);
-        surveyGlobalStatsService.addDueCount(info.getDueCount());
 
         member.decreaseCoin(request.totalCoin());
-
-        Duration duration = Duration.between(
-                LocalDateTime.now(),
-                request.deadline()
-        );
-        setValue(this.dueCountKey, surveyId, String.valueOf(request.dueCount()), duration);
-        setValue(this.completedKey, surveyId, "0", duration);
-        addZSetValue(this.potentialKey, surveyId, String.valueOf(userKey));
-        setValue(this.creatorKey, surveyId, String.valueOf(userKey), duration);
-
         log.info("[SurveySubmit] 설문 제출 완료 - surveyId={}", surveyId);
+        return finalizeSubmit(userKey, surveyId, survey, info, request.dueCount(), request.deadline(), request.totalCoin());
+    }
 
-        SurveySubmittedAlert alert = new SurveySubmittedAlert(
-                userKey,
+
+    @Override
+    public SurveyFormResponse submitFreeSurvey(Long userKey, Long surveyId, FreeSurveyFormRequest request) {
+        Survey survey = getSurvey(surveyId);
+        validateMember(userKey);
+
+        survey.markFree();
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), 0);
+
+        SurveyInfo info = upsertSurveyInfo(
                 surveyId,
-                survey.getTitle(),
-                request.totalCoin(),
-                info.getDueCount()
+                100,
+                Gender.ALL,
+                Set.of(AgeRange.ALL),
+                Residence.ALL,
+                0, 0, 0, 0,
+                false
         );
 
-        afterCommitExecutor.run(() -> alertNotifier.sendSurveySubmittedAsync(alert));
-        return SurveyFormResponse.fromEntity(survey);
+        log.info("[SurveySubmit] FREE 설문 제출 완료 - surveyId={}", surveyId);
+        return finalizeSubmit(userKey, surveyId, survey, info, 100, request.deadline(), 0);
     }
 
     @Override
@@ -278,5 +254,73 @@ public class SurveyCommandService implements SurveyCommand {
         redisTemplate.opsForZSet().add(
             keyPrefix + surveyId, value, System.currentTimeMillis()
         );
+    }
+
+    private Survey getSurvey(Long surveyId) {
+        return surveyRepository.getSurveyById(surveyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+    }
+
+    private Member validateMember(Long userKey) {
+        return memberRepository.findMemberByUserKey(userKey)
+                .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    private SurveyInfo upsertSurveyInfo(
+            Long surveyId,
+            Integer dueCount,
+            Gender gender,
+            Set<AgeRange> ages,
+            Residence residence,
+            Integer genderPrice,
+            Integer agePrice,
+            Integer residencePrice,
+            Integer dueCountPrice,
+            boolean refundable
+    ) {
+        SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
+                .orElseGet(() -> SurveyInfo.createSurveyInfo(
+                        surveyId, dueCount, gender, ages, residence,
+                        genderPrice, agePrice, residencePrice, dueCountPrice
+                ));
+
+        info.updateSurveyInfo(dueCount, gender, ages, residence, genderPrice, agePrice, residencePrice, dueCountPrice);
+
+        if (!refundable) info.markNonRefundable();
+
+        return info;
+    }
+
+    private SurveyFormResponse finalizeSubmit(
+            Long userKey,
+            Long surveyId,
+            Survey survey,
+            SurveyInfo info,
+            Integer dueCount,
+            LocalDateTime deadline,
+            Integer totalCoin
+    ) {
+        survey.submitSurvey();
+
+        surveyRepository.save(survey);
+        surveyInfoRepository.save(info);
+        surveyGlobalStatsService.addDueCount(info.getDueCount());
+
+        applySurveyRuntimeCache(surveyId, userKey, dueCount, deadline);
+
+        SurveySubmittedAlert alert = new SurveySubmittedAlert(
+                userKey, surveyId, survey.getTitle(), totalCoin, info.getDueCount()
+        );
+        afterCommitExecutor.run(() -> alertNotifier.sendSurveySubmittedAsync(alert));
+
+        return SurveyFormResponse.fromEntity(survey);
+    }
+
+    private void applySurveyRuntimeCache(Long surveyId, Long userKey, Integer dueCount, LocalDateTime deadline) {
+        Duration duration = Duration.between(LocalDateTime.now(), deadline);
+        setValue(this.dueCountKey, surveyId, String.valueOf(dueCount), duration);
+        setValue(this.completedKey, surveyId, "0", duration);
+        addZSetValue(this.potentialKey, surveyId, String.valueOf(userKey));
+        setValue(this.creatorKey, surveyId, String.valueOf(userKey), duration);
     }
 }

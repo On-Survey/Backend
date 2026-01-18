@@ -43,7 +43,6 @@ public class SecurityConfig {
             "/auth/toss/login",
             "/auth/reissue",
             "/connect-out",
-            "/sentry-test/**",
             "/toss/promotion/recheck-pending"
     };
 

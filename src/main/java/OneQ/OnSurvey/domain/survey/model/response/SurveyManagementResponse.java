@@ -20,6 +20,7 @@ public class SurveyManagementResponse {
         private String title;
         private String description;
         private SurveyStatus status;
+        private Boolean isFree;
 
         private LocalDateTime deadLine;
         private Integer dueCount;
@@ -41,6 +42,7 @@ public class SurveyManagementResponse {
             .title(survey.getTitle())
             .description(survey.getDescription())
             .status(survey.getStatus())
+            .isFree(survey.getIsFree())
             .deadLine(survey.getDeadline())
             .dueCount(info.getDueCount())
             .currentCount(info.getCompletedCount())
@@ -55,6 +57,7 @@ public class SurveyManagementResponse {
             .title(survey.getTitle())
             .description(survey.getDescription())
             .status(survey.getStatus())
+            .isFree(survey.getIsFree())
             .deadLine(survey.getDeadline())
             .createdAt(survey.getCreatedAt())
             .updatedAt(survey.getUpdatedAt())

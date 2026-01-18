@@ -7,6 +7,7 @@ import OneQ.OnSurvey.domain.survey.service.form.SurveyFormFacade;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -62,9 +63,19 @@ public class FormController implements FormControllerDoc {
     public SuccessResponse<SurveyFormResponse> completeSurvey(
         @AuthenticationPrincipal CustomUserDetails details,
         @PathVariable Long surveyId,
-        @RequestBody SurveyFormRequest request
+        @RequestBody @Valid SurveyFormRequest request
     ) {
         return SuccessResponse.ok(surveyFormFacade.completeSurvey(details.getUserKey(), surveyId, request));
+    }
+
+    @PatchMapping("/surveys/{surveyId}/free")
+    @Operation(summary = "무료 설문 폼을 완성합니다.")
+    public SuccessResponse<SurveyFormResponse> completeFreeSurvey(
+            @AuthenticationPrincipal CustomUserDetails details,
+            @PathVariable Long surveyId,
+            @RequestBody @Valid FreeSurveyFormRequest request
+    ) {
+        return SuccessResponse.ok(surveyFormFacade.completeFreeSurvey(details.getUserKey(), surveyId, request));
     }
 
     @PatchMapping("/surveys/{surveyId}/interests")

@@ -98,6 +98,12 @@ public class SurveyFormFacade implements SurveyFormUseCase {
     }
 
     @Override
+    public SurveyFormResponse completeFreeSurvey(Long userKey, Long surveyId, FreeSurveyFormRequest request) {
+        log.info("[FORM:completeFreeSurvey] 무료 설문 제출 - surveyId: {}, userKey: {}", surveyId, userKey);
+        return surveyCommand.submitFreeSurvey(userKey, surveyId, request);
+    }
+
+    @Override
     public InterestResponse updateInterest(Long surveyId, SurveyInterestRequest request) {
         log.info("[FORM:updateInterest] surveyId: {}, interests: {}", surveyId, request.getInterests());
         return surveyCommand.upsertInterest(surveyId, request.getInterests());

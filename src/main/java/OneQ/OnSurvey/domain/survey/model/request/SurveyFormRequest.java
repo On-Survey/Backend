@@ -4,12 +4,14 @@ import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Future;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 public record SurveyFormRequest(
-        @Schema(description = "설문 마감일", example = "2024-12-31T23:59:59")
+        @Future
+        @Schema(description = "설문 마감일", example = "2026-12-31T23:59:59")
         LocalDateTime deadline,
 
         @Schema(description = "성별", example = "ALL")
