@@ -15,7 +15,7 @@ public interface SurveyCommand {
     SurveyFormResponse submitSurvey(Long userKey, Long surveyId, SurveyFormRequest request);
     SurveyFormResponse submitFreeSurvey(Long userKey, Long surveyId, FreeSurveyFormRequest request);
 
-    ScreeningResponse upsertScreening(Long screeningId, Long surveyId, String content, Boolean answer);
+    ScreeningResponse upsertScreening(Long surveyId, String content, Boolean answer);
     Boolean refundSurvey(Long memberId, Long surveyId);
 
     InterestResponse upsertInterest(Long surveyId, Set<Interest> interestSet);

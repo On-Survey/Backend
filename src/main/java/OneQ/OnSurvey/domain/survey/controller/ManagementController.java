@@ -10,7 +10,9 @@ import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.*;
+import OneQ.OnSurvey.domain.survey.model.dto.ScreeningFormData;
 import OneQ.OnSurvey.domain.survey.model.response.*;
+import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
@@ -43,6 +45,7 @@ public class ManagementController {
     private final ResponseQuery responseQuery;
     private final AnswerQuery<QuestionAnswer> answerQuery;
     private final SurveyInfoRepository surveyInfoRepository;
+    private final ScreeningRepository screeningRepository;
 
     @GetMapping("/surveys")
     @Operation(summary = "사용자가 생성한 설문을 조회합니다.")
@@ -153,8 +156,9 @@ public class ManagementController {
 
         surveyQuery.validateSurveyRequest(surveyId, principal.getMemberId(), SurveyStatus.WRITING);
         List<DefaultQuestionDto> questionDto = questionQuery.getQuestionDtoListBySurveyId(surveyId);
+        ScreeningFormData screeningFormData = screeningRepository.getScreeningFormDataBySurveyId(surveyId);
 
-        return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto));
+        return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto, screeningFormData));
     }
 
     @GetMapping

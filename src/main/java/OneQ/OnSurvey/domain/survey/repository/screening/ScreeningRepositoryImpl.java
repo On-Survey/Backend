@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.repository.screening;
 
 import OneQ.OnSurvey.domain.survey.entity.Screening;
+import OneQ.OnSurvey.domain.survey.model.dto.ScreeningFormData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -46,6 +47,17 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             .groupBy(screening.id)
             .orderBy(screening.surveyId.asc())
             .fetch();
+    }
+
+    @Override
+    public ScreeningFormData getScreeningFormDataBySurveyId(Long surveyId) {
+        return jpaQueryFactory.select(Projections.constructor(ScreeningFormData.class,
+            screening.id,
+            screening.content
+        ))
+            .from(screening)
+            .where(screening.surveyId.eq(surveyId))
+            .fetchOne();
     }
 
     @Override

@@ -112,7 +112,7 @@ public class SurveyFormFacade implements SurveyFormUseCase {
     @Override
     public ScreeningResponse createScreening(Long surveyId, ScreeningRequest request) {
         log.info("[FORM:createScreening] surveyId: {}, content: {}", surveyId, request.content());
-        return surveyCommand.upsertScreening(null, surveyId, request.content(), request.answer());
+        return surveyCommand.upsertScreening(surveyId, request.content(), request.answer());
     }
 
 
