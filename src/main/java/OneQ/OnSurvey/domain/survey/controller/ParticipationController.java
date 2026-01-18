@@ -16,6 +16,7 @@ import OneQ.OnSurvey.domain.survey.model.response.DeprecatedQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningListResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationInfoResponse;
+import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningSingleResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
@@ -190,6 +191,17 @@ public class ParticipationController {
 
         Pageable pageable = PageRequest.of(0, size);
         return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, principal.getMemberId(), principal.getUserKey()));
+    }
+
+    @GetMapping("surveys/screenings/{screeningId}")
+    @Operation(summary = "단일 스크리닝 문항을 조회합니다.")
+    public SuccessResponse<ParticipationScreeningSingleResponse> getScreening(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @PathVariable Long screeningId
+    ) {
+        log.info("[PARTICIPATION] 단일 스크리닝 퀴즈 조회 - screeningId: {}, memberId: {}", screeningId, principal.getMemberId());
+
+        return SuccessResponse.ok(surveyQueryService.getScreeningSingleResponse(screeningId, principal.getMemberId()));
     }
 
     @PostMapping("screenings/{screeningId}")

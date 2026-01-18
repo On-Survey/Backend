@@ -11,6 +11,7 @@ public interface ScreeningRepository {
     List<ScreeningIntroData> getScreeningListBySurveyIdList(List<Long> surveyIdList);
     ScreeningFormData getScreeningFormDataBySurveyId(Long surveyId);
 
+    ScreeningIntroData getScreeningIntroDataByScreeningId(Long screeningId);
     Boolean getScreeningAnswer(Long screeningId);
     Long getSurveyId(Long screeningId);
 

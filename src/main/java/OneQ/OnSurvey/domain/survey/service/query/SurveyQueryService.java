@@ -195,6 +195,15 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
+    public ParticipationScreeningSingleResponse getScreeningSingleResponse(Long screeningId, Long memberId) {
+        log.info("[SURVEY:QUERY:getScreeningSingleResponse] 단일 스크리닝 퀴즈 조회 - screeningId: {}, memberId: {}", screeningId, memberId);
+
+        ScreeningIntroData screening = screeningRepository.getScreeningIntroDataByScreeningId(screeningId);
+
+        return new ParticipationScreeningSingleResponse(screening);
+    }
+
+    @Override
     public ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey) {
         log.info("[SURVEY:QUERY:getParticipationInfo] 설문 기본정보 조회 - surveyId: {}", surveyId);
 

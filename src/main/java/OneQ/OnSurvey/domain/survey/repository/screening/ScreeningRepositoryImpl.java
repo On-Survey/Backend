@@ -61,6 +61,22 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
     }
 
     @Override
+    public ScreeningIntroData getScreeningIntroDataByScreeningId(Long screeningId) {
+        return jpaQueryFactory.select(Projections.constructor(ScreeningIntroData.class,
+            screening.id,
+            screening.surveyId,
+            screening.content,
+            screening.answer,
+            screeningAnswer.answerId.count()
+        ))
+            .from(screening)
+            .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId))
+            .where(screening.id.eq(screeningId))
+            .groupBy(screening.id)
+            .fetchOne();
+    }
+
+    @Override
     public Boolean getScreeningAnswer(Long screeningId) {
         return jpaQueryFactory.select(screening.answer)
             .from(screening)
