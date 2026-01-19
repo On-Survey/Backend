@@ -7,9 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.Map;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -38,12 +35,5 @@ public class ResponseQueryService implements ResponseQuery {
         }
 
         return responseRepository.getResponseCountBySurveyId(surveyId, filter);
-    }
-
-    @Override
-    public Map<Long, Long> getResponseCountsBySurveyIds(Collection<Long> surveyIds) {
-        log.info("[RESPONSE:QUERY:getResponseCountsBySurveyIds] 설문 응답 수 일괄 조회 - surveyIds: {}", surveyIds);
-
-        return responseRepository.getResponseCountsBySurveyIds(surveyIds);
     }
 }

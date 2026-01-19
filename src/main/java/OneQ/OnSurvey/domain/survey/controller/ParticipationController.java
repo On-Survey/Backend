@@ -12,11 +12,8 @@ import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
-import OneQ.OnSurvey.domain.survey.model.response.DeprecatedQuestionResponse;
-import OneQ.OnSurvey.domain.survey.model.response.ParticipationQuestionResponse;
-import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningResponse;
-import OneQ.OnSurvey.domain.survey.model.response.ParticipationInfoResponse;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
+import OneQ.OnSurvey.domain.survey.model.response.*;
+import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
@@ -45,8 +42,9 @@ public class ParticipationController {
     private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
     private final ResponseCommand responseCommand;
     private final SurveyCommandService surveyCommandService;
-
     private final QuestionQuery questionQueryService;
+
+    private final ScreeningRepository screeningRepository;
 
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
@@ -136,7 +134,7 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 설문 기본정보 조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
 
-        return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId, principal.getUserKey()));
+        return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId, principal.getUserKey(), principal.getMemberId()));
     }
 
     @GetMapping("surveys/questions")
@@ -172,16 +170,17 @@ public class ParticipationController {
         }
 
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
+        boolean isScreenRequired = screeningRepository.isScreenRequired(surveyId, principal.getMemberId());
 
         DeprecatedQuestionResponse body =
-            DeprecatedQuestionResponse.of(survey, questionDtoList);
+            DeprecatedQuestionResponse.of(survey, questionDtoList, isScreenRequired);
 
         return SuccessResponse.ok(body);
     }
 
     @GetMapping("surveys/screenings")
     @Operation(summary = "세그멘테이션에 일치하는 설문의 스크리닝 문항을 조회합니다.")
-    public SuccessResponse<ParticipationScreeningResponse> getRecommendedScreenings(
+    public SuccessResponse<ParticipationScreeningListResponse> getRecommendedScreenings(
         @AuthenticationPrincipal CustomUserDetails principal,
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size
@@ -190,6 +189,17 @@ public class ParticipationController {
 
         Pageable pageable = PageRequest.of(0, size);
         return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, principal.getMemberId(), principal.getUserKey()));
+    }
+
+    @GetMapping("surveys/screenings/{screeningId}")
+    @Operation(summary = "단일 스크리닝 문항을 조회합니다.")
+    public SuccessResponse<ParticipationScreeningSingleResponse> getScreening(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @PathVariable Long screeningId
+    ) {
+        log.info("[PARTICIPATION] 단일 스크리닝 퀴즈 조회 - screeningId: {}, memberId: {}", screeningId, principal.getMemberId());
+
+        return SuccessResponse.ok(surveyQueryService.getScreeningSingleResponse(screeningId));
     }
 
     @PostMapping("screenings/{screeningId}")

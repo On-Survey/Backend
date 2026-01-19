@@ -14,11 +14,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static OneQ.OnSurvey.domain.member.QMember.member;
 import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
@@ -64,20 +61,6 @@ public class ResponseRepositoryImpl implements ResponseRepository {
     }
 
     @Override
-    public Map<Long, Long> getResponseCountsBySurveyIds(Collection<Long> surveyIds) {
-        return jpaQueryFactory.select(response.surveyId, response.surveyId.count())
-            .from(response)
-            .where(response.surveyId.in(surveyIds))
-            .groupBy(response.surveyId)
-            .fetch()
-            .stream()
-            .collect(Collectors.toMap(
-                tuple -> tuple.get(response.surveyId),
-                tuple -> tuple.get(response.surveyId.count())
-            ));
-    }
-
-    @Override
     public Response save(Response response) {
         return responseJpaRepository.save(response);
     }
@@ -105,6 +88,21 @@ public class ResponseRepositoryImpl implements ResponseRepository {
     @Override
     public Optional<Response> findBySurveyIdAndMemberId(Long surveyId, Long memberId) {
         return responseJpaRepository.findBySurveyIdAndMemberId(surveyId, memberId);
+    }
+
+    /* 설문 응답 완료 여부 판단 */
+    @Override
+    public boolean isSurveyResponded(Long surveyId, Long memberId) {
+        Boolean isResponded = jpaQueryFactory.select(response.isResponded)
+            .from(response)
+            .where(
+                response.surveyId.eq(surveyId),
+                response.memberId.eq(memberId)
+            )
+            .fetchOne();
+
+        // 응답 기록이 있고, 설문 응답이 완료인 케이스
+        return isResponded != null && isResponded;
     }
 
     private BooleanExpression buildGenderCondition(EnumPath<Gender> genderPath, List<Gender> genders) {

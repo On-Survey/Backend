@@ -30,10 +30,6 @@ public class SurveyManagementResponse {
         // 기본 생성 일자
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
-
-        public void updateCurrentParticipationCount(Integer count) {
-            this.currentCount = count;
-        }
     }
 
     public static SurveyInformation fromEntity(Survey survey, SurveyInfo info) {
