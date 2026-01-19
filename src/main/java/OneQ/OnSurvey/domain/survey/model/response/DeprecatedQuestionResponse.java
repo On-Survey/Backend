@@ -16,12 +16,14 @@ public record DeprecatedQuestionResponse(
     Boolean isFree,
     Set<Interest> interests,
     LocalDateTime deadline,
-    List<DefaultQuestionDto> info
+    List<DefaultQuestionDto> info,
+    boolean isScreenRequired
 ) {
 
     public static DeprecatedQuestionResponse of(
         Survey survey,
-        List<DefaultQuestionDto> info
+        List<DefaultQuestionDto> info,
+        boolean isScreenRequired
     ) {
         Set<Interest> interestsSet = survey.getInterests() != null
             ? new java.util.HashSet<>(survey.getInterests())
@@ -35,7 +37,8 @@ public record DeprecatedQuestionResponse(
             survey.getIsFree(),
             interestsSet,
             survey.getDeadline(),
-            info
+            info,
+            isScreenRequired
         );
     }
 }

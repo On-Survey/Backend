@@ -17,10 +17,11 @@ public interface SurveyQuery {
     SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     );
-    ParticipationScreeningResponse getScreeningList(
+    ParticipationScreeningListResponse getScreeningList(
         Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     );
-    ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey);
+    ParticipationScreeningSingleResponse getScreeningSingleResponse(Long screeningId);
+    ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey, Long memberId);
     ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey);
 
     MySurveyListResponse getMySurveys(Long memberId);

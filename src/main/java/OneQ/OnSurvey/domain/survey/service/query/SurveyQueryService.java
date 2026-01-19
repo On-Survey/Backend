@@ -161,7 +161,7 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public ParticipationScreeningResponse getScreeningList(
+    public ParticipationScreeningListResponse getScreeningList(
         Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     ) {
         log.info("[SURVEY:QUERY:getScreeningList] 본인 제작 제외 세그멘테이션 기반 설문의 스크리닝 문항 조회 - "
@@ -188,19 +188,33 @@ public class SurveyQueryService implements SurveyQuery {
 
         List<ScreeningIntroData> screeningList = screeningRepository.getScreeningListBySurveyIdList(idList);
 
-        return ParticipationScreeningResponse.builder()
+        return ParticipationScreeningListResponse.builder()
             .data(screeningList)
             .hasNext(surveyList.hasNext())
             .build();
     }
 
     @Override
-    public ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey) {
+    public ParticipationScreeningSingleResponse getScreeningSingleResponse(Long screeningId) {
+        log.info("[SURVEY:QUERY:getScreeningSingleResponse] 단일 스크리닝 퀴즈 조회 - screeningId: {}", screeningId);
+
+        ScreeningIntroData screening = screeningRepository.getScreeningIntroDataByScreeningId(screeningId);
+
+        return new ParticipationScreeningSingleResponse(screening);
+    }
+
+    @Override
+    public ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey, Long memberId) {
         log.info("[SURVEY:QUERY:getParticipationInfo] 설문 기본정보 조회 - surveyId: {}", surveyId);
 
         if (checkValidSegmentation(surveyId, userKey)) {
-            log.warn("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            log.warn("[SURVEY:QUERY] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
+        }
+
+        if (responseRepository.isSurveyResponded(surveyId, memberId)) {
+            log.warn("[SURVEY:QUERY] 이미 참여한 설문 참여 불가 - surveyId: {}, memberId: {}", surveyId, memberId);
+            throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
         }
 
         Survey survey = surveyRepository.getSurveyById(surveyId)
@@ -212,8 +226,9 @@ public class SurveyQueryService implements SurveyQuery {
         }
 
         int completedCount = getIntValue(surveyId, this.completedKey);
+        boolean isScreenRequired = screeningRepository.isScreenRequired(surveyId, memberId);
 
-        return ParticipationInfoResponse.from(survey, completedCount);
+        return ParticipationInfoResponse.from(survey, completedCount, isScreenRequired);
     }
 
     @Override
@@ -227,18 +242,19 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
         }
 
-        if (!isActivationAvailable(surveyId, userKey)) {
-            log.warn("[SURVEY:QUERY] 일시적 설문 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
-            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
-        }
-
         SurveyStatus status = surveyRepository.getSurveyStatusById(surveyId);
         if (!isSurveyAccessible(status)) {
             log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, status);
             throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
         }
 
+        if (!isActivationAvailable(surveyId, userKey)) {
+            log.warn("[SURVEY:QUERY] 일시적 설문 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
+        }
+
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
+
         return ParticipationQuestionResponse.of(questionDtoList);
     }
 

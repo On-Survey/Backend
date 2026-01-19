@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.model.request;
 
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,6 +30,7 @@ public class InsertQuestionAnswerRequest {
             .build();
     }
 
+    @JsonIgnore
     public boolean isEmpty() {
         return infoList == null || infoList.isEmpty();
     }
