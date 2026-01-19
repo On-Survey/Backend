@@ -16,5 +16,6 @@ public interface ResponseRepository {
     Response save(Response response);
     List<Long> getExcludedSurveyIdList(Long memberId, boolean checkScreened);
     Optional<Response> findBySurveyIdAndMemberId(Long surveyId, Long memberId);
+    boolean isSurveyResponded(Long surveyId, Long memberId);
 }
 

@@ -208,8 +208,13 @@ public class SurveyQueryService implements SurveyQuery {
         log.info("[SURVEY:QUERY:getParticipationInfo] 설문 기본정보 조회 - surveyId: {}", surveyId);
 
         if (checkValidSegmentation(surveyId, userKey)) {
-            log.warn("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            log.warn("[SURVEY:QUERY] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
+        }
+
+        if (responseRepository.isSurveyResponded(surveyId, memberId)) {
+            log.warn("[SURVEY:QUERY] 이미 참여한 설문 참여 불가 - surveyId: {}, memberId: {}", surveyId, memberId);
+            throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
         }
 
         Survey survey = surveyRepository.getSurveyById(surveyId)

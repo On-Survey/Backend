@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.survey.repository.screening;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningFormData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -93,19 +94,24 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             .fetchOne();
     }
 
-    /* 스크리닝 문항에 답변을 했는지 여부 판단 */
+    /* 스크리닝 퀴즈에 답변 필요 여부 판단 */
     @Override
     public boolean isScreenRequired(Long surveyId, Long memberId) {
-        Integer isScreened = jpaQueryFactory.selectOne()
+        Tuple isScreened = jpaQueryFactory.select(screening.id, response.isScreened)
             .from(screening)
-            .leftJoin(response).on(screening.surveyId.eq(response.surveyId))
+            .leftJoin(response)
+                .on(
+                    screening.surveyId.eq(response.surveyId),
+                    response.memberId.eq(memberId)
+                )
             .where(
-                response.surveyId.eq(surveyId),
-                response.memberId.eq(memberId)
+                screening.surveyId.eq(surveyId)
             )
-            .fetchFirst();
+            .fetchOne();
 
-        return isScreened == null;
+        // 스크리닝 퀴즈가 있으나 응답이 없는 케이스 (퀴즈가 없으면 false 반환)
+        return isScreened != null
+            && isScreened.get(response.isScreened) == null;
     }
 
     @Override
