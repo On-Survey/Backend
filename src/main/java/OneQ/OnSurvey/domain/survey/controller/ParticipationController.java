@@ -175,10 +175,10 @@ public class ParticipationController {
         }
 
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
-        boolean isScreenAnswered = screeningRepository.isScreenRequired(surveyId, principal.getMemberId());
+        boolean isScreenRequired = screeningRepository.isScreenRequired(surveyId, principal.getMemberId());
 
         DeprecatedQuestionResponse body =
-            DeprecatedQuestionResponse.of(survey, questionDtoList, isScreenAnswered);
+            DeprecatedQuestionResponse.of(survey, questionDtoList, isScreenRequired);
 
         return SuccessResponse.ok(body);
     }
@@ -204,7 +204,7 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 단일 스크리닝 퀴즈 조회 - screeningId: {}, memberId: {}", screeningId, principal.getMemberId());
 
-        return SuccessResponse.ok(surveyQueryService.getScreeningSingleResponse(screeningId, principal.getMemberId()));
+        return SuccessResponse.ok(surveyQueryService.getScreeningSingleResponse(screeningId));
     }
 
     @PostMapping("screenings/{screeningId}")
