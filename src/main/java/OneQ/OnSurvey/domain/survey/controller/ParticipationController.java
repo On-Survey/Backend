@@ -18,6 +18,7 @@ import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningListResp
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationInfoResponse;
 import OneQ.OnSurvey.domain.survey.model.response.ParticipationScreeningSingleResponse;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyParticipationResponse;
+import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
@@ -46,8 +47,9 @@ public class ParticipationController {
     private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
     private final ResponseCommand responseCommand;
     private final SurveyCommandService surveyCommandService;
-
     private final QuestionQuery questionQueryService;
+
+    private final ScreeningRepository screeningRepository;
 
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
@@ -137,7 +139,7 @@ public class ParticipationController {
     ) {
         log.info("[PARTICIPATION] 설문 기본정보 조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
 
-        return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId, principal.getUserKey()));
+        return SuccessResponse.ok(surveyQueryService.getParticipationInfo(surveyId, principal.getUserKey(), principal.getMemberId()));
     }
 
     @GetMapping("surveys/questions")
@@ -173,9 +175,10 @@ public class ParticipationController {
         }
 
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
+        boolean isScreenAnswered = screeningRepository.isScreenRequired(surveyId, principal.getMemberId());
 
         DeprecatedQuestionResponse body =
-            DeprecatedQuestionResponse.of(survey, questionDtoList);
+            DeprecatedQuestionResponse.of(survey, questionDtoList, isScreenAnswered);
 
         return SuccessResponse.ok(body);
     }

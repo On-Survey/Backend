@@ -204,7 +204,7 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey) {
+    public ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey, Long memberId) {
         log.info("[SURVEY:QUERY:getParticipationInfo] 설문 기본정보 조회 - surveyId: {}", surveyId);
 
         if (checkValidSegmentation(surveyId, userKey)) {
@@ -221,8 +221,9 @@ public class SurveyQueryService implements SurveyQuery {
         }
 
         int completedCount = getIntValue(surveyId, this.completedKey);
+        boolean isScreenRequired = screeningRepository.isScreenRequired(surveyId, memberId);
 
-        return ParticipationInfoResponse.from(survey, completedCount);
+        return ParticipationInfoResponse.from(survey, completedCount, isScreenRequired);
     }
 
     @Override
@@ -236,18 +237,19 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
         }
 
-        if (!isActivationAvailable(surveyId, userKey)) {
-            log.warn("[SURVEY:QUERY] 일시적 설문 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
-            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
-        }
-
         SurveyStatus status = surveyRepository.getSurveyStatusById(surveyId);
         if (!isSurveyAccessible(status)) {
             log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, status);
             throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
         }
 
+        if (!isActivationAvailable(surveyId, userKey)) {
+            log.warn("[SURVEY:QUERY] 일시적 설문 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
+        }
+
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
+
         return ParticipationQuestionResponse.of(questionDtoList);
     }
 

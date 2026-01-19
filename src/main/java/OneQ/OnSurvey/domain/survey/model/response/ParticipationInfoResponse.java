@@ -12,10 +12,11 @@ public record ParticipationInfoResponse(
     String description,
     LocalDateTime deadline,
     Set<Interest> interests,
-    Integer responseCount
+    int responseCount,
+    boolean isScreenRequired
 ) {
     public static ParticipationInfoResponse from(
-        Survey survey, Integer responseCount
+        Survey survey, int responseCount, boolean isScreenRequired
     ) {
         return new ParticipationInfoResponse(
             survey.getId(),
@@ -23,7 +24,8 @@ public record ParticipationInfoResponse(
             survey.getDescription(),
             survey.getDeadline(),
             survey.getInterests(),
-            responseCount
+            responseCount,
+            isScreenRequired
         );
     }
 }

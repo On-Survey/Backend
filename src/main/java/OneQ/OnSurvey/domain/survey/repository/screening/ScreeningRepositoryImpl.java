@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 
@@ -90,6 +91,21 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             .from(screening)
             .where(screening.id.eq(screeningId))
             .fetchOne();
+    }
+
+    /* 스크리닝 문항에 답변을 했는지 여부 판단 */
+    @Override
+    public boolean isScreenRequired(Long surveyId, Long memberId) {
+        Integer isScreened = jpaQueryFactory.selectOne()
+            .from(screening)
+            .leftJoin(response).on(screening.surveyId.eq(response.surveyId))
+            .where(
+                response.surveyId.eq(surveyId),
+                response.memberId.eq(memberId)
+            )
+            .fetchFirst();
+
+        return isScreened == null;
     }
 
     @Override
