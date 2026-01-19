@@ -107,7 +107,7 @@ public class ResponseRepositoryImpl implements ResponseRepository {
         return responseJpaRepository.findBySurveyIdAndMemberId(surveyId, memberId);
     }
 
-    /* 설문 응답을 완료하지 완료 여부 판단 */
+    /* 설문 응답 완료 여부 판단 */
     @Override
     public boolean isSurveyResponded(Long surveyId, Long memberId) {
         Boolean isResponded = jpaQueryFactory.select(response.isResponded)
@@ -118,7 +118,7 @@ public class ResponseRepositoryImpl implements ResponseRepository {
             )
             .fetchOne();
 
-        // 응답 기록이 있고, isResponded(응답 완료)가 true인 케이스
+        // 응답 기록이 있고, 설문 응답이 완료인 케이스
         return isResponded != null && isResponded;
     }
 
