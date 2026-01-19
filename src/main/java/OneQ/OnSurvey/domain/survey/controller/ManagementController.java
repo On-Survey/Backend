@@ -30,7 +30,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -55,26 +54,6 @@ public class ManagementController {
         log.info("[MANAGEMENT] 사용자 생성 설문 조회 - memberId: {}", principal.getMemberId());
 
         List<SurveyManagementResponse.SurveyInformation> surveyInfoList = surveyQuery.getSurveyListByMemberId(principal.getMemberId());
-
-        Map<Long, SurveyManagementResponse.SurveyInformation> responseExistSurveyIdInformationMap = surveyInfoList.stream()
-            .filter(info -> SurveyStatus.ONGOING.equals(info.getStatus())
-                                            || SurveyStatus.CLOSED.equals(info.getStatus()))
-            .collect(Collectors.toMap(
-                SurveyManagementResponse.SurveyInformation::getSurveyId,
-                Function.identity()
-            ));
-
-        if (!responseExistSurveyIdInformationMap.isEmpty()) {
-            log.info("[MANAGEMENT] 사용자 생성 설문 정보 조회 - IDs: {}", responseExistSurveyIdInformationMap.keySet());
-
-            Map<Long, Long> surveyResponseCountMap
-                = responseQuery.getResponseCountsBySurveyIds(responseExistSurveyIdInformationMap.keySet());
-
-            surveyResponseCountMap.forEach((surveyId, count) -> {
-                SurveyManagementResponse.SurveyInformation surveyInformation = responseExistSurveyIdInformationMap.get(surveyId);
-                surveyInformation.updateCurrentParticipationCount(Math.toIntExact(count));
-            });
-        }
 
         return SuccessResponse.ok(new SurveyManagementResponse(surveyInfoList));
     }
