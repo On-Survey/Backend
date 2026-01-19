@@ -12,7 +12,8 @@ public record ParticipationInfoResponse(
     String description,
     LocalDateTime deadline,
     Set<Interest> interests,
-    Integer responseCount
+    Integer responseCount,
+    Boolean isFree
 ) {
     public static ParticipationInfoResponse from(
         Survey survey, Integer responseCount
@@ -23,7 +24,8 @@ public record ParticipationInfoResponse(
             survey.getDescription(),
             survey.getDeadline(),
             survey.getInterests(),
-            responseCount
+            responseCount,
+            survey.getIsFree()
         );
     }
 }
