@@ -28,10 +28,10 @@ public abstract class Question extends BaseEntity {
     @Column(name = "type", insertable = false, updatable = false)
     protected String type;
 
-    @Column(length = 64)
+    @Column(columnDefinition = "TEXT")
     protected String title;
 
-    @Column(length = 128)
+    @Column(columnDefinition = "TEXT")
     protected String description;
 
     @Column(name = "is_required")
