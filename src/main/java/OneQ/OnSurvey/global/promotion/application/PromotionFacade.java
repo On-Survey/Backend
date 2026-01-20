@@ -3,7 +3,10 @@ package OneQ.OnSurvey.global.promotion.application;
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
+import OneQ.OnSurvey.domain.survey.service.query.SurveyQueryService;
 import OneQ.OnSurvey.global.auth.token.TokenStore;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutePromotionResponse;
@@ -55,6 +58,7 @@ public class PromotionFacade implements PromotionUseCase {
     private final PromotionGrantTxService grantTx;
     private final MemberRepository memberRepository;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
+    private final SurveyQueryService surveyQueryService;
 
     private SSLContext tossSslContext;
 
@@ -67,6 +71,13 @@ public class PromotionFacade implements PromotionUseCase {
     @Transactional
     public ExecutionResultResponse issueAndConfirm(long userKey, long surveyId) {
         log.info("[PROMO] 프로모션 지급 시도 userKey={} surveyId={}", userKey, surveyId);
+
+        Survey survey = surveyQueryService.getSurveyById(surveyId);
+
+        if (Boolean.TRUE.equals(survey.getIsFree())) {
+            log.info("[PROMO] 무료 설문 지급 차단 userKey={} surveyId={}", userKey, surveyId);
+            throw new CustomException(SurveyErrorCode.SURVEY_FREE_PROMOTION_NOT_ALLOWED);
+        }
 
         // 최초 실행 / 재시도 실행 경로
         Long grantId = upsertGrantId(userKey, surveyId, promotionCode);
