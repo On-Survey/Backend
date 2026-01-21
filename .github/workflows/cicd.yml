@@ -5,6 +5,12 @@ on:
     branches: [ "develop" ]
   pull_request:
     branches: [ "develop" ]
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: '실행할 Feat 브랜치'
+        required: true
+
 
 jobs:
   build-and-push:
