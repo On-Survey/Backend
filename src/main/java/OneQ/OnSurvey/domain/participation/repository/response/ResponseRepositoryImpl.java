@@ -51,6 +51,7 @@ public class ResponseRepositoryImpl implements ResponseRepository {
                 .join(member).on(member.id.eq(response.memberId))
                 .where(
                         response.surveyId.eq(surveyId),
+                        response.isResponded.eq(true),
                         buildAgeCondition(member.birthDay, f.ages()),
                         buildGenderCondition(member.gender, f.genders()),
                         buildResidenceCondition(member.residence, f.residences())
