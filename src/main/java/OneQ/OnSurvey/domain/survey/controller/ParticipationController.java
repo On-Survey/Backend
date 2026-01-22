@@ -148,36 +148,6 @@ public class ParticipationController {
         return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, principal.getUserKey()));
     }
 
-    /**
-     *  @deprecated
-     *  @code GET /surveys/info
-     *  @code GET /surveys/questions
-    */
-    @Deprecated(forRemoval = true)
-    @GetMapping("surveys")
-    @Operation(summary = "선택한 설문을 조회합니다.")
-    public SuccessResponse<DeprecatedQuestionResponse> getTotalSurveyInfoOfSurveyId(
-        @RequestParam Long surveyId,
-        @AuthenticationPrincipal CustomUserDetails principal
-    ) {
-        log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}", surveyId);
-
-        Survey survey = surveyQueryService.getSurveyById(surveyId);
-
-        if (surveyQueryService.checkValidSegmentation(surveyId, principal.getUserKey())) {
-            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
-            throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
-        }
-
-        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
-        boolean isScreenRequired = screeningRepository.isScreenRequired(surveyId, principal.getMemberId());
-
-        DeprecatedQuestionResponse body =
-            DeprecatedQuestionResponse.of(survey, questionDtoList, isScreenRequired);
-
-        return SuccessResponse.ok(body);
-    }
-
     @GetMapping("surveys/screenings")
     @Operation(summary = "세그멘테이션에 일치하는 설문의 스크리닝 문항을 조회합니다.")
     public SuccessResponse<ParticipationScreeningListResponse> getRecommendedScreenings(

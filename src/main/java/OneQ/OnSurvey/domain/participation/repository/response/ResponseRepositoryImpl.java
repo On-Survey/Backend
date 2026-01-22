@@ -90,21 +90,6 @@ public class ResponseRepositoryImpl implements ResponseRepository {
         return responseJpaRepository.findBySurveyIdAndMemberId(surveyId, memberId);
     }
 
-    /* 설문 응답 완료 여부 판단 */
-    @Override
-    public boolean isSurveyResponded(Long surveyId, Long memberId) {
-        Boolean isResponded = jpaQueryFactory.select(response.isResponded)
-            .from(response)
-            .where(
-                response.surveyId.eq(surveyId),
-                response.memberId.eq(memberId)
-            )
-            .fetchOne();
-
-        // 응답 기록이 있고, 설문 응답이 완료인 케이스
-        return isResponded != null && isResponded;
-    }
-
     private BooleanExpression buildGenderCondition(EnumPath<Gender> genderPath, List<Gender> genders) {
         if (genders == null || genders.isEmpty()) return null;
         if (genders.contains(Gender.ALL)) return null;
