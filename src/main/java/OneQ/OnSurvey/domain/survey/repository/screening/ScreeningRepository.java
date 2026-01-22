@@ -14,7 +14,6 @@ public interface ScreeningRepository {
     ScreeningIntroData getScreeningIntroDataByScreeningId(Long screeningId);
     Boolean getScreeningAnswer(Long screeningId);
     Long getSurveyId(Long screeningId);
-    boolean isScreenRequired(Long surveyId, Long memberId);
 
     Screening save(Screening screening);
 }

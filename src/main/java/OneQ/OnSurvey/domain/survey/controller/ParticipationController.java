@@ -5,15 +5,11 @@ import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseCommand;
-import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
-import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
-import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.response.*;
-import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
@@ -29,7 +25,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -42,9 +37,6 @@ public class ParticipationController {
     private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
     private final ResponseCommand responseCommand;
     private final SurveyCommandService surveyCommandService;
-    private final QuestionQuery questionQueryService;
-
-    private final ScreeningRepository screeningRepository;
 
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
@@ -146,36 +138,6 @@ public class ParticipationController {
         log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
 
         return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, principal.getUserKey()));
-    }
-
-    /**
-     *  @deprecated
-     *  @code GET /surveys/info
-     *  @code GET /surveys/questions
-    */
-    @Deprecated(forRemoval = true)
-    @GetMapping("surveys")
-    @Operation(summary = "선택한 설문을 조회합니다.")
-    public SuccessResponse<DeprecatedQuestionResponse> getTotalSurveyInfoOfSurveyId(
-        @RequestParam Long surveyId,
-        @AuthenticationPrincipal CustomUserDetails principal
-    ) {
-        log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}", surveyId);
-
-        Survey survey = surveyQueryService.getSurveyById(surveyId);
-
-        if (surveyQueryService.checkValidSegmentation(surveyId, principal.getUserKey())) {
-            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
-            throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
-        }
-
-        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
-        boolean isScreenRequired = screeningRepository.isScreenRequired(surveyId, principal.getMemberId());
-
-        DeprecatedQuestionResponse body =
-            DeprecatedQuestionResponse.of(survey, questionDtoList, isScreenRequired);
-
-        return SuccessResponse.ok(body);
     }
 
     @GetMapping("surveys/screenings")
