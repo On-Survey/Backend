@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.model.response;
 
 import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 
 import java.time.LocalDateTime;
@@ -13,11 +14,13 @@ public record ParticipationInfoResponse(
     LocalDateTime deadline,
     Set<Interest> interests,
     Integer responseCount,
-    Boolean isScreenRequired,
+    boolean isScreenRequired,
+    boolean isScreened,
+    boolean isSurveyResponded,
     Boolean isFree
 ) {
     public static ParticipationInfoResponse from(
-        Survey survey, int responseCount, boolean isScreenRequired
+        Survey survey, int responseCount, ParticipationStatus participationStatus
     ) {
         return new ParticipationInfoResponse(
             survey.getId(),
@@ -26,7 +29,9 @@ public record ParticipationInfoResponse(
             survey.getDeadline(),
             survey.getInterests(),
             responseCount,
-            isScreenRequired,
+            participationStatus.isScreenRequired(),
+            participationStatus.isScreened(),
+            participationStatus.isSurveyResponded(),
             survey.getIsFree()
         );
     }

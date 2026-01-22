@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import org.springframework.data.domain.Pageable;
@@ -22,4 +23,5 @@ public interface SurveyRepository {
     Survey save(Survey survey);
 
     SurveyStatus getSurveyStatusById(Long surveyId);
+    ParticipationStatus getParticipationStatus(Long surveyId, Long memberId);
 }
