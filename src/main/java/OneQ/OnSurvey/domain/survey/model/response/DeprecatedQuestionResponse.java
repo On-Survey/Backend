@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.model.response;
 
 import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 
@@ -17,13 +18,15 @@ public record DeprecatedQuestionResponse(
     Set<Interest> interests,
     LocalDateTime deadline,
     List<DefaultQuestionDto> info,
-    boolean isScreenRequired
+    boolean isScreenRequired,
+    boolean isScreened,
+    boolean isSurveyResponded
 ) {
 
     public static DeprecatedQuestionResponse of(
         Survey survey,
         List<DefaultQuestionDto> info,
-        boolean isScreenRequired
+        ParticipationStatus participationStatus
     ) {
         Set<Interest> interestsSet = survey.getInterests() != null
             ? new java.util.HashSet<>(survey.getInterests())
@@ -38,7 +41,9 @@ public record DeprecatedQuestionResponse(
             interestsSet,
             survey.getDeadline(),
             info,
-            isScreenRequired
+            participationStatus.isScreenRequired(),
+            participationStatus.isScreened(),
+            participationStatus.isSurveyResponded()
         );
     }
 }

@@ -1,12 +1,14 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.global.common.util.QuerydslUtils;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
@@ -139,5 +142,35 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .from(survey)
             .where(survey.id.eq(surveyId))
             .fetchOne();
+    }
+
+    @Override
+    public ParticipationStatus getParticipationStatus(Long surveyId, Long memberId) {
+        Tuple statusResult = jpaQueryFactory
+            .select(
+                screening.id,           // 스크리닝 존재 여부
+                response.isScreened,    // 스크리닝 응답 여부
+                response.isResponded    // 설문 응답 여부
+            )
+            .from(survey)
+            .leftJoin(screening).on(
+                survey.id.eq(screening.surveyId)
+            )
+            .leftJoin(response).on(
+                survey.id.eq(response.surveyId),
+                response.memberId.eq(memberId)
+            )
+            .where(survey.id.eq(surveyId))
+            .fetchOne();
+
+        if (statusResult == null) {
+            return ParticipationStatus.defaultStatus(false);
+        }
+
+        Long screeningId = statusResult.get(screening.id);
+        Boolean isScreened =  statusResult.get(response.isScreened);
+        Boolean isResponded = statusResult.get(response.isResponded);
+
+        return ParticipationStatus.generateStatus(screeningId, isScreened, isResponded);
     }
 }

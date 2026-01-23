@@ -3,17 +3,18 @@ package OneQ.OnSurvey.domain.survey.controller;
 import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseCommand;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
-import OneQ.OnSurvey.domain.question.service.QuestionQuery;
+import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.response.*;
-import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
+import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
@@ -42,9 +43,9 @@ public class ParticipationController {
     private final AnswerCommand<QuestionAnswer> questionAnswerCommand;
     private final ResponseCommand responseCommand;
     private final SurveyCommandService surveyCommandService;
-    private final QuestionQuery questionQueryService;
 
-    private final ScreeningRepository screeningRepository;
+    private final QuestionQueryService questionQueryService;
+    private final SurveyRepository surveyRepository;
 
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
@@ -152,7 +153,7 @@ public class ParticipationController {
      *  @deprecated
      *  @code GET /surveys/info
      *  @code GET /surveys/questions
-    */
+     */
     @Deprecated(forRemoval = true)
     @GetMapping("surveys")
     @Operation(summary = "선택한 설문을 조회합니다.")
@@ -170,10 +171,10 @@ public class ParticipationController {
         }
 
         List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
-        boolean isScreenRequired = screeningRepository.isScreenRequired(surveyId, principal.getMemberId());
+        ParticipationStatus participationStatus = surveyRepository.getParticipationStatus(surveyId, principal.getMemberId());
 
         DeprecatedQuestionResponse body =
-            DeprecatedQuestionResponse.of(survey, questionDtoList, isScreenRequired);
+            DeprecatedQuestionResponse.of(survey, questionDtoList, participationStatus);
 
         return SuccessResponse.ok(body);
     }

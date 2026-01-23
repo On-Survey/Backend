@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.survey.service.query;
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.participation.repository.answer.ScreeningAnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
@@ -212,11 +213,6 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
 
-        if (responseRepository.isSurveyResponded(surveyId, memberId)) {
-            log.warn("[SURVEY:QUERY] 이미 참여한 설문 참여 불가 - surveyId: {}, memberId: {}", surveyId, memberId);
-            throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
-        }
-
         Survey survey = surveyRepository.getSurveyById(surveyId)
             .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
@@ -226,9 +222,18 @@ public class SurveyQueryService implements SurveyQuery {
         }
 
         int completedCount = getIntValue(surveyId, this.completedKey);
-        boolean isScreenRequired = screeningRepository.isScreenRequired(surveyId, memberId);
+        ParticipationStatus participationStatus = surveyRepository.getParticipationStatus(surveyId, memberId);
+        if (participationStatus.isScreenRequired()) {
+            log.warn("[SURVEY:QUERY] 스크리닝 퀴즈 응답이 필요합니다. - surveyId: {}, memberId: {}", surveyId, memberId);
+        }
+        if (participationStatus.isScreened()) {
+            log.warn("[SURVEY:QUERY] 스크리닝 퀴즈에 의해 필터링되었습니다. - surveyId: {}, memberId: {}", surveyId, memberId);
+        }
+        if (participationStatus.isSurveyResponded()) {
+            log.warn("[SURVEY:QUERY] 이미 참여한 설문입니다. - surveyId: {}, memberId: {}", surveyId, memberId);
+        }
 
-        return ParticipationInfoResponse.from(survey, completedCount, isScreenRequired);
+        return ParticipationInfoResponse.from(survey, completedCount, participationStatus);
     }
 
     @Override
