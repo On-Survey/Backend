@@ -127,7 +127,7 @@ public class TossAuthFacade implements AuthUseCase {
         String at = resolveBearer(request);
         try {
             if (at == null || at.isBlank()) {
-                log.warn("[TOSS:AUTH] Access Token이 비어있습니다.");
+                log.warn("[TOSS:AUTH] Access Token이 비어있습니다. - RequestURI: {}:{}", request.getMethod(), request.getRequestURI());
                 alertNotifier.sendTossAccessTokenAsync(
                     new TossAccessTokenAlert(at, "401", "EMPTY TOKEN")
                 );

@@ -37,7 +37,7 @@ public class DiscordAlarmService {
     @Value("${discord.survey-alert-url:}")
     private String surveyWebhookUrl;
 
-    @Value("${discord.test-toss-auth-url}")
+    @Value("${discord.test-toss-auth-url:}")
     private String tossAuthTestWebhookUrl;
 
     public void sendErrorAlert(Throwable e, String method, String path, String query) {
@@ -87,7 +87,7 @@ public class DiscordAlarmService {
         post(url, title, desc);
     }
 
-    public void sendTossAuthTestAlert(TossAccessTokenAlert a) {
+    public void sendTossAccessTokenAlert(TossAccessTokenAlert a) {
         if (!enabled) return;
 
         String url = (tossAuthTestWebhookUrl != null && !tossAuthTestWebhookUrl.isBlank())
@@ -98,7 +98,7 @@ public class DiscordAlarmService {
         Map<String, Object> value = JwtDecodeUtils.decodePayload(a.accessToken());
 
         String title = "🔔 Toss 비정상 AccessToken 테스트 알림";
-        String desc =
+        String desc = value.get("error") != null ? "Toss IAP AccessToken 이 비어있습니다. \n" :
             "Toss IAP AccessToken 갱신이 비정상적으로 이루어지고 있습니다. \n" +
             " ERROR: `" + safe(a.errorCode()) + "` - `" + safe(a.errorReason()) + "`\n" +
             "  • accessToken: `" + maskKey(safe(a.accessToken())) + "`\n" +

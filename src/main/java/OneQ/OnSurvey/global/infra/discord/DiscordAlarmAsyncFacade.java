@@ -29,6 +29,6 @@ public class DiscordAlarmAsyncFacade {
 
     @Async("discordAlarmExecutor")
     public void sendTossAccessTokenAsync(TossAccessTokenAlert alert) {
-        service.sendTossAuthTestAlert(alert);
+        service.sendTossAccessTokenAlert(alert);
     }
 }
