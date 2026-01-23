@@ -6,6 +6,8 @@ import OneQ.OnSurvey.domain.member.service.MemberQueryService;
 import OneQ.OnSurvey.global.auth.dto.DecryptedLoginMeResponse;
 import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
 import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import OneQ.OnSurvey.global.infra.toss.auth.TossMemberInfoDecryptService;
 import OneQ.OnSurvey.global.infra.toss.auth.TossUnlinkValue;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.*;
@@ -46,6 +48,8 @@ public class TossAuthFacade implements AuthUseCase {
     private final TossMemberInfoDecryptService tossMemberInfoDecryptService;
     private final WithdrawalService withdrawalService;
     private final MemberQueryService memberQueryService;
+
+    private final AlertNotifier alertNotifier;
 
     @Override
     public TossLoginResponse createAccessAndRefreshToken(TossLoginRequest tossLoginRequest, HttpServletResponse response) {
@@ -120,9 +124,16 @@ public class TossAuthFacade implements AuthUseCase {
 
     @Override
     public LoginMeResponse.Success authenticateWithToss(HttpServletRequest request) {
+        String at = resolveBearer(request);
         try {
-            String at = resolveBearer(request);
-            if (at == null || at.isBlank()) throw new CustomException(UNAUTHORIZED);
+            if (at == null || at.isBlank()) {
+                log.warn("[TOSS:AUTH] Access Token이 비어있습니다.");
+                alertNotifier.sendTossAccessTokenAsync(
+                    new TossAccessTokenAlert(at, "401", "EMPTY TOKEN")
+                );
+                throw new CustomException(UNAUTHORIZED);
+            }
+
             SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
             return tossAuthPort.getLoginMe(ctx, at);
         } catch (IOException e) {
