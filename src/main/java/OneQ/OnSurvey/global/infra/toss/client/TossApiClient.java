@@ -2,6 +2,8 @@ package OneQ.OnSurvey.global.infra.toss.client;
 
 import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
 import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginRequest;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossTokenResponse;
@@ -80,6 +82,7 @@ public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPo
     private String getIapOrderStatusUrl;
 
     private final ObjectMapper objectMapper;
+    private final AlertNotifier alertNotifier;
 
     /* ===================== SSL ===================== */
     @Override
@@ -209,7 +212,20 @@ public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPo
         conn.setRequestProperty(HDR_AUTH, "Bearer " + accessToken);
         try {
             JsonNode root = readJson(conn);
-            if (!isSuccess(root)) throw new CustomException(TossErrorCode.TOSS_GET_USER_INFO_ERROR);
+            if (!isSuccess(root)) {
+                JsonNode errorNode = root.path("error");
+                log.warn("[TOSS:CLIENT] 사용자 정보를 조회에 실패했습니다. - errorCode: {}, reason: {}",
+                    errorNode.path("errorCode").asText(), errorNode.path("reason").asText()
+                );
+                alertNotifier.sendTossAccessTokenAsync(
+                    new TossAccessTokenAlert(
+                        accessToken,
+                        errorNode.path("errorCode").asText(),
+                        errorNode.path("reason").asText()
+                    )
+                );
+                throw new CustomException(TossErrorCode.TOSS_GET_USER_INFO_ERROR);
+            }
             JsonNode successRoot = root.path("success");
 
 

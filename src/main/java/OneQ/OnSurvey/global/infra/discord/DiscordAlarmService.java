@@ -1,14 +1,17 @@
 package OneQ.OnSurvey.global.infra.discord;
 
+import OneQ.OnSurvey.global.common.util.JwtDecodeUtils;
 import OneQ.OnSurvey.global.infra.discord.client.DiscordWebhookClient;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -33,6 +36,9 @@ public class DiscordAlarmService {
 
     @Value("${discord.survey-alert-url:}")
     private String surveyWebhookUrl;
+
+    @Value("${discord.test-toss-auth-url:}")
+    private String tossAuthTestWebhookUrl;
 
     public void sendErrorAlert(Throwable e, String method, String path, String query) {
         if (!enabled || errorWebhookUrl == null || errorWebhookUrl.isBlank()) return;
@@ -79,6 +85,33 @@ public class DiscordAlarmService {
                         "• dueCount: `" + a.dueCount() + "`\n";
 
         post(url, title, desc);
+    }
+
+    public void sendTossAccessTokenAlert(TossAccessTokenAlert a) {
+        if (!enabled) return;
+
+        String url = (tossAuthTestWebhookUrl != null && !tossAuthTestWebhookUrl.isBlank())
+                ? tossAuthTestWebhookUrl
+                : errorWebhookUrl;
+        if (url == null || url.isBlank()) return;
+
+        Map<String, Object> value = JwtDecodeUtils.decodePayload(a.accessToken());
+
+        String title = "🔔 Toss 비정상 AccessToken 테스트 알림";
+        String desc = value.get("error") != null ? "Toss IAP AccessToken 이 비어있습니다. \n" :
+            "Toss IAP AccessToken 갱신이 비정상적으로 이루어지고 있습니다. \n" +
+            " ERROR: `" + safe(a.errorCode()) + "` - `" + safe(a.errorReason()) + "`\n" +
+            "  • accessToken: `" + maskKey(safe(a.accessToken())) + "`\n" +
+            "  • String exp: `" + value.get("exp") + "`\n" +
+            "  • String iat: `" + value.get("iat") + "`\n" +
+            "  • String iss: `" + value.get("iss") + "`\n" +
+            "  • String scope: `" + value.get("scope") + "`\n";
+
+        post(url, title, desc);
+    }
+
+    private String maskKey(String key) {
+        return JwtDecodeUtils.maskToken(key);
     }
 
     private void post(String url, String title, String desc) {
