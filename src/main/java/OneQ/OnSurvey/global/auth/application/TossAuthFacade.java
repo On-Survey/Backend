@@ -12,6 +12,7 @@ import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import OneQ.OnSurvey.global.infra.toss.auth.TossMemberInfoDecryptService;
 import OneQ.OnSurvey.global.infra.toss.auth.TossUnlinkValue;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.*;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -52,13 +53,19 @@ public class TossAuthFacade implements AuthUseCase {
 
     private final AlertNotifier alertNotifier;
 
+    private SSLContext sslContext;
+
+    @PostConstruct
+    public void init() throws Exception {
+        this.sslContext = tossAuthPort.createSSLContext(publicCrt, privateKey);
+    }
+
     @Override
     public TossLoginResponse createAccessAndRefreshToken(TossLoginRequest tossLoginRequest, HttpServletResponse response) {
         try {
-            SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
-            TossTokenResponse token = tossAuthPort.getAccessToken(ctx, tossLoginRequest);
+            TossTokenResponse token = tossAuthPort.getAccessToken(sslContext, tossLoginRequest);
 
-            LoginMeResponse.Success me = tossAuthPort.getLoginMe(ctx, token.accessToken());
+            LoginMeResponse.Success me = tossAuthPort.getLoginMe(sslContext, token.accessToken());
             DecryptedLoginMeResponse decrypted = decryptLoginMeOrThrow(me);
             Member member = memberModifyService.upsertMember(decrypted);
             response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token.accessToken());
@@ -99,8 +106,7 @@ public class TossAuthFacade implements AuthUseCase {
         try {
             String at = resolveBearer(request);
             if (at == null) return false;
-            SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
-            return tossAuthPort.removeByAccessToken(ctx, at);
+            return tossAuthPort.removeByAccessToken(sslContext, at);
         } catch (Exception e) {
             log.error("[TossAuthService-logoutByAT] {}", e.getMessage(), e);
             throw new CustomException(TOSS_API_CONNECTION_ERROR);
@@ -110,8 +116,7 @@ public class TossAuthFacade implements AuthUseCase {
     @Override
     public boolean logoutByUserKey(long userKey) {
         try {
-            SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
-            return tossAuthPort.removeByUserKey(ctx, userKey);
+            return tossAuthPort.removeByUserKey(sslContext, userKey);
         } catch (Exception e) {
             log.error("[TossAuthService-logoutByUserKey] {}", e.getMessage(), e);
             throw new CustomException(TOSS_API_CONNECTION_ERROR);
@@ -133,8 +138,7 @@ public class TossAuthFacade implements AuthUseCase {
             if (JwtDecodeUtils.isTokenExpired(at)) {
                 reissueToken(request, response);
             }
-            SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
-            return tossAuthPort.getLoginMe(ctx, at);
+            return tossAuthPort.getLoginMe(sslContext, at);
         } catch (IOException e) {
             throw new CustomException(UNAUTHORIZED);
         } catch (Exception e) {
@@ -191,8 +195,7 @@ public class TossAuthFacade implements AuthUseCase {
 
     private boolean setToken(String rt, HttpServletResponse res) {
         try {
-            SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
-            TossTokenResponse token = tossAuthPort.refreshOauth2Token(ctx, rt);
+            TossTokenResponse token = tossAuthPort.refreshOauth2Token(sslContext, rt);
 
             res.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token.accessToken());
             if (token.refreshToken() != null) {
