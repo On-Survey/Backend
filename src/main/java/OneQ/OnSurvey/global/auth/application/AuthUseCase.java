@@ -13,11 +13,13 @@ public interface AuthUseCase {
 
     boolean reissueToken(TossReissueRequest request, HttpServletResponse response);
 
+    boolean reissueToken(HttpServletRequest request, HttpServletResponse response);
+
     boolean logoutByAccessToken(HttpServletRequest request);
 
     boolean logoutByUserKey(long userKey);
 
-    LoginMeResponse.Success authenticateWithToss(HttpServletRequest request);
+    LoginMeResponse.Success authenticateWithToss(HttpServletRequest request, HttpServletResponse response);
 
     /**
      * 토스 연결 해지

@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.member.service.MemberQueryService;
 import OneQ.OnSurvey.global.auth.dto.DecryptedLoginMeResponse;
 import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
 import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.common.util.JwtDecodeUtils;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import OneQ.OnSurvey.global.infra.toss.auth.TossMemberInfoDecryptService;
@@ -80,22 +81,17 @@ public class TossAuthFacade implements AuthUseCase {
             throw new CustomException(INVALID_REFRESH_TOKEN);
         }
         String rt = stripBearer(presentedRt);
-        try {
-            SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
-            TossTokenResponse token = tossAuthPort.refreshOauth2Token(ctx, rt);
+        return setToken(rt, response);
+    }
 
-            response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token.accessToken());
-            if (token.refreshToken() != null) {
-                response.setHeader("X-Refresh-Token", "Bearer " + token.refreshToken());
-            }
-            return true;
-        } catch (IOException e) {
-            log.error("[TossAuthService-reissue] {}", e.getMessage(), e);
+    @Override
+    public boolean reissueToken(HttpServletRequest request, HttpServletResponse response) {
+        String presentedRt = request.getHeader("X-Refresh-Token");
+        if (presentedRt == null || presentedRt.isBlank()) {
             throw new CustomException(INVALID_REFRESH_TOKEN);
-        } catch (Exception e) {
-            log.error("[TossAuthService-reissue] {}", e.getMessage(), e);
-            throw new CustomException(TOSS_API_CONNECTION_ERROR);
         }
+        String rt = stripBearer(presentedRt);
+        return setToken(rt, response);
     }
 
     @Override
@@ -123,7 +119,7 @@ public class TossAuthFacade implements AuthUseCase {
     }
 
     @Override
-    public LoginMeResponse.Success authenticateWithToss(HttpServletRequest request) {
+    public LoginMeResponse.Success authenticateWithToss(HttpServletRequest request, HttpServletResponse response) {
         String at = resolveBearer(request);
         try {
             if (at == null || at.isBlank()) {
@@ -134,6 +130,9 @@ public class TossAuthFacade implements AuthUseCase {
                 throw new CustomException(UNAUTHORIZED);
             }
 
+            if (JwtDecodeUtils.isTokenExpired(at)) {
+                reissueToken(request, response);
+            }
             SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
             return tossAuthPort.getLoginMe(ctx, at);
         } catch (IOException e) {
@@ -187,6 +186,26 @@ public class TossAuthFacade implements AuthUseCase {
         } catch (Exception e) {
             log.error("[TossAuthService] 유저 정보 복호화 실패", e);
             throw new CustomException(TOSS_DECRYPT_ERROR);
+        }
+    }
+
+    private boolean setToken(String rt, HttpServletResponse res) {
+        try {
+            SSLContext ctx = tossAuthPort.createSSLContext(publicCrt, privateKey);
+            TossTokenResponse token = tossAuthPort.refreshOauth2Token(ctx, rt);
+
+            res.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token.accessToken());
+            if (token.refreshToken() != null) {
+                res.setHeader("X-Refresh-Token", "Bearer " + token.refreshToken());
+            }
+
+            return true;
+        } catch (IOException e) {
+            log.error("[TossAuthService-reissue] {}", e.getMessage(), e);
+            throw new CustomException(INVALID_REFRESH_TOKEN);
+        } catch (Exception e) {
+            log.error("[TossAuthService-reissue] {}", e.getMessage(), e);
+            throw new CustomException(TOSS_API_CONNECTION_ERROR);
         }
     }
 }

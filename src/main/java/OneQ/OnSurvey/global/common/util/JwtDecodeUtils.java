@@ -43,4 +43,14 @@ public class JwtDecodeUtils {
 
         return prefix + "****" + suffix;
     }
+
+    public static boolean isTokenExpired(String accessToken) {
+        Map<String, Object> payload = decodePayload(accessToken);
+        if (payload.containsKey("exp")) {
+            long exp = (long) payload.get("exp");
+            long currentTime = System.currentTimeMillis();
+            return (exp - currentTime) <= 0;
+        }
+        return false;
+    }
 }
