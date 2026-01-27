@@ -103,7 +103,6 @@ public class DiscordAlarmService {
             " ERROR: `" + safe(a.errorCode()) + "` - `" + safe(a.errorReason()) + "`\n" +
             "  • accessToken: `" + maskKey(safe(a.accessToken())) + "`\n" +
             "  • String exp: `" + value.get("exp") + "`\n" +
-            "  • String iat: `" + value.get("iat") + "`\n" +
             "  • String iss: `" + value.get("iss") + "`\n" +
             "  • String scope: `" + value.get("scope") + "`\n";
 
