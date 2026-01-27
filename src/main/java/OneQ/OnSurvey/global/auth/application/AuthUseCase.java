@@ -13,7 +13,7 @@ public interface AuthUseCase {
 
     boolean reissueToken(TossReissueRequest request, HttpServletResponse response);
 
-    boolean reissueToken(HttpServletRequest request, HttpServletResponse response);
+    String reissueTokenAndRetrieveAccessToken(HttpServletRequest request, HttpServletResponse response);
 
     boolean logoutByAccessToken(HttpServletRequest request);
 

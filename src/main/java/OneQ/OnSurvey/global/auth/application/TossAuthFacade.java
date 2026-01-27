@@ -88,11 +88,13 @@ public class TossAuthFacade implements AuthUseCase {
             throw new CustomException(INVALID_REFRESH_TOKEN);
         }
         String rt = stripBearer(presentedRt);
-        return setToken(rt, response);
+        setToken(rt, response);
+
+        return true;
     }
 
     @Override
-    public boolean reissueToken(HttpServletRequest request, HttpServletResponse response) {
+    public String reissueTokenAndRetrieveAccessToken(HttpServletRequest request, HttpServletResponse response) {
         String presentedRt = request.getHeader("X-Refresh-Token");
         if (presentedRt == null || presentedRt.isBlank()) {
             throw new CustomException(INVALID_REFRESH_TOKEN);
@@ -136,7 +138,7 @@ public class TossAuthFacade implements AuthUseCase {
             }
 
             if (JwtDecodeUtils.isTokenExpired(at)) {
-                reissueToken(request, response);
+                at = reissueTokenAndRetrieveAccessToken(request, response);
             }
             return tossAuthPort.getLoginMe(sslContext, at);
         } catch (IOException e) {
@@ -193,7 +195,7 @@ public class TossAuthFacade implements AuthUseCase {
         }
     }
 
-    private boolean setToken(String rt, HttpServletResponse res) {
+    private String setToken(String rt, HttpServletResponse res) {
         try {
             TossTokenResponse token = tossAuthPort.refreshOauth2Token(sslContext, rt);
 
@@ -202,7 +204,7 @@ public class TossAuthFacade implements AuthUseCase {
                 res.setHeader("X-Refresh-Token", "Bearer " + token.refreshToken());
             }
 
-            return true;
+            return token.accessToken();
         } catch (IOException e) {
             log.error("[TossAuthService-reissue] {}", e.getMessage(), e);
             throw new CustomException(INVALID_REFRESH_TOKEN);
