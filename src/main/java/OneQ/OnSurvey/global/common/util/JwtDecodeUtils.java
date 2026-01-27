@@ -47,9 +47,14 @@ public class JwtDecodeUtils {
     public static boolean isTokenExpired(String accessToken) {
         Map<String, Object> payload = decodePayload(accessToken);
         if (payload.containsKey("exp")) {
-            long exp = ((Number) payload.get("exp")).longValue();
-            long currentTime = System.currentTimeMillis() / 1000;
-            return (exp - currentTime) <= 0;
+            try {
+                long exp = ((Number) payload.get("exp")).longValue();
+                long currentTime = System.currentTimeMillis() / 1000;
+                return (exp - currentTime) <= 0;
+            } catch (ClassCastException | NullPointerException e) {
+                log.warn("[JWT:DECODE] 토큰 만료 정보를 확인할 수 없습니다. - {}", e.getMessage(), e);
+                return false;
+            }
         }
         return false;
     }
