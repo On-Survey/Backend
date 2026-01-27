@@ -47,8 +47,8 @@ public class JwtDecodeUtils {
     public static boolean isTokenExpired(String accessToken) {
         Map<String, Object> payload = decodePayload(accessToken);
         if (payload.containsKey("exp")) {
-            long exp = (long) payload.get("exp");
-            long currentTime = System.currentTimeMillis();
+            long exp = ((Number) payload.get("exp")).longValue();
+            long currentTime = System.currentTimeMillis() / 1000;
             return (exp - currentTime) <= 0;
         }
         return false;

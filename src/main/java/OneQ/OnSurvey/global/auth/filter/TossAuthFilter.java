@@ -56,7 +56,7 @@ public class TossAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws IOException, ServletException {
         try {
-            LoginMeResponse.Success me = authUseCase.authenticateWithToss(req);
+            LoginMeResponse.Success me = authUseCase.authenticateWithToss(req, res);
 
             Member member = memberRepository.findMemberByUserKey(me.userKey())
                     .orElseThrow(() -> new BadCredentialsException("member not found"));
