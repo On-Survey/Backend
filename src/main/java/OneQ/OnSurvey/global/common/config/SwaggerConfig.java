@@ -32,8 +32,8 @@ public class SwaggerConfig {
     }
 
     private Components components() {
-        String securityScheme = "JWT TOKEN";
-        String basicScheme = "BASIC AUTH";
+        String securityScheme = "jwtToken";
+        String basicScheme = "basicAuth";
         return new Components()
                 .addSecuritySchemes(securityScheme, new SecurityScheme()
                         .name(securityScheme)
@@ -50,7 +50,7 @@ public class SwaggerConfig {
     }
 
     private SecurityRequirement securityRequirement() {
-        String securityScheme = "JWT TOKEN";
+        String securityScheme = "jwtToken";
         return new SecurityRequirement().addList(securityScheme);
     }
 }
