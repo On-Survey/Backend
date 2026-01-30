@@ -2,7 +2,6 @@ package OneQ.OnSurvey.domain.survey.controller;
 
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormListResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestResponse;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormCreator;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormFinder;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormUpdater;
@@ -29,22 +28,14 @@ public class FormRequestController {
         return SuccessResponse.ok(requestId);
     }
 
-    @GetMapping("/{requestId}")
-    @Operation(summary = "폼 신청 조회", description = "특정 폼 신청 정보를 조회합니다.")
-    public SuccessResponse<FormRequestResponse> getGoogleFormRequest(
-            @PathVariable Long requestId
-    ) {
-        return SuccessResponse.ok(formFinder.getGoogleFormRequest(requestId));
-    }
-
     @GetMapping("/unregistered")
     @Operation(summary = "미등록 구글 폼 목록 조회", description = "아직 등록되지 않은 폼 신청 목록을 조회합니다.")
     public SuccessResponse<FormListResponse> getUnregisteredRequests() {
         return SuccessResponse.ok(formFinder.getAllUnregisteredRequests());
     }
 
-    @PatchMapping("/{requestId}/register")
-    @Operation(summary = "폼 등록 완료 처리", description = "폼이 등록됐습니다.")
+    @PostMapping("/{requestId}/register")
+    @Operation(summary = "폼 등록 완료 처리", description = "요청한 폼을 등록합니다.")
     public SuccessResponse<String> markAsRegistered(
             @PathVariable Long requestId,
             @RequestParam Long surveyId
