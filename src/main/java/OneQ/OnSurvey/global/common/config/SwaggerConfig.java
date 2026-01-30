@@ -16,37 +16,36 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-                .servers(List.of(
-                        new Server().url("https://api.onsurvey.co.kr").description("Prod Server"),
-                        new Server().url("http://localhost:8080").description("Local Server")
-                ))
-                .components(components())
-                .info(apiInfo())
-                .addSecurityItem(securityRequirement());
+            .servers(List.of(
+                new Server().url("https://api.onsurvey.co.kr").description("Prod Server"),
+                new Server().url("http://localhost:8080").description("Local Server")
+            ))
+            .components(components())
+            .info(apiInfo())
+            .addSecurityItem(securityRequirement());
     }
 
     private Info apiInfo() {
         return new Info()
-                .title("OnSurvey API Docs")
-                .description("OnSurvey Spring boot Api Document 입니다.");
+            .title("OnSurvey API Docs")
+            .description("OnSurvey Spring boot Api Document 입니다.");
     }
 
     private Components components() {
         String securityScheme = "jwtToken";
         String basicScheme = "basicAuth";
         return new Components()
-                .addSecuritySchemes(securityScheme, new SecurityScheme()
-                        .name(securityScheme)
-                        .type(SecurityScheme.Type.HTTP)
-                        .scheme("Bearer")
-                        .bearerFormat("JWT")
-                )
-                .addSecuritySchemes(basicScheme,
-                        new SecurityScheme()
-                                .name(basicScheme)
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("basic")
-                );
+            .addSecuritySchemes(securityScheme,
+                new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT")
+            )
+            .addSecuritySchemes(basicScheme,
+                new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("basic")
+            );
     }
 
     private SecurityRequirement securityRequirement() {
