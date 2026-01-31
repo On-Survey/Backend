@@ -52,7 +52,7 @@ public class DefaultQuestionDto {
             .description(question.getDescription())
             .isRequired(question.getIsRequired())
             .questionOrder(question.getOrder())
-            .section(question.getSection())
+            .section(question.getSection() != null ? question.getSection() : 1)
             .build();
     }
 
