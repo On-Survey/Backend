@@ -96,4 +96,9 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
     public Screening save(Screening screening) {
         return screeningJpaRepository.save(screening);
     }
+
+    @Override
+    public void delete(Screening screening) {
+        screeningJpaRepository.delete(screening);
+    }
 }
