@@ -21,6 +21,7 @@ public class ShortAnswer extends Question {
         String title,
         String description,
         Boolean isRequired,
+        Integer section,
         QuestionType type
     ) {
         return ShortAnswer.builder()
@@ -29,6 +30,7 @@ public class ShortAnswer extends Question {
             .title(title)
             .description(description)
             .isRequired(isRequired)
+            .section(section)
             .type(type.name())
             .build();
     }
@@ -37,8 +39,9 @@ public class ShortAnswer extends Question {
         String title,
         String description,
         Boolean isRequired,
-        Integer order
+        Integer order,
+        Integer section
     ) {
-        super.updateQuestion(title, description, isRequired, order);
+        super.updateQuestion(title, description, isRequired, order, section);
     }
 }

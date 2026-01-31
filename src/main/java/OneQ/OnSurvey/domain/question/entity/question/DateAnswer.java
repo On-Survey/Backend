@@ -29,6 +29,7 @@ public class DateAnswer extends Question {
         String title,
         String description,
         Boolean isRequired,
+        Integer section,
         LocalDateTime defaultDate,
         QuestionType type
     ) {
@@ -38,6 +39,7 @@ public class DateAnswer extends Question {
             .title(title)
             .description(description)
             .isRequired(isRequired)
+            .section(section)
             .defaultDate(defaultDate)
             .type(type.name())
             .build();
@@ -48,9 +50,10 @@ public class DateAnswer extends Question {
         String description,
         Boolean isRequired,
         Integer order,
+        Integer section,
         LocalDateTime defaultDate
     ) {
-        super.updateQuestion(title, description, isRequired, order);
+        super.updateQuestion(title, description, isRequired, order, section);
         this.defaultDate = defaultDate;
     }
 }

@@ -25,6 +25,11 @@ public abstract class Question extends BaseEntity {
     @Column(name = "QUESTION_ORDER")
     protected Integer order;
 
+    @Column(name = "SECTION")
+    @ColumnDefault("1")
+    @Builder.Default
+    protected Integer section = 1;
+
     @Column(name = "type", insertable = false, updatable = false)
     protected String type;
 
@@ -43,12 +48,14 @@ public abstract class Question extends BaseEntity {
         String title,
         String description,
         Boolean isRequired,
-        Integer order
+        Integer order,
+        Integer section
     ) {
         this.title = title;
         this.description = description;
         this.isRequired = isRequired;
         this.order = order;
+        this.section = section;
     }
 
     public void updateOrder(Integer order) {

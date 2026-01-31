@@ -32,15 +32,22 @@ public class Choice extends Question {
     @Builder.Default
     private Boolean hasCustomInput = false;
 
+    @Column(name = "IS_SECTION_DECIDABLE")
+    @ColumnDefault("FALSE")
+    @Builder.Default
+    private Boolean isSectionDecidable = false;
+
     public static Choice of(
         Long surveyId,
         Integer order,
         String title,
         String description,
         Boolean isRequired,
+        Integer section,
         Integer maxChoice,
         Boolean hasNoneOption,
         Boolean hasCustomInput,
+        Boolean isSectionDecidable,
         QuestionType type
     ) {
         return Choice.builder()
@@ -49,9 +56,11 @@ public class Choice extends Question {
             .title(title)
             .description(description)
             .isRequired(isRequired)
+            .section(section)
             .maxChoice(maxChoice)
             .hasNoneOption(hasNoneOption)
             .hasCustomInput(hasCustomInput)
+            .isSectionDecidable(isSectionDecidable)
             .type(type.name())
             .build();
     }
@@ -61,13 +70,16 @@ public class Choice extends Question {
         String description,
         Boolean isRequired,
         Integer order,
+        Integer section,
         Integer maxChoice,
         Boolean hasNoneOption,
-        Boolean hasCustomInput
+        Boolean hasCustomInput,
+        Boolean isSectionDecidable
     ) {
-        super.updateQuestion(title, description, isRequired, order);
+        super.updateQuestion(title, description, isRequired, order, section);
         this.maxChoice = maxChoice;
         this.hasNoneOption = hasNoneOption;
         this.hasCustomInput = hasCustomInput;
+        this.isSectionDecidable = isSectionDecidable;
     }
 }
