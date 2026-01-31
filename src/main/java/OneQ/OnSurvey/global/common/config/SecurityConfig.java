@@ -1,9 +1,9 @@
 package OneQ.OnSurvey.global.common.config;
 
-import OneQ.OnSurvey.domain.member.repository.MemberRepository;
-import OneQ.OnSurvey.global.auth.application.AuthUseCase;
+import OneQ.OnSurvey.global.auth.application.strategy.AuthStrategy;
+import OneQ.OnSurvey.global.auth.filter.AuthFilter;
+import OneQ.OnSurvey.global.auth.filter.BOSessionFilter;
 import OneQ.OnSurvey.global.auth.filter.ExactBasicHeaderFilter;
-import OneQ.OnSurvey.global.auth.filter.TossAuthFilter;
 import OneQ.OnSurvey.global.common.handler.CustomAccessDeniedHandler;
 import OneQ.OnSurvey.global.common.handler.JWTAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +16,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -30,10 +32,10 @@ public class SecurityConfig {
     @Value("${toss.basic.header}")
     private String expectedHeader;
 
+    private final AuthStrategy authStrategy;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
     private final JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final MemberRepository memberRepository;
-    private final AuthUseCase authUseCase;
 
     private final String[] allowedUrls = {
             "/",
@@ -51,25 +53,40 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public TossAuthFilter tossAuthFilter() {
-        return new TossAuthFilter(authUseCase, memberRepository, jwtAuthenticationEntryPoint);
-    }
-
-    @Bean @Order(2)
-    public SecurityFilterChain filterChain(HttpSecurity http, TossAuthFilter tossAuthFilter) throws Exception {
+    @Bean @Order(3)
+    public SecurityFilterChain filterChain(HttpSecurity http, BOSessionFilter boFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(allowedUrls).permitAll()
-                        .anyRequest().hasRole("MEMBER")
+                        .anyRequest().hasAnyRole("MEMBER", "ADMIN")
                 )
-                .addFilterBefore(tossAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new AuthFilter(authStrategy, authenticationEntryPoint), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(boFilter, AuthFilter.class)
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler));
+        return http.build();
+    }
+
+    @Bean @Order(2)
+    public SecurityFilterChain boFilterChain(HttpSecurity http, BOSessionFilter boFilter) throws Exception {
+        http
+            .securityMatcher("/v1/bo/**", "bo/**")
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/v1/bo", "/v1/bo/admin/login").permitAll()
+                .anyRequest().hasRole("ADMIN")
+            )
+            .headers(headers -> headers.frameOptions(
+                HeadersConfigurer.FrameOptionsConfig::sameOrigin
+            ))
+            .addFilterBefore(boFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
