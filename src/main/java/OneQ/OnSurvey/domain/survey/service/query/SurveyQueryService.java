@@ -258,7 +258,10 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
         }
 
-        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyIdAndSection(surveyId, section);
+
+        List<DefaultQuestionDto> questionDtoList = section != null
+            ? questionQueryService.getQuestionDtoListBySurveyIdAndSection(surveyId, section)
+            : questionQueryService.getQuestionDtoListBySurveyId(surveyId);
 
         return ParticipationQuestionResponse.of(questionDtoList);
     }

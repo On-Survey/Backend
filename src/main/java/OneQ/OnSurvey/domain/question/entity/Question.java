@@ -55,7 +55,7 @@ public abstract class Question extends BaseEntity {
         this.description = description;
         this.isRequired = isRequired;
         this.order = order;
-        this.section = section;
+        this.section = (section != null) ? section : this.section;
     }
 
     public void updateOrder(Integer order) {

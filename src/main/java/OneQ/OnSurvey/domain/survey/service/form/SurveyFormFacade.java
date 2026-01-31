@@ -149,12 +149,13 @@ public class SurveyFormFacade implements SurveyFormUseCase {
         return QuestionUpsertDto.builder()
                 .surveyId(surveyId)
                 .upsertInfoList(
-                        List.of(QuestionUpsertDto.UpsertInfo.builder()
-                                .questionType(type)
-                                .title(questionDto.getTitle())
-                                .description(questionDto.getDescription())
-                                .questionOrder(questionDto.getQuestionOrder())
-                                .build())
+                    List.of(QuestionUpsertDto.UpsertInfo.builder()
+                        .questionType(type)
+                        .title(questionDto.getTitle())
+                        .description(questionDto.getDescription())
+                        .questionOrder(questionDto.getQuestionOrder())
+                        .section(questionDto.getSection() != null ? questionDto.getSection() : 1)
+                        .build())
                 )
                 .build();
     }

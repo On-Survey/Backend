@@ -78,8 +78,8 @@ public class Choice extends Question {
     ) {
         super.updateQuestion(title, description, isRequired, order, section);
         this.maxChoice = maxChoice;
-        this.hasNoneOption = hasNoneOption;
-        this.hasCustomInput = hasCustomInput;
-        this.isSectionDecidable = isSectionDecidable;
+        this.hasNoneOption = (hasNoneOption != null) ? hasNoneOption : this.hasNoneOption;
+        this.hasCustomInput = (hasCustomInput != null) ? hasCustomInput : this.hasCustomInput;
+        this.isSectionDecidable = (isSectionDecidable != null) ? isSectionDecidable : this.isSectionDecidable;
     }
 }

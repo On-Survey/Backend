@@ -40,14 +40,14 @@ public class QuestionConverter {
             .isRequired(dto.getIsRequired())
             .questionOrder(dto.getQuestionOrder())
             .questionType(QuestionType.valueOf(dto.getQuestionType()))
-            .section(dto.getSection());
+            .section(dto.getSection() != null ? dto.getSection() : 1); // section이 null인 경우 기본값 1 설정
 
         // 2. 타입별 특정 필드 매핑
         switch (dto) {
             case ChoiceDto choiceDto -> builder.maxChoice(choiceDto.getMaxChoice())
-                .hasNoneOption(choiceDto.getHasNoneOption())
-                .hasCustomInput(choiceDto.getHasCustomInput())
-                .isSectionDecidable(choiceDto.getIsSectionDecidable())
+                .hasNoneOption(choiceDto.getHasNoneOption() != null ? choiceDto.getHasNoneOption() : false)
+                .hasCustomInput(choiceDto.getHasCustomInput() != null ? choiceDto.getHasCustomInput() : false)
+                .isSectionDecidable(choiceDto.getIsSectionDecidable() != null ? choiceDto.getIsSectionDecidable() : false)
                 .options(choiceDto.getOptions().stream().map(option ->
                     OptionDto.builder()
                         .optionId(option.getOptionId())
