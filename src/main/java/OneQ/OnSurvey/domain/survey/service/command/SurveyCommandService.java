@@ -24,6 +24,7 @@ import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.domain.survey.service.refund.SurveyRefundPolicy;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import OneQ.OnSurvey.global.common.util.AuthorizationUtils;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
@@ -90,7 +91,7 @@ public class SurveyCommandService implements SurveyCommand {
                         throw new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND);
                     });
 
-            if (!survey.getMemberId().equals(memberId)) {
+            if (AuthorizationUtils.validateOwnershipOrAdmin(survey.getMemberId(), memberId)) {
                 log.warn("[SURVEY:COMMAND:upsertSurvey] 설문 수정 권한 없음 - surveyId={}, memberId={}", surveyId, memberId);
                 throw new CustomException(SurveyErrorCode.SURVEY_FORBIDDEN);
             }
