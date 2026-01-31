@@ -16,4 +16,5 @@ public interface ScreeningRepository {
     Long getSurveyId(Long screeningId);
 
     Screening save(Screening screening);
+    void delete(Screening screening);
 }
