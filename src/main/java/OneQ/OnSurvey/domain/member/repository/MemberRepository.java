@@ -12,4 +12,5 @@ public interface MemberRepository {
 
     Member findMemberInterestsById(Long memberId);
     MemberSegmentation findMemberSegmentByUserKey(Long userKey);
+    Long validateAdminRoleAndGetMemberIdByUserKey(Long userKey);
 }
