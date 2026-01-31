@@ -316,7 +316,7 @@ public class QuestionCommandService implements QuestionCommand {
                 OptionDto optionInfo = updateInfoMap.get(id);
                 option.updateOption(
                     optionInfo.getContent(),
-                    optionInfo.getNextQuestionId()
+                    optionInfo.getNextSection()
                 );
             });
 
@@ -325,7 +325,7 @@ public class QuestionCommandService implements QuestionCommand {
                 .map(upsertInfo -> ChoiceOption.of(
                     questionId,
                     upsertInfo.getContent(),
-                    upsertInfo.getNextQuestionId()
+                    upsertInfo.getNextSection()
                 )).toList();
 
             finalList.addAll(updateList);

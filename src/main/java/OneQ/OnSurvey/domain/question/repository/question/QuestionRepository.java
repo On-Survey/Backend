@@ -8,6 +8,7 @@ import java.util.Set;
 
 public interface QuestionRepository {
     List<Question> getQuestionListBySurveyId(Long surveyId);
+    List<Question> getQuestionListBySurveyIdAndSection(Long surveyId, Integer section);
     Question save(Question question);
     List<Question> saveAll(Collection<Question> questions);
 

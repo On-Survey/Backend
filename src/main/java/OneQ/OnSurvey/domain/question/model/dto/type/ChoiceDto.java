@@ -16,12 +16,16 @@ public class ChoiceDto extends DefaultQuestionDto {
     private Integer maxChoice;
     private Boolean hasNoneOption;
     private Boolean hasCustomInput;
+    private Boolean isSectionDecidable;
 
     private List<OptionDto> options;
 
     public static ChoiceDto fromEntity(Choice choice) {
         return ChoiceDto.builder()
             .maxChoice(choice.getMaxChoice())
+            .hasNoneOption(choice.getHasNoneOption())
+            .hasCustomInput(choice.getHasCustomInput())
+            .isSectionDecidable(choice.getIsSectionDecidable())
             .questionId(choice.getQuestionId())
             .surveyId(choice.getSurveyId())
             .questionType(choice.getType())
@@ -29,6 +33,7 @@ public class ChoiceDto extends DefaultQuestionDto {
             .description(choice.getDescription())
             .isRequired(choice.getIsRequired())
             .questionOrder(choice.getOrder())
+            .section(choice.getSection())
             .build();
     }
 

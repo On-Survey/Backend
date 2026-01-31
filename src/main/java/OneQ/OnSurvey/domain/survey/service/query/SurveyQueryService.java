@@ -237,7 +237,7 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey) {
+    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Integer section, Long userKey) {
         log.info("[SURVEY:QUERY] 설문 문항정보 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
 
         cleanupExpiredPotentials(surveyId);
@@ -258,7 +258,7 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
         }
 
-        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyId(surveyId);
+        List<DefaultQuestionDto> questionDtoList = questionQueryService.getQuestionDtoListBySurveyIdAndSection(surveyId, section);
 
         return ParticipationQuestionResponse.of(questionDtoList);
     }

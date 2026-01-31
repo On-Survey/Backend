@@ -9,6 +9,7 @@ public record CreateQuestionResponse (
     Long surveyId,
     Long questionId,
     Integer questionOrder,
+    Integer section,
     String title,
     QuestionType type
 ) {
@@ -20,6 +21,7 @@ public record CreateQuestionResponse (
             .surveyId(dto.getSurveyId())
             .questionId(info.getQuestionId())
             .questionOrder(info.getQuestionOrder())
+            .section(info.getSection())
             .title(info.getTitle())
             .type(info.getQuestionType())
             .build();

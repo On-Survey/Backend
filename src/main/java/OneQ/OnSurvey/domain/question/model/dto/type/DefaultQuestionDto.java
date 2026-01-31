@@ -41,6 +41,7 @@ public class DefaultQuestionDto {
     private String description;
     private Boolean isRequired;
     private Integer questionOrder;
+    private Integer section;
 
     public static DefaultQuestionDto fromEntity(Question question) {
         return DefaultQuestionDto.builder()
@@ -51,6 +52,7 @@ public class DefaultQuestionDto {
             .description(question.getDescription())
             .isRequired(question.getIsRequired())
             .questionOrder(question.getOrder())
+            .section(question.getSection())
             .build();
     }
 

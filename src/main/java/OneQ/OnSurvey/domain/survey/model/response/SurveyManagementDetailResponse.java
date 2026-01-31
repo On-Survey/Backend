@@ -32,6 +32,7 @@ public class SurveyManagementDetailResponse {
         private final String title;
         private final String description;
         private final Boolean isRequired;
+        private final Integer section;
 
         @Setter
         @Schema(

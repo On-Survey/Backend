@@ -35,16 +35,27 @@ public class QuestionQueryService implements QuestionQuery {
 
     @Override
     public List<DefaultQuestionDto> getQuestionDtoListBySurveyId(Long surveyId) {
-        log.info("[QUESTION:QUERY:getQuestionDtoListBySurveyId] 조회할 설문 ID: {}", surveyId);
-
         List<Question> questionList = questionRepository.getQuestionListBySurveyId(surveyId);
         log.info("[QUESTION:QUERY:getQuestionDtoListBySurveyId] 조회할 설문 문항 IDs: {}", questionList.stream().map(Question::getQuestionId).toList());
+
+        return fillChoiceOptions(questionList);
+    }
+
+    @Override
+    public List<DefaultQuestionDto> getQuestionDtoListBySurveyIdAndSection(Long surveyId, Integer section) {
+        List<Question> questionList = questionRepository.getQuestionListBySurveyIdAndSection(surveyId, section);
+        log.info("[QUESTION:QUERY:getQuestionDtoListBySurveyIdAndSection] 조회할 설문 문항 IDs: {}", questionList.stream().map(Question::getQuestionId).toList());
+
+        return fillChoiceOptions(questionList);
+    }
+
+    private List<DefaultQuestionDto> fillChoiceOptions(List<Question> questionList) {
 
         Set<Long> choiceIdSet = questionList.stream()
             .filter(Question::isChoice)
             .map(Question::getQuestionId)
             .collect(Collectors.toSet());
-        log.info("[QUESTION:QUERY:getQuestionDtoListBySurveyId] 선택형 설문 문항 IDs: {}", choiceIdSet);
+        log.info("[QUESTION:QUERY:fillChoiceOptions] 선택형 설문 문항 IDs: {}", choiceIdSet);
 
         List<ChoiceOption> totalOptionList = choiceIdSet.isEmpty() ?
             List.of() : choiceOptionRepository.getOptionsByQuestionIds(choiceIdSet);

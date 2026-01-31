@@ -22,7 +22,7 @@ public interface SurveyQuery {
     );
     ParticipationScreeningSingleResponse getScreeningSingleResponse(Long screeningId);
     ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey, Long memberId);
-    ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Long userKey);
+    ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Integer section, Long userKey);
 
     MySurveyListResponse getMySurveys(Long memberId);
     SurveyDetailResponse getMySurveyDetail(Long memberId, Long surveyId);

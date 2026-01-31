@@ -42,12 +42,9 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
         Long memberId = insertDto.getAnswerInfoList().getFirst().getMemberId();
         log.info("[QUESTION_ANSWER:COMMAND] 문항 응답 생성 - memberId: {}", memberId);
 
-        Map<Long, QuestionAnswer> newQuestionAnswerMap = insertDto.getAnswerInfoList().stream()
+        Map<Long, List<QuestionAnswer>> newQuestionAnswerMap = insertDto.getAnswerInfoList().stream()
             .map(this::createAnswerFromDto)
-            .collect(Collectors.toMap(
-                QuestionAnswer::getQuestionId, Function.identity(),
-                (existing, replacement) -> existing
-            ));
+            .collect(Collectors.groupingBy(QuestionAnswer::getQuestionId));
         List<Long> questionIdList = insertDto.getAnswerInfoList().stream().map(AnswerInsertDto.AnswerInfo::getId).toList();
 
         Map<Long, QuestionAnswer> existingQuestionAnswerMap =
@@ -59,22 +56,23 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
                 ));
 
         List<QuestionAnswer> upsertQuestionList = questionIdList.stream()
-            .map(questionId -> {
-                QuestionAnswer newAnswer = newQuestionAnswerMap.get(questionId);
-                if (existingQuestionAnswerMap.get(questionId) != null) {
-                    QuestionAnswer existing = existingQuestionAnswerMap.get(questionId);
+            .flatMap(questionId -> {
+                List<QuestionAnswer> newAnswerList = newQuestionAnswerMap.get(questionId);
+                return newAnswerList.stream().map(newAnswer -> {
+                    if (existingQuestionAnswerMap.get(questionId) != null) {
+                        QuestionAnswer existing = existingQuestionAnswerMap.get(questionId);
 
-                    if (!Objects.equals(newAnswer.getContent(), existing.getContent())) {
-                        existing.updateContent(newAnswer.getContent());
-                        return existing;
+                        if (!Objects.equals(newAnswer.getContent(), existing.getContent())) {
+                            existing.updateContent(newAnswer.getContent());
+                            return existing;
+                        } else {
+                            return null;
+                        }
                     } else {
-                        return null;
+                        return newAnswer;
                     }
-                } else {
-                    return newAnswer;
-                }
+                });
             })
-            .filter(Objects::nonNull)
             .toList();
 
         answerRepository.saveAll(upsertQuestionList);
