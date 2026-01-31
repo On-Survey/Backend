@@ -239,7 +239,7 @@ public class ParticipationController {
 
         AnswerInsertDto answerInsertDto = request.toDto(principal.getMemberId());
 
-        return SuccessResponse.ok(questionAnswerCommand.insertAnswers(answerInsertDto));
+        return SuccessResponse.ok(questionAnswerCommand.upsertAnswers(answerInsertDto));
     }
 
     @PostMapping("surveys/{surveyId}/complete")

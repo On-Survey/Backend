@@ -9,6 +9,7 @@ import java.util.List;
 public interface AnswerRepository<E> {
     E save(E answer);
     List<E> saveAll(Collection<E> answers);
+    void deleteAllByIds(Collection<Long> answers);
 
     default List<E> getAnswerListByQuestionIdsAndMemberId(Collection<Long> questionIds, Long memberId) {
         return List.of();

@@ -10,10 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -38,48 +38,65 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
     }
 
     @Override
-    public Boolean insertAnswers(AnswerInsertDto insertDto) {
-        Long memberId = insertDto.getAnswerInfoList().getFirst().getMemberId();
+    public Boolean upsertAnswers(AnswerInsertDto insertDto) {
+        AnswerInsertDto.AnswerInfo first = insertDto.getAnswerInfoList().getFirst();
+        Long memberId = first.getMemberId();
         log.info("[QUESTION_ANSWER:COMMAND] 문항 응답 생성 - memberId: {}", memberId);
 
-        Map<Long, List<QuestionAnswer>> newQuestionAnswerMap = insertDto.getAnswerInfoList().stream()
+        // 새로운 응답을 questionId 기준으로 그룹화
+        Map<Long, Set<QuestionAnswer>> newQuestionAnswerMap = insertDto.getAnswerInfoList().stream()
             .map(this::createAnswerFromDto)
-            .collect(Collectors.groupingBy(QuestionAnswer::getQuestionId));
-        List<Long> questionIdList = insertDto.getAnswerInfoList().stream().map(AnswerInsertDto.AnswerInfo::getId).toList();
+            .collect(Collectors.groupingBy(QuestionAnswer::getQuestionId, Collectors.toSet()));
 
-        Map<Long, QuestionAnswer> existingQuestionAnswerMap =
+        // 새로운 응답의 questionId로부터 기존 응답 조회 및 그룹화
+        List<Long> questionIdList = newQuestionAnswerMap.keySet().stream().toList();
+        Map<Long, Set<QuestionAnswer>> existingQuestionAnswerMap =
             answerRepository.getAnswerListByQuestionIdsAndMemberId(questionIdList, memberId)
                 .stream()
-                .collect(Collectors.toMap(
-                    QuestionAnswer::getQuestionId, Function.identity(),
-                    (existing, replacement) -> existing
-                ));
+                .collect(Collectors.groupingBy(QuestionAnswer::getQuestionId, Collectors.toSet()));
 
-        List<QuestionAnswer> upsertQuestionList = questionIdList.stream()
-            .flatMap(questionId -> {
-                List<QuestionAnswer> newAnswerList = newQuestionAnswerMap.get(questionId);
-                return newAnswerList.stream().map(newAnswer -> {
-                    if (existingQuestionAnswerMap.get(questionId) != null) {
-                        QuestionAnswer existing = existingQuestionAnswerMap.get(questionId);
+        // 새로 저장할 응답 리스트
+        List<QuestionAnswer> finalAnswersToSave = new ArrayList<>();
+        // 삭제할 기존 응답 ID 리스트 (초기값: 기존 응답 전체)
+        List<Long> finalAnswerIdsToDelete = new ArrayList<>(
+            existingQuestionAnswerMap.values().stream()
+                .flatMap(a -> a.stream().map(QuestionAnswer::getAnswerId))
+                .toList()
+        );
 
-                        if (!Objects.equals(newAnswer.getContent(), existing.getContent())) {
-                            existing.updateContent(newAnswer.getContent());
-                            return existing;
-                        } else {
-                            return null;
-                        }
-                    } else {
-                        return newAnswer;
-                    }
-                });
-            })
-            .toList();
+        questionIdList.parallelStream().forEach(questionId -> {
+            // questionId에 대한 새로운 응답과 기존 응답의 content 집합 생성
+            Set<QuestionAnswer> newAnswerContentSet = newQuestionAnswerMap.getOrDefault(questionId, Set.of());
+            Set<String> newContents = newAnswerContentSet.stream()
+                .map(QuestionAnswer::getContent)
+                .map(content -> content == null ? null : content.strip())
+                .collect(Collectors.toSet());
+            Set<QuestionAnswer> existingAnswerContentSet = existingQuestionAnswerMap.getOrDefault(questionId, Set.of());
+            Set<String> existingContents = existingAnswerContentSet.stream()
+                .map(QuestionAnswer::getContent)
+                .collect(Collectors.toSet());
 
-        answerRepository.saveAll(upsertQuestionList);
+            // 새로운 응답이 null을 포함한 경우(객관식) 혹은 빈 문자열인 경우(단답/장문), 해당 문항의 기존 응답은 모두 삭제 대상에 남겨둠
+            if (!newContents.contains(null) && !newContents.contains("")) {
+                // 새로운 응답 중 기존에 없는 content는 저장 대상에 추가
+                newAnswerContentSet.stream()
+                    .filter(newAnswer -> !existingContents.contains(newAnswer.getContent()))
+                    .forEach(finalAnswersToSave::add);
+                // 새로운 응답에 포함된 기존 응답은 삭제 대상에서 제외
+                finalAnswerIdsToDelete.removeAll(existingAnswerContentSet.stream()
+                    .filter(existingAnswer -> newContents.contains(existingAnswer.getContent()))
+                    .map(QuestionAnswer::getAnswerId)
+                    .toList());
+            }
+        });
+        if (!finalAnswersToSave.isEmpty()) {
+            answerRepository.saveAll(finalAnswersToSave);
+        }
+        if (!finalAnswerIdsToDelete.isEmpty()) {
+            answerRepository.deleteAllByIds(finalAnswerIdsToDelete);
+        }
 
-        AnswerInsertDto.AnswerInfo first = insertDto.getAnswerInfoList().getFirst();
         Long surveyId = getSurveyIdFromQuestion(first.getId());
-
         updateResponseAfterQuestionAnswers(surveyId, first);
 
         return true;
