@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.member.repository;
 
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
+import OneQ.OnSurvey.domain.member.value.Role;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -77,5 +78,16 @@ public class MemberRepositoryImpl implements MemberRepository {
         }
 
         return memberSegmentation;
+    }
+
+    @Override
+    public Long validateAdminRoleAndGetMemberIdByUserKey(Long userKey) {
+        return jpaQueryFactory.select(member.id)
+            .from(member)
+            .where(
+                member.userKey.eq(userKey),
+                member.role.eq(Role.ROLE_ADMIN)
+            )
+            .fetchFirst();
     }
 }
