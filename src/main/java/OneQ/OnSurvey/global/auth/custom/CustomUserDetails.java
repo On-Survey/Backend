@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 @AllArgsConstructor
-public class CustomUserDetails implements UserDetails {
+public class CustomUserDetails implements UserDetails, Authenticatable{
 
     private final Member member;
 
