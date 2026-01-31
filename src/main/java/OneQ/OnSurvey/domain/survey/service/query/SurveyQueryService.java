@@ -23,6 +23,7 @@ import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
 import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import OneQ.OnSurvey.global.common.util.AuthorizationUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -326,7 +327,7 @@ public class SurveyQueryService implements SurveyQuery {
         Survey survey = surveyRepository.getSurveyById(surveyId)
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
-        if (!survey.getMemberId().equals(memberId)) {
+        if (AuthorizationUtils.validateOwnershipOrAdmin(survey.getMemberId(), memberId)) {
             log.warn("[SURVEY:QUERY:VALIDATE] 접근 권한 없음 - surveyId: {}, memberId: {}, surveyMemberId: {}",
                     surveyId, memberId, survey.getMemberId());
             throw new CustomException(SurveyErrorCode.SURVEY_FORBIDDEN);
