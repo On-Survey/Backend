@@ -8,8 +8,10 @@ import OneQ.OnSurvey.domain.survey.service.formRequest.FormUpdater;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/form-requests")
@@ -24,6 +26,7 @@ public class FormRequestController {
     public SuccessResponse<Long> createGoogleFormRequest(
             @RequestBody FormRequestDto request
     ) {
+        log.info("controller dto.deadline={}", request.deadline());
         Long requestId = formCreator.createFormRequest(request);
         return SuccessResponse.ok(requestId);
     }
