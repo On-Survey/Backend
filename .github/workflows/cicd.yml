@@ -56,7 +56,6 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:latest
 
   deploy-ncp:
-    if: github.ref == 'refs/heads/develop'
     needs: build-and-push
     runs-on: ubuntu-latest
 
