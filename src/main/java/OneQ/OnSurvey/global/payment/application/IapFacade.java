@@ -99,12 +99,7 @@ public class IapFacade implements IapUseCase {
 
     @Override
     public OrderStatusResponse getStatus(long userKey, String orderId) {
-        try {
-            return tossApiClient.getIapOrderStatus(tossSslContext, userKey, orderId);
-        } catch (Exception e) {
-            log.error("[IAP] getStatus error, orderId={}", orderId, e);
-            throw new CustomException(TossErrorCode.TOSS_IAP_GET_STATUS_ERROR);
-        }
+        return fetchOrderStatus(userKey, orderId);
     }
 
     @Override
