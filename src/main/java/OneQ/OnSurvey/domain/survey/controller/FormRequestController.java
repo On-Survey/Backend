@@ -26,9 +26,7 @@ public class FormRequestController {
     public SuccessResponse<Long> createGoogleFormRequest(
             @RequestBody FormRequestDto request
     ) {
-        log.info("controller dto.deadline={}", request.deadline());
-        Long requestId = formCreator.createFormRequest(request);
-        return SuccessResponse.ok(requestId);
+        return SuccessResponse.ok(formCreator.createFormRequest(request));
     }
 
     @GetMapping("/unregistered")
