@@ -28,6 +28,9 @@ public class QuestionUpsertDto {
         Integer questionOrder;
         Integer section;
 
+        // 임시 필드
+        Integer nextSection;
+
         // Choice 필드
         Integer maxChoice;
         Boolean hasNoneOption;

@@ -116,6 +116,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput(),
@@ -128,6 +129,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
                 upsertInfo.getRate()
@@ -138,7 +140,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
-                upsertInfo.getSection()
+                upsertInfo.getSection(),
+                upsertInfo.getNextSection()
             );
         } else if (question instanceof DateAnswer date) {
             date.updateQuestion(
@@ -147,6 +150,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getDefaultDate()
             );
         } else if (question instanceof ShortAnswer shortAnswer) {
@@ -155,7 +159,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
-                upsertInfo.getSection()
+                upsertInfo.getSection(),
+                upsertInfo.getNextSection()
             );
         } else if (question instanceof LongAnswer longAnswer) {
             longAnswer.updateQuestion(
@@ -163,7 +168,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
-                upsertInfo.getSection()
+                upsertInfo.getSection(),
+                upsertInfo.getNextSection()
             );
         } else if (question instanceof NumberAnswer numberAnswer) {
             numberAnswer.updateQuestion(
@@ -171,7 +177,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
-                upsertInfo.getSection()
+                upsertInfo.getSection(),
+                upsertInfo.getNextSection()
             );
         }
     }
@@ -187,6 +194,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getDefaultDate(),
                 type
             );
@@ -198,6 +206,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 type
             );
         } else if (QuestionType.RATING.equals(type)) {
@@ -208,6 +217,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
                 upsertInfo.getRate(),
@@ -221,6 +231,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput(),
@@ -235,6 +246,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 type
             );
         } else if (QuestionType.LONG.equals(type)) {
@@ -245,6 +257,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 type
             );
         } else if (QuestionType.NUMBER.equals(type)) {
@@ -255,6 +268,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 type
             );
         } else {

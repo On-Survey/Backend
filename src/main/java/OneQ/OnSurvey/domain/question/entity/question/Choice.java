@@ -44,6 +44,7 @@ public class Choice extends Question {
         String description,
         Boolean isRequired,
         Integer section,
+        Integer nextSection,
         Integer maxChoice,
         Boolean hasNoneOption,
         Boolean hasCustomInput,
@@ -57,6 +58,7 @@ public class Choice extends Question {
             .description(description)
             .isRequired(isRequired)
             .section(section)
+            .nextSection(nextSection)
             .maxChoice(maxChoice)
             .hasNoneOption(hasNoneOption)
             .hasCustomInput(hasCustomInput)
@@ -71,12 +73,13 @@ public class Choice extends Question {
         Boolean isRequired,
         Integer order,
         Integer section,
+        Integer nextSection,
         Integer maxChoice,
         Boolean hasNoneOption,
         Boolean hasCustomInput,
         Boolean isSectionDecidable
     ) {
-        super.updateQuestion(title, description, isRequired, order, section);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection);
         this.maxChoice = maxChoice;
         this.hasNoneOption = (hasNoneOption != null) ? hasNoneOption : this.hasNoneOption;
         this.hasCustomInput = (hasCustomInput != null) ? hasCustomInput : this.hasCustomInput;
