@@ -142,11 +142,12 @@ public class ParticipationController {
     @Operation(summary = "선택한 설문의 문항 정보를 조회합니다.")
     public SuccessResponse<ParticipationQuestionResponse> getQuestionsOfSurveyId(
         @RequestParam Long surveyId,
+        @RequestParam(required = false, defaultValue = "1") Integer section,
         @AuthenticationPrincipal CustomUserDetails principal
     ) {
-        log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
+        log.info("[PARTICIPATION] 응답하고자 하는 설문 문항조회 - surveyId: {}, section: {}, userKey: {}", surveyId, section, principal.getUserKey());
 
-        return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, principal.getUserKey()));
+        return SuccessResponse.ok(surveyQueryService.getParticipationQuestionInfo(surveyId, section, principal.getUserKey()));
     }
 
     /**
@@ -238,7 +239,7 @@ public class ParticipationController {
 
         AnswerInsertDto answerInsertDto = request.toDto(principal.getMemberId());
 
-        return SuccessResponse.ok(questionAnswerCommand.insertAnswers(answerInsertDto));
+        return SuccessResponse.ok(questionAnswerCommand.upsertAnswers(answerInsertDto));
     }
 
     @PostMapping("surveys/{surveyId}/complete")

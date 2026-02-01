@@ -115,9 +115,11 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection(),
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
-                upsertInfo.getHasCustomInput()
+                upsertInfo.getHasCustomInput(),
+                upsertInfo.getIsSectionDecidable()
             );
         } else if (question instanceof Rating rating) {
             rating.updateQuestion(
@@ -125,6 +127,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
                 upsertInfo.getRate()
@@ -134,7 +137,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getQuestionOrder()
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection()
             );
         } else if (question instanceof DateAnswer date) {
             date.updateQuestion(
@@ -142,6 +146,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection(),
                 upsertInfo.getDefaultDate()
             );
         } else if (question instanceof ShortAnswer shortAnswer) {
@@ -149,21 +154,24 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getQuestionOrder()
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection()
             );
         } else if (question instanceof LongAnswer longAnswer) {
             longAnswer.updateQuestion(
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getQuestionOrder()
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection()
             );
         } else if (question instanceof NumberAnswer numberAnswer) {
             numberAnswer.updateQuestion(
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
-                upsertInfo.getQuestionOrder()
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection()
             );
         }
     }
@@ -178,6 +186,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
                 upsertInfo.getDefaultDate(),
                 type
             );
@@ -188,6 +197,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
                 type
             );
         } else if (QuestionType.RATING.equals(type)) {
@@ -197,6 +207,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
                 upsertInfo.getRate(),
@@ -209,9 +220,11 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput(),
+                upsertInfo.getIsSectionDecidable(),
                 type
             );
         } else if (QuestionType.SHORT.equals(type)) {
@@ -221,6 +234,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
                 type
             );
         } else if (QuestionType.LONG.equals(type)) {
@@ -230,6 +244,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
                 type
             );
         } else if (QuestionType.NUMBER.equals(type)) {
@@ -239,6 +254,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
                 type
             );
         } else {
@@ -300,7 +316,7 @@ public class QuestionCommandService implements QuestionCommand {
                 OptionDto optionInfo = updateInfoMap.get(id);
                 option.updateOption(
                     optionInfo.getContent(),
-                    optionInfo.getNextQuestionId()
+                    optionInfo.getNextSection()
                 );
             });
 
@@ -309,7 +325,7 @@ public class QuestionCommandService implements QuestionCommand {
                 .map(upsertInfo -> ChoiceOption.of(
                     questionId,
                     upsertInfo.getContent(),
-                    upsertInfo.getNextQuestionId()
+                    upsertInfo.getNextSection()
                 )).toList();
 
             finalList.addAll(updateList);

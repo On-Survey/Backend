@@ -10,14 +10,14 @@ public class OptionDto {
     private Long optionId;
     private Long questionId;
     private String content;
-    private Long nextQuestionId;
+    private Integer nextSection;
 
     public static OptionDto fromEntity(ChoiceOption choiceOption) {
         return OptionDto.builder()
             .optionId(choiceOption.getChoiceOptionId())
             .questionId(choiceOption.getQuestionId())
             .content(choiceOption.getContent())
-            .nextQuestionId(choiceOption.getNextQuestionId())
+            .nextSection(choiceOption.getNextSection())
             .build();
     }
 }

@@ -26,6 +26,7 @@ public class RatingDto extends DefaultQuestionDto {
             .description(rating.getDescription())
             .isRequired(rating.getIsRequired())
             .questionOrder(rating.getOrder())
+            .section(rating.getSection() != null ? rating.getSection() : 1)
             .build();
     }
 }

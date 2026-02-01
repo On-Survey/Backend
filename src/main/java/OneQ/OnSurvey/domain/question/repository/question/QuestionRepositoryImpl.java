@@ -24,6 +24,11 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     }
 
     @Override
+    public List<Question> getQuestionListBySurveyIdAndSection(Long surveyId, Integer section) {
+        return questionJpaRepository.getQuestionsBySurveyIdAndSectionOrderByOrder(surveyId, section);
+    }
+
+    @Override
     public Question save(Question question) {
         return questionJpaRepository.save(question);
     }

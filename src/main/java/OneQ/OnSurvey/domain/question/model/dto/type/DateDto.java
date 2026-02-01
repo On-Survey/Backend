@@ -24,6 +24,7 @@ public class DateDto extends DefaultQuestionDto {
             .description(date.getDescription())
             .isRequired(date.getIsRequired())
             .questionOrder(date.getOrder())
+            .section(date.getSection() != null ? date.getSection() : 1)
             .build();
     }
 }

@@ -16,7 +16,7 @@ public abstract class AnswerCommandService<E extends AbstractAnswer> implements 
     protected final AnswerRepository<E> answerRepository;
     protected final ResponseRepository responseRepository;
 
-    public Boolean insertAnswers(AnswerInsertDto insertDto) {
+    public Boolean upsertAnswers(AnswerInsertDto insertDto) {
         List<E> answerList = insertDto.getAnswerInfoList().stream()
             .map(this::createAnswerFromDto)
             .toList();

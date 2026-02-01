@@ -26,11 +26,13 @@ public class QuestionUpsertDto {
         Boolean isRequired;
         QuestionType questionType;
         Integer questionOrder;
+        Integer section;
 
         // Choice 필드
         Integer maxChoice;
         Boolean hasNoneOption;
         Boolean hasCustomInput;
+        Boolean isSectionDecidable;
         @Setter
         List<OptionDto> options;
 
@@ -50,6 +52,7 @@ public class QuestionUpsertDto {
             .description(question.getDescription())
             .isRequired(question.getIsRequired())
             .questionOrder(question.getOrder())
+            .section(question.getSection())
             .questionType(QuestionType.valueOf(question.getType()));
 
         return switch (QuestionType.valueOf(question.getType())) {
@@ -59,6 +62,7 @@ public class QuestionUpsertDto {
                     .maxChoice(choice.getMaxChoice())
                     .hasNoneOption(choice.getHasNoneOption())
                     .hasCustomInput(choice.getHasCustomInput())
+                    .isSectionDecidable(choice.getIsSectionDecidable())
                     .build();
             }
             case RATING -> {

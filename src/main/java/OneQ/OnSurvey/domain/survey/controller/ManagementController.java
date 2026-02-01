@@ -89,7 +89,8 @@ public class ManagementController {
                     QuestionType.valueOf(dto.getQuestionType()),
                     dto.getTitle(),
                     dto.getDescription(),
-                    dto.getIsRequired()
+                    dto.getIsRequired(),
+                    dto.getSection()
                 ))
             .toList();
 

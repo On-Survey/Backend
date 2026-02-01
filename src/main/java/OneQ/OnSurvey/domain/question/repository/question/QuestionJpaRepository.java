@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface QuestionJpaRepository extends JpaRepository<Question, Long> {
     List<Question> getQuestionsBySurveyIdOrderByOrder(Long surveyId);
+
+    List<Question> getQuestionsBySurveyIdAndSectionOrderByOrder(Long surveyId, Integer section);
 }

@@ -18,20 +18,32 @@ public class QuestionRequest {
                     "title": "string",
                     "description": "string",
                     "isRequired": true,
+                    "section": 1,
                     "questionOrder": 0,
                     "maxChoice": 1,
                     "hasNoneOption": false,
                     "hasCustomInput": false,
+                    "isSectionDecidable": true,
                     "options": [
                       {
                         "optionId": 1,
-                        "content": "보기1",
-                        "nextQuestionId": 2
+                        "content": "섹션2로 가는 보기",
+                        "nextSection": 2
                       },
                       {
                         "optionId": 2,
-                        "content": "보기2",
-                        "nextQuestionId": 3
+                        "content": "섹션3으로 가는 보기",
+                        "nextSection": 3
+                      },
+                      {
+                        "optionId": 2,
+                        "content": "설문을 끝내는 보기",
+                        "nextSection": 0
+                      },
+                      {
+                        "optionId": 2,
+                        "content": "다음 섹션으로 가는 보기",
+                        "nextSection": 2
                       }
                     ]
                   },
@@ -41,20 +53,20 @@ public class QuestionRequest {
                     "title": "string",
                     "description": "string",
                     "isRequired": true,
+                    "section": 1,
                     "questionOrder": 1,
                     "maxChoice": 1,
                     "hasNoneOption": true,
                     "hasCustomInput": true,
+                    "isSectionDecidable": false,
                     "options": [
                       {
                         "optionId": 3,
-                        "content": "보기1",
-                        "nextQuestionId": 4
+                        "content": "보기1"
                       },
                       {
                         "optionId": 4,
-                        "content": "보기2",
-                        "nextQuestionId": 4
+                        "content": "보기2"
                       }
                     ]
                   },
@@ -64,6 +76,7 @@ public class QuestionRequest {
                     "title": "string",
                     "description": "string",
                     "isRequired": false,
+                    "section": 2,
                     "questionOrder": 2
                   },
                   {
@@ -72,6 +85,7 @@ public class QuestionRequest {
                     "title": "string",
                     "description": "string",
                     "isRequired": false,
+                    "section": 3,
                     "questionOrder": 3,
                     "minValue": "최소 라벨",
                     "maxValue": "최대 라벨",

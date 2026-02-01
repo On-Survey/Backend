@@ -19,34 +19,34 @@ public class ChoiceOption {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "next_question_id")
-    private Long nextQuestionId;
+    @Column(name = "next_section")
+    private Integer nextSection;
 
     public static ChoiceOption of(
         Long questionId,
         String content,
-        Long nextQuestionId
+        Integer nextSection
     ) {
         return ChoiceOption.builder()
             .questionId(questionId)
             .content(content)
-            .nextQuestionId(nextQuestionId)
+            .nextSection(nextSection)
             .build();
     }
 
     public void updateOption(
         String content,
-        Long nextQuestionId
+        Integer nextSection
     ) {
         this.content = content;
-        this.nextQuestionId = nextQuestionId;
+        this.nextSection = nextSection;
     }
 
     public void updateChoiceOption(String content) {
         this.content = content;
     }
 
-    public void updateNextQuestionId(Long nextQuestionId) {
-        this.nextQuestionId = nextQuestionId;
+    public void updateNextSection(Integer nextSection) {
+        this.nextSection = nextSection;
     }
 }

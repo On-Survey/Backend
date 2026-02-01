@@ -17,4 +17,8 @@ public abstract class AbstractAnswerRepository<E extends AbstractAnswer> impleme
     public List<E> saveAll(Collection<E> answerList) {
         return answerJpaRepository.saveAll(answerList);
     }
+
+    public void deleteAllByIds(Collection<Long> answerIds) {
+        answerJpaRepository.deleteAllByIdInBatch(answerIds);
+    }
 }

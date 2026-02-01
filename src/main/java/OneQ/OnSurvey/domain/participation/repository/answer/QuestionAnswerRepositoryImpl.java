@@ -126,6 +126,12 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                 .fetch();
     }
 
+    @Override
+    public void deleteAllByIds(Collection<Long> answerIds) {
+        jpaQueryFactory.delete(questionAnswer)
+            .where(questionAnswer.answerId.in(answerIds))
+            .execute();
+    }
 
     private BooleanExpression buildGenderCondition(EnumPath<Gender> genderPath, List<Gender> genders) {
         if (genders == null || genders.isEmpty()) return null;
