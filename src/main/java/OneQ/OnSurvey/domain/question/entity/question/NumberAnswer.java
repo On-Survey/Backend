@@ -22,6 +22,7 @@ public class NumberAnswer extends Question {
         String description,
         Boolean isRequired,
         Integer section,
+        Integer nextSection,
         QuestionType type
     ) {
         return NumberAnswer.builder()
@@ -32,6 +33,7 @@ public class NumberAnswer extends Question {
             .isRequired(isRequired)
             .type(type.name())
             .section(section)
+            .nextSection(nextSection)
             .build();
     }
 
@@ -40,8 +42,9 @@ public class NumberAnswer extends Question {
         String description,
         Boolean isRequired,
         Integer order,
-        Integer section
+        Integer section,
+        Integer nextSection
     ) {
-        super.updateQuestion(title, description, isRequired, order, section);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection);
     }
 }

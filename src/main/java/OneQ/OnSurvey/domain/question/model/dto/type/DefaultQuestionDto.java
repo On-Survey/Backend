@@ -43,6 +43,9 @@ public class DefaultQuestionDto {
     private Integer questionOrder;
     private Integer section;
 
+    // 임시 필드
+    private Integer nextSection;
+
     public static DefaultQuestionDto fromEntity(Question question) {
         return DefaultQuestionDto.builder()
             .questionId(question.getQuestionId())
@@ -53,6 +56,7 @@ public class DefaultQuestionDto {
             .isRequired(question.getIsRequired())
             .questionOrder(question.getOrder())
             .section(question.getSection() != null ? question.getSection() : 1)
+            .nextSection(question.getNextSection())
             .build();
     }
 
