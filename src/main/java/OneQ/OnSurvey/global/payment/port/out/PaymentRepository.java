@@ -8,6 +8,6 @@ import java.util.Optional;
 public interface PaymentRepository {
     Optional<Payment> findByOrderId(String orderId);
     List<Payment> findPaymentsByUserKeyOrderByDate(Long userKey);
-    void save(Payment payment);
+    Payment save(Payment payment);
     List<Payment> findPaidPaymentsByUserKey(long userKey);
 }

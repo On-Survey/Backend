@@ -63,6 +63,7 @@ public class DiscordAlarmService {
                         "• orderId: `" + safe(completedAlert.orderId()) + "`\n" +
                         "• amount: `" + completedAlert.amount() + "` (KRW==COIN)\n" +
                         "• paidAt: `" + safe(completedAlert.paidAt()) + "`\n" +
+                        "• paymentPurpose: `" + safe(completedAlert.paymentPurpose().name()) + "`\n" +
                         "• newBalance: `" + completedAlert.newBalance() + "`\n";
 
         post(url, title, desc);

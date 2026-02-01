@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.domain.member;
+package OneQ.OnSurvey.global.payment;
 
 import OneQ.OnSurvey.global.common.exception.ApiErrorCode;
 import lombok.AllArgsConstructor;
@@ -7,12 +7,9 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum CoinErrorCode implements ApiErrorCode {
+public enum PaymentErrorCode implements ApiErrorCode {
 
-
-
-    COIN_NOT_POSITIVE("COIN400", "코인은 음수일 수 없습니다.", HttpStatus.NOT_FOUND),
-    COIN_LACK("COIN401", "코인이 부족합니다.", HttpStatus.BAD_REQUEST);
+    PAYMENT_PURPOSE_MISMATCH("PAYMENT400", "결제 목적이 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
 
     private final String errorCode;
     private final String message;

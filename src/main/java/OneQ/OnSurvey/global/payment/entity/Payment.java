@@ -39,6 +39,10 @@ public class Payment {
     @Column(name = "REFUND_AT")
     private LocalDateTime refundAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "PURPOSE", nullable = false, length = 30)
+    private PaymentPurpose purpose;
+
     public void markPaid(LocalDateTime completedAt) {
         this.status = PaymentStatus.PAID;
         this.paymentCompletedAt = completedAt != null ? completedAt : LocalDateTime.now();
@@ -49,13 +53,14 @@ public class Payment {
         this.refundAt = refundedAt != null ? refundedAt : LocalDateTime.now();
     }
 
-    public static Payment pending(Long userKey, String orderId, String sku, Integer totalAmount) {
+    public static Payment pending(Long userKey, String orderId, String sku, Integer totalAmount, PaymentPurpose paymentPurpose) {
         return Payment.builder()
                 .userKey(userKey)
                 .orderId(orderId)
                 .sku(sku)
                 .totalAmount(totalAmount != null ? totalAmount : 0)
                 .status(PaymentStatus.PENDING)
+                .purpose(paymentPurpose)
                 .build();
     }
 }
