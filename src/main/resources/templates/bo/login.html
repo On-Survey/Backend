@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 h-screen flex items-center justify-center">
+
+<div class="bg-white p-8 rounded-lg shadow-xl w-96">
+    <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-slate-800">Admin OS</h1>
+        <p class="text-slate-500 text-sm">관리자 계정으로 로그인하세요</p>
+    </div>
+
+    <form id="loginForm" class="space-y-4">
+        <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">ID</label>
+            <input type="text" id="adminId" class="w-full border border-slate-300 rounded p-2 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="admin">
+        </div>
+        <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">Password</label>
+            <input type="password" id="adminPw" class="w-full border border-slate-300 rounded p-2 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="••••••">
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded hover:bg-indigo-700 transition">로그인</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('adminId').value;
+        const pw = document.getElementById('adminPw').value;
+
+        try {
+            // 실제 백엔드 로그인 API 호출
+            const res = await fetch('/v1/bo/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    "username": id,
+                    "password": pw
+                })
+            });
+
+            if (res.ok) {
+                // ★ 중요: 서버가 Set-Cookie를 주면 브라우저가 알아서 저장함.
+                // 클라이언트는 단순히 페이지 이동만 하면 됨.
+                // window.location.href = '/templates/bo/index.html';
+                window.location.href = 'bo/index';
+            } else {
+                alert('로그인 실패: 아이디나 비밀번호를 확인하세요.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('서버 오류가 발생했습니다.');
+        }
+    });
+</script>
+</body>
+</html>

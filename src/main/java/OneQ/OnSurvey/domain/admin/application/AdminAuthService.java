@@ -22,12 +22,14 @@ public class AdminAuthService {
 
         Admin admin = adminRepository.findByUsername(username);
         if (admin == null
-            || !admin.matchPassword(passwordEncoder, rawPassword)
+//            || !admin.matchPassword(passwordEncoder, rawPassword)
+            || !admin.getPassword().equals(rawPassword)
         ) {
             return null;
         }
 
         return admin.getAdminId();
+
     }
 
     @Transactional
