@@ -29,6 +29,16 @@ public class IapController {
         return SuccessResponse.ok(iapUseCase.grantByOrder(userKey, body.orderId(), body.price()));
     }
 
+    @PostMapping("/grant-home")
+    @Operation(summary = "홈 결제 반영", description = "orderId 서버검증 후 PAYMENT 반영 (코인 지급 없음)")
+    public SuccessResponse<Boolean> grantHome(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @Valid @RequestBody IapGrantRequest body
+    ) {
+        long userKey = principal.getUserKey();
+        return SuccessResponse.ok(iapUseCase.grantHomeByOrder(userKey, body.orderId(), body.price()));
+    }
+
     /** 추가 컨트롤러. 삭제 고려 **/
     @PostMapping("/status")
     @Operation(summary = "IAP 주문 상태 조회", description = "주문 상태 재검증")
