@@ -25,14 +25,6 @@ public abstract class Question extends BaseEntity {
     @Column(name = "QUESTION_ORDER")
     protected Integer order;
 
-    @Column(name = "SECTION")
-    @ColumnDefault("1")
-    @Builder.Default
-    protected Integer section = 1;
-
-    @Column(name = "NEXT_SECTION")
-    protected Integer nextSection;
-
     @Column(name = "type", insertable = false, updatable = false)
     protected String type;
 
@@ -46,6 +38,16 @@ public abstract class Question extends BaseEntity {
     @ColumnDefault("FALSE")
     @Builder.Default
     protected Boolean isRequired = false;
+
+    /* 임시 필드 */
+    @Column(name = "SECTION")
+    @ColumnDefault("1")
+    @Builder.Default
+    protected Integer section = 1;
+
+    @Column(name = "NEXT_SECTION")
+    protected Integer nextSection;
+    /* 섹션 엔티티 분리 후 제거 예정 */
 
     public void updateQuestion(
         String title,
