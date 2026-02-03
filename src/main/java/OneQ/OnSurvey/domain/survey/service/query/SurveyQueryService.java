@@ -6,7 +6,9 @@ import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.participation.repository.answer.ScreeningAnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.repository.section.SectionRepository;
 import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
@@ -58,6 +60,7 @@ public class SurveyQueryService implements SurveyQuery {
     private final ResponseRepository responseRepository;
     private final MemberRepository memberRepository;
     private final ScreeningAnswerRepository screeningAnswerRepository;
+    private final SectionRepository sectionRepository;
 
     private final QuestionQueryService questionQueryService;
 
@@ -238,12 +241,12 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Integer section, Long userKey) {
+    public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Integer sectionOrder, Long userKey) {
         log.info("[SURVEY:QUERY] 설문 문항정보 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
 
         cleanupExpiredPotentials(surveyId);
 
-        if (userKey.equals(getLongValue(surveyId, this.creatorKey))) {
+        if (AuthorizationUtils.validateOwnershipOrAdmin(userKey, getLongValue(surveyId, this.creatorKey))) {
             log.warn("[SURVEY:QUERY] 설문 제작자는 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
             throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
         }
@@ -259,12 +262,16 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_TEMP_EXCEEDED);
         }
 
-
-        List<DefaultQuestionDto> questionDtoList = section != null
-            ? questionQueryService.getQuestionDtoListBySurveyIdAndSection(surveyId, section)
+        List<DefaultQuestionDto> questionDtoList = sectionOrder != null
+            ? questionQueryService.getQuestionDtoListBySurveyIdAndSection(surveyId, sectionOrder)
             : questionQueryService.getQuestionDtoListBySurveyId(surveyId);
+        SectionDto section = sectionRepository.findSectionDtoBySurveyIdAndOrder(surveyId, sectionOrder != null ? sectionOrder : 1);
 
-        return ParticipationQuestionResponse.of(questionDtoList);
+        return section != null
+            ? ParticipationQuestionResponse.of(
+                section.title(), section.description(), section.order(), section.nextSection(), questionDtoList
+            )
+            : ParticipationQuestionResponse.of(questionDtoList);
     }
 
     @Override

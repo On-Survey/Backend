@@ -1,10 +1,14 @@
 package OneQ.OnSurvey.domain.survey.model.response;
 
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
+
+import java.util.List;
+
 public record SectionResponse (
-    Long sectionId,
-    String title,
-    String description,
-    Integer order,
-    Integer nextSection
+    List<SectionDto> sections
 ) {
+
+    public static SectionResponse from(List<SectionDto> sections) {
+        return new SectionResponse(sections);
+    }
 }

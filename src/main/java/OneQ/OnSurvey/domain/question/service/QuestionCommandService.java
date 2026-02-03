@@ -2,13 +2,17 @@ package OneQ.OnSurvey.domain.question.service;
 
 import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.Question;
+import OneQ.OnSurvey.domain.question.entity.Section;
 import OneQ.OnSurvey.domain.question.entity.question.*;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.repository.choiceOption.ChoiceOptionRepository;
 import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
+import OneQ.OnSurvey.domain.question.repository.section.SectionRepository;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,7 @@ public class QuestionCommandService implements QuestionCommand {
 
     private final QuestionRepository questionRepository;
     private final ChoiceOptionRepository choiceOptionRepository;
+    private final SectionRepository sectionRepository;
 
     @Override
     public QuestionUpsertDto upsertQuestionList(QuestionUpsertDto upsertDto) {
@@ -363,5 +368,51 @@ public class QuestionCommandService implements QuestionCommand {
                 .build();
             })
             .toList();
+    }
+
+    @Override
+    public List<SectionDto> upsertSections(Long surveyId, List<SectionDto> sectionDtoList) {
+        if (!sectionDtoList.stream().allMatch(SectionDto::isValid)) {
+            log.warn("[QUESTION:COMMAND:upsertSection] 섹션 정보가 유효하지 않습니다. surveyId: {}", surveyId);
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_SECTION);
+        }
+
+        Map<Integer, Section> orderSectionMap = sectionRepository.findAllSectionBySurveyId(surveyId).stream()
+            .collect(Collectors.toMap
+                (Section::getSectionOrder, Function.identity())
+            );
+        List<Section> sectionList = sectionDtoList.stream().map(sectionDto -> {
+            if (sectionDto.isNewSection()) {
+                return Section.builder()
+                    .surveyId(surveyId)
+                    .title(sectionDto.title())
+                    .description(sectionDto.description())
+                    .sectionOrder(sectionDto.order())
+                    .nextSection(sectionDto.nextSection())
+                    .build();
+            } else {
+                Section section = orderSectionMap.get(sectionDto.order());
+                section.updateSection(
+                    sectionDto.title(), sectionDto.description(), sectionDto.order(), sectionDto.nextSection()
+                );
+                orderSectionMap.remove(sectionDto.order());
+                return section;
+            }
+        }).toList();
+        List<Section> savedSectionList = List.of();
+        if (!orderSectionMap.isEmpty()) {
+            sectionRepository.deleteAll(orderSectionMap.values().stream().map(Section::getSectionId).toList());
+        }
+        if (!sectionDtoList.isEmpty()) {
+            savedSectionList = sectionRepository.saveAll(sectionList);
+        }
+        if (!savedSectionList.isEmpty()) {
+            questionRepository.deleteBySurveyIdAndNotInOrder(
+                surveyId,
+                savedSectionList.stream().map(Section::getSectionOrder).collect(Collectors.toSet())
+            );
+        }
+
+        return savedSectionList.stream().map(SectionDto::fromEntity).toList();
     }
 }

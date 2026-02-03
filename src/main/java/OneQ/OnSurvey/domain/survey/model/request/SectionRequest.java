@@ -1,23 +1,27 @@
 package OneQ.OnSurvey.domain.survey.model.request;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
+
+import java.util.List;
 
 public record SectionRequest (
-    Long sectionId,
-    String title,
-    String description,
-    Integer order,
-    Integer nextSection,
+    List<SectionInfo> sectionInfoList
 ) {
+    public record SectionInfo (
+        Long sectionId,
+        String title,
+        String description,
+        Integer order,
+        Integer nextSection
+    ) { }
 
-    @JsonIgnore
-    public boolean isValid() {
-        return title != null && !title.strip().isBlank()
-            && order != null && order >= 0;
-    }
-
-    @JsonIgnore
-    public boolean isNewSection() {
-        return sectionId == null;
+    public List<SectionDto> toDto() {
+        return sectionInfoList.stream().map(sectionInfo -> new SectionDto(
+            sectionInfo.sectionId(),
+            sectionInfo.title(),
+            sectionInfo.description(),
+            sectionInfo.order(),
+            sectionInfo.nextSection()
+        )).toList();
     }
 }
