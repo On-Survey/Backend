@@ -20,6 +20,6 @@ public class AuthorizationUtils {
     }
 
     public static boolean validateOwnershipOrAdmin(Long resourceOwnerId, Long currentUserId) {
-        return !(isAdmin() || resourceOwnerId.equals(currentUserId));
+        return !(isAdmin() || !resourceOwnerId.equals(currentUserId));
     }
 }

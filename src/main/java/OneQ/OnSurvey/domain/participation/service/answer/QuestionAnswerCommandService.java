@@ -64,7 +64,7 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
                 .toList()
         );
 
-        questionIdList.parallelStream().forEach(questionId -> {
+        questionIdList.forEach(questionId -> {
             // questionId에 대한 새로운 응답과 기존 응답의 content 집합 생성
             Set<QuestionAnswer> newAnswerContentSet = newQuestionAnswerMap.getOrDefault(questionId, Set.of());
             Set<String> newContents = newAnswerContentSet.stream()
