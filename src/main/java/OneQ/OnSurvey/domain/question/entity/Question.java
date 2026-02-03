@@ -39,12 +39,12 @@ public abstract class Question extends BaseEntity {
     @Builder.Default
     protected Boolean isRequired = false;
 
-    /* 임시 필드 */
     @Column(name = "SECTION")
     @ColumnDefault("1")
     @Builder.Default
     protected Integer section = 1;
 
+    /* 임시 필드 */
     @Column(name = "NEXT_SECTION")
     protected Integer nextSection;
     /* 섹션 엔티티 분리 후 제거 예정 */
