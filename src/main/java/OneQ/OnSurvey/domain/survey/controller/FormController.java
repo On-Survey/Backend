@@ -96,4 +96,13 @@ public class FormController implements FormControllerDoc {
     ) {
         return SuccessResponse.ok(surveyFormFacade.createScreening(surveyId, request));
     }
+
+    @PutMapping("/surveys/{surveyId}/sections")
+    @Operation(summary = "설문에 대한 섹션을 생성/수정하고, 삭제되는 섹션 내의 문항들을 삭제합니다.")
+    public SuccessResponse<SectionResponse> createSection(
+        @RequestBody SectionRequest request,
+        @PathVariable Long surveyId
+    ) {
+        return SuccessResponse.ok(surveyFormFacade.upsertSection(surveyId, request));
+    }
 }

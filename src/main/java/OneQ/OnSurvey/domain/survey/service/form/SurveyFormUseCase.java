@@ -12,4 +12,5 @@ public interface SurveyFormUseCase {
     SurveyFormResponse completeFreeSurvey(Long userKey, Long surveyId, FreeSurveyFormRequest request);
     InterestResponse updateInterest(Long surveyId, SurveyInterestRequest request);
     ScreeningResponse createScreening(Long surveyId, ScreeningRequest request);
+    SectionResponse upsertSection(Long surveyId, SectionRequest request);
 }
