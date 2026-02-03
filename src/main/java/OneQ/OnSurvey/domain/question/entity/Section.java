@@ -13,12 +13,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
-@Builder
+@Getter @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Entity
-@Table(name = "section")
+@Entity @Table(name = "SECTION")
 public class Section extends BaseEntity {
 
     @Id
@@ -40,4 +38,11 @@ public class Section extends BaseEntity {
 
     @Column(name = "NEXT_SECTION", nullable = false)
     private Integer nextSection;
+
+    public void updateSection(String title, String description, Integer order, Integer nextSection) {
+        this.title = title;
+        this.description = description;
+        this.sectionOrder = order;
+        this.nextSection = nextSection;
+    }
 }
