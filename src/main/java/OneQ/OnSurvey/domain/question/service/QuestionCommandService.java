@@ -67,6 +67,17 @@ public class QuestionCommandService implements QuestionCommand {
 
             if (!deleteIdSet.isEmpty()) {
                 log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 문항 IDs: {}", deleteIdSet);
+
+                // 문항 삭제 전에 해당 문항의 보기(ChoiceOption)도 삭제
+                List<ChoiceOption> optionsToDelete = choiceOptionRepository.getOptionsByQuestionIds(deleteIdSet);
+                if (!optionsToDelete.isEmpty()) {
+                    Set<Long> optionIdsToDelete = optionsToDelete.stream()
+                        .map(ChoiceOption::getChoiceOptionId)
+                        .collect(Collectors.toSet());
+                    log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 보기 IDs: {}", optionIdsToDelete);
+                    choiceOptionRepository.deleteAll(optionIdsToDelete);
+                }
+
                 questionRepository.deleteAll(deleteIdSet);
                 log.info("[QUESTION:COMMAND:upsertQuestionList] DELETE 진행");
             }
@@ -407,10 +418,9 @@ public class QuestionCommandService implements QuestionCommand {
             savedSectionList = sectionRepository.saveAll(sectionList);
         }
         if (!savedSectionList.isEmpty()) {
-            questionRepository.deleteBySurveyIdAndNotInOrder(
-                surveyId,
-                savedSectionList.stream().map(Section::getSectionOrder).collect(Collectors.toSet())
-            );
+            Set<Integer> savedSections = savedSectionList.stream().map(Section::getSectionOrder).collect(Collectors.toSet());
+            choiceOptionRepository.deleteBySections(surveyId, savedSections);
+            questionRepository.deleteBySurveyIdAndNotInOrder(surveyId, savedSections);
         }
 
         return savedSectionList.stream().map(SectionDto::fromEntity).toList();

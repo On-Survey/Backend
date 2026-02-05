@@ -11,43 +11,58 @@
         body { font-family: 'Pretendard', sans-serif; }
         /* 메뉴 활성화 스타일 */
         .nav-item.active { background-color: #1e293b; color: #fff; border-right: 4px solid #6366f1; }
+        /* 사이드바 접힌 상태 */
+        aside.collapsed { width: 64px; }
+        aside.collapsed .nav-text,
+        aside.collapsed .nav-label,
+        aside.collapsed .user-info,
+        aside.collapsed .logo-text,
+        aside.collapsed .badge { display: none; }
+        aside.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+        aside.collapsed .nav-item i { margin: 0; }
+        aside.collapsed .user-avatar { margin: 0 auto; }
     </style>
 </head>
 <body class="bg-slate-100 h-screen overflow-hidden flex">
 
-<aside class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300">
-    <div class="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950">
-        <i class="fas fa-poll text-indigo-500 text-xl mr-3"></i>
-        <span class="text-white font-bold text-lg tracking-tight">Admin OS</span>
+<aside id="sidebar" class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300">
+    <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950">
+        <div class="flex items-center">
+            <i class="fas fa-poll text-indigo-500 text-xl mr-3"></i>
+            <span class="logo-text text-white font-bold text-lg tracking-tight">Admin OS</span>
+        </div>
+        <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white transition-colors">
+            <i id="toggle-icon" class="fas fa-angles-left"></i>
+        </button>
     </div>
 
     <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
-        <p class="px-6 text-xs font-bold text-slate-500 uppercase mb-2">Overview</p>
+        <p class="nav-label px-6 text-xs font-bold text-slate-500 uppercase mb-2">Overview</p>
         <a href="#" onclick="showPage('dashboard', this)" class="nav-item active flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
             <i class="fas fa-chart-line w-6"></i>
-            <span class="text-sm font-medium">데이터 모니터링</span>
+            <span class="nav-text text-sm font-medium">데이터 모니터링</span>
         </a>
 
-        <p class="px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">Management</p>
+        <p class="nav-label px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">Management</p>
         <a href="#" onclick="showPage('builder', this)" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
             <i class="fas fa-pen-to-square w-6"></i>
-            <span class="text-sm font-medium">설문 제작/수정</span>
+            <span class="nav-text text-sm font-medium">설문 제작/수정</span>
         </a>
         <a href="#" onclick="showPage('review', this)" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
             <i class="fas fa-check-double w-6"></i>
-            <span class="text-sm font-medium">무료 설문 검수</span>
-            <span class="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">3</span>
+            <span class="nav-text text-sm font-medium">무료 설문 검수</span>
+            <span class="badge ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">3</span>
         </a>
         <a href="#" onclick="showPage('promotion', this)" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
             <i class="fas fa-coins w-6"></i>
-            <span class="text-sm font-medium">리워드/프로모션</span>
+            <span class="nav-text text-sm font-medium">리워드/프로모션</span>
         </a>
     </nav>
 
     <div class="p-4 border-t border-slate-800 bg-slate-950">
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">AD</div>
-            <div>
+            <div class="user-avatar w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">AD</div>
+            <div class="user-info">
                 <p class="text-sm text-white font-medium">김운영 매니저</p>
                 <p class="text-xs text-slate-500">Super Admin</p>
             </div>
@@ -257,6 +272,23 @@
 </main>
 
 <script>
+    // 사이드바 토글 함수
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleIcon = document.getElementById('toggle-icon');
+
+        sidebar.classList.toggle('collapsed');
+
+        // 아이콘 방향 변경
+        if (sidebar.classList.contains('collapsed')) {
+            toggleIcon.classList.remove('fa-angles-left');
+            toggleIcon.classList.add('fa-angles-right');
+        } else {
+            toggleIcon.classList.remove('fa-angles-right');
+            toggleIcon.classList.add('fa-angles-left');
+        }
+    }
+
     // 페이지 전환 함수
     function showPage(pageId, element) {
         // 1. 모든 페이지 섹션 숨기기
