@@ -58,7 +58,7 @@ jobs:
   deploy-ncp:
     needs: build-and-push
     runs-on: ubuntu-latest
-
+    if: ${{ github.event_name != 'pull_request' }}
     steps:
       - name: Checkout code (for docker-compose.yml)
         uses: actions/checkout@v4
