@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>설문 변환 요청</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 p-6">
+
+<div class="space-y-6">
+    <!-- 검색 및 필터 영역 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div class="flex flex-wrap gap-4 items-end">
+            <!-- 이메일 검색 -->
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-bold text-slate-500 mb-1">신청자 이메일 검색</label>
+                <input type="text" id="searchEmail" placeholder="이메일 입력..."
+                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none"
+                       onkeyup="if(event.key === 'Enter') loadFormRequests()">
+            </div>
+            <!-- 등록 상태 필터 -->
+            <div class="min-w-[150px]">
+                <label class="block text-xs font-bold text-slate-500 mb-1">등록 상태</label>
+                <select id="filterStatus" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none" onchange="loadFormRequests()">
+                    <option value="">전체</option>
+                    <option value="false">미등록</option>
+                    <option value="true">등록완료</option>
+                </select>
+            </div>
+            <!-- 페이지 크기 -->
+            <div class="min-w-[100px]">
+                <label class="block text-xs font-bold text-slate-500 mb-1">표시 개수</label>
+                <select id="pageSize" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none" onchange="loadFormRequests()">
+                    <option value="10">10개</option>
+                    <option value="20">20개</option>
+                    <option value="50">50개</option>
+                </select>
+            </div>
+            <!-- 버튼 영역 -->
+            <div class="flex gap-2">
+                <button onclick="loadFormRequests()" class="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-bold hover:bg-indigo-700">
+                    <i class="fas fa-search mr-1"></i>검색
+                </button>
+                <button onclick="resetFilters()" class="px-4 py-2 bg-slate-500 text-white rounded text-sm font-bold hover:bg-slate-600">
+                    <i class="fas fa-undo mr-1"></i>초기화
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 테이블 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-slate-500 border-b">
+            <tr>
+                <th class="px-6 py-4">ID</th>
+                <th class="px-6 py-4">폼 링크</th>
+                <th class="px-6 py-4">신청자 이메일</th>
+                <th class="px-6 py-4">질문 수</th>
+                <th class="px-6 py-4">목표 응답</th>
+                <th class="px-6 py-4">마감일</th>
+                <th class="px-6 py-4">가격</th>
+                <th class="px-6 py-4">등록 상태</th>
+                <th class="px-6 py-4">등록일</th>
+                <th class="px-6 py-4 text-center">작업</th>
+            </tr>
+            </thead>
+            <tbody id="formRequestTableBody" class="divide-y divide-slate-100">
+                <!-- 동적으로 로드됨 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div id="paginationContainer" class="flex justify-between items-center">
+        <div id="pageInfo" class="text-sm text-slate-600"></div>
+        <div id="pagination" class="flex gap-1"></div>
+    </div>
+</div>
+
+<!-- 토스트 컨테이너 -->
+<div id="toastContainer"></div>
+
+<!-- 설문 생성 모달 -->
+<div id="surveyCreateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+        <div class="bg-indigo-600 px-6 py-4">
+            <h3 class="text-lg font-bold text-white"><i class="fas fa-plus-circle mr-2"></i>설문 생성</h3>
+        </div>
+        <div class="p-6 space-y-4">
+            <div id="modalFormInfo" class="bg-slate-50 rounded-lg p-4 text-sm">
+                <p class="text-slate-500 mb-1">폼 링크</p>
+                <a id="modalFormLink" href="#" target="_blank" class="text-indigo-600 hover:underline break-all"></a>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">설문 제목 <span class="text-red-500">*</span></label>
+                <input type="text" id="modalSurveyTitle" class="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition" placeholder="설문 제목을 입력하세요">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">설문 설명</label>
+                <textarea id="modalSurveyDescription" class="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition resize-none" rows="3" placeholder="설문 설명을 입력하세요 (선택사항)"></textarea>
+            </div>
+            <input type="hidden" id="modalFormRequestId">
+        </div>
+        <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3">
+            <button onclick="closeSurveyModal()" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-200 rounded-lg transition">취소</button>
+            <button onclick="submitCreateSurvey()" class="px-6 py-2 text-sm bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition">
+                <i class="fas fa-check mr-1"></i>설문 생성 및 등록
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = '/v1';
+
+    // 페이지네이션 상태
+    let currentPage = 0;
+    let totalPages = 0;
+
+    // 페이지 로드 시 데이터 불러오기
+    document.addEventListener('DOMContentLoaded', function() {
+        loadFormRequests();
+    });
+
+    // 필터 초기화
+    function resetFilters() {
+        document.getElementById('searchEmail').value = '';
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('pageSize').value = '10';
+        currentPage = 0;
+        loadFormRequests();
+    }
+
+    // 토스트 메시지 표시
+    function showToast(message, type = 'info') {
+        const existingToast = document.querySelector('.toast-message');
+        if (existingToast) {
+            existingToast.remove();
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'toast-message fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300';
+
+        const colors = {
+            'info': 'bg-blue-500 text-white',
+            'success': 'bg-green-500 text-white',
+            'error': 'bg-red-500 text-white',
+            'warning': 'bg-orange-500 text-white'
+        };
+        toast.className += ' ' + (colors[type] || colors['info']);
+        toast.innerText = message;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // 공통 API 호출 함수
+    async function apiCall(url, method = 'GET', data = null) {
+        const options = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include'
+        };
+
+        if (data && method !== 'GET') {
+            options.body = JSON.stringify(data);
+        }
+
+        try {
+            const response = await fetch(API_BASE_URL + url, options);
+            const contentType = response.headers.get('content-type');
+
+            if (contentType && contentType.includes('text/html')) {
+                console.warn('API가 HTML을 반환했습니다. 인증이 필요할 수 있습니다.');
+            }
+
+            if (response.status === 401) {
+                showToast('로그인이 필요합니다.', 'error');
+                return null;
+            }
+
+            if (response.status === 403) {
+                showToast('접근 권한이 없습니다.', 'error');
+                return null;
+            }
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'API 호출 실패');
+            }
+
+            return result.result;
+        } catch (error) {
+            console.error('API Error:', error);
+            showToast('오류가 발생했습니다: ' + error.message, 'error');
+            throw error;
+        }
+    }
+
+    // ========== 설문 변환 요청 관련 함수 ==========
+    async function loadFormRequests(page = 0) {
+        try {
+            const email = document.getElementById('searchEmail').value.trim();
+            const status = document.getElementById('filterStatus').value;
+            const size = document.getElementById('pageSize').value;
+
+            currentPage = page;
+
+            // URL 파라미터 구성
+            const params = new URLSearchParams();
+            params.append('page', page);
+            params.append('size', size);
+            if (email) params.append('email', email);
+            if (status !== '') params.append('isRegistered', status);
+
+            const response = await apiCall(`/form-requests?${params.toString()}`);
+            if (response) {
+                renderFormRequests(response.requests);
+                renderPagination(response);
+            }
+        } catch (error) {
+            console.error('Failed to load form requests:', error);
+        }
+    }
+
+    // 날짜 포맷팅 함수
+    function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return '-';
+        const date = new Date(dateTimeStr);
+        return date.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function renderFormRequests(requests) {
+        const tbody = document.getElementById('formRequestTableBody');
+        if (!requests || requests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500">검색 조건에 맞는 설문 변환 요청이 없습니다.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = requests.map(req => `
+            <tr class="hover:bg-slate-50">
+                <td class="px-6 py-4 text-slate-600">${req.id}</td>
+                <td class="px-6 py-4">
+                    <a href="${req.formLink}" target="_blank" class="text-indigo-600 hover:underline truncate max-w-xs block" title="${req.formLink}">
+                        ${req.formLink.length > 40 ? req.formLink.substring(0, 40) + '...' : req.formLink}
+                    </a>
+                </td>
+                <td class="px-6 py-4 text-slate-600">${req.requesterEmail || '-'}</td>
+                <td class="px-6 py-4 text-slate-600">${req.questionCount || '-'}</td>
+                <td class="px-6 py-4 text-slate-600">${req.targetResponseCount || '-'}</td>
+                <td class="px-6 py-4 text-slate-600">${req.deadline || '-'}</td>
+                <td class="px-6 py-4 text-slate-600">${req.price ? req.price.toLocaleString() + '원' : '-'}</td>
+                <td class="px-6 py-4">
+                    ${req.isRegistered
+                        ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">등록완료</span>`
+                        : `<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-bold">미등록</span>`
+                    }
+                </td>
+                <td class="px-6 py-4 text-slate-600 text-xs">${formatDateTime(req.createdAt)}</td>
+                <td class="px-6 py-4 text-center">
+                    ${req.isRegistered && req.registeredSurveyId
+                        ? `<button onclick="openSurveyEditor(${req.registeredSurveyId})" class="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700">
+                            <i class="fas fa-eye mr-1"></i>설문 조회
+                           </button>`
+                        : `<button onclick="createSurveyFromRequest(${req.id}, '${req.formLink}')" class="px-3 py-1 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700">
+                            <i class="fas fa-plus mr-1"></i>설문 생성
+                           </button>`
+                    }
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // 페이지네이션 렌더링
+    function renderPagination(pageData) {
+        const { currentPage, totalPages, totalElements, size, hasNext, hasPrevious } = pageData;
+
+        // 페이지 정보 표시
+        const startItem = currentPage * size + 1;
+        const endItem = Math.min((currentPage + 1) * size, totalElements);
+        document.getElementById('pageInfo').innerHTML =
+            `총 <strong>${totalElements}</strong>건 중 <strong>${startItem}-${endItem}</strong>건 표시`;
+
+        // 페이지네이션 버튼
+        const pagination = document.getElementById('pagination');
+        let html = '';
+
+        // 이전 버튼
+        html += `<button onclick="loadFormRequests(${currentPage - 1})"
+                         class="px-3 py-1 rounded text-sm ${hasPrevious ? 'bg-slate-200 hover:bg-slate-300' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}"
+                         ${!hasPrevious ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                 </button>`;
+
+        // 페이지 번호들
+        const maxVisiblePages = 5;
+        let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages);
+
+        if (endPage - startPage < maxVisiblePages) {
+            startPage = Math.max(0, endPage - maxVisiblePages);
+        }
+
+        if (startPage > 0) {
+            html += `<button onclick="loadFormRequests(0)" class="px-3 py-1 rounded text-sm bg-slate-200 hover:bg-slate-300">1</button>`;
+            if (startPage > 1) {
+                html += `<span class="px-2 text-slate-400">...</span>`;
+            }
+        }
+
+        for (let i = startPage; i < endPage; i++) {
+            html += `<button onclick="loadFormRequests(${i})"
+                             class="px-3 py-1 rounded text-sm ${i === currentPage ? 'bg-indigo-600 text-white' : 'bg-slate-200 hover:bg-slate-300'}">
+                        ${i + 1}
+                     </button>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                html += `<span class="px-2 text-slate-400">...</span>`;
+            }
+            html += `<button onclick="loadFormRequests(${totalPages - 1})" class="px-3 py-1 rounded text-sm bg-slate-200 hover:bg-slate-300">${totalPages}</button>`;
+        }
+
+        // 다음 버튼
+        html += `<button onclick="loadFormRequests(${currentPage + 1})"
+                         class="px-3 py-1 rounded text-sm ${hasNext ? 'bg-slate-200 hover:bg-slate-300' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}"
+                         ${!hasNext ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                 </button>`;
+
+        pagination.innerHTML = html;
+    }
+
+    // 설문 생성 - 모달 열기
+    function createSurveyFromRequest(requestId, formLink) {
+        document.getElementById('modalFormRequestId').value = requestId;
+        document.getElementById('modalFormLink').href = formLink;
+        document.getElementById('modalFormLink').innerText = formLink;
+        document.getElementById('modalSurveyTitle').value = '';
+        document.getElementById('modalSurveyDescription').value = '';
+        document.getElementById('surveyCreateModal').classList.remove('hidden');
+    }
+
+    // 모달 닫기
+    function closeSurveyModal() {
+        document.getElementById('surveyCreateModal').classList.add('hidden');
+    }
+
+    // 설문 생성 및 폼 등록 처리
+    async function submitCreateSurvey() {
+        const title = document.getElementById('modalSurveyTitle').value.trim();
+        const description = document.getElementById('modalSurveyDescription').value.trim();
+        const formRequestId = document.getElementById('modalFormRequestId').value;
+
+        if (!title) {
+            showToast('설문 제목을 입력해주세요.', 'error');
+            document.getElementById('modalSurveyTitle').focus();
+            return;
+        }
+
+        try {
+            // 1. 설문 생성
+            const surveyResponse = await apiCall('/survey-form/surveys', 'POST', {
+                title: title,
+                description: description
+            });
+
+            if (!surveyResponse || !surveyResponse.surveyId) {
+                showToast('설문 생성에 실패했습니다.', 'error');
+                return;
+            }
+
+            const surveyId = surveyResponse.surveyId;
+            showToast(`설문이 생성되었습니다. (ID: ${surveyId})`, 'success');
+
+            // 2. 폼 요청 등록 처리
+            await apiCall(`/form-requests/${formRequestId}/register?surveyId=${surveyId}`, 'POST');
+            showToast('폼이 설문에 등록되었습니다.', 'success');
+
+            // 3. 모달 닫기 및 목록 새로고침
+            closeSurveyModal();
+            loadFormRequests();
+
+            // 4. 설문 편집 페이지로 이동 (선택사항)
+            if (confirm('생성된 설문의 문항을 편집하시겠습니까?')) {
+                const params = new URLSearchParams({
+                    surveyId: surveyId,
+                    title: title,
+                    description: description
+                });
+                window.open(`/v1/bo/survey?${params.toString()}`, '_blank');
+            }
+        } catch (error) {
+            console.error('설문 생성/등록 실패:', error);
+        }
+    }
+
+    // 설문 조회/수정 - 기존 설문 빌더에서 해당 설문 열기
+    function openSurveyEditor(surveyId) {
+        window.open(`/v1/bo/survey?surveyId=${surveyId}`, '_blank');
+    }
+</script>
+</body>
+</html>

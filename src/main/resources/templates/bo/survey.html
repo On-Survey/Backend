@@ -54,7 +54,7 @@
             <div class="flex relative">
                 <select id="search-type" class="border border-r-0 border-slate-300 rounded-l px-3 py-2 text-sm bg-slate-50 focus:outline-none">
                     <option value="title">제목</option>
-                    <option value="creator">작성자</option>
+                    <option value="creator">소유자</option>
                 </select>
                 <input type="text" id="search-input" placeholder="검색어 입력" class="border border-slate-300 rounded-r px-3 py-2 text-sm pl-2 w-64 focus:outline-none focus:border-indigo-500" onkeyup="filterSurveys()">
             </div>
@@ -89,7 +89,7 @@
                 <th class="px-6 py-4">ID</th>
                 <th class="px-6 py-4">설문 제목</th>
                 <th class="px-6 py-4">상태</th>
-                <th class="px-6 py-4">작성자</th>
+                <th class="px-6 py-4">소유자</th>
                 <th class="px-6 py-4">등록일</th>
                 <th class="px-6 py-4 text-center">관리</th>
             </tr>
@@ -2231,9 +2231,64 @@
     }
 
     // 페이지 로드 시 초기화
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
         // 설문 목록 로드
-        loadSurveyList();
+        await loadSurveyList();
+
+        // URL 파라미터에서 surveyId, title, description 확인
+        const urlParams = new URLSearchParams(window.location.search);
+        const surveyIdParam = urlParams.get('surveyId');
+        const titleParam = urlParams.get('title');
+        const descriptionParam = urlParams.get('description');
+
+        if (surveyIdParam) {
+            const surveyId = parseInt(surveyIdParam);
+            // 설문 목록에서 해당 설문 찾기
+            let survey = globalSurveyList.find(s => s.surveyId === surveyId);
+
+            if (survey) {
+                // 설문이 목록에 있으면 바로 편집 모드로 열기
+                await openBuilderWithSurvey(surveyId);
+            } else {
+                // 목록에 없으면 가상의 survey 객체를 만들어서 열기
+                try {
+                    // URL 파라미터에서 title/description이 있으면 우선 사용
+                    const title = titleParam || '';
+                    const description = descriptionParam || '';
+
+                    // survey 객체 형태로 변환
+                    survey = {
+                        surveyId: surveyId,
+                        title: title,
+                        description: description,
+                        status: 'WRITING'
+                    };
+
+                    // 목록에 추가 (편집 후 목록으로 돌아갈 때 사용)
+                    globalSurveyList.push(survey);
+
+                    currentSurveyId = surveyId;
+                    isNewSurvey = false;
+
+                    // 편집 모드로 전환
+                    document.getElementById('view-list').classList.add('hidden');
+                    document.getElementById('view-builder').classList.remove('hidden');
+
+                    // UI에 제목과 설명 설정
+                    document.getElementById('survey-title').value = title;
+                    document.getElementById('survey-description').value = description;
+                    document.getElementById('desc-preview').innerText = description || '설문 설명이 없습니다.';
+
+                    // 기본 섹션 추가
+                    await addSection();
+
+                    showToast(`설문 #${surveyId}을(를) 불러왔습니다.`, 'success');
+                } catch (error) {
+                    console.error('설문 조회 실패:', error);
+                    showToast('설문을 불러오는데 실패했습니다.', 'error');
+                }
+            }
+        }
 
         // Enter 키로 문항 추가
         const newQuestionTitle = document.getElementById('new-question-title');

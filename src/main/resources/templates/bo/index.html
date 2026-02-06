@@ -48,12 +48,20 @@
             <i class="fas fa-pen-to-square w-6"></i>
             <span class="nav-text text-sm font-medium">설문 제작/수정</span>
         </a>
-        <a href="#" onclick="showPage('review', this)" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+        <a href="#" onclick="showPage('formRequest', this)" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+            <i class="fas fa-file-import w-6"></i>
+            <span class="nav-text text-sm font-medium">설문 변환 요청</span>
+        </a>
+        <a href="#" onclick="showPage('memberSearch', this)" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+            <i class="fas fa-users w-6"></i>
+            <span class="nav-text text-sm font-medium">사용자 검색</span>
+        </a>
+        <a href="#" onclick="showComingSoon('무료 설문 검수')" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
             <i class="fas fa-check-double w-6"></i>
             <span class="nav-text text-sm font-medium">무료 설문 검수</span>
             <span class="badge ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">3</span>
         </a>
-        <a href="#" onclick="showPage('promotion', this)" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+        <a href="#" onclick="showComingSoon('리워드/프로모션')" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
             <i class="fas fa-coins w-6"></i>
             <span class="nav-text text-sm font-medium">리워드/프로모션</span>
         </a>
@@ -266,12 +274,23 @@
             </div>
         </div>
 
+        <!-- 설문 변환 요청 페이지 -->
+        <div id="page-formRequest" class="page-section hidden h-full w-full">
+            <iframe src="/v1/bo/form-request" class="w-full h-full border-none"></iframe>
+        </div>
+
+        <!-- 사용자 검색 페이지 -->
+        <div id="page-memberSearch" class="page-section hidden h-full w-full">
+            <iframe src="/v1/bo/member-search" class="w-full h-full border-none"></iframe>
+        </div>
+
         <div class="h-20"></div>
 
     </div>
 </main>
 
 <script>
+
     // 사이드바 토글 함수
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
@@ -303,7 +322,9 @@
             'dashboard': '데이터 모니터링',
             'builder': '설문 제작 및 관리',
             'review': '무료 설문 검수',
-            'promotion': '리워드 및 프로모션 관리'
+            'promotion': '리워드 및 프로모션 관리',
+            'formRequest': '설문 변환 요청',
+            'memberSearch': '사용자 검색'
         };
         document.getElementById('page-title').innerText = titles[pageId];
 
@@ -315,67 +336,39 @@
         }
     }
 
-    // 공통 API 호출 함수
-    async function apiCall(url, method = 'GET', data = null) {
-        console.log("API CALL 발생");
-        const options = {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            credentials: 'include'  // 쿠키 포함 (인증용)
-        };
-
-        if (data && method !== 'GET') {
-            options.body = JSON.stringify(data);
-        }
-        console.log("BODY: " + options.body);
-
-        try {
-            const response = await fetch(API_BASE_URL + url, options);
-
-            // Content-Type 확인
-            const contentType = response.headers.get('content-type');
-
-            // HTML 응답인 경우 (로그인 페이지로 리다이렉트 등)
-            if (contentType && contentType.includes('text/html')) {
-                console.warn('API가 HTML을 반환했습니다. 인증이 필요할 수 있습니다.');
-            }
-
-            // 401 Unauthorized - 인증 필요
-            if (response.code === 401) {
-                showToast('로그인이 필요합니다.', 'error');
-                // 로그인 페이지로 리다이렉트 (필요시)
-                // window.location.href = '/login';
-                return null;
-            }
-
-            // 403 Forbidden
-            if (response.code === 403) {
-                showToast('접근 권한이 없습니다.', 'error');
-                return null;
-            }
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || 'API 호출 실패');
-            }
-
-            return result.result;
-        } catch (error) {
-            console.error('API Error:', error);
-
-            // JSON 파싱 에러인 경우
-            if (error instanceof SyntaxError) {
-                console.warn('JSON 파싱 실패 - 개발 모드로 전환');
-            }
-
-            showToast('오류가 발생했습니다: ' + error.message, 'error');
-            throw error;
-        }
+    // 아직 준비 중 토스트 표시
+    function showComingSoon(featureName) {
+        showToast(`'${featureName}' 기능은 아직 준비 중입니다.`, 'info');
     }
+
+    // 토스트 메시지 표시
+    function showToast(message, type = 'info') {
+        // 기존 토스트 제거
+        const existingToast = document.querySelector('.toast-message');
+        if (existingToast) {
+            existingToast.remove();
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'toast-message fixed top-20 right-8 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300';
+
+        const colors = {
+            'info': 'bg-blue-500 text-white',
+            'success': 'bg-green-500 text-white',
+            'error': 'bg-red-500 text-white',
+            'warning': 'bg-orange-500 text-white'
+        };
+        toast.className += ' ' + (colors[type] || colors['info']);
+        toast.innerText = message;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
 
 </script>
 </body>

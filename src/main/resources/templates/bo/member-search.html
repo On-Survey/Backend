@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용자 검색</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 p-6">
+<div class="space-y-6">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h3 class="font-bold text-slate-700 mb-4">사용자 검색</h3>
+        <div class="grid grid-cols-4 gap-4 mb-4">
+            <div>
+                <label for="searchEmail" class="block text-xs text-slate-500 mb-1">이메일</label>
+                <input type="text" id="searchEmail" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="이메일 입력">
+            </div>
+            <div>
+                <label for="searchPhone" class="block text-xs text-slate-500 mb-1">전화번호</label>
+                <input type="text" id="searchPhone" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="전화번호 입력">
+            </div>
+            <div>
+                <label for="searchMemberId" class="block text-xs text-slate-500 mb-1">회원 ID</label>
+                <input type="text" id="searchMemberId" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="회원 ID 입력">
+            </div>
+            <div>
+                <label for="searchName" class="block text-xs text-slate-500 mb-1">이름</label>
+                <input type="text" id="searchName" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="이름 입력">
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="searchMembers()" class="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-bold hover:bg-indigo-700">
+                <i class="fas fa-search mr-2"></i>검색
+            </button>
+            <button onclick="clearMemberSearch()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm hover:bg-slate-300">
+                초기화
+            </button>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-slate-500 border-b">
+            <tr>
+                <th class="px-6 py-4">회원 ID</th>
+                <th class="px-6 py-4">UserKey</th>
+                <th class="px-6 py-4">이름</th>
+                <th class="px-6 py-4">이메일</th>
+                <th class="px-6 py-4">전화번호</th>
+                <th class="px-6 py-4">생년월일</th>
+                <th class="px-6 py-4">성별</th>
+                <th class="px-6 py-4">상태</th>
+                <th class="px-6 py-4">코인</th>
+            </tr>
+            </thead>
+            <tbody id="memberSearchTableBody" class="divide-y divide-slate-100">
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    const API_BASE_URL = '';
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = ['searchEmail', 'searchPhone', 'searchMemberId', 'searchName'];
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchMembers();
+                }
+            });
+        });
+    });
+    function showToast(message, type = 'info') {
+        const existingToast = document.querySelector('.toast-message');
+        if (existingToast) existingToast.remove();
+        const toast = document.createElement('div');
+        toast.className = 'toast-message fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300';
+        const colors = {
+            'info': 'bg-blue-500 text-white',
+            'success': 'bg-green-500 text-white',
+            'error': 'bg-red-500 text-white',
+            'warning': 'bg-orange-500 text-white'
+        };
+        toast.className += ' ' + (colors[type] || colors['info']);
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    async function apiCall(url, method = 'GET', data = null) {
+        const options = {
+            method,
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            credentials: 'include'
+        };
+        if (data && method !== 'GET') options.body = JSON.stringify(data);
+        try {
+            const response = await fetch(API_BASE_URL + url, options);
+            if (response.status === 401) { showToast('로그인이 필요합니다.', 'error'); return null; }
+            if (response.status === 403) { showToast('접근 권한이 없습니다.', 'error'); return null; }
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'API 호출 실패');
+            return result.result;
+        } catch (error) {
+            console.error('API Error:', error);
+            showToast('오류가 발생했습니다: ' + error.message, 'error');
+            throw error;
+        }
+    }
+    async function searchMembers() {
+        const email = document.getElementById('searchEmail').value.trim();
+        const phone = document.getElementById('searchPhone').value.trim();
+        const memberId = document.getElementById('searchMemberId').value.trim();
+        const name = document.getElementById('searchName').value.trim();
+        if (!email && !phone && !memberId && !name) {
+            showToast('검색 조건을 하나 이상 입력해주세요.', 'warning');
+            return;
+        }
+        const params = new URLSearchParams();
+        if (email) params.append('email', email);
+        if (phone) params.append('phoneNumber', phone);
+        if (memberId) params.append('memberId', memberId);
+        if (name) params.append('name', name);
+        try {
+            const response = await apiCall('/v1/admin/search?' + params.toString());
+            if (response) renderMemberSearchResults(response.members || response);
+        } catch (error) {
+            console.error('Failed to search members:', error);
+        }
+    }
+    function renderMemberSearchResults(members) {
+        const tbody = document.getElementById('memberSearchTableBody');
+        if (!members || members.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="px-6 py-8 text-center text-slate-500">검색 결과가 없습니다.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = members.map(member => 
+            '<tr class="hover:bg-slate-50">' +
+            '<td class="px-6 py-4 text-slate-600">' + member.id + '</td>' +
+            '<td class="px-6 py-4 text-slate-600">' + (member.userKey || '-') + '</td>' +
+            '<td class="px-6 py-4 font-medium text-slate-800">' + (member.name || '-') + '</td>' +
+            '<td class="px-6 py-4 text-slate-600">' + (member.email || '-') + '</td>' +
+            '<td class="px-6 py-4 text-slate-600">' + (member.phoneNumber || '-') + '</td>' +
+            '<td class="px-6 py-4 text-slate-600">' + (member.birthDay || '-') + '</td>' +
+            '<td class="px-6 py-4 text-slate-600">' + (member.gender || '-') + '</td>' +
+            '<td class="px-6 py-4"><span class="px-2 py-0.5 rounded text-xs font-bold ' + getStatusColor(member.status) + '">' + (member.status || '-') + '</span></td>' +
+            '<td class="px-6 py-4 text-slate-600">' + (member.coin ? member.coin.toLocaleString() : 0) + '</td>' +
+            '</tr>'
+        ).join('');
+    }
+    function getStatusColor(status) {
+        const statusColors = {
+            'ACTIVE': 'bg-green-100 text-green-700',
+            'INACTIVE': 'bg-slate-100 text-slate-600',
+            'SUSPENDED': 'bg-red-100 text-red-700',
+            'TOSS_CONNECT_OUT': 'bg-orange-100 text-orange-700'
+        };
+        return statusColors[status] || 'bg-slate-100 text-slate-600';
+    }
+    function clearMemberSearch() {
+        document.getElementById('searchEmail').value = '';
+        document.getElementById('searchPhone').value = '';
+        document.getElementById('searchMemberId').value = '';
+        document.getElementById('searchName').value = '';
+        document.getElementById('memberSearchTableBody').innerHTML = '';
+    }
+</script>
+</body>
+</html>
