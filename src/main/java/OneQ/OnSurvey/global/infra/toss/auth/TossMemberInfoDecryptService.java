@@ -24,11 +24,16 @@ public class TossMemberInfoDecryptService {
     @Value("${toss.decrypt.aad}")
     private String aad;
 
+    private static final int IV_LENGTH = 12;
+
     private String decrypt(
             String encryptedText
     ) throws Exception {
-        final int IV_LENGTH = 12;
         byte[] decoded = Base64.getDecoder().decode(encryptedText);
+        if (decoded.length < IV_LENGTH) {
+            log.warn("[TossMemberInfoDecryptService] 암호화 데이터 길이 부족: {} bytes (최소 {} 필요)", decoded.length, IV_LENGTH);
+            return null;
+        }
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         byte[] keyByteArray = Base64.getDecoder().decode(base64EncodedAesKey);
         SecretKeySpec key = new SecretKeySpec(keyByteArray, "AES");
