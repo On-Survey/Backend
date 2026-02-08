@@ -309,7 +309,8 @@ public class SurveyCommandService implements SurveyCommand {
         applySurveyRuntimeCache(surveyId, userKey, dueCount, deadline);
 
         SurveySubmittedAlert alert = new SurveySubmittedAlert(
-                userKey, surveyId, survey.getTitle(), totalCoin, info.getDueCount()
+                userKey, surveyId, survey.getTitle(), totalCoin, info.getDueCount(),
+                survey.getDeadline(), survey.getIsFree(), info.getGender(), info.getAges().stream().toList()
         );
         afterCommitExecutor.run(() -> alertNotifier.sendSurveySubmittedAsync(alert));
 
