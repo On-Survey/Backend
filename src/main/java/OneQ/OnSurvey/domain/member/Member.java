@@ -170,10 +170,9 @@ public class Member extends BaseEntity {
 
     public void completeOnboarding(Residence residence, Set<Interest> interests) {
         this.residence = residence;
-        this.interests.clear();
-        if (interests != null) {
-            this.interests.addAll(interests);
-        }
+        Set<Interest> newInterests = interests != null ? interests : Set.of();
+        this.interests.retainAll(newInterests);
+        this.interests.addAll(newInterests);
         this.onboardingCompleted = true;
     }
 }
