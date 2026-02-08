@@ -118,11 +118,11 @@ public class Member extends BaseEntity {
             Gender gender,
             MemberStatus status
     ) {
-        this.name = name;
-        this.phoneNumber = phoneNumber;
-        this.birthDay = birthDay;
-        this.email = email;
-        this.gender = gender;
+        if (name != null) this.name = name;
+        if (phoneNumber != null) this.phoneNumber = phoneNumber;
+        if (birthDay != null) this.birthDay = birthDay;
+        if (email != null) this.email = email;
+        if (gender != null) this.gender = gender;
         this.status = status;
     }
 
