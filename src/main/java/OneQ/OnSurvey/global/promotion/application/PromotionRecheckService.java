@@ -34,6 +34,11 @@ public class PromotionRecheckService {
     public void scheduledRecheckPending() {
         log.info("[PROMO-SCHEDULER] 스케줄러 실행");
         recheckPending(schedulerLimit);
+        try {
+            recheckPending(schedulerLimit);
+        } catch (Exception e) {
+            log.error("[PROMO-SCHEDULER] 스케줄러 실행 중 오류 발생", e);
+        }
     }
 
     public PromotionRecheckPendingResponse recheckPending(int limit) {
