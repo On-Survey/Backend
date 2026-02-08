@@ -1,10 +1,15 @@
 package OneQ.OnSurvey.domain.survey.service.export;
 
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import OneQ.OnSurvey.domain.survey.model.AgeRange;
+import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.export.SurveyAnswerProjection;
 import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
 import OneQ.OnSurvey.domain.survey.model.export.SurveyMemberProjection;
 import OneQ.OnSurvey.domain.survey.model.export.SurveyQuestionHeader;
 import OneQ.OnSurvey.domain.survey.repository.export.SurveyExportRepository;
+import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.SURVEY_FORBIDDEN;
 
@@ -28,6 +30,7 @@ import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.SURVEY_FORBIDDEN;
 public class SurveyExportService implements SurveyExport {
 
     private final SurveyExportRepository surveyExportRepository;
+    private final SurveyInfoRepository surveyInfoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -39,6 +42,10 @@ public class SurveyExportService implements SurveyExport {
         }
 
         try {
+            SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId).orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
+            boolean includeGender = shouldIncludeGender(surveyInfo);
+            boolean includeAge = shouldIncludeAge(surveyInfo);
+
             List<SurveyQuestionHeader> headers = surveyExportRepository.findQuestionHeaders(surveyId);
             List<SurveyMemberProjection> members = surveyExportRepository.findMembersWhoAnswered(surveyId);
             List<SurveyAnswerProjection> answers = surveyExportRepository.findAnswers(surveyId);
@@ -56,8 +63,8 @@ public class SurveyExportService implements SurveyExport {
 
             // header
             List<String> headerCols = new ArrayList<>();
-            headerCols.add("age");
-            headerCols.add("gender");
+            if (includeAge) headerCols.add("age");
+            if (includeGender) headerCols.add("gender");
             headerCols.add("residence");
             for (SurveyQuestionHeader h : headers) {
                 headerCols.add("Q" + nvlInt(h.getOrderNo() + 1) + ". " + nvl(h.getTitle()));
@@ -68,9 +75,15 @@ public class SurveyExportService implements SurveyExport {
             for (SurveyMemberProjection m : members) {
                 List<String> row = new ArrayList<>();
 
-                Integer age = toAge(m.getBirthDay());
-                row.add(age == null ? "" : String.valueOf(age));
-                row.add(m.getGender());
+                if (includeAge) {
+                    Integer age = toAge(m.getBirthDay());
+                    row.add(age == null ? "" : String.valueOf(age));
+                }
+
+                if (includeGender) {
+                    row.add(nvl(m.getGender()));
+                }
+
                 row.add(nvl(m.getResidence()));
 
                 Map<Long, String> memberAnswers = answerMap.getOrDefault(m.getMemberId(), Map.of());
@@ -104,6 +117,21 @@ public class SurveyExportService implements SurveyExport {
             throw e;
         }
     }
+
+    private boolean shouldIncludeGender(SurveyInfo info) {
+        if (info == null) return false;
+        if (info.getGender() == null) return false;
+        return info.getGender() != Gender.ALL; // '전체'면 제공 안 함
+    }
+
+    private boolean shouldIncludeAge(SurveyInfo info) {
+        if (info == null) return false;
+        Set<AgeRange> ages = info.getAges();
+        if (ages == null || ages.isEmpty()) return false;
+
+        return !ages.contains(AgeRange.ALL);
+    }
+
 
     private String nvl(String s) { return s == null ? "" : s; }
     private String nvlInt(Integer i) { return i == null ? "" : String.valueOf(i); }
