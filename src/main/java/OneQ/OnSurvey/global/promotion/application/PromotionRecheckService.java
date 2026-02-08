@@ -7,6 +7,7 @@ import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -25,6 +26,15 @@ public class PromotionRecheckService {
 
     @Value("${toss.api.promotion.code}")
     private String promotionCode;
+
+    @Value("${toss.api.promotion.recheck.scheduler.limit}")
+    private int schedulerLimit;
+
+    @Scheduled(fixedDelayString = "${toss.api.promotion.recheck.scheduler.delay-ms}")
+    public void scheduledRecheckPending() {
+        log.info("[PROMO-SCHEDULER] 스케줄러 실행");
+        recheckPending(schedulerLimit);
+    }
 
     public PromotionRecheckPendingResponse recheckPending(int limit) {
         List<PromotionGrant> pendings = promotionGrantRepository.findPendingWithExecKey(limit);
