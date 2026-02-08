@@ -83,7 +83,11 @@ public class DiscordAlarmService {
                         "• surveyId: `" + a.surveyId() + "`\n" +
                         "• title: `" + safe(a.title()) + "`\n" +
                         "• totalCoin: `" + a.totalCoin() + "`\n" +
-                        "• dueCount: `" + a.dueCount() + "`\n";
+                        "• dueCount: `" + a.dueCount() + "`\n" +
+                        "• deadline: `" + a.deadline() + "`\n" +
+                        "• isFree: `" + a.isFree() + "`\n" +
+                        "• gender: `" + a.gender() + "`\n" +
+                        "• ages: `" + a.ages() + "`\n";
 
         post(url, title, desc);
     }
@@ -141,7 +145,7 @@ public class DiscordAlarmService {
 
         if (stack.length() > budget) {
             int sliceBudget = Math.max(0, budget - TRUNC_SUFFIX.length());
-            stack = stack.substring(0, Math.max(0, sliceBudget));
+            stack = stack.substring(0, sliceBudget);
             truncated = true;
         }
 
