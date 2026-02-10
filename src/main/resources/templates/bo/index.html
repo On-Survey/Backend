@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>설문 플랫폼 통합 백오피스</title>
-    <script src="../script/auth-guard.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/bo-session.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Pretendard', sans-serif; }
@@ -59,7 +59,7 @@
         <a href="#" onclick="showComingSoon('무료 설문 검수')" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
             <i class="fas fa-check-double w-6"></i>
             <span class="nav-text text-sm font-medium">무료 설문 검수</span>
-            <span class="badge ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">3</span>
+            <span class="badge ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full"></span>
         </a>
         <a href="#" onclick="showComingSoon('리워드/프로모션')" class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
             <i class="fas fa-coins w-6"></i>
@@ -69,27 +69,36 @@
 
     <div class="p-4 border-t border-slate-800 bg-slate-950">
         <div class="flex items-center gap-3">
-            <div class="user-avatar w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">AD</div>
+            <div class="user-avatar w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs"
+                 th:text="${adminName != null ? adminName.substring(0, 1).toUpperCase() : 'A'}">A</div>
             <div class="user-info">
-                <p class="text-sm text-white font-medium">김운영 매니저</p>
-                <p class="text-xs text-slate-500">Super Admin</p>
+                <p class="text-sm text-white font-medium" th:text="${adminName != null ? adminName : 'Admin'}">Admin</p>
+                <p class="text-xs text-slate-500">Admin</p>
             </div>
         </div>
     </div>
 </aside>
 
-<main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+<main class="flex-1 flex flex-col overflow-hidden relative">
     <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10">
-        <h2 id="page-title" class="text-lg font-bold text-slate-800">데이터 모니터링</h2>
+        <div class="flex items-center gap-4">
+            <button id="back-btn" onclick="goBack()" class="hidden text-slate-400 hover:text-slate-600 hover:bg-slate-100 px-2 py-1 rounded transition-colors" title="뒤로가기">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2 id="page-title" class="text-lg font-bold text-slate-800">데이터 모니터링</h2>
+        </div>
         <div class="flex items-center gap-4">
             <button class="text-slate-400 hover:text-slate-600"><i class="fas fa-bell"></i></button>
             <button class="text-slate-400 hover:text-slate-600"><i class="fas fa-cog"></i></button>
+            <button onclick="boSession.logout()" class="text-slate-400 hover:text-red-500" title="로그아웃">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-8 bg-slate-100">
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-100">
 
-        <div id="page-dashboard" class="page-section space-y-6">
+        <div id="page-dashboard" class="page-section flex-1 overflow-y-auto p-8 space-y-6">
             <div class="grid grid-cols-4 gap-6">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div class="text-slate-500 text-xs font-bold uppercase mb-1">오늘 신규 설문</div>
@@ -180,11 +189,11 @@
             </div>
         </div>
 
-        <div id="page-builder" class="page-section hidden h-full w-full">
+        <div id="page-builder" class="page-section hidden flex-1 w-full">
             <iframe src="/v1/bo/survey" class="w-full h-full border-none"></iframe>
         </div>
 
-        <div id="page-review" class="page-section hidden space-y-6">
+        <div id="page-review" class="page-section hidden flex-1 overflow-y-auto p-8 space-y-6">
             <div class="flex gap-2 mb-4">
                 <button class="px-4 py-2 bg-slate-800 text-white rounded text-sm font-bold">대기중 (3)</button>
                 <button class="px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded text-sm hover:bg-slate-50">승인 완료</button>
@@ -230,7 +239,7 @@
             </div>
         </div>
 
-        <div id="page-promotion" class="page-section hidden space-y-6">
+        <div id="page-promotion" class="page-section hidden flex-1 overflow-y-auto p-8 space-y-6">
             <div class="grid grid-cols-3 gap-6">
                 <div class="bg-indigo-900 text-white p-6 rounded-xl shadow-md">
                     <div class="text-indigo-200 text-xs font-bold uppercase mb-1">지급 대기 포인트</div>
@@ -275,21 +284,22 @@
         </div>
 
         <!-- 설문 변환 요청 페이지 -->
-        <div id="page-formRequest" class="page-section hidden h-full w-full">
+        <div id="page-formRequest" class="page-section hidden flex-1 w-full">
             <iframe src="/v1/bo/form-request" class="w-full h-full border-none"></iframe>
         </div>
 
         <!-- 사용자 검색 페이지 -->
-        <div id="page-memberSearch" class="page-section hidden h-full w-full">
+        <div id="page-memberSearch" class="page-section hidden flex-1 w-full">
             <iframe src="/v1/bo/member-search" class="w-full h-full border-none"></iframe>
         </div>
-
-        <div class="h-20"></div>
-
     </div>
 </main>
 
 <script>
+
+    // 네비게이션 히스토리 스택 (뒤로가기 지원용)
+    let navigationHistory = [];
+    let currentPageId = 'dashboard';
 
     // 사이드바 토글 함수
     function toggleSidebar() {
@@ -309,7 +319,20 @@
     }
 
     // 페이지 전환 함수
-    function showPage(pageId, element) {
+    function showPage(pageId, element, addToHistory = true) {
+        // 히스토리에 현재 페이지 추가 (뒤로가기용)
+        if (addToHistory && currentPageId !== pageId) {
+            navigationHistory.push({
+                pageId: currentPageId,
+                iframeSrc: getCurrentIframeSrc(currentPageId)
+            });
+
+            // History API로 브라우저 히스토리에도 추가
+            history.pushState({ pageId: pageId }, '', `#${pageId}`);
+        }
+
+        currentPageId = pageId;
+
         // 1. 모든 페이지 섹션 숨기기
         const sections = document.querySelectorAll('.page-section');
         sections.forEach(sec => sec.classList.add('hidden'));
@@ -333,8 +356,172 @@
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => item.classList.remove('active'));
             element.classList.add('active');
+        } else {
+            // element가 없으면 pageId로 찾아서 활성화
+            updateNavActiveState(pageId);
         }
     }
+
+    // 현재 iframe의 src 가져오기
+    function getCurrentIframeSrc(pageId) {
+        const pageEl = document.getElementById('page-' + pageId);
+        const iframe = pageEl?.querySelector('iframe');
+        return iframe?.src || null;
+    }
+
+    // 네비게이션 활성화 상태 업데이트
+    function updateNavActiveState(pageId) {
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => item.classList.remove('active'));
+
+        const pageToNavMap = {
+            'dashboard': 'dashboard',
+            'builder': 'builder',
+            'formRequest': 'formRequest',
+            'memberSearch': 'memberSearch'
+        };
+
+        navItems.forEach(item => {
+            const onclick = item.getAttribute('onclick');
+            if (onclick && onclick.includes(`'${pageId}'`)) {
+                item.classList.add('active');
+            }
+        });
+    }
+
+    // iframe 내부에서 다른 페이지로 이동 요청 처리
+    function navigateIframe(pageId, iframeSrc) {
+        // 히스토리에 현재 상태 저장
+        navigationHistory.push({
+            pageId: currentPageId,
+            iframeSrc: getCurrentIframeSrc(currentPageId)
+        });
+
+        currentPageId = pageId;
+
+        // History API로 브라우저 히스토리에도 추가
+        history.pushState({ pageId: pageId, iframeSrc: iframeSrc }, '', `#${pageId}`);
+
+        // 1. 모든 페이지 섹션 숨기기
+        const sections = document.querySelectorAll('.page-section');
+        sections.forEach(sec => sec.classList.add('hidden'));
+
+        // 2. 선택된 페이지 보여주기 및 iframe src 변경
+        const pageEl = document.getElementById('page-' + pageId);
+        pageEl.classList.remove('hidden');
+
+        const iframe = pageEl.querySelector('iframe');
+        if (iframe && iframeSrc) {
+            iframe.src = iframeSrc;
+        }
+
+        // 3. 헤더 타이틀 변경
+        const titles = {
+            'dashboard': '데이터 모니터링',
+            'builder': '설문 제작 및 관리',
+            'review': '무료 설문 검수',
+            'promotion': '리워드 및 프로모션 관리',
+            'formRequest': '설문 변환 요청',
+            'memberSearch': '사용자 검색'
+        };
+        document.getElementById('page-title').innerText = titles[pageId] || pageId;
+
+        // 4. 네비게이션 활성화 상태 변경
+        updateNavActiveState(pageId);
+
+        // 5. 뒤로가기 버튼 표시
+        updateBackButton();
+    }
+
+    // 뒤로가기 버튼 표시/숨김
+    function updateBackButton() {
+        const backBtn = document.getElementById('back-btn');
+        if (navigationHistory.length > 0) {
+            backBtn.classList.remove('hidden');
+        } else {
+            backBtn.classList.add('hidden');
+        }
+    }
+
+    // 뒤로가기 함수
+    function goBack() {
+        if (navigationHistory.length > 0) {
+            const prev = navigationHistory.pop();
+
+            currentPageId = prev.pageId;
+
+            // 1. 모든 페이지 섹션 숨기기
+            const sections = document.querySelectorAll('.page-section');
+            sections.forEach(sec => sec.classList.add('hidden'));
+
+            // 2. 이전 페이지 보여주기
+            const pageEl = document.getElementById('page-' + prev.pageId);
+            pageEl.classList.remove('hidden');
+
+            // iframe src 복원
+            if (prev.iframeSrc) {
+                const iframe = pageEl.querySelector('iframe');
+                if (iframe) {
+                    iframe.src = prev.iframeSrc;
+                }
+            }
+
+            // 3. 헤더 타이틀 변경
+            const titles = {
+                'dashboard': '데이터 모니터링',
+                'builder': '설문 제작 및 관리',
+                'review': '무료 설문 검수',
+                'promotion': '리워드 및 프로모션 관리',
+                'formRequest': '설문 변환 요청',
+                'memberSearch': '사용자 검색'
+            };
+            document.getElementById('page-title').innerText = titles[prev.pageId];
+
+            // 4. 네비게이션 활성화 상태 변경
+            updateNavActiveState(prev.pageId);
+
+            // 5. 뒤로가기 버튼 업데이트
+            updateBackButton();
+
+            return true;
+        }
+        return false;
+    }
+
+    // iframe에서 오는 메시지 처리
+    window.addEventListener('message', function(event) {
+        // 보안: 같은 origin에서 온 메시지만 처리
+        if (event.origin !== window.location.origin) return;
+
+        const data = event.data;
+
+        if (data && data.type === 'navigate') {
+            // form-request에서 survey 페이지로 이동 요청
+            if (data.from === 'form-request' && data.url) {
+                navigateIframe('builder', data.url);
+            }
+        }
+
+        if (data && data.type === 'goBack') {
+            // iframe에서 뒤로가기 요청
+            goBack();
+        }
+    });
+
+    // 브라우저 뒤로가기/앞으로가기 버튼 처리
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.pageId) {
+            showPage(event.state.pageId, null, false);
+
+            if (event.state.iframeSrc) {
+                const pageEl = document.getElementById('page-' + event.state.pageId);
+                const iframe = pageEl?.querySelector('iframe');
+                if (iframe) {
+                    iframe.src = event.state.iframeSrc;
+                }
+            }
+        }
+    });
 
     // 아직 준비 중 토스트 표시
     function showComingSoon(featureName) {
@@ -368,6 +555,9 @@
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
+
+    // 초기화: 현재 페이지를 히스토리에 등록
+    history.replaceState({ pageId: 'dashboard' }, '', '#dashboard');
 
 
 </script>

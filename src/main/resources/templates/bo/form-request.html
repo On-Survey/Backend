@@ -10,9 +10,9 @@
         body { font-family: 'Pretendard', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-100 p-6">
+<body class="bg-slate-100 h-screen overflow-y-auto p-6">
 
-<div class="space-y-6">
+<div class="space-y-6 pb-6">
     <!-- 검색 및 필터 영역 -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div class="flex flex-wrap gap-4 items-end">
@@ -279,7 +279,7 @@
                 <td class="px-6 py-4 text-slate-600 text-xs">${formatDateTime(req.createdAt)}</td>
                 <td class="px-6 py-4 text-center">
                     ${req.isRegistered && req.registeredSurveyId
-                        ? `<button onclick="openSurveyEditor(${req.registeredSurveyId})" class="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700">
+                        ? `<button onclick="openSurveyEditor(${req.registeredSurveyId}, ${req.id})" class="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700">
                             <i class="fas fa-eye mr-1"></i>설문 조회
                            </button>`
                         : `<button onclick="createSurveyFromRequest(${req.id}, '${req.formLink}')" class="px-3 py-1 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700">
@@ -406,19 +406,41 @@
             if (confirm('생성된 설문의 문항을 편집하시겠습니까?')) {
                 const params = new URLSearchParams({
                     surveyId: surveyId,
+                    formRequestId: formRequestId,
                     title: title,
                     description: description
                 });
-                window.open(`/v1/bo/survey?${params.toString()}`, '_blank');
+                navigateToSurvey(params.toString());
             }
         } catch (error) {
             console.error('설문 생성/등록 실패:', error);
         }
     }
 
-    // 설문 조회/수정 - 기존 설문 빌더에서 해당 설문 열기
-    function openSurveyEditor(surveyId) {
-        window.open(`/v1/bo/survey?surveyId=${surveyId}`, '_blank');
+    // 설문 조회/수정 - 기존 설문 빌더에서 해당 설문 열기 (formRequestId 전달)
+    function openSurveyEditor(surveyId, formRequestId) {
+        const params = new URLSearchParams({
+            surveyId: surveyId,
+            formRequestId: formRequestId
+        });
+        navigateToSurvey(params.toString());
+    }
+
+    // 부모 iframe에서 설문 페이지로 이동
+    function navigateToSurvey(queryString) {
+        const surveyUrl = `/v1/bo/survey?${queryString}`;
+
+        // 부모 창(index.html)에 메시지를 보내서 iframe src 변경 요청
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: 'navigate',
+                url: surveyUrl,
+                from: 'form-request'
+            }, '*');
+        } else {
+            // iframe이 아닌 경우 직접 이동
+            window.location.href = surveyUrl;
+        }
     }
 </script>
 </body>

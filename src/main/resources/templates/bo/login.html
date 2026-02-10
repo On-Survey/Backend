@@ -48,8 +48,7 @@
             if (res.ok) {
                 // ★ 중요: 서버가 Set-Cookie를 주면 브라우저가 알아서 저장함.
                 // 클라이언트는 단순히 페이지 이동만 하면 됨.
-                // window.location.href = '/templates/bo/index.html';
-                window.location.href = 'bo/index';
+                window.location.href = '/v1/bo/index';
             } else {
                 alert('로그인 실패: 아이디나 비밀번호를 확인하세요.');
             }

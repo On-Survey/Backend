@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>설문 관리 시스템 - 업그레이드</title>
-    <script src="../script/auth-guard.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -33,31 +32,38 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-8">
+<body class="bg-slate-100 h-screen flex flex-col overflow-hidden">
 
-<header class="flex justify-between items-center mb-6">
+<header class="flex justify-between items-center px-8 py-4 bg-slate-100 shrink-0">
     <h1 class="text-2xl font-bold text-slate-800"><i class="fas fa-tasks mr-2 text-indigo-600"></i>설문 관리</h1>
     <button onclick="goToPage('list')" class="text-sm text-slate-500 hover:text-indigo-600 underline">
         <i class="fas fa-home"></i> 설문 목록으로 돌아가기
     </button>
 </header>
 
-<div id="view-list" class="block">
+<div id="view-list" class="flex-1 overflow-y-auto px-8 pb-8">
     <div class="flex justify-between items-center mb-4">
         <div class="flex gap-2">
-            <select class="border border-slate-300 rounded px-3 py-2 text-sm">
-                <option>전체 상태</option>
-                <option>작성중</option>
-                <option>진행중</option>
-                <option>종료</option>
+            <select id="status-filter" class="border border-slate-300 rounded px-3 py-2 text-sm" onchange="handleFilterChange()">
+                <option value="">전체 상태</option>
+                <option value="WRITING">작성중</option>
+                <option value="NON_WRITING">작성완료</option>
             </select>
             <div class="flex relative">
                 <select id="search-type" class="border border-r-0 border-slate-300 rounded-l px-3 py-2 text-sm bg-slate-50 focus:outline-none">
                     <option value="title">제목</option>
                     <option value="creator">소유자</option>
                 </select>
-                <input type="text" id="search-input" placeholder="검색어 입력" class="border border-slate-300 rounded-r px-3 py-2 text-sm pl-2 w-64 focus:outline-none focus:border-indigo-500" onkeyup="filterSurveys()">
+                <input type="text" id="search-input" placeholder="검색어 입력" class="border border-slate-300 rounded-r px-3 py-2 text-sm pl-2 w-64 focus:outline-none focus:border-indigo-500" onkeyup="handleSearchKeyup(event)">
+                <button onclick="handleFilterChange()" class="ml-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-sm text-slate-600">
+                    <i class="fas fa-search"></i>
+                </button>
             </div>
+            <select id="page-size" class="border border-slate-300 rounded px-3 py-2 text-sm" onchange="handlePageSizeChange()">
+                <option value="10">10개</option>
+                <option value="20">20개</option>
+                <option value="50">50개</option>
+            </select>
         </div>
         <button onclick="toggleCreateForm()" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 text-sm font-bold transition-colors">
             <i class="fas fa-plus mr-1"></i> 새 설문 만들기
@@ -98,23 +104,46 @@
             </tbody>
         </table>
     </div>
+
+    <!-- 페이지네이션 UI -->
+    <div id="pagination-container" class="flex justify-between items-center mt-4 px-2">
+        <div id="pagination-info" class="text-sm text-slate-500">
+            <!-- 예: 총 205건 중 1-10 -->
+        </div>
+        <div id="pagination-buttons" class="flex gap-1">
+            <!-- 페이지 버튼이 여기에 렌더링됨 -->
+        </div>
+    </div>
 </div>
 
 
-<div id="view-builder" class="hidden space-y-6">
+<div id="view-builder" class="hidden flex-1 overflow-y-auto px-8 pb-8">
 
-    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 sticky top-4 z-10">
+    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 sticky top-0 z-10 mt-4">
         <div class="flex justify-between items-start gap-4">
             <div class="flex-1">
-                <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block">EDIT MODE</span>
+                <span id="mode-badge" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block">EDIT MODE</span>
                 <input type="text" id="survey-title" class="w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors" value="" placeholder="설문 제목을 입력하세요">
             </div>
-            <div class="flex flex-col gap-2 shrink-0">
+            <!-- 편집 모드 버튼 -->
+            <div id="edit-mode-buttons" class="flex flex-col gap-2 shrink-0">
                 <button onclick="updateSurveyDisplay()" class="px-4 py-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 text-sm">
                     <i class="fas fa-pen mr-1"></i>설문 정보 수정
                 </button>
                 <button onclick="saveQuestions()" class="px-4 py-2 bg-indigo-600 text-white rounded shadow hover:bg-indigo-700 text-sm font-bold">
                     <i class="fas fa-save mr-1"></i>문항 저장
+                </button>
+                <button onclick="openPublishModal()" class="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 text-sm font-bold">
+                    <i class="fas fa-paper-plane mr-1"></i>설문 게시
+                </button>
+            </div>
+            <!-- 읽기 전용 모드 버튼 -->
+            <div id="view-mode-buttons" class="hidden flex flex-col gap-2 shrink-0">
+                <button onclick="openSurveyInfoModal()" class="px-4 py-2 bg-slate-600 text-white rounded shadow hover:bg-slate-700 text-sm font-bold">
+                    <i class="fas fa-info-circle mr-1"></i>설문 정보 확인
+                </button>
+                <button onclick="openOwnerChangeModal()" class="px-4 py-2 bg-orange-500 text-white rounded shadow hover:bg-orange-600 text-sm font-bold">
+                    <i class="fas fa-user-edit mr-1"></i>설문 소유자 변경
                 </button>
             </div>
         </div>
@@ -145,35 +174,407 @@
         </div>
     </div>
 
-    <div id="section-list" class="space-y-8 pb-20"></div>
+    <div id="section-list" class="space-y-8 pb-8 mt-6"></div>
 
-    <div class="flex justify-center pb-10">
+    <div id="add-section-btn" class="flex justify-center pb-10">
         <button onclick="addSection()" class="flex items-center gap-2 text-slate-500 hover:text-indigo-600 bg-white border border-slate-300 hover:border-indigo-400 px-6 py-2 rounded-full shadow-sm transition-all text-sm font-bold">
             <i class="fas fa-layer-group"></i> 새 섹션 추가
         </button>
     </div>
+</div>
 
-<!--    <div id="question-list" class="space-y-6 pb-20">-->
-<!--        <div id="add-question-btn" class="flex items-center gap-4 bg-white border-2 border-dashed border-slate-300 rounded-lg p-4 hover:border-indigo-400 transition-all">-->
-<!--            <button onclick="addNewQuestionWithData()" class="group flex items-center justify-center rounded-full border-2 border-slate-300 bg-slate-50 px-6 py-3 hover:border-indigo-500 hover:bg-indigo-50 transition-all shrink-0">-->
-<!--                <i class="fas fa-plus text-slate-400 group-hover:text-indigo-600 mr-2"></i>-->
-<!--                <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600">새 문항 추가</span>-->
-<!--            </button>-->
-<!--            <select id="new-question-type" class="text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white">-->
-<!--                <option value="choice" selected>객관식</option>-->
-<!--                <option value="text">단답형</option>-->
-<!--                <option value="textarea">장문형</option>-->
-<!--                <option value="rating">평가형</option>-->
-<!--                <option value="nps">NPS</option>-->
-<!--                <option value="number">숫자형</option>-->
-<!--                <option value="date">날짜형</option>-->
-<!--            </select>-->
-<!--            <div class="flex-1 flex flex-col gap-2">-->
-<!--                <input type="text" id="new-question-title" class="w-full text-sm font-medium border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="문항 제목을 입력하세요">-->
-<!--                <textarea id="new-question-desc" class="w-full text-sm text-slate-600 border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none" rows="2" placeholder="문항 설명을 입력하세요 (선택사항)"></textarea>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
+<!-- 설문 게시 모달 -->
+<div id="publishModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-paper-plane mr-2 text-green-600"></i>설문 게시</h2>
+            <button onclick="closePublishModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- 1. 스크리닝 퀴즈 섹션 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-slate-700"><i class="fas fa-filter mr-2 text-indigo-500"></i>스크리닝 퀴즈 (선택)</h3>
+                    <span id="screeningStatus" class="text-xs px-2 py-1 rounded bg-slate-100 text-slate-500">미설정</span>
+                </div>
+                <p class="text-xs text-slate-500 mb-3">스크리닝 퀴즈를 통해 설문 응답자 필터링이 가능합니다.</p>
+
+                <div id="screeningForm" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">스크리닝 질문</label>
+                        <input type="text" id="screeningContent" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="예: 본 설문의 대상인 20대 여성이 맞습니까?">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">정답 (설문 진행 가능 응답)</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="screeningAnswer" value="true" class="text-indigo-600">
+                                <span class="text-sm">예</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="screeningAnswer" value="false" class="text-indigo-600">
+                                <span class="text-sm">아니오</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="saveScreening()" class="px-4 py-2 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700">
+                            <i class="fas fa-save mr-1"></i>스크리닝 저장
+                        </button>
+                        <button onclick="deleteScreening()" class="px-4 py-2 bg-slate-200 text-slate-600 rounded text-xs hover:bg-slate-300">
+                            <i class="fas fa-trash mr-1"></i>삭제
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 관심사 선택 섹션 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-heart mr-2 text-pink-500"></i>관심사 (필수, 최소 1개)</h3>
+                <p class="text-xs text-slate-500 mb-3">설문 대상자의 관심사를 선택하세요.</p>
+
+                <div id="interestGrid" class="grid grid-cols-3 gap-2">
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="CAREER" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">커리어</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="BUSINESS" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">비즈니스</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="FINANCE" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">재테크/금융</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="HEALTH" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">건강</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="CULTURE" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">문화/예술</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="FASHION" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">패션/뷰티</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="SOCIETY" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">사회/시사</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="SELF_IMPROVEMENT" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">자기개발</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="DAILY_LIFE" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">일상생활</span>
+                    </label>
+                </div>
+                <button onclick="saveInterests()" class="mt-3 px-4 py-2 bg-pink-600 text-white rounded text-xs font-bold hover:bg-pink-700">
+                    <i class="fas fa-save mr-1"></i>관심사 저장
+                </button>
+            </div>
+
+            <!-- 3. 타겟 설정 섹션 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-crosshairs mr-2 text-orange-500"></i>타겟 설정</h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 성별 -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">타겟 성별</label>
+                        <select id="targetGender" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                            <option value="ALL">전체</option>
+                            <option value="MALE">남성</option>
+                            <option value="FEMALE">여성</option>
+                        </select>
+                    </div>
+
+                    <!-- 거주지 -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">타겟 거주지</label>
+                        <select id="targetResidence" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                            <option value="ALL">전체</option>
+                            <option value="SEOUL">서울</option>
+                            <option value="GYEONGGI">경기</option>
+                            <option value="INCHEON">인천</option>
+                            <option value="BUSAN">부산</option>
+                            <option value="DAEGU">대구</option>
+                            <option value="DAEJEON">대전</option>
+                            <option value="GWANGJU">광주</option>
+                            <option value="ULSAN">울산</option>
+                            <option value="SEJONG">세종</option>
+                            <option value="GANGWON">강원</option>
+                            <option value="CHUNGNAM">충남</option>
+                            <option value="CHUNGBUK">충북</option>
+                            <option value="JEONNAM">전남</option>
+                            <option value="JEONBUK">전북</option>
+                            <option value="GYEONGNAM">경남</option>
+                            <option value="GYEONGBUK">경북</option>
+                            <option value="JEJU">제주</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 연령대 -->
+                <div class="mt-4">
+                    <label class="block text-xs font-medium text-slate-600 mb-2">타겟 연령대 (복수 선택 가능)</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="ALL" class="age-checkbox text-indigo-600 rounded" onchange="handleAgeAllSelect(this)">
+                            <span>전체</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="TEN" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>10대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="TWENTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>20대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="THIRTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>30대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="FOURTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>40대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="FIFTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>50대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="SIXTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>60대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="OVER" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>70세 이상</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 응답 수 & 마감일 설정 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-chart-bar mr-2 text-blue-500"></i>응답 설정</h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">목표 응답 수</label>
+                        <select id="targetDueCount" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                            <option value="50">50명</option>
+                            <option value="100">100명</option>
+                            <option value="150">150명</option>
+                            <option value="200">200명</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">마감일</label>
+                        <input type="date" id="targetDeadline" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. 가격 정보 (읽기 전용) -->
+            <div class="border border-green-200 bg-green-50 rounded-xl p-4">
+                <h3 class="font-bold text-green-700 mb-3"><i class="fas fa-coins mr-2"></i>예상 비용</h3>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">성별 타겟:</span>
+                        <span id="priceGender" class="font-medium">0 코인</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">연령대 타겟:</span>
+                        <span id="priceAge" class="font-medium">0 코인</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">거주지 타겟:</span>
+                        <span id="priceResidence" class="font-medium">0 코인</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">응답 수:</span>
+                        <span id="priceDueCount" class="font-medium">0 코인</span>
+                    </div>
+                </div>
+                <div class="border-t border-green-300 mt-3 pt-3 flex justify-between">
+                    <span class="font-bold text-green-800">총 비용:</span>
+                    <span id="priceTotal" class="font-bold text-green-800 text-lg">0 코인</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 모달 하단 버튼 -->
+        <div class="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+            <button onclick="closePublishModal()" class="px-6 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 text-sm font-medium">
+                취소
+            </button>
+            <button onclick="publishSurvey()" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 text-sm font-bold">
+                <i class="fas fa-paper-plane mr-1"></i>설문 게시하기
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 설문 정보 확인 모달 (읽기 전용) -->
+<div id="surveyInfoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-info-circle mr-2 text-slate-600"></i>설문 정보</h2>
+            <button onclick="closeSurveyInfoModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- 스크리닝 퀴즈 정보 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-filter mr-2 text-indigo-500"></i>스크리닝 퀴즈</h3>
+                <div id="infoScreening" class="text-sm text-slate-600">
+                    <p class="text-slate-400">로딩 중...</p>
+                </div>
+            </div>
+
+            <!-- 관심사 정보 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-heart mr-2 text-pink-500"></i>관심사</h3>
+                <div id="infoInterests" class="flex flex-wrap gap-2">
+                    <p class="text-slate-400 text-sm">로딩 중...</p>
+                </div>
+            </div>
+
+            <!-- 타겟 설정 정보 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-crosshairs mr-2 text-orange-500"></i>타겟 설정</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-slate-500">성별:</span>
+                        <span id="infoGender" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">거주지:</span>
+                        <span id="infoResidence" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-500">연령대:</span>
+                        <span id="infoAges" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 응답 설정 정보 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-chart-bar mr-2 text-blue-500"></i>응답 설정</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-slate-500">목표 응답 수:</span>
+                        <span id="infoDueCount" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">현재 응답 수:</span>
+                        <span id="infoCurrentCount" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">마감일:</span>
+                        <span id="infoDeadline" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">설문 상태:</span>
+                        <span id="infoStatus" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 비용 정보 -->
+            <div class="border border-green-200 bg-green-50 rounded-xl p-4">
+                <h3 class="font-bold text-green-700 mb-3"><i class="fas fa-coins mr-2"></i>결제 정보</h3>
+                <div class="text-sm">
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-600">총 결제 코인:</span>
+                        <span id="infoTotalCoin" class="font-bold text-green-700">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 모달 하단 버튼 -->
+        <div class="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex justify-end">
+            <button onclick="closeSurveyInfoModal()" class="px-6 py-2 bg-slate-600 text-white rounded-lg shadow hover:bg-slate-700 text-sm font-bold">
+                닫기
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 설문 소유자 변경 모달 -->
+<div id="ownerChangeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-orange-500 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+            <h2 class="text-lg font-bold text-white"><i class="fas fa-user-edit mr-2"></i>설문 소유자 변경</h2>
+            <button onclick="closeOwnerChangeModal()" class="text-white hover:text-orange-200 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+            <!-- 현재 소유자 정보 -->
+            <div class="bg-slate-50 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-slate-600 mb-2">현재 소유자</h3>
+                <div id="currentOwnerInfo" class="text-sm text-slate-700">
+                    <p class="text-slate-400">설문 정보를 불러오는 중...</p>
+                </div>
+            </div>
+
+            <!-- 회원 검색 영역 -->
+            <div class="border border-slate-200 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-slate-600 mb-3">새 소유자 검색</h3>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <input type="text" id="ownerSearchMemberId" placeholder="회원 ID"
+                           class="flex-1 min-w-[100px] border border-slate-300 rounded px-3 py-2 text-sm focus:border-orange-500 outline-none">
+                    <input type="text" id="ownerSearchName" placeholder="이름"
+                           class="flex-1 min-w-[100px] border border-slate-300 rounded px-3 py-2 text-sm focus:border-orange-500 outline-none">
+                    <input type="text" id="ownerSearchEmail" placeholder="이메일"
+                           class="flex-1 min-w-[150px] border border-slate-300 rounded px-3 py-2 text-sm focus:border-orange-500 outline-none">
+                </div>
+                <button onclick="searchMembersForOwner()" class="w-full px-4 py-2 bg-slate-600 text-white rounded text-sm font-bold hover:bg-slate-700">
+                    <i class="fas fa-search mr-1"></i>회원 검색
+                </button>
+            </div>
+
+            <!-- 검색 결과 -->
+            <div id="ownerSearchResults" class="hidden border border-slate-200 rounded-lg overflow-hidden">
+                <div class="bg-slate-50 px-4 py-2 border-b border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-600">검색 결과</h3>
+                </div>
+                <div id="ownerSearchResultsList" class="max-h-60 overflow-y-auto">
+                    <!-- 검색 결과가 여기에 렌더링됨 -->
+                </div>
+            </div>
+
+            <!-- 선택된 새 소유자 -->
+            <div id="selectedNewOwner" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-orange-600 mb-2">선택된 새 소유자</h3>
+                <div id="selectedOwnerInfo" class="text-sm text-slate-700"></div>
+                <input type="hidden" id="selectedNewMemberId">
+            </div>
+        </div>
+
+        <!-- 모달 하단 버튼 -->
+        <div class="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+            <button onclick="closeOwnerChangeModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">
+                취소
+            </button>
+            <button id="confirmOwnerChangeBtn" onclick="confirmOwnerChange()" disabled
+                    class="px-6 py-2 bg-orange-500 text-white rounded-lg shadow hover:bg-orange-600 text-sm font-bold disabled:bg-slate-300 disabled:cursor-not-allowed">
+                <i class="fas fa-check mr-1"></i>소유자 변경
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -184,9 +585,51 @@
     let currentSurveyId = null;           // 현재 편집 중인 설문 ID
     let isNewSurvey = true;               // 새 설문 여부
     let isSaving = false;                 // 저장 중 여부
+    let isReadOnlyMode = false;           // 읽기 전용 모드 여부
     let questionIdMap = new Map();        // 프론트엔드 questionCounter → 백엔드 questionId 매핑
     let optionIdMap = new Map();          // 프론트엔드 옵션 → 백엔드 optionId 매핑
     let globalSurveyList = [];
+    let isFromFormRequest = false;        // 설문 변환 요청에서 접근했는지 여부
+    let currentFormRequestId = null;      // 현재 설문 변환 요청 ID
+    let currentSurveyInfo = null;         // 현재 설문 상세 정보 (읽기 전용 모드용)
+
+    // 설문 게시 관련 상태
+    let currentScreeningId = null;        // 현재 스크리닝 퀴즈 ID
+    let savedInterests = new Set();       // 저장된 관심사 목록
+
+    // 가격 매핑 (추후 실제 값으로 교체 예정)
+    const PRICE_MAP = {
+        gender: {
+            ALL: 0,
+            MALE: 100,
+            FEMALE: 100
+        },
+        age: {
+            ALL: 0,
+            TEN: 50,
+            TWENTY: 50,
+            THIRTY: 50,
+            FOURTY: 50,
+            FIFTY: 50,
+            SIXTY: 50,
+            OVER: 50
+        },
+        residence: {
+            ALL: 0,
+            SEOUL: 100,
+            GYEONGGI: 100,
+            // ... 기타 지역도 동일
+            DEFAULT: 100
+        },
+        dueCountPerPerson: 100  // 1명당 비용
+    };
+
+    // 페이지네이션 상태 관리
+    let currentPage = 0;                  // 현재 페이지 (0-based)
+    let currentPageSize = 10;             // 페이지 크기
+    let totalElements = 0;                // 전체 요소 개수
+    let totalPages = 0;                   // 전체 페이지 개수
+    let isLastPage = false;               // 마지막 페이지 여부
 
     // 문항 타입 표시용 텍스트 매핑
     const QUESTION_TYPE_LABEL = {
@@ -278,6 +721,33 @@
                 console.warn('JSON 파싱 실패 - 개발 모드로 전환');
             }
 
+            showToast('오류가 발생했습니다: ' + error.message, 'error');
+            throw error;
+        }
+    }
+
+    // 페이지네이션 API 호출 함수 (PageResponse 전체 반환)
+    async function apiCallPaged(url, method = 'GET') {
+        const options = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include'
+        };
+
+        try {
+            const response = await fetch(API_BASE_URL + url, options);
+
+            if (!response.ok) {
+                const result = await response.json();
+                throw new Error(result.message || 'API 호출 실패');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API Error:', error);
             showToast('오류가 발생했습니다: ' + error.message, 'error');
             throw error;
         }
@@ -676,10 +1146,11 @@
         }
     }
 
-    // 작성 중인 설문 조회
+    // 설문 조회 (어드민 API 사용)
     async function loadSurveyForEdit(survey) {
         try {
-            const response = await apiCall(`/survey-management/writing?surveyId=${survey.surveyId}`, 'GET');
+            // 어드민 API로 설문 상세 조회
+            const response = await apiCall(`/admin/surveys/${survey.surveyId}`, 'GET');
 
             currentSurveyId = survey.surveyId;
             isNewSurvey = false;
@@ -688,17 +1159,25 @@
             if (response) {
                 const sections = response.sections || [];
                 const questions = response.questions || [];
+
+                // survey 객체에 title, description 업데이트 (API 응답에서)
+                if (response.information) {
+                    survey.title = response.information.title || survey.title;
+                    survey.description = response.information.description || survey.description;
+                }
+
                 await openBuilder('edit', survey);
                 await renderLoadedQuestions(questions, sections);
             }
 
             return response;
         } catch (error) {
+            console.error('설문 조회 실패:', error);
             return null;
         }
     }
 
-    // 조회된 문항 렌더링
+    // 조회된 문항 렌더링 (AdminSurveyDetailResponse 구조 지원)
     async function renderLoadedQuestions(questions, sections = []) {
         // 기존 섹션 비우기
         const sectionList = document.getElementById('section-list');
@@ -735,10 +1214,15 @@
         for (const q of questions) {
             questionCounter++;
             const frontendType = QUESTION_TYPE_REVERSE_MAP[q.questionType] || 'choice';
-            const isSectionDecidable = q.isSectionDecidable || false;
-            const hasCustomInput = q.hasCustomInput || false;
 
-            const defaultDate = q.defaultDate || null;
+            // AdminSurveyDetailResponse 구조: choiceProperty, ratingProperty, dateProperty
+            const choiceProp = q.choiceProperty || {};
+            const ratingProp = q.ratingProperty || {};
+            const dateProp = q.dateProperty || {};
+
+            const isSectionDecidable = choiceProp.isSectionDecidable || false;
+            const hasCustomInput = choiceProp.hasCustomInput || false;
+            const defaultDate = dateProp.defaultDate || null;
 
             // DOM 생성 (append는 아직)
             const newQuestionEl = addNewQuestion(q.questionId, q.title, q.description, questionCounter, frontendType, isSectionDecidable, hasCustomInput, defaultDate);
@@ -754,7 +1238,7 @@
             if (reqCheck) reqCheck.checked = q.isRequired || false;
 
             // 옵션 및 분기 설정 로드
-            if (q.questionType === 'CHOICE') {
+            if (q.questionType === 'CHOICE' && choiceProp.options) {
                 const container = newQuestionEl.querySelector('.options-container');
                 container.innerHTML = '';
 
@@ -763,9 +1247,11 @@
                     updateSectionJumpOptions(newQuestionEl, true);
                 }
 
-                q.options.forEach(opt => {
-                    // 옵션 추가
-                    addOptionWithData(newQuestionEl, opt.content, opt.optionId, opt.nextSection, isSectionDecidable);
+                // options는 Set이므로 Array로 변환
+                const optionsArray = Array.isArray(choiceProp.options) ? choiceProp.options : Array.from(choiceProp.options || []);
+                optionsArray.forEach(opt => {
+                    // 옵션 추가 (optionId가 없으므로 null 전달)
+                    addOptionWithData(newQuestionEl, opt.content, null, opt.nextSection, isSectionDecidable);
                 });
 
                 if (hasCustomInput) {
@@ -774,9 +1260,9 @@
 
                 // Max Choice 설정
                 const maxSel = newQuestionEl.querySelector('.max-select-count');
-                if (maxSel && q.maxChoice) {
+                if (maxSel && choiceProp.maxChoice) {
                     updateMaxSelectOptions(q.questionId); // 옵션 수 기반 리스트 갱신
-                    maxSel.value = q.maxChoice;
+                    maxSel.value = choiceProp.maxChoice;
                 }
             }
 
@@ -786,18 +1272,18 @@
                 const leftLabel = newQuestionEl.querySelector('.rating-label-left');
                 const rightLabel = newQuestionEl.querySelector('.rating-label-right');
 
-                if (ratingCircles && q.rate) {
-                    ratingCircles.setAttribute('data-count', q.rate);
+                if (ratingCircles && ratingProp.rate) {
+                    ratingCircles.setAttribute('data-count', ratingProp.rate);
                     // 동그라미 다시 렌더링
                     let circlesHTML = '';
-                    for (let i = 1; i <= q.rate; i++) {
+                    for (let i = 1; i <= ratingProp.rate; i++) {
                         circlesHTML += `<span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">${i}</span>`;
                     }
                     ratingCircles.innerHTML = circlesHTML;
                 }
 
-                if (leftLabel && q.minValue) leftLabel.value = q.minValue;
-                if (rightLabel && q.maxValue) rightLabel.value = q.maxValue;
+                if (leftLabel && ratingProp.minValue) leftLabel.value = ratingProp.minValue;
+                if (rightLabel && ratingProp.maxValue) rightLabel.value = ratingProp.maxValue;
             }
         }
 
@@ -861,13 +1347,41 @@
         return div.innerHTML;
     }
 
-    // 설문 목록 조회
-    async function loadSurveyList() {
+    // 설문 목록 조회 (페이지네이션 지원)
+    async function loadSurveyList(page = 0) {
         try {
-            const response = await apiCall('/survey-management/surveys', 'GET');
+            // 필터 값 가져오기
+            const statusFilter = document.getElementById('status-filter').value;
+            const searchType = document.getElementById('search-type').value;
+            const searchInput = document.getElementById('search-input').value.trim();
+            const pageSize = document.getElementById('page-size').value;
 
-            if (response && response.infoList) {
-                renderSurveyList(response.infoList);
+            // URL 쿼리 파라미터 구성
+            const params = new URLSearchParams();
+            params.append('page', page);
+            params.append('size', pageSize);
+            params.append('sort', 'createdAt,desc');
+
+            if (statusFilter && statusFilter !== "") {
+                params.append('status', statusFilter);
+            }
+            if (searchInput && searchType === 'title') {
+                params.append('keyword', searchInput);
+            }
+            // creator 검색은 현재 백엔드가 ID만 지원하므로 생략
+
+            const response = await apiCallPaged(`/admin/surveys?${params.toString()}`);
+
+            if (response && response.result) {
+                // 페이지네이션 상태 업데이트
+                currentPage = response.pageNumber;
+                currentPageSize = response.pageSize;
+                totalElements = response.totalElements;
+                totalPages = response.totalPages;
+                isLastPage = response.last;
+
+                renderSurveyList(response.result);
+                renderPagination();
             }
         } catch (error) {
             console.error('설문 목록 조회 실패:', error);
@@ -892,7 +1406,7 @@
                         ${getStatusText(survey.status)}
                     </span>
                 </td>
-                <td class="px-6 py-4">${survey.creatorName || '-'}</td>
+                <td class="px-6 py-4">${survey.memberId || '-'}</td>
                 <td class="px-6 py-4 text-slate-500">${formatDate(survey.createdAt)}</td>
                 <td class="px-6 py-4 text-center">
                     ${survey.status === 'WRITING'
@@ -902,6 +1416,106 @@
                 </td>
             </tr>
         `).join('');
+    }
+
+    // 페이지네이션 UI 렌더링
+    function renderPagination() {
+        const infoContainer = document.getElementById('pagination-info');
+        const buttonsContainer = document.getElementById('pagination-buttons');
+
+        // 페이지 정보 표시
+        const startItem = totalElements === 0 ? 0 : (currentPage * currentPageSize) + 1;
+        const endItem = Math.min((currentPage + 1) * currentPageSize, totalElements);
+        infoContainer.innerHTML = `총 <span class="font-medium">${totalElements}</span>건 중 <span class="font-medium">${startItem}-${endItem}</span>`;
+
+        // 페이지 버튼 생성
+        let buttonsHtml = '';
+
+        // 이전 버튼
+        buttonsHtml += `
+            <button onclick="goToSurveyPage(${currentPage - 1})"
+                    class="px-3 py-1.5 text-sm border rounded ${currentPage === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white hover:bg-slate-50 text-slate-600'}"
+                    ${currentPage === 0 ? 'disabled' : ''}>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        `;
+
+        // 페이지 번호 버튼들
+        const maxVisiblePages = 5;
+        let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 1);
+
+        // startPage 조정
+        if (endPage - startPage < maxVisiblePages - 1) {
+            startPage = Math.max(0, endPage - maxVisiblePages + 1);
+        }
+
+        // 첫 페이지 버튼 (필요한 경우)
+        if (startPage > 0) {
+            buttonsHtml += `
+                <button onclick="goToSurveyPage(0)" class="px-3 py-1.5 text-sm border rounded bg-white hover:bg-slate-50 text-slate-600">1</button>
+            `;
+            if (startPage > 1) {
+                buttonsHtml += `<span class="px-2 text-slate-400">...</span>`;
+            }
+        }
+
+        // 중간 페이지 버튼들
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === currentPage;
+            buttonsHtml += `
+                <button onclick="goToSurveyPage(${i})"
+                        class="px-3 py-1.5 text-sm border rounded ${isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white hover:bg-slate-50 text-slate-600'}">
+                    ${i + 1}
+                </button>
+            `;
+        }
+
+        // 마지막 페이지 버튼 (필요한 경우)
+        if (endPage < totalPages - 1) {
+            if (endPage < totalPages - 2) {
+                buttonsHtml += `<span class="px-2 text-slate-400">...</span>`;
+            }
+            buttonsHtml += `
+                <button onclick="goToSurveyPage(${totalPages - 1})" class="px-3 py-1.5 text-sm border rounded bg-white hover:bg-slate-50 text-slate-600">${totalPages}</button>
+            `;
+        }
+
+        // 다음 버튼
+        buttonsHtml += `
+            <button onclick="goToSurveyPage(${currentPage + 1})"
+                    class="px-3 py-1.5 text-sm border rounded ${isLastPage ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white hover:bg-slate-50 text-slate-600'}"
+                    ${isLastPage ? 'disabled' : ''}>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        `;
+
+        buttonsContainer.innerHTML = buttonsHtml;
+    }
+
+    // 페이지 이동
+    function goToSurveyPage(page) {
+        if (page < 0 || page >= totalPages || page === currentPage) return;
+        loadSurveyList(page);
+    }
+
+    // 필터 변경 핸들러
+    function handleFilterChange() {
+        currentPage = 0;  // 필터 변경 시 첫 페이지로
+        loadSurveyList(0);
+    }
+
+    // 페이지 크기 변경 핸들러
+    function handlePageSizeChange() {
+        currentPage = 0;  // 페이지 크기 변경 시 첫 페이지로
+        loadSurveyList(0);
+    }
+
+    // 검색 입력 키업 핸들러 (Enter 키)
+    function handleSearchKeyup(event) {
+        if (event.key === 'Enter') {
+            handleFilterChange();
+        }
     }
 
     // 상태 배지 클래스
@@ -918,7 +1532,7 @@
     function getStatusText(status) {
         switch(status) {
             case 'WRITING': return '작성중';
-            case 'ACTIVE': return '진행중';
+            case 'NON_WRITING': return '작성완료';
             case 'CLOSED': return '종료';
             default: return status;
         }
@@ -939,25 +1553,52 @@
         // 설문 데이터 로드
         const survey = globalSurveyList.find(s => s.surveyId === surveyId);
         await loadSurveyForEdit(survey);
+
+        // 상태에 따라 읽기 전용 모드 설정
+        // WRITING 상태가 아니면 읽기 전용
+        const isCompleted = survey && survey.status !== 'WRITING';
+        setReadOnlyMode(isCompleted);
     }
 
-    // 설문 조회 (읽기 전용)
-    function viewSurvey(surveyId) {
-        alert('진행 중인 설문은 상세 페이지만 볼 수 있습니다.');
+    // 설문 조회 (읽기 전용) - 목록에서 직접 호출
+    async function viewSurvey(surveyId) {
+        document.getElementById('view-list').classList.add('hidden');
+        document.getElementById('view-builder').classList.remove('hidden');
+
+        // 설문 데이터 로드
+        const survey = globalSurveyList.find(s => s.surveyId === surveyId);
+        await loadSurveyForEdit(survey);
+
+        // 읽기 전용 모드 강제 설정
+        setReadOnlyMode(true);
     }
 
     // ==================== 화면 전환 ====================
 
     function goToPage(page) {
         if(page === 'list') {
+            // 설문 변환 요청에서 접근한 경우 부모(index.html)에게 뒤로가기 요청
+            if (isFromFormRequest && window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'goBack' }, '*');
+                // 플래그 초기화
+                isFromFormRequest = false;
+                currentFormRequestId = null;
+                return;
+            }
+
             document.getElementById('view-list').classList.remove('hidden');
             document.getElementById('view-builder').classList.add('hidden');
 
             // 상태 초기화
             currentSurveyId = null;
             isNewSurvey = true;
+            isReadOnlyMode = false;
+            currentSurveyInfo = null;
             questionIdMap.clear();
             questionCounter = 0;
+
+            // 읽기 전용 모드 해제
+            setReadOnlyMode(false);
         }
     }
 
@@ -2235,11 +2876,18 @@
         // 설문 목록 로드
         await loadSurveyList();
 
-        // URL 파라미터에서 surveyId, title, description 확인
+        // URL 파라미터에서 surveyId, formRequestId, title, description 확인
         const urlParams = new URLSearchParams(window.location.search);
         const surveyIdParam = urlParams.get('surveyId');
+        const formRequestIdParam = urlParams.get('formRequestId');
         const titleParam = urlParams.get('title');
         const descriptionParam = urlParams.get('description');
+
+        // 설문 변환 요청에서 접근한 경우 플래그 설정
+        if (formRequestIdParam) {
+            isFromFormRequest = true;
+            currentFormRequestId = parseInt(formRequestIdParam);
+        }
 
         if (surveyIdParam) {
             const surveyId = parseInt(surveyIdParam);
@@ -2309,6 +2957,676 @@
         //     }
         // }, 300000); // 5분 = 300000ms
     });
+
+    // ==================== 설문 게시 관련 함수 ====================
+
+    // 설문 게시 모달 열기
+    async function openPublishModal() {
+        if (!currentSurveyId) {
+            showToast('먼저 설문을 저장해주세요.', 'error');
+            return;
+        }
+
+        // 기존 스크리닝 데이터 로드
+        await loadScreeningData();
+
+        // 기존 관심사 데이터 로드 (survey info에서)
+        // TODO: 관심사 로드 API가 있다면 여기서 호출
+
+        // 마감일 기본값 설정 (현재로부터 2주 후)
+        const defaultDeadline = new Date();
+        defaultDeadline.setDate(defaultDeadline.getDate() + 14);
+        document.getElementById('targetDeadline').value = defaultDeadline.toISOString().slice(0, 10);
+
+        // 가격 계산 이벤트 리스너 설정
+        setupPriceCalculation();
+
+        // 가격 초기 계산
+        calculateTotalPrice();
+
+        document.getElementById('publishModal').classList.remove('hidden');
+    }
+
+    // 설문 게시 모달 닫기
+    function closePublishModal() {
+        document.getElementById('publishModal').classList.add('hidden');
+    }
+
+    // 스크리닝 데이터 로드 (어드민 API 사용, content만 로드, 정답은 매번 다시 설정)
+    async function loadScreeningData() {
+        // 정답 라디오 버튼 초기화 (매번 새로 설정하도록)
+        document.querySelector('input[name="screeningAnswer"][value="true"]').checked = false;
+        document.querySelector('input[name="screeningAnswer"][value="false"]').checked = false;
+
+        try {
+            // 어드민 API를 통해 설문 정보 및 스크리닝 조회
+            const response = await apiCall(`/admin/surveys/${currentSurveyId}`);
+
+            if (response && response.screening && response.screening.content) {
+                const screening = response.screening;
+                currentScreeningId = screening.screeningId;
+
+                // content만 설정 (정답은 매번 새로 설정해야 함)
+                document.getElementById('screeningContent').value = screening.content;
+
+                document.getElementById('screeningStatus').textContent = '내용만 로드됨 (정답 재설정 필요)';
+                document.getElementById('screeningStatus').className = 'text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700';
+
+                showToast('스크리닝 질문을 불러왔습니다. 정답을 다시 설정해주세요.', 'info');
+            } else {
+                currentScreeningId = null;
+                document.getElementById('screeningContent').value = '';
+                document.getElementById('screeningStatus').textContent = '미설정';
+                document.getElementById('screeningStatus').className = 'text-xs px-2 py-1 rounded bg-slate-100 text-slate-500';
+            }
+        } catch (error) {
+            console.error('스크리닝 데이터 로드 실패:', error);
+        }
+    }
+
+    // 스크리닝 퀴즈 저장
+    async function saveScreening() {
+        const content = document.getElementById('screeningContent').value.trim();
+        const answerRadio = document.querySelector('input[name="screeningAnswer"]:checked');
+
+        if (!content) {
+            showToast('스크리닝 질문을 입력해주세요.', 'error');
+            return;
+        }
+
+        if (!answerRadio) {
+            showToast('정답을 선택해주세요.', 'error');
+            return;
+        }
+
+        const answer = answerRadio.value === 'true';
+
+        try {
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/screenings`, 'POST', {
+                content: content,
+                answer: answer
+            });
+
+            if (response && response.screeningId) {
+                currentScreeningId = response.screeningId;
+                document.getElementById('screeningStatus').textContent = '설정됨';
+                document.getElementById('screeningStatus').className = 'text-xs px-2 py-1 rounded bg-green-100 text-green-700';
+                showToast('스크리닝 퀴즈가 저장되었습니다.', 'success');
+            }
+        } catch (error) {
+            console.error('스크리닝 저장 실패:', error);
+        }
+    }
+
+    // 스크리닝 퀴즈 삭제
+    async function deleteScreening() {
+        if (!currentScreeningId) {
+            showToast('삭제할 스크리닝 퀴즈가 없습니다.', 'info');
+            return;
+        }
+
+        if (!confirm('스크리닝 퀴즈를 삭제하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            // content가 null이면 삭제
+            await apiCall(`/survey-form/surveys/${currentSurveyId}/screenings`, 'POST', {
+                content: null,
+                answer: null
+            });
+
+            currentScreeningId = null;
+            document.getElementById('screeningContent').value = '';
+            document.querySelector('input[name="screeningAnswer"][value="true"]').checked = false;
+            document.querySelector('input[name="screeningAnswer"][value="false"]').checked = false;
+            document.getElementById('screeningStatus').textContent = '미설정';
+            document.getElementById('screeningStatus').className = 'text-xs px-2 py-1 rounded bg-slate-100 text-slate-500';
+
+            showToast('스크리닝 퀴즈가 삭제되었습니다.', 'success');
+        } catch (error) {
+            console.error('스크리닝 삭제 실패:', error);
+        }
+    }
+
+    // 관심사 저장
+    async function saveInterests() {
+        const checkboxes = document.querySelectorAll('.interest-checkbox:checked');
+        const interests = Array.from(checkboxes).map(cb => cb.value);
+
+        if (interests.length === 0) {
+            showToast('관심사를 최소 1개 이상 선택해주세요.', 'error');
+            return;
+        }
+
+        try {
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/interests`, 'PATCH', {
+                interests: interests
+            });
+
+            if (response) {
+                savedInterests = new Set(interests);
+                showToast('관심사가 저장되었습니다.', 'success');
+            }
+        } catch (error) {
+            console.error('관심사 저장 실패:', error);
+        }
+    }
+
+    // 연령대 "전체" 선택 시 처리
+    function handleAgeAllSelect(checkbox) {
+        const specificCheckboxes = document.querySelectorAll('.age-specific');
+        if (checkbox.checked) {
+            specificCheckboxes.forEach(cb => {
+                cb.checked = false;
+                cb.disabled = true;
+            });
+        } else {
+            specificCheckboxes.forEach(cb => {
+                cb.disabled = false;
+            });
+        }
+        calculateTotalPrice();
+    }
+
+    // 가격 계산 이벤트 리스너 설정
+    function setupPriceCalculation() {
+        // 성별, 거주지 변경
+        document.getElementById('targetGender').addEventListener('change', calculateTotalPrice);
+        document.getElementById('targetResidence').addEventListener('change', calculateTotalPrice);
+
+        // 연령대 체크박스 변경
+        document.querySelectorAll('.age-checkbox').forEach(cb => {
+            cb.addEventListener('change', calculateTotalPrice);
+        });
+
+        // 응답 수 변경
+        document.getElementById('targetDueCount').addEventListener('change', calculateTotalPrice);
+    }
+
+    // 총 가격 계산
+    function calculateTotalPrice() {
+        const gender = document.getElementById('targetGender').value;
+        const residence = document.getElementById('targetResidence').value;
+        const dueCount = parseInt(document.getElementById('targetDueCount').value) || 0;
+
+        // 선택된 연령대
+        const ageAllChecked = document.querySelector('.age-checkbox[value="ALL"]').checked;
+        const selectedAges = ageAllChecked
+            ? ['ALL']
+            : Array.from(document.querySelectorAll('.age-specific:checked')).map(cb => cb.value);
+
+        // 가격 계산
+        const genderPrice = PRICE_MAP.gender[gender] || 0;
+
+        let agePrice = 0;
+        if (ageAllChecked || selectedAges.length === 0) {
+            agePrice = PRICE_MAP.age.ALL;
+        } else {
+            agePrice = selectedAges.reduce((sum, age) => sum + (PRICE_MAP.age[age] || 0), 0);
+        }
+
+        const residencePrice = PRICE_MAP.residence[residence] || PRICE_MAP.residence.DEFAULT || 0;
+        const dueCountPrice = dueCount * PRICE_MAP.dueCountPerPerson;
+
+        const total = genderPrice + agePrice + residencePrice + dueCountPrice;
+
+        // UI 업데이트
+        document.getElementById('priceGender').textContent = `${genderPrice.toLocaleString()} 코인`;
+        document.getElementById('priceAge').textContent = `${agePrice.toLocaleString()} 코인`;
+        document.getElementById('priceResidence').textContent = `${residencePrice.toLocaleString()} 코인`;
+        document.getElementById('priceDueCount').textContent = `${dueCountPrice.toLocaleString()} 코인`;
+        document.getElementById('priceTotal').textContent = `${total.toLocaleString()} 코인`;
+
+        return {
+            genderPrice,
+            agePrice,
+            residencePrice,
+            dueCountPrice,
+            total
+        };
+    }
+
+    // 설문 게시
+    async function publishSurvey() {
+        // 관심사 확인
+        const checkedInterests = document.querySelectorAll('.interest-checkbox:checked');
+        if (checkedInterests.length === 0) {
+            showToast('관심사를 최소 1개 이상 선택하고 저장해주세요.', 'error');
+            return;
+        }
+
+        // 연령대 확인
+        const ageAllChecked = document.querySelector('.age-checkbox[value="ALL"]').checked;
+        const selectedAges = ageAllChecked
+            ? ['ALL']
+            : Array.from(document.querySelectorAll('.age-specific:checked')).map(cb => cb.value);
+
+        if (!ageAllChecked && selectedAges.length === 0) {
+            showToast('타겟 연령대를 선택해주세요.', 'error');
+            return;
+        }
+
+        // 마감일 확인
+        const deadlineStr = document.getElementById('targetDeadline').value;
+        if (!deadlineStr) {
+            showToast('마감일을 설정해주세요.', 'error');
+            return;
+        }
+
+        // 마감일은 선택한 날짜의 23:59:59로 설정
+        const deadlineDate = new Date(deadlineStr + 'T23:59:59');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);  // 오늘 날짜의 시작 시간
+
+        if (deadlineDate <= today) {
+            showToast('마감일은 오늘 이후 날짜여야 합니다.', 'error');
+            return;
+        }
+
+        const gender = document.getElementById('targetGender').value;
+        const residence = document.getElementById('targetResidence').value;
+        const dueCount = parseInt(document.getElementById('targetDueCount').value) || 50;
+
+        // 가격 계산
+        const prices = calculateTotalPrice();
+
+        // 요청 데이터 구성 (마감일은 23:59:59로 고정)
+        const requestData = {
+            deadline: deadlineStr + 'T23:59:59',  // LocalDateTime 형식
+            gender: gender,
+            genderPrice: prices.genderPrice,
+            ages: selectedAges,
+            agePrice: prices.agePrice,
+            residence: residence,
+            residencePrice: prices.residencePrice,
+            dueCount: dueCount,
+            dueCountPrice: prices.dueCountPrice,
+            totalCoin: prices.total
+        };
+
+        if (!confirm(`설문을 게시하시겠습니까?\n\n총 비용: ${prices.total.toLocaleString()} 코인`)) {
+            return;
+        }
+
+        try {
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}`, 'PATCH', requestData);
+
+            if (response) {
+                showToast('설문이 성공적으로 게시되었습니다!', 'success');
+                closePublishModal();
+
+                // 설문 목록 새로고침
+                await loadSurveyList();
+                goToPage('list');
+            }
+        } catch (error) {
+            console.error('설문 게시 실패:', error);
+        }
+    }
+
+    // ==================== 읽기 전용 모드 관련 함수 ====================
+
+    // 읽기 전용 모드 설정
+    function setReadOnlyMode(enabled) {
+        isReadOnlyMode = enabled;
+
+        const modeBadge = document.getElementById('mode-badge');
+        const editButtons = document.getElementById('edit-mode-buttons');
+        const viewButtons = document.getElementById('view-mode-buttons');
+        const addSectionBtn = document.getElementById('add-section-btn');
+        const surveyTitle = document.getElementById('survey-title');
+        const surveyDescription = document.getElementById('survey-description');
+
+        if (enabled) {
+            // 읽기 전용 모드
+            modeBadge.textContent = 'VIEW MODE';
+            modeBadge.className = 'text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded mb-2 inline-block';
+
+            editButtons.classList.add('hidden');
+            viewButtons.classList.remove('hidden');
+            addSectionBtn.classList.add('hidden');
+
+            surveyTitle.readOnly = true;
+            surveyTitle.classList.add('bg-slate-50', 'cursor-not-allowed');
+            surveyDescription.readOnly = true;
+            surveyDescription.classList.add('bg-slate-50', 'cursor-not-allowed');
+
+            // 모든 입력 필드 비활성화
+            disableAllInputs();
+        } else {
+            // 편집 모드
+            modeBadge.textContent = 'EDIT MODE';
+            modeBadge.className = 'text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block';
+
+            editButtons.classList.remove('hidden');
+            viewButtons.classList.add('hidden');
+            addSectionBtn.classList.remove('hidden');
+
+            surveyTitle.readOnly = false;
+            surveyTitle.classList.remove('bg-slate-50', 'cursor-not-allowed');
+            surveyDescription.readOnly = false;
+            surveyDescription.classList.remove('bg-slate-50', 'cursor-not-allowed');
+        }
+    }
+
+    // 모든 입력 필드 비활성화 (읽기 전용 모드)
+    function disableAllInputs() {
+        const sectionList = document.getElementById('section-list');
+
+        // 섹션 내 모든 입력 필드 비활성화
+        sectionList.querySelectorAll('input, textarea, select').forEach(el => {
+            el.readOnly = true;
+            el.disabled = true;
+            el.classList.add('bg-slate-50', 'cursor-not-allowed');
+        });
+
+        // 버튼 비활성화/숨기기
+        sectionList.querySelectorAll('button').forEach(btn => {
+            btn.style.display = 'none';
+        });
+
+        // 드래그 핸들 숨기기
+        sectionList.querySelectorAll('.drag-handle').forEach(handle => {
+            handle.style.display = 'none';
+        });
+    }
+
+    // ==================== 설문 정보 확인 모달 관련 함수 ====================
+
+    // 설문 정보 모달 열기 (어드민 API 사용)
+    async function openSurveyInfoModal() {
+        if (!currentSurveyId) {
+            showToast('설문 정보를 불러올 수 없습니다.', 'error');
+            return;
+        }
+
+        try {
+            // 어드민 API로 설문 상세 정보 조회 (스크리닝 포함)
+            const response = await apiCall(`/admin/surveys/${currentSurveyId}`);
+
+            if (response) {
+                currentSurveyInfo = response;
+                renderSurveyInfo(response);
+                document.getElementById('surveyInfoModal').classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('설문 정보 조회 실패:', error);
+            showToast('설문 정보를 불러오는데 실패했습니다.', 'error');
+        }
+    }
+
+    // 설문 정보 모달 닫기
+    function closeSurveyInfoModal() {
+        document.getElementById('surveyInfoModal').classList.add('hidden');
+    }
+
+    // 설문 정보 렌더링 (AdminSurveyDetailResponse 구조)
+    function renderSurveyInfo(response) {
+        const info = response.information || {};
+        const screening = response.screening;
+
+        // 스크리닝 퀴즈
+        const screeningEl = document.getElementById('infoScreening');
+        if (screening && screening.content) {
+            const answerText = screening.answer === 'true' || screening.answer === true ? '예' : '아니오';
+            screeningEl.innerHTML = `
+                <p class="mb-1"><strong>질문:</strong> ${screening.content}</p>
+                <p><strong>정답:</strong> ${answerText}</p>
+            `;
+        } else {
+            screeningEl.innerHTML = '<p class="text-slate-400">스크리닝 퀴즈가 설정되지 않았습니다.</p>';
+        }
+
+        // 관심사
+        const interestsEl = document.getElementById('infoInterests');
+        if (info.interests && info.interests.length > 0) {
+            const interestLabels = {
+                'CAREER': '커리어', 'BUSINESS': '비즈니스', 'FINANCE': '재테크/금융',
+                'HEALTH': '건강', 'CULTURE': '문화/예술', 'FASHION': '패션/뷰티',
+                'SOCIETY': '사회/시사', 'SELF_IMPROVEMENT': '자기계발', 'DAILY_LIFE': '일상생활'
+            };
+            const interestsArray = Array.isArray(info.interests) ? info.interests : Array.from(info.interests);
+            interestsEl.innerHTML = interestsArray.map(i =>
+                `<span class="px-2 py-1 bg-pink-100 text-pink-700 rounded text-xs font-medium">${interestLabels[i] || i}</span>`
+            ).join('');
+        } else {
+            interestsEl.innerHTML = '<p class="text-slate-400 text-sm">관심사가 설정되지 않았습니다.</p>';
+        }
+
+        // 타겟 설정
+        const genderLabels = { 'ALL': '전체', 'MALE': '남성', 'FEMALE': '여성' };
+        const residenceLabels = {
+            'ALL': '전체', 'SEOUL': '서울', 'GYEONGGI': '경기', 'INCHEON': '인천',
+            'BUSAN': '부산', 'DAEGU': '대구', 'DAEJEON': '대전', 'GWANGJU': '광주',
+            'ULSAN': '울산', 'SEJONG': '세종', 'GANGWON': '강원', 'CHUNGNAM': '충남',
+            'CHUNGBUK': '충북', 'JEONNAM': '전남', 'JEONBUK': '전북', 'GYEONGNAM': '경남',
+            'GYEONGBUK': '경북', 'JEJU': '제주'
+        };
+        const ageLabels = {
+            'ALL': '전체', 'TEN': '10대', 'TWENTY': '20대', 'THIRTY': '30대',
+            'FOURTY': '40대', 'FIFTY': '50대', 'SIXTY': '60대', 'OVER': '70세 이상'
+        };
+
+        document.getElementById('infoGender').textContent = genderLabels[info.gender] || info.gender || '-';
+        document.getElementById('infoResidence').textContent = residenceLabels[info.residence] || info.residence || '-';
+
+        if (info.ages && (info.ages.length > 0 || info.ages.size > 0)) {
+            const agesArray = Array.isArray(info.ages) ? info.ages : Array.from(info.ages);
+            document.getElementById('infoAges').textContent = agesArray.map(a => ageLabels[a] || a).join(', ');
+        } else {
+            document.getElementById('infoAges').textContent = '-';
+        }
+
+        // 응답 설정
+        document.getElementById('infoDueCount').textContent = info.dueCount ? `${info.dueCount}명` : '-';
+        document.getElementById('infoCurrentCount').textContent = '-';  // 현재 응답 수는 별도 API 필요
+
+        // 마감일
+        if (info.deadline) {
+            const deadline = new Date(info.deadline);
+            document.getElementById('infoDeadline').textContent = deadline.toLocaleDateString('ko-KR', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+        } else {
+            document.getElementById('infoDeadline').textContent = '-';
+        }
+
+        // 상태 (information에서 가져올 수 없으므로 globalSurveyList에서 찾기)
+        const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
+        const status = survey?.status || '-';
+
+        const statusLabels = {
+            'WRITING': '작성중', 'PENDING': '검토중', 'ACTIVE': '진행중',
+            'NON_WRITING': '작성완료', 'COMPLETED': '완료', 'CLOSED': '마감', 'REFUNDED': '환불됨'
+        };
+        const statusEl = document.getElementById('infoStatus');
+        statusEl.textContent = statusLabels[status] || status;
+
+        // 상태에 따른 색상
+        const statusColors = {
+            'WRITING': 'text-yellow-600', 'PENDING': 'text-blue-600', 'ACTIVE': 'text-green-600',
+            'NON_WRITING': 'text-indigo-600', 'COMPLETED': 'text-slate-600', 'CLOSED': 'text-red-600', 'REFUNDED': 'text-orange-600'
+        };
+        statusEl.className = `ml-2 font-medium ${statusColors[status] || 'text-slate-700'}`;
+
+        // 비용 정보 (globalSurveyList에서)
+        const totalCoin = survey?.totalCoin;
+        document.getElementById('infoTotalCoin').textContent = totalCoin ? `${totalCoin.toLocaleString()} 코인` : '-';
+    }
+
+    // ==================== 설문 소유자 변경 관련 함수 ====================
+
+    // 소유자 변경 모달 열기
+    function openOwnerChangeModal() {
+        if (!currentSurveyId) {
+            showToast('설문 정보를 불러올 수 없습니다.', 'error');
+            return;
+        }
+
+        // 모달 초기화
+        document.getElementById('ownerSearchMemberId').value = '';
+        document.getElementById('ownerSearchName').value = '';
+        document.getElementById('ownerSearchEmail').value = '';
+        document.getElementById('ownerSearchResults').classList.add('hidden');
+        document.getElementById('selectedNewOwner').classList.add('hidden');
+        document.getElementById('selectedNewMemberId').value = '';
+        document.getElementById('confirmOwnerChangeBtn').disabled = true;
+
+        // 현재 소유자 정보 표시
+        const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
+        const currentOwnerEl = document.getElementById('currentOwnerInfo');
+        if (survey && survey.memberId) {
+            currentOwnerEl.innerHTML = `
+                <p><strong>회원 ID:</strong> ${survey.memberId}</p>
+                <p><strong>작성자:</strong> ${survey.creatorName || '-'}</p>
+            `;
+        } else {
+            currentOwnerEl.innerHTML = '<p class="text-slate-400">소유자 정보를 불러올 수 없습니다.</p>';
+        }
+
+        document.getElementById('ownerChangeModal').classList.remove('hidden');
+    }
+
+    // 소유자 변경 모달 닫기
+    function closeOwnerChangeModal() {
+        document.getElementById('ownerChangeModal').classList.add('hidden');
+    }
+
+    // 회원 검색 (소유자 변경용)
+    async function searchMembersForOwner() {
+        const memberId = document.getElementById('ownerSearchMemberId').value.trim();
+        const name = document.getElementById('ownerSearchName').value.trim();
+        const email = document.getElementById('ownerSearchEmail').value.trim();
+
+        if (!memberId && !name && !email) {
+            showToast('검색 조건을 하나 이상 입력해주세요.', 'warning');
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            if (memberId) params.append('memberId', memberId);
+            if (name) params.append('name', name);
+            if (email) params.append('email', email);
+
+            const response = await apiCall(`/admin/search?${params.toString()}`);
+
+            if (response && response.members) {
+                renderOwnerSearchResults(response.members);
+            } else {
+                renderOwnerSearchResults([]);
+            }
+        } catch (error) {
+            console.error('회원 검색 실패:', error);
+            showToast('회원 검색에 실패했습니다.', 'error');
+        }
+    }
+
+    // 검색 결과 렌더링
+    function renderOwnerSearchResults(members) {
+        const resultsContainer = document.getElementById('ownerSearchResults');
+        const resultsList = document.getElementById('ownerSearchResultsList');
+
+        if (!members || members.length === 0) {
+            resultsList.innerHTML = '<p class="p-4 text-center text-slate-400 text-sm">검색 결과가 없습니다.</p>';
+            resultsContainer.classList.remove('hidden');
+            return;
+        }
+
+        // 현재 소유자 ID 가져오기
+        const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
+        const currentOwnerId = survey?.memberId;
+
+        resultsList.innerHTML = members.map(member => {
+            const isCurrentOwner = member.id === currentOwnerId;
+
+            if (isCurrentOwner) {
+                return `
+                    <div class="flex items-center justify-between px-4 py-3 bg-slate-100 border-b border-slate-100 last:border-b-0 cursor-not-allowed opacity-60">
+                        <div class="flex-1">
+                            <p class="font-medium text-slate-700">${member.name || '이름 없음'} <span class="text-orange-500 text-xs">(현재 소유자)</span></p>
+                            <p class="text-xs text-slate-500">ID: ${member.id} | ${member.email || '이메일 없음'}</p>
+                        </div>
+                        <span class="px-3 py-1 bg-slate-200 text-slate-500 rounded text-xs font-bold">
+                            선택 불가
+                        </span>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 cursor-pointer"
+                     onclick="selectNewOwner(${member.id}, '${member.name || ''}', '${member.email || ''}')">
+                    <div class="flex-1">
+                        <p class="font-medium text-slate-700">${member.name || '이름 없음'}</p>
+                        <p class="text-xs text-slate-500">ID: ${member.id} | ${member.email || '이메일 없음'}</p>
+                    </div>
+                    <button class="px-3 py-1 bg-orange-100 text-orange-600 rounded text-xs font-bold hover:bg-orange-200">
+                        선택
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        resultsContainer.classList.remove('hidden');
+    }
+
+    // 새 소유자 선택
+    function selectNewOwner(memberId, name, email) {
+        // 현재 소유자와 동일한지 확인
+        const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
+        const currentOwnerId = survey?.memberId;
+
+        if (memberId === currentOwnerId) {
+            showToast('현재 소유자와 동일한 사용자입니다.', 'warning');
+            return;
+        }
+
+        document.getElementById('selectedNewMemberId').value = memberId;
+        document.getElementById('selectedOwnerInfo').innerHTML = `
+            <p><strong>회원 ID:</strong> ${memberId}</p>
+            <p><strong>이름:</strong> ${name || '-'}</p>
+            <p><strong>이메일:</strong> ${email || '-'}</p>
+        `;
+        document.getElementById('selectedNewOwner').classList.remove('hidden');
+        document.getElementById('confirmOwnerChangeBtn').disabled = false;
+
+        // 검색 결과에서 선택된 항목 하이라이트
+        document.querySelectorAll('#ownerSearchResultsList > div').forEach(el => {
+            el.classList.remove('bg-orange-50');
+        });
+        event.currentTarget.classList.add('bg-orange-50');
+    }
+
+    // 소유자 변경 확인
+    async function confirmOwnerChange() {
+        const newMemberId = document.getElementById('selectedNewMemberId').value;
+
+        if (!newMemberId) {
+            showToast('새 소유자를 선택해주세요.', 'warning');
+            return;
+        }
+
+        if (!confirm('정말 설문 소유자를 변경하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+            return;
+        }
+
+        try {
+            await apiCall(`/admin/surveys/${currentSurveyId}/owner`, 'PATCH', {
+                newMemberId: parseInt(newMemberId)
+            });
+
+            showToast('설문 소유자가 변경되었습니다.', 'success');
+            closeOwnerChangeModal();
+
+            // 설문 목록 새로고침
+            await loadSurveyList();
+        } catch (error) {
+            console.error('소유자 변경 실패:', error);
+            showToast('소유자 변경에 실패했습니다.', 'error');
+        }
+    }
 </script>
 </body>
 </html>
