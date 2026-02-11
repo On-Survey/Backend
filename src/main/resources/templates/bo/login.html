@@ -35,7 +35,7 @@
 
         try {
             // 실제 백엔드 로그인 API 호출
-            const res = await fetch('/v1/bo/admin/login', {
+            const res = await fetch('/v1/bo/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

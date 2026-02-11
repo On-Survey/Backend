@@ -1,0 +1,54 @@
+/* Common Styles for Back Office */
+body {
+    font-family: 'Pretendard', sans-serif;
+}
+
+/* 메뉴 활성화 스타일 */
+.nav-item.active {
+    background-color: #1e293b;
+    color: #fff;
+    border-right: 4px solid #6366f1;
+}
+
+/* 사이드바 접힌 상태 */
+aside.collapsed {
+    width: 64px;
+}
+
+aside.collapsed .nav-text,
+aside.collapsed .nav-label,
+aside.collapsed .user-info,
+aside.collapsed .logo-text,
+aside.collapsed .badge {
+    display: none;
+}
+
+aside.collapsed .nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+aside.collapsed .nav-item i {
+    margin: 0;
+}
+
+aside.collapsed .user-avatar {
+    margin: 0 auto;
+}
+
+/* Toast 메시지 스타일 */
+.toast-message {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
