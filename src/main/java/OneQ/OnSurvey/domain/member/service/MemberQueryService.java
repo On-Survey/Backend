@@ -33,4 +33,9 @@ public class MemberQueryService implements MemberFinder {
             member.getName(), member.getProfileUrl(), member.getCoin(), member.getPromotionPoint(), member.isOnboardingCompleted()
         );
     }
+
+    @Override
+    public Long validateAdminRoleAndGetMemberIdByUserKey(Long userKey) {
+        return memberRepository.validateAdminRoleAndGetMemberIdByUserKey(userKey);
+    }
 }

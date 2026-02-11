@@ -40,7 +40,7 @@ public class BOSessionFilter extends OncePerRequestFilter {
             || path.endsWith(".png")
             || path.endsWith(".jpg")
             || path.equals("/v1/bo")
-            || path.equals("/v1/bo/admin/login");
+            || path.equals("/v1/bo/auth/login");
     }
 
     @Override

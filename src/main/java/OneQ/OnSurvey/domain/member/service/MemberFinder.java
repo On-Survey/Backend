@@ -6,4 +6,6 @@ import OneQ.OnSurvey.domain.member.dto.MemberInfoResponse;
 public interface MemberFinder {
     Member getMemberByUserKey(Long userKey);
     MemberInfoResponse getMemberInfo(Long userKey);
+
+    Long validateAdminRoleAndGetMemberIdByUserKey(Long userKey);
 }

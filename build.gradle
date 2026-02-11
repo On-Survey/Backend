@@ -64,6 +64,9 @@ dependencies {
 	// Sentry
 	implementation("io.sentry:sentry-spring-boot-starter-jakarta:8.22.0")
 	implementation("io.sentry:sentry-logback:8.22.0")
+
+	// Resilience4j Rate Limiter
+	implementation 'io.github.resilience4j:resilience4j-ratelimiter:2.2.0'
 }
 
 tasks.named('test') {

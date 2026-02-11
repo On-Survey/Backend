@@ -1,7 +1,7 @@
 package OneQ.OnSurvey.domain.admin.infra.adapter;
 
 import OneQ.OnSurvey.domain.admin.domain.port.out.MemberPort;
-import OneQ.OnSurvey.domain.member.repository.MemberRepository;
+import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MemberAdapter implements MemberPort {
 
-    private final MemberRepository memberRepository;
+    private final MemberFinder memberFinder;
 
     public Long validateAdminRoleAndGetMemberIdByUserKey(Long userKey) {
-         return memberRepository.validateAdminRoleAndGetMemberIdByUserKey(userKey);
+         return memberFinder.validateAdminRoleAndGetMemberIdByUserKey(userKey);
     }
 }

@@ -4,6 +4,8 @@ import OneQ.OnSurvey.global.auth.application.strategy.AuthStrategy;
 import OneQ.OnSurvey.global.auth.filter.AuthFilter;
 import OneQ.OnSurvey.global.auth.filter.BOSessionFilter;
 import OneQ.OnSurvey.global.auth.filter.ExactBasicHeaderFilter;
+import OneQ.OnSurvey.global.common.handler.CookieAccessDeniedHandler;
+import OneQ.OnSurvey.global.common.handler.CookieAuthenticationEntryPoint;
 import OneQ.OnSurvey.global.common.handler.CustomAccessDeniedHandler;
 import OneQ.OnSurvey.global.common.handler.JWTAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -33,9 +34,10 @@ public class SecurityConfig {
     private String expectedHeader;
 
     private final AuthStrategy authStrategy;
-    private final AuthenticationEntryPoint authenticationEntryPoint;
     private final JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CookieAccessDeniedHandler cookieAccessDeniedHandler;
+    private final CookieAuthenticationEntryPoint cookieAuthenticationEntryPoint;
 
     private final String[] allowedUrls = {
             "/",
@@ -63,7 +65,7 @@ public class SecurityConfig {
                         .requestMatchers(allowedUrls).permitAll()
                         .anyRequest().hasAnyRole("MEMBER", "ADMIN")
                 )
-                .addFilterBefore(new AuthFilter(authStrategy, authenticationEntryPoint), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new AuthFilter(authStrategy, jwtAuthenticationEntryPoint), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(boFilter, AuthFilter.class)
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
@@ -74,17 +76,22 @@ public class SecurityConfig {
     @Bean @Order(2)
     public SecurityFilterChain boFilterChain(HttpSecurity http, BOSessionFilter boFilter) throws Exception {
         http
-            .securityMatcher("/v1/bo/**", "bo/**")
+            .securityMatcher("/v1/bo/**", "/v1/admin/**", "/static/bo/**")
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/v1/bo", "/v1/bo/admin/login").permitAll()
+                .requestMatchers("/static/bo/**").permitAll()
+                .requestMatchers("/v1/bo", "/v1/bo/auth/login", "/v1/bo/auth/logout").permitAll()
                 .anyRequest().hasRole("ADMIN")
             )
             .headers(headers -> headers.frameOptions(
                 HeadersConfigurer.FrameOptionsConfig::sameOrigin
             ))
+            .exceptionHandling(e -> e
+                .authenticationEntryPoint(cookieAuthenticationEntryPoint)
+                .accessDeniedHandler(cookieAccessDeniedHandler)
+            )
             .addFilterBefore(boFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
