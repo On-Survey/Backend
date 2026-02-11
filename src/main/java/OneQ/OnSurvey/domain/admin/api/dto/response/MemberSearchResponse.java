@@ -1,8 +1,6 @@
 package OneQ.OnSurvey.domain.admin.api.dto.response;
 
-import OneQ.OnSurvey.domain.member.dto.MemberSearchResult;
-import OneQ.OnSurvey.domain.member.value.MemberStatus;
-import OneQ.OnSurvey.domain.survey.model.Gender;
+import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
 
 import java.util.List;
 
@@ -16,11 +14,11 @@ public record MemberSearchResponse(
         String email,
         String phoneNumber,
         String birthDay,
-        Gender gender,
-        MemberStatus status,
+        String gender,
+        String status,
         Long coin
     ) {
-        public static MemberSearchInfo from(MemberSearchResult result) {
+        public static MemberSearchInfo from(AdminMemberView result) {
             return new MemberSearchInfo(
                 result.id(),
                 result.userKey(),
@@ -35,7 +33,7 @@ public record MemberSearchResponse(
         }
     }
 
-    public static MemberSearchResponse from(List<MemberSearchResult> results) {
+    public static MemberSearchResponse from(List<AdminMemberView> results) {
         return new MemberSearchResponse(
             results.stream()
                 .map(MemberSearchInfo::from)

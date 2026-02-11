@@ -3,12 +3,14 @@ package OneQ.OnSurvey.domain.member.repository;
 import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.value.Role;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import static OneQ.OnSurvey.domain.member.QMember.member;
@@ -89,5 +91,29 @@ public class MemberRepositoryImpl implements MemberRepository {
                 member.role.eq(Role.ROLE_ADMIN)
             )
             .fetchFirst();
+    }
+
+    @Override
+    public List<Member> searchMembers(String email, String phoneNumber, Long memberId, String name) {
+        BooleanBuilder builder = new BooleanBuilder();
+
+        if (email != null && !email.isBlank()) {
+            builder.and(member.email.containsIgnoreCase(email));
+        }
+        if (phoneNumber != null && !phoneNumber.isBlank()) {
+            builder.and(member.phoneNumber.contains(phoneNumber));
+        }
+        if (memberId != null) {
+            builder.and(member.id.eq(memberId));
+        }
+        if (name != null && !name.isBlank()) {
+            builder.and(member.name.containsIgnoreCase(name));
+        }
+
+        return jpaQueryFactory.selectFrom(member)
+            .where(builder)
+            .orderBy(member.id.desc())
+            .limit(100)
+            .fetch();
     }
 }

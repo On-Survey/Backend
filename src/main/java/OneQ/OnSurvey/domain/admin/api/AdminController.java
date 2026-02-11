@@ -6,7 +6,7 @@ import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyDetailResponse;
 import OneQ.OnSurvey.domain.admin.api.dto.response.MemberSearchResponse;
 import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyIntroItem;
 import OneQ.OnSurvey.domain.admin.application.AdminFacade;
-import OneQ.OnSurvey.domain.member.dto.MemberSearchResult;
+import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
 import OneQ.OnSurvey.global.common.response.PageResponse;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,7 +35,7 @@ public class AdminController {
         @RequestParam(required = false) String name
     ) {
         log.info("[ADMIN] 회원 검색 - email: {}, phone: {}, memberId: {}, name: {}", email, phoneNumber, memberId, name);
-        List<MemberSearchResult> members = adminFacade.searchMembers(email, phoneNumber, memberId, name);
+        List<AdminMemberView> members = adminFacade.searchMembers(email, phoneNumber, memberId, name);
         return SuccessResponse.ok(MemberSearchResponse.from(members));
     }
 

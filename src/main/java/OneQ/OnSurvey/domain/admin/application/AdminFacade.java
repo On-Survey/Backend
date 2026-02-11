@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyDetailResponse;
 import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyIntroItem;
 import OneQ.OnSurvey.domain.admin.domain.model.Admin;
 import OneQ.OnSurvey.domain.admin.domain.model.AdminRole;
+import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.AdminSurveyListView;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySingleViewInfo;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyQuestion;
@@ -15,7 +16,6 @@ import OneQ.OnSurvey.domain.admin.domain.port.in.AuthUseCase;
 import OneQ.OnSurvey.domain.admin.domain.port.out.MemberPort;
 import OneQ.OnSurvey.domain.admin.domain.port.out.SurveyPort;
 import OneQ.OnSurvey.domain.admin.domain.repository.AdminRepository;
-import OneQ.OnSurvey.domain.member.dto.MemberSearchResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -72,7 +72,7 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     }
 
     @Override
-    public List<MemberSearchResult> searchMembers(String email, String phoneNumber, Long memberId, String name) {
+    public List<AdminMemberView> searchMembers(String email, String phoneNumber, Long memberId, String name) {
         return memberPort.searchMembers(email, phoneNumber, memberId, name);
     }
 
