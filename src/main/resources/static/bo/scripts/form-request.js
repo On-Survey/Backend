@@ -32,9 +32,9 @@ async function loadFormRequests(page = 0) {
         if (email) params.append('email', email);
         if (status !== '') params.append('isRegistered', status);
 
-        const response = await apiCall(`/form-requests?${params.toString()}`);
+        const response = await apiCallPaged(`/form-requests?${params.toString()}`);
         if (response) {
-            renderFormRequests(response.requests);
+            renderFormRequests(response.result);
             renderPagination(response);
         }
     } catch (error) {
@@ -57,6 +57,9 @@ function formatDateTime(dateTimeStr) {
 
 function renderFormRequests(requests) {
     const tbody = document.getElementById('formRequestTableBody');
+
+    console.log(requests);
+
     if (!requests || requests.length === 0) {
         tbody.innerHTML = '<tr><td colspan="10" class="px-6 py-8 text-center text-slate-500">검색 조건에 맞는 설문 변환 요청이 없습니다.</td></tr>';
         return;
@@ -98,11 +101,15 @@ function renderFormRequests(requests) {
 
 // 페이지네이션 렌더링
 function renderPagination(pageData) {
-    const { currentPage, totalPages, totalElements, size, hasNext, hasPrevious } = pageData;
+    const { pageNumber, totalPages, totalElements, pageSize, last } = pageData;
+
+    // hasNext, hasPrevious 계산
+    const hasPrevious = pageNumber > 0;
+    const hasNext = !last;
 
     // 페이지 정보 표시
-    const startItem = currentPage * size + 1;
-    const endItem = Math.min((currentPage + 1) * size, totalElements);
+    const startItem = totalElements > 0 ? pageNumber * pageSize + 1 : 0;
+    const endItem = Math.min((pageNumber + 1) * pageSize, totalElements);
     document.getElementById('pageInfo').innerHTML =
         `총 <strong>${totalElements}</strong>건 중 <strong>${startItem}-${endItem}</strong>건 표시`;
 
@@ -111,7 +118,7 @@ function renderPagination(pageData) {
     let html = '';
 
     // 이전 버튼
-    html += `<button onclick="loadFormRequests(${currentPage - 1})"
+    html += `<button onclick="loadFormRequests(${pageNumber - 1})"
                      class="px-3 py-1 rounded text-sm ${hasPrevious ? 'bg-slate-200 hover:bg-slate-300' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}"
                      ${!hasPrevious ? 'disabled' : ''}>
                 <i class="fas fa-chevron-left"></i>
@@ -119,7 +126,7 @@ function renderPagination(pageData) {
 
     // 페이지 번호들
     const maxVisiblePages = 5;
-    let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
+    let startPage = Math.max(0, pageNumber - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages);
 
     if (endPage - startPage < maxVisiblePages) {
@@ -135,7 +142,7 @@ function renderPagination(pageData) {
 
     for (let i = startPage; i < endPage; i++) {
         html += `<button onclick="loadFormRequests(${i})"
-                         class="px-3 py-1 rounded text-sm ${i === currentPage ? 'bg-indigo-600 text-white' : 'bg-slate-200 hover:bg-slate-300'}">
+                         class="px-3 py-1 rounded text-sm ${i === pageNumber ? 'bg-indigo-600 text-white' : 'bg-slate-200 hover:bg-slate-300'}">
                     ${i + 1}
                  </button>`;
     }
@@ -148,7 +155,7 @@ function renderPagination(pageData) {
     }
 
     // 다음 버튼
-    html += `<button onclick="loadFormRequests(${currentPage + 1})"
+    html += `<button onclick="loadFormRequests(${pageNumber + 1})"
                      class="px-3 py-1 rounded text-sm ${hasNext ? 'bg-slate-200 hover:bg-slate-300' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}"
                      ${!hasNext ? 'disabled' : ''}>
                 <i class="fas fa-chevron-right"></i>
