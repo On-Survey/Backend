@@ -18,6 +18,10 @@ import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
+import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySegmentation;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
@@ -30,6 +34,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -469,5 +474,26 @@ public class SurveyQueryService implements SurveyQuery {
     public Survey getSurveyById(Long surveyId) {
         return surveyRepository.getSurveyById(surveyId)
             .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+    }
+
+    // 외부 PORT
+    @Override
+    public Page<SurveyListView> getPagedSurveyListViewByQuery(Pageable pageable, SurveySearchQuery query) {
+        return surveyRepository.getPagedSurveyListViewByQuery(pageable, query);
+    }
+
+    @Override
+    public SurveyDetailData getSurveyDetailById(Long surveyId) {
+        return surveyRepository.getSurveyDetailDataById(surveyId);
+    }
+
+    @Override
+    public ScreeningViewData getScreeningIntroBySurveyId(Long surveyId) {
+        return screeningRepository.getScreeningIntroBySurveyId(surveyId);
+    }
+
+    @Override
+    public List<SectionDto> getSectionDtoListBySurveyId(Long surveyId) {
+        return sectionRepository.findAllSectionDtoBySurveyId(surveyId);
     }
 }

@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.service.command;
 
 import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveyOwnerChangeDto;
 import OneQ.OnSurvey.domain.survey.model.request.FreeSurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
@@ -21,4 +22,5 @@ public interface SurveyCommand {
     InterestResponse upsertInterest(Long surveyId, Set<Interest> interestSet);
 
     boolean sendSurveyHeartbeat(Long surveyId, Long userKey);
+    void updateSurveyOwner(SurveyOwnerChangeDto changeDto);
 }
