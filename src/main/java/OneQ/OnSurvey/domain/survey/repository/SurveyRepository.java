@@ -25,7 +25,6 @@ public interface SurveyRepository {
         SurveyStatus status, Long creatorId, Collection<Long> excludedIds);
     Page<SurveyListView> getPagedSurveyListViewByQuery(Pageable pageable, SurveySearchQuery query);
     SurveyDetailData getSurveyDetailDataById(Long surveyId);
-        SurveyStatus status, Long creatorId, Collection<Long> excludedIds);
     Slice<SurveyWithEligibility> getSurveyListWithEligibility(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
         SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation);
@@ -34,5 +33,4 @@ public interface SurveyRepository {
 
     SurveyStatus getSurveyStatusById(Long surveyId);
     ParticipationStatus getParticipationStatus(Long surveyId, Long memberId);
-
 }
