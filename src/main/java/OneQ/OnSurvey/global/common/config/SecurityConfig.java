@@ -76,7 +76,7 @@ public class SecurityConfig {
     @Bean @Order(2)
     public SecurityFilterChain boFilterChain(HttpSecurity http, BOSessionFilter boFilter) throws Exception {
         http
-            .securityMatcher("/v1/bo/**", "/v1/admin/**", "/static/bo/**")
+            .securityMatcher("/v1/bo/**", "/v1/admin/**", "/bo/**")
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
