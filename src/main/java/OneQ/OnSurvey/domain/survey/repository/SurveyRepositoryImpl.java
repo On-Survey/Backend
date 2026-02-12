@@ -157,6 +157,13 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         builder.and(
             survey.status.eq(status)
         );
+        builder.and(
+            screening.id.isNull() // 스크리닝 퀴즈가 없거나,
+                .or(
+                    screening.id.isNotNull() // 스크리닝 퀴즈가 있으면
+                        .and(response.isScreened.isFalse().or(response.isScreened.isNull())) // 스크리닝 퀴즈를 통과 or 응답하지 않은 설문만 조회
+                )
+        );
 
         if (lastDeadline == null) {
             builder
@@ -183,6 +190,13 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         return jpaQueryFactory
             .select(survey.id)
             .from(survey)
+            .leftJoin(screening).on(
+                survey.id.eq(screening.surveyId)
+            )
+            .leftJoin(response).on(
+                survey.id.eq(response.surveyId),
+                response.memberId.eq(memberId)
+            )
             .where(builder)
             .orderBy(QuerydslUtils.getSortPaidFirst(pageable, survey, survey.isFree))
             .limit(pageable.getPageSize() + 1)
