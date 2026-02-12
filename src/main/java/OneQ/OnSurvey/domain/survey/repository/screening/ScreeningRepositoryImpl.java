@@ -39,9 +39,6 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
 
         BooleanBuilder screenedCondition = new BooleanBuilder();
         screenedCondition.and(
-            screening.id.isNotNull() // 스크리닝 퀴즈가 존재하고,
-        );
-        screenedCondition.and(
             response.isScreened.isNull() // 스크리닝 퀴즈 응답이 없는 설문
         );
         BooleanBuilder surveyCondition = new BooleanBuilder();
@@ -64,7 +61,10 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
         ))
             .from(screening)
             .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId))
-            .leftJoin(response).on(screening.surveyId.eq(response.surveyId))
+            .leftJoin(response).on(
+                screening.surveyId.eq(response.surveyId),
+                response.memberId.eq(creatorId)
+            )
             .leftJoin(survey).on(screening.surveyId.eq(survey.id))
             .where(screenedCondition, surveyCondition)
             .groupBy(screening.id)

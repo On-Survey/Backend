@@ -195,7 +195,7 @@ public class SurveyQueryService implements SurveyQuery {
         );
 
         return ParticipationScreeningListResponse.builder()
-            .data(screeningSlice.map(Function.identity()).toList())
+            .data(screeningSlice.getContent())
             .hasNext(screeningSlice.hasNext())
             .build();
     }
