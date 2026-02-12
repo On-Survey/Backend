@@ -11,6 +11,7 @@ import OneQ.OnSurvey.domain.survey.model.export.SurveyQuestionHeader;
 import OneQ.OnSurvey.domain.survey.repository.export.SurveyExportRepository;
 import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.common.util.AuthorizationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,9 @@ public class SurveyExportService implements SurveyExport {
     public SurveyExportFile exportCsv(Long surveyId, Long requesterMemberId) {
         log.info("[SurveyExport] CSV export start. surveyId={}", surveyId);
 
-        if (!surveyExportRepository.existsOwnedSurvey(surveyId, requesterMemberId)) {
+        if (AuthorizationUtils.isAdmin() ||
+            !surveyExportRepository.existsOwnedSurvey(surveyId, requesterMemberId)
+        ) {
             throw new CustomException(SURVEY_FORBIDDEN);
         }
 

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<header th:fragment="header(pageTitle)" class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10">
+    <div class="flex items-center gap-4">
+        <button id="back-btn" onclick="goBack()" class="hidden text-slate-400 hover:text-slate-600 hover:bg-slate-100 px-2 py-1 rounded transition-colors" title="뒤로가기">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2 id="page-title" class="text-lg font-bold text-slate-800" th:text="${pageTitle} ?: '데이터 모니터링'">데이터 모니터링</h2>
+    </div>
+    <div class="flex items-center gap-4">
+        <button class="text-slate-400 hover:text-slate-600"><i class="fas fa-bell"></i></button>
+        <button class="text-slate-400 hover:text-slate-600"><i class="fas fa-cog"></i></button>
+        <button onclick="boSession.logout()" class="text-slate-400 hover:text-red-500" title="로그아웃">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </div>
+</header>
+</html>

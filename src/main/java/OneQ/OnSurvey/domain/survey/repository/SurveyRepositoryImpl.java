@@ -7,6 +7,9 @@ import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyWithEligibility;
 import OneQ.OnSurvey.global.common.util.QuerydslUtils;
 import com.querydsl.core.BooleanBuilder;
@@ -17,16 +20,20 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.EnumPath;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
@@ -102,6 +109,75 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .values());
 
         return QuerydslUtils.createSlice(results, pageable);
+    }
+
+    @Override
+    public Page<SurveyListView> getPagedSurveyListViewByQuery(Pageable pageable, SurveySearchQuery query) {
+        BooleanBuilder builder = new BooleanBuilder();
+        if (query.title() != null) {
+            builder.and(survey.title.eq(query.title()));
+        }
+        if (query.creator() != null) {
+            builder.and(survey.memberId.eq(query.creator()));
+        }
+        if (query.status() != null && !query.status().isEmpty()) {
+            builder.and(survey.status.in(query.status()));
+        }
+        if (query.startDate() != null) {
+            builder.and(survey.createdAt.goe(query.startDate().atStartOfDay()));
+        }
+        if (query.endDate() != null) {
+            builder.and(survey.createdAt.loe(query.endDate().atStartOfDay()));
+        }
+
+        List<SurveyListView> results = jpaQueryFactory.select(Projections.fields(SurveyListView.class,
+                survey.id.as("surveyId"),
+                survey.title,
+                survey.memberId.as("creator"),
+                survey.createdAt,
+                survey.status
+            ))
+            .from(survey)
+            .where(builder)
+            .orderBy(QuerydslUtils.getSort(pageable, survey))
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize())
+            .fetch();
+
+        JPAQuery<Long> countQuery = jpaQueryFactory
+            .select(survey.count())
+            .from(survey)
+            .where(builder);
+
+        return PageableExecutionUtils.getPage(results, pageable, countQuery::fetchOne);
+    }
+
+    @Override
+    public SurveyDetailData getSurveyDetailDataById(Long surveyId) {
+        EnumPath<Interest> interestAlias = Expressions.enumPath(Interest.class, "interestAlias");
+        EnumPath<AgeRange> ageAlias = Expressions.enumPath(AgeRange.class, "ageAlias");
+
+        Map<Long, SurveyDetailData> result = jpaQueryFactory
+            .from(survey)
+            .leftJoin(survey.interests, interestAlias)
+            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId))
+            .leftJoin(surveyInfo.ages, ageAlias)
+            .where(survey.id.eq(surveyId))
+            .transform(
+                groupBy(survey.id).as(Projections.fields(SurveyDetailData.class,
+                    survey.id.as("surveyId"),
+                    survey.title,
+                    survey.description,
+                    survey.deadline,
+                    surveyInfo.dueCount,
+                    set(ageAlias).as("ages"),
+                    surveyInfo.gender,
+                    surveyInfo.residence,
+                    set(interestAlias).as("interests")
+                ))
+            );
+        System.out.println("result = " + result);
+        return result.get(surveyId);
     }
 
     @Override

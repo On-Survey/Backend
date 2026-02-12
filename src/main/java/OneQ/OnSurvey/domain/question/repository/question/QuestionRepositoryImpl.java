@@ -50,4 +50,9 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     public void deleteAll(Set<Long> idList) {
         questionJpaRepository.deleteAllByIdInBatch(idList);
     }
+
+    @Override
+    public void deleteBySurveyIdAndNotInOrder(Long surveyId, Collection<Integer> orders) {
+        questionJpaRepository.deleteAllBySurveyIdEqualsAndSectionNotIn(surveyId, orders);
+    }
 }

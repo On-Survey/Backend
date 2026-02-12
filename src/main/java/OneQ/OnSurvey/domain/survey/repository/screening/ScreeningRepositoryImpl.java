@@ -4,6 +4,7 @@ import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningFormData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
+import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
 import OneQ.OnSurvey.global.common.util.QuerydslUtils;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
@@ -84,6 +85,18 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             .from(screening)
             .where(screening.surveyId.eq(surveyId))
             .fetchOne();
+    }
+
+    @Override
+    public ScreeningViewData getScreeningIntroBySurveyId(Long surveyId) {
+        return jpaQueryFactory.select(Projections.fields(ScreeningViewData.class,
+            screening.id.as("screeningId"),
+            screening.content,
+            screening.answer
+        ))
+            .from(screening)
+            .where(screening.surveyId.eq(surveyId))
+            .fetchFirst();
     }
 
     @Override

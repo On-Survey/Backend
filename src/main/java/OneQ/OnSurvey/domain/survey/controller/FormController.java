@@ -4,6 +4,7 @@ import OneQ.OnSurvey.domain.survey.controller.swagger.FormControllerDoc;
 import OneQ.OnSurvey.domain.survey.model.request.*;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.service.form.SurveyFormFacade;
+import OneQ.OnSurvey.global.auth.custom.Authenticatable;
 import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +25,7 @@ public class FormController implements FormControllerDoc {
     @PostMapping("/surveys")
     @Operation(summary = "설문 폼을 생성합니다.")
     public SuccessResponse<SurveyFormResponse> createSurvey(
-        @AuthenticationPrincipal CustomUserDetails principal,
+        @AuthenticationPrincipal Authenticatable principal,
         @RequestBody SurveyFormCreateRequest request
     ) {
         return SuccessResponse.ok(surveyFormFacade.createSurvey(principal.getMemberId(), request));
@@ -33,7 +34,7 @@ public class FormController implements FormControllerDoc {
     @PatchMapping("/surveys/{surveyId}/display")
     @Operation(summary = "설문 제목과 상세설명을 수정합니다.")
     public SuccessResponse<SurveyFormResponse> updateSurvey(
-        @AuthenticationPrincipal CustomUserDetails principal,
+        @AuthenticationPrincipal Authenticatable principal,
         @RequestBody SurveyFormCreateRequest request,
         @PathVariable Long surveyId
     ) {
@@ -61,7 +62,7 @@ public class FormController implements FormControllerDoc {
     @PatchMapping("/surveys/{surveyId}")
     @Operation(summary = "폼을 완성합니다.")
     public SuccessResponse<SurveyFormResponse> completeSurvey(
-        @AuthenticationPrincipal CustomUserDetails details,
+        @AuthenticationPrincipal Authenticatable details,
         @PathVariable Long surveyId,
         @RequestBody @Valid SurveyFormRequest request
     ) {
@@ -94,5 +95,14 @@ public class FormController implements FormControllerDoc {
         @PathVariable Long surveyId
     ) {
         return SuccessResponse.ok(surveyFormFacade.createScreening(surveyId, request));
+    }
+
+    @PutMapping("/surveys/{surveyId}/sections")
+    @Operation(summary = "설문에 대한 섹션을 생성/수정하고, 삭제되는 섹션 내의 문항들을 삭제합니다.")
+    public SuccessResponse<SectionResponse> createSection(
+        @RequestBody SectionRequest request,
+        @PathVariable Long surveyId
+    ) {
+        return SuccessResponse.ok(surveyFormFacade.upsertSection(surveyId, request));
     }
 }

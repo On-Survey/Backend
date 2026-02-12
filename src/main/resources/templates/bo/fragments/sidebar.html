@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<aside th:fragment="sidebar(activePage, adminName)" id="sidebar" class="w-64 bg-slate-900 text-slate-400 flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300">
+    <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950">
+        <div class="flex items-center">
+            <i class="fas fa-poll text-indigo-500 text-xl mr-3"></i>
+            <span class="logo-text text-white font-bold text-lg tracking-tight">Admin OS</span>
+        </div>
+        <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white transition-colors">
+            <i id="toggle-icon" class="fas fa-angles-left"></i>
+        </button>
+    </div>
+
+    <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+        <p class="nav-label px-6 text-xs font-bold text-slate-500 uppercase mb-2">Overview</p>
+        <a href="#" onclick="showPage('dashboard', this)"
+           th:classappend="${activePage == 'dashboard'} ? ' active' : ''"
+           class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+            <i class="fas fa-chart-line w-6"></i>
+            <span class="nav-text text-sm font-medium">데이터 모니터링</span>
+        </a>
+
+        <p class="nav-label px-6 text-xs font-bold text-slate-500 uppercase mt-6 mb-2">Management</p>
+        <a href="#" onclick="showPage('builder', this)"
+           th:classappend="${activePage == 'builder'} ? ' active' : ''"
+           class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+            <i class="fas fa-pen-to-square w-6"></i>
+            <span class="nav-text text-sm font-medium">설문 제작/수정</span>
+        </a>
+        <a href="#" onclick="showPage('formRequest', this)"
+           th:classappend="${activePage == 'formRequest'} ? ' active' : ''"
+           class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+            <i class="fas fa-file-import w-6"></i>
+            <span class="nav-text text-sm font-medium">설문 변환 요청</span>
+        </a>
+        <a href="#" onclick="showPage('memberSearch', this)"
+           th:classappend="${activePage == 'memberSearch'} ? ' active' : ''"
+           class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+            <i class="fas fa-users w-6"></i>
+            <span class="nav-text text-sm font-medium">사용자 검색</span>
+        </a>
+        <a href="#" onclick="showComingSoon('무료 설문 검수')"
+           th:classappend="${activePage == 'review'} ? ' active' : ''"
+           class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+            <i class="fas fa-check-double w-6"></i>
+            <span class="nav-text text-sm font-medium">무료 설문 검수</span>
+        </a>
+        <a href="#" onclick="showComingSoon('리워드/프로모션')"
+           th:classappend="${activePage == 'promotion'} ? ' active' : ''"
+           class="nav-item flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors">
+            <i class="fas fa-coins w-6"></i>
+            <span class="nav-text text-sm font-medium">리워드/프로모션</span>
+        </a>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800 bg-slate-950">
+        <div class="flex items-center gap-3">
+            <div class="user-avatar w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs"
+                 th:text="${adminName != null ? adminName.substring(0, 1).toUpperCase() : 'A'}">A</div>
+            <div class="user-info">
+                <p class="text-sm text-white font-medium" th:text="${adminName != null ? adminName : 'Admin'}">Admin</p>
+                <p class="text-xs text-slate-500">Admin</p>
+            </div>
+        </div>
+    </div>
+</aside>
+</html>

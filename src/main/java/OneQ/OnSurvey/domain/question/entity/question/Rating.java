@@ -32,6 +32,7 @@ public class Rating extends Question {
         String description,
         Boolean isRequired,
         Integer section,
+        Integer nextSection,
         String maxValue,
         String minValue,
         Integer rate,
@@ -44,6 +45,7 @@ public class Rating extends Question {
             .description(description)
             .isRequired(isRequired)
             .section(section)
+            .nextSection(nextSection)
             .maxValue(maxValue)
             .minValue(minValue)
             .rate(rate)
@@ -57,11 +59,12 @@ public class Rating extends Question {
         Boolean isRequired,
         Integer order,
         Integer section,
+        Integer nextSection,
         String maxValue,
         String minValue,
         Integer rate
     ) {
-        super.updateQuestion(title, description, isRequired, order, section);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection);
         this.maxValue = maxValue;
         this.minValue = minValue;
         this.rate = rate;

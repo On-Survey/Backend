@@ -2,13 +2,17 @@ package OneQ.OnSurvey.domain.question.service;
 
 import OneQ.OnSurvey.domain.question.entity.ChoiceOption;
 import OneQ.OnSurvey.domain.question.entity.Question;
+import OneQ.OnSurvey.domain.question.entity.Section;
 import OneQ.OnSurvey.domain.question.entity.question.*;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.repository.choiceOption.ChoiceOptionRepository;
 import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
+import OneQ.OnSurvey.domain.question.repository.section.SectionRepository;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,7 @@ public class QuestionCommandService implements QuestionCommand {
 
     private final QuestionRepository questionRepository;
     private final ChoiceOptionRepository choiceOptionRepository;
+    private final SectionRepository sectionRepository;
 
     @Override
     public QuestionUpsertDto upsertQuestionList(QuestionUpsertDto upsertDto) {
@@ -62,6 +67,17 @@ public class QuestionCommandService implements QuestionCommand {
 
             if (!deleteIdSet.isEmpty()) {
                 log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 문항 IDs: {}", deleteIdSet);
+
+                // 문항 삭제 전에 해당 문항의 보기(ChoiceOption)도 삭제
+                List<ChoiceOption> optionsToDelete = choiceOptionRepository.getOptionsByQuestionIds(deleteIdSet);
+                if (!optionsToDelete.isEmpty()) {
+                    Set<Long> optionIdsToDelete = optionsToDelete.stream()
+                        .map(ChoiceOption::getChoiceOptionId)
+                        .collect(Collectors.toSet());
+                    log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 보기 IDs: {}", optionIdsToDelete);
+                    choiceOptionRepository.deleteAll(optionIdsToDelete);
+                }
+
                 questionRepository.deleteAll(deleteIdSet);
                 log.info("[QUESTION:COMMAND:upsertQuestionList] DELETE 진행");
             }
@@ -116,6 +132,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput(),
@@ -128,6 +145,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
                 upsertInfo.getRate()
@@ -138,7 +156,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
-                upsertInfo.getSection()
+                upsertInfo.getSection(),
+                upsertInfo.getNextSection()
             );
         } else if (question instanceof DateAnswer date) {
             date.updateQuestion(
@@ -147,6 +166,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getDefaultDate()
             );
         } else if (question instanceof ShortAnswer shortAnswer) {
@@ -155,7 +175,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
-                upsertInfo.getSection()
+                upsertInfo.getSection(),
+                upsertInfo.getNextSection()
             );
         } else if (question instanceof LongAnswer longAnswer) {
             longAnswer.updateQuestion(
@@ -163,7 +184,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
-                upsertInfo.getSection()
+                upsertInfo.getSection(),
+                upsertInfo.getNextSection()
             );
         } else if (question instanceof NumberAnswer numberAnswer) {
             numberAnswer.updateQuestion(
@@ -171,7 +193,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
-                upsertInfo.getSection()
+                upsertInfo.getSection(),
+                upsertInfo.getNextSection()
             );
         }
     }
@@ -187,6 +210,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getDefaultDate(),
                 type
             );
@@ -198,6 +222,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 type
             );
         } else if (QuestionType.RATING.equals(type)) {
@@ -208,6 +233,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
                 upsertInfo.getRate(),
@@ -221,6 +247,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput(),
@@ -235,6 +262,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 type
             );
         } else if (QuestionType.LONG.equals(type)) {
@@ -245,6 +273,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 type
             );
         } else if (QuestionType.NUMBER.equals(type)) {
@@ -255,6 +284,7 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
+                upsertInfo.getNextSection(),
                 type
             );
         } else {
@@ -349,5 +379,50 @@ public class QuestionCommandService implements QuestionCommand {
                 .build();
             })
             .toList();
+    }
+
+    @Override
+    public List<SectionDto> upsertSections(Long surveyId, List<SectionDto> sectionDtoList) {
+        if (!sectionDtoList.stream().allMatch(SectionDto::isValid)) {
+            log.warn("[QUESTION:COMMAND:upsertSection] 섹션 정보가 유효하지 않습니다. surveyId: {}", surveyId);
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_SECTION);
+        }
+
+        Map<Integer, Section> orderSectionMap = sectionRepository.findAllSectionBySurveyId(surveyId).stream()
+            .collect(Collectors.toMap
+                (Section::getSectionOrder, Function.identity())
+            );
+        List<Section> sectionList = sectionDtoList.stream().map(sectionDto -> {
+            if (sectionDto.isNewSection()) {
+                return Section.builder()
+                    .surveyId(surveyId)
+                    .title(sectionDto.title())
+                    .description(sectionDto.description())
+                    .sectionOrder(sectionDto.order())
+                    .nextSection(sectionDto.nextSection())
+                    .build();
+            } else {
+                Section section = orderSectionMap.get(sectionDto.order());
+                section.updateSection(
+                    sectionDto.title(), sectionDto.description(), sectionDto.order(), sectionDto.nextSection()
+                );
+                orderSectionMap.remove(sectionDto.order());
+                return section;
+            }
+        }).toList();
+        List<Section> savedSectionList = List.of();
+        if (!orderSectionMap.isEmpty()) {
+            sectionRepository.deleteAll(orderSectionMap.values().stream().map(Section::getSectionId).toList());
+        }
+        if (!sectionDtoList.isEmpty()) {
+            savedSectionList = sectionRepository.saveAll(sectionList);
+        }
+        if (!savedSectionList.isEmpty()) {
+            Set<Integer> savedSections = savedSectionList.stream().map(Section::getSectionOrder).collect(Collectors.toSet());
+            choiceOptionRepository.deleteBySections(surveyId, savedSections);
+            questionRepository.deleteBySurveyIdAndNotInOrder(surveyId, savedSections);
+        }
+
+        return savedSectionList.stream().map(SectionDto::fromEntity).toList();
     }
 }

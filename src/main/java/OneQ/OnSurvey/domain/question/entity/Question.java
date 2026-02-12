@@ -25,11 +25,6 @@ public abstract class Question extends BaseEntity {
     @Column(name = "QUESTION_ORDER")
     protected Integer order;
 
-    @Column(name = "SECTION")
-    @ColumnDefault("1")
-    @Builder.Default
-    protected Integer section = 1;
-
     @Column(name = "type", insertable = false, updatable = false)
     protected String type;
 
@@ -44,18 +39,30 @@ public abstract class Question extends BaseEntity {
     @Builder.Default
     protected Boolean isRequired = false;
 
+    @Column(name = "SECTION")
+    @ColumnDefault("1")
+    @Builder.Default
+    protected Integer section = 1;
+
+    /* 임시 필드 */
+    @Column(name = "NEXT_SECTION")
+    protected Integer nextSection;
+    /* 섹션 엔티티 분리 후 제거 예정 */
+
     public void updateQuestion(
         String title,
         String description,
         Boolean isRequired,
         Integer order,
-        Integer section
+        Integer section,
+        Integer nextSection
     ) {
         this.title = title;
         this.description = description;
         this.isRequired = isRequired;
         this.order = order;
         this.section = (section != null) ? section : this.section;
+        this.nextSection = nextSection;
     }
 
     public void updateOrder(Integer order) {

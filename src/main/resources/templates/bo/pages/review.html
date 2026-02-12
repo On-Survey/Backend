@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<!-- Review Page Content Fragment -->
+<div th:fragment="content" id="page-review" class="page-section hidden flex-1 overflow-y-auto p-8 space-y-6">
+    <div class="flex gap-2 mb-4">
+        <button class="px-4 py-2 bg-slate-800 text-white rounded text-sm font-bold">대기중 (3)</button>
+        <button class="px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded text-sm hover:bg-slate-50">승인 완료</button>
+        <button class="px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded text-sm hover:bg-slate-50">반려됨</button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-slate-500 border-b">
+            <tr>
+                <th class="px-6 py-4">신청일자</th>
+                <th class="px-6 py-4">설문 제목</th>
+                <th class="px-6 py-4">신청자</th>
+                <th class="px-6 py-4">문항 수</th>
+                <th class="px-6 py-4 text-center">작업</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+            <tr class="hover:bg-slate-50">
+                <td class="px-6 py-4 text-slate-500">2024-05-20 09:30</td>
+                <td class="px-6 py-4 font-bold text-slate-800">대학생 창업 아이템 설문조사</td>
+                <td class="px-6 py-4">김학생 (user_12)</td>
+                <td class="px-6 py-4">8문항</td>
+                <td class="px-6 py-4 text-center flex justify-center gap-2">
+                    <button class="px-3 py-1 bg-white border border-slate-300 rounded text-xs hover:bg-slate-100">미리보기</button>
+                    <button class="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700">승인</button>
+                    <button class="px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs hover:bg-red-100">반려</button>
+                </td>
+            </tr>
+            <tr class="hover:bg-slate-50">
+                <td class="px-6 py-4 text-slate-500">2024-05-19 18:20</td>
+                <td class="px-6 py-4 font-bold text-slate-800">반려동물 사료 선호도</td>
+                <td class="px-6 py-4">이견주 (user_55)</td>
+                <td class="px-6 py-4">12문항</td>
+                <td class="px-6 py-4 text-center flex justify-center gap-2">
+                    <button class="px-3 py-1 bg-white border border-slate-300 rounded text-xs hover:bg-slate-100">미리보기</button>
+                    <button class="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700">승인</button>
+                    <button class="px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs hover:bg-red-100">반려</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</html>

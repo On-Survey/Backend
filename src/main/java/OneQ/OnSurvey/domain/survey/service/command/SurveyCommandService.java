@@ -11,6 +11,7 @@ import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveyOwnerChangeDto;
 import OneQ.OnSurvey.domain.survey.model.request.FreeSurveyFormRequest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormRequest;
@@ -24,6 +25,7 @@ import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.domain.survey.service.refund.SurveyRefundPolicy;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import OneQ.OnSurvey.global.common.util.AuthorizationUtils;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
@@ -90,7 +92,7 @@ public class SurveyCommandService implements SurveyCommand {
                         throw new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND);
                     });
 
-            if (!survey.getMemberId().equals(memberId)) {
+            if (AuthorizationUtils.validateOwnershipOrAdmin(survey.getMemberId(), memberId)) {
                 log.warn("[SURVEY:COMMAND:upsertSurvey] 설문 수정 권한 없음 - surveyId={}, memberId={}", surveyId, memberId);
                 throw new CustomException(SurveyErrorCode.SURVEY_FORBIDDEN);
             }
@@ -248,6 +250,18 @@ public class SurveyCommandService implements SurveyCommand {
         // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신
         redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
         return true;
+    }
+
+    @Override
+    public void updateSurveyOwner(SurveyOwnerChangeDto changeDto) {
+        Survey survey = surveyRepository.getSurveyById(changeDto.surveyId())
+                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+        survey.changeOwner(changeDto.newMemberId());
+        surveyRepository.save(survey);
+
+        log.info("[SURVEY:COMMAND:updateSurveyOwner] 설문 소유자 변경 완료 - surveyId: {}, newMemberId: {}",
+            changeDto.surveyId(), changeDto.newMemberId());
     }
 
     private void setValue(String keyPrefix, Long surveyId, String value, Duration duration) {

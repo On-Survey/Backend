@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,14 +59,10 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
 
         // 새로 저장할 응답 리스트
         List<QuestionAnswer> finalAnswersToSave = new ArrayList<>();
-        // 삭제할 기존 응답 ID 리스트 (초기값: 기존 응답 전체)
-        List<Long> finalAnswerIdsToDelete = new ArrayList<>(
-            existingQuestionAnswerMap.values().stream()
-                .flatMap(a -> a.stream().map(QuestionAnswer::getAnswerId))
-                .toList()
-        );
+        // 삭제하지 않을 ID
+        Set<Long> idSetToKeep = new HashSet<>();
 
-        questionIdList.parallelStream().forEach(questionId -> {
+        questionIdList.forEach(questionId -> {
             // questionId에 대한 새로운 응답과 기존 응답의 content 집합 생성
             Set<QuestionAnswer> newAnswerContentSet = newQuestionAnswerMap.getOrDefault(questionId, Set.of());
             Set<String> newContents = newAnswerContentSet.stream()
@@ -83,12 +81,19 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
                     .filter(newAnswer -> !existingContents.contains(newAnswer.getContent()))
                     .forEach(finalAnswersToSave::add);
                 // 새로운 응답에 포함된 기존 응답은 삭제 대상에서 제외
-                finalAnswerIdsToDelete.removeAll(existingAnswerContentSet.stream()
+                existingAnswerContentSet.stream()
                     .filter(existingAnswer -> newContents.contains(existingAnswer.getContent()))
                     .map(QuestionAnswer::getAnswerId)
-                    .toList());
+                    .forEach(idSetToKeep::add);
             }
         });
+        // 삭제할 기존 응답 ID 리스트 (초기값: 기존 응답 전체)
+        List<Long> finalAnswerIdsToDelete = existingQuestionAnswerMap.values().stream()
+            .flatMap(Collection::stream)
+            .map(QuestionAnswer::getAnswerId)
+            .collect(Collectors.toList());
+        finalAnswerIdsToDelete.removeAll(idSetToKeep);
+
         if (!finalAnswersToSave.isEmpty()) {
             answerRepository.saveAll(finalAnswersToSave);
         }

@@ -99,4 +99,8 @@ public class Survey extends BaseEntity {
     public void markFree() {
         this.isFree = true;
     }
+
+    public void changeOwner(Long newMemberId) {
+        this.memberId = newMemberId;
+    }
 }

@@ -2,13 +2,18 @@ package OneQ.OnSurvey.domain.survey.controller;
 
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormListResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestResponse;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormCreator;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormFinder;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormUpdater;
+import OneQ.OnSurvey.global.common.response.PageResponse;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -27,6 +32,24 @@ public class FormRequestController {
             @RequestBody FormRequestDto request
     ) {
         return SuccessResponse.ok(formCreator.createFormRequest(request));
+    }
+
+    @GetMapping
+    @Operation(summary = "폼 요청 목록 조회", description = "전체 폼 요청 목록을 페이지네이션하여 조회합니다. 이메일 검색 및 등록 상태 필터링이 가능합니다.")
+    public PageResponse<FormRequestResponse> getFormRequests(
+            @Parameter(description = "신청자 이메일 검색 (부분 일치)")
+            @RequestParam(required = false) String email,
+            @Parameter(description = "등록 상태 필터 (null: 전체, true: 등록완료, false: 미등록)")
+            @RequestParam(required = false) Boolean isRegistered,
+            @Parameter(description = "페이지 번호 (0부터 시작)")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기")
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        log.info("[FormRequest] 목록 조회 - email: {}, isRegistered: {}, page: {}, size: {}",
+                email, isRegistered, page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        return PageResponse.ok(formFinder.getFormRequests(email, isRegistered, pageable));
     }
 
     @GetMapping("/unregistered")

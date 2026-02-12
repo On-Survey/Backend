@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용자 검색</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/bo/scripts/navigation.js"></script>
+    <script src="/bo/scripts/toast.js"></script>
+    <script src="/bo/scripts/api-call.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/bo/styles/common.css}">
+</head>
+<body class="bg-slate-100 h-screen overflow-y-auto p-6">
+<div class="space-y-6 pb-6">
+    <!-- 어드민 등록 섹션 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h3 class="font-bold text-slate-700 mb-4">
+            <i class="fas fa-user-plus mr-2 text-indigo-500"></i>어드민 계정 등록
+        </h3>
+        <div class="grid grid-cols-4 gap-4 mb-4">
+            <div>
+                <label for="adminUserKey" class="block text-xs text-slate-500 mb-1">User Key <span class="text-red-500">*</span></label>
+                <input type="number" id="adminUserKey" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="회원 UserKey 입력">
+            </div>
+            <div>
+                <label for="adminUsername" class="block text-xs text-slate-500 mb-1">아이디 <span class="text-red-500">*</span></label>
+                <input type="text" id="adminUsername" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="로그인 아이디">
+            </div>
+            <div>
+                <label for="adminPassword" class="block text-xs text-slate-500 mb-1">비밀번호 <span class="text-red-500">*</span></label>
+                <input type="password" id="adminPassword" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="비밀번호">
+            </div>
+            <div>
+                <label for="adminName" class="block text-xs text-slate-500 mb-1">이름 <span class="text-red-500">*</span></label>
+                <input type="text" id="adminName" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="표시될 이름">
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="registerAdmin()" class="px-4 py-2 bg-green-600 text-white rounded text-sm font-bold hover:bg-green-700">
+                <i class="fas fa-user-plus mr-2"></i>어드민 등록
+            </button>
+            <button onclick="clearAdminForm()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm hover:bg-slate-300">
+                초기화
+            </button>
+        </div>
+    </div>
+
+    <!-- 사용자 검색 섹션 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h3 class="font-bold text-slate-700 mb-4">사용자 검색</h3>
+        <div class="grid grid-cols-4 gap-4 mb-4">
+            <div>
+                <label for="searchEmail" class="block text-xs text-slate-500 mb-1">이메일</label>
+                <input type="text" id="searchEmail" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="이메일 입력">
+            </div>
+            <div>
+                <label for="searchPhone" class="block text-xs text-slate-500 mb-1">전화번호</label>
+                <input type="text" id="searchPhone" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="전화번호 입력">
+            </div>
+            <div>
+                <label for="searchMemberId" class="block text-xs text-slate-500 mb-1">회원 ID</label>
+                <input type="text" id="searchMemberId" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="회원 ID 입력">
+            </div>
+            <div>
+                <label for="searchName" class="block text-xs text-slate-500 mb-1">이름</label>
+                <input type="text" id="searchName" class="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="이름 입력">
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="searchMembers()" class="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-bold hover:bg-indigo-700">
+                <i class="fas fa-search mr-2"></i>검색
+            </button>
+            <button onclick="clearMemberSearch()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded text-sm hover:bg-slate-300">
+                초기화
+            </button>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-slate-500 border-b">
+            <tr>
+                <th class="px-6 py-4">회원 ID</th>
+                <th class="px-6 py-4">UserKey</th>
+                <th class="px-6 py-4">이름</th>
+                <th class="px-6 py-4">이메일</th>
+                <th class="px-6 py-4">전화번호</th>
+                <th class="px-6 py-4">생년월일</th>
+                <th class="px-6 py-4">성별</th>
+                <th class="px-6 py-4">상태</th>
+                <th class="px-6 py-4">코인</th>
+            </tr>
+            </thead>
+            <tbody id="memberSearchTableBody" class="divide-y divide-slate-100">
+            </tbody>
+        </table>
+    </div>
+</div>
+<script th:src="@{/bo/scripts/member-search.js}"></script>
+</body>
+</html>

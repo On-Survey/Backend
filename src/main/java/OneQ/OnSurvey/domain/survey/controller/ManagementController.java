@@ -5,7 +5,9 @@ import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.repository.section.SectionRepository;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
@@ -45,6 +47,7 @@ public class ManagementController {
     private final AnswerQuery<QuestionAnswer> answerQuery;
     private final SurveyInfoRepository surveyInfoRepository;
     private final ScreeningRepository screeningRepository;
+    private final SectionRepository sectionRepository;
 
     @GetMapping("/surveys")
     @Operation(summary = "사용자가 생성한 설문을 조회합니다.")
@@ -71,6 +74,7 @@ public class ManagementController {
 
         SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
         SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId).orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
+        List<SectionDto> sections = sectionRepository.findAllSectionDtoBySurveyId(surveyId);
 
         if (!principal.getMemberId().equals(response.getMemberId())) {
             throw new CustomException(ErrorCode.FORBIDDEN);
@@ -120,6 +124,7 @@ public class ManagementController {
         }
 
         detailInfoList = answerQuery.getDetailInfo(surveyId, filter, detailInfoList);
+        response.updateSections(sections);
         response.updateDetailInfoList(detailInfoList);
         response.updateSurveyInfo(surveyInfo);
 
@@ -137,8 +142,9 @@ public class ManagementController {
         surveyQuery.validateSurveyRequest(surveyId, principal.getMemberId(), SurveyStatus.WRITING);
         List<DefaultQuestionDto> questionDto = questionQuery.getQuestionDtoListBySurveyId(surveyId);
         ScreeningFormData screeningFormData = screeningRepository.getScreeningFormDataBySurveyId(surveyId);
+        List<SectionDto> sections = sectionRepository.findAllSectionDtoBySurveyId(surveyId);
 
-        return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto, screeningFormData));
+        return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto, screeningFormData, sections));
     }
 
     @GetMapping

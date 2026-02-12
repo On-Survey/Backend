@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.survey.service.form;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionCommand;
 import OneQ.OnSurvey.domain.question.service.QuestionConverter;
@@ -115,6 +116,13 @@ public class SurveyFormFacade implements SurveyFormUseCase {
         return surveyCommand.upsertScreening(surveyId, request.content(), request.answer());
     }
 
+    @Override
+    public SectionResponse upsertSection(Long surveyId, SectionRequest request) {
+        log.info("[FORM:upsertSection] 섹션 수정 - surveyId: {}, size: {}", surveyId, request.sectionInfoList().size());
+        List<SectionDto> result = questionCommand.upsertSections(surveyId, request.toDto());
+
+        return SectionResponse.from(result);
+    }
 
     private void validateCreateQuestionRequest(QuestionRequest request) {
         if (request.getQuestions().isEmpty()) {
