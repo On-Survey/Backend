@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class QuerydslUtils {
@@ -42,7 +43,7 @@ public abstract class QuerydslUtils {
 
         if (contents.size() > size) {
             hasNext = true;
-            contents.remove(size);
+            contents = new ArrayList<>(contents.subList(0, size));
         }
 
         return new SliceImpl<>(contents, pageable, hasNext);

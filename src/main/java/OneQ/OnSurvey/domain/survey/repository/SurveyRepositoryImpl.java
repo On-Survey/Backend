@@ -28,13 +28,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
 
 import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
-import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
@@ -86,13 +84,9 @@ public class SurveyRepositoryImpl implements SurveyRepository {
 
         List<SurveyWithEligibility> results = new ArrayList<>(jpaQueryFactory
             .from(survey)
-            .distinct()
             .leftJoin(survey.interests, interestAlias)
             .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId))
             .leftJoin(surveyInfo.ages, ageAlias)
-            .leftJoin(screening).on(survey.id.eq(screening.surveyId))
-            .leftJoin(screeningAnswer).on(
-                screeningAnswer.memberId.eq(memberId).and(screening.id.eq(screeningAnswer.screeningId)))
             .where(survey.id.in(targetIdList))
             .orderBy(QuerydslUtils.getSortPaidFirst(pageable, survey, survey.isFree))
             .transform(groupBy(survey.id).as(Projections.fields(SurveyWithEligibility.class,
@@ -189,12 +183,6 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         return jpaQueryFactory
             .select(survey.id)
             .from(survey)
-            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId))
-            .leftJoin(screening).on(survey.id.eq(screening.surveyId))
-            .leftJoin(screeningAnswer).on(
-                screeningAnswer.memberId.eq(memberId)
-                    .and(screening.id.eq(screeningAnswer.screeningId))
-            )
             .where(builder)
             .orderBy(QuerydslUtils.getSortPaidFirst(pageable, survey, survey.isFree))
             .limit(pageable.getPageSize() + 1)

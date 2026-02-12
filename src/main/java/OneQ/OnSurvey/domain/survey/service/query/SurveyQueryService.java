@@ -116,20 +116,19 @@ public class SurveyQueryService implements SurveyQuery {
     public SurveyParticipationResponse getParticipationSurveySlice(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     ) {
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 제작자 제외 필터에 따른 설문 조회 - "
+        log.info("[SURVEY:QUERY:getParticipationSurveySlice] 제작자 제외 필터에 따른 설문 조회 - "
             + "lastSurveyId: {}, size: {}, status: {}, creator: {}",
             lastSurveyId, pageable.getPageSize(), status.name(), userKey
         );
 
         List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
         MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
+        log.info("[SURVEY:QUERY:getParticipationSurveySlice] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
             userKey, memberSegmentation, excludedIdList);
 
         Slice<SurveyWithEligibility> surveySlice = surveyRepository.getSurveyListWithEligibility(
             lastSurveyId, null, pageable, status, memberId, excludedIdList, memberSegmentation
         );
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 필터에 맞는 설문 조회 결과 - surveys: {}", surveySlice);
 
         return SurveyParticipationResponse.builder()
             .surveys(surveySlice.stream().map(SurveyParticipationResponse::from).toList())
@@ -200,10 +199,9 @@ public class SurveyQueryService implements SurveyQuery {
                 .distinct()
                 .toList();
 
-        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
-        log.info("[SURVEY:QUERY:getScreeningList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
-            userKey, memberSegmentation, excludedIdList);
-
+        /* TODO: 스크리닝 조회 로직 개선 필요
+         * ScreeningRepository 내에서 설문 상태에 따라 스크리닝 퀴즈를 조회하도록 수정
+         */
         List<Long> surveyIdList = surveyRepository.getSurveyIdListByFilters(
             lastSurveyId, null, pageable, SurveyStatus.ONGOING, memberId, excludedIdList);
         boolean hasNext = surveyIdList.size() > pageable.getPageSize();
