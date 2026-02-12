@@ -6,6 +6,10 @@ import com.querydsl.core.types.dsl.BooleanPath;
 import com.querydsl.core.types.dsl.EntityPathBase;
 import com.querydsl.core.types.dsl.Expressions;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
+
+import java.util.List;
 
 public abstract class QuerydslUtils {
 
@@ -30,5 +34,17 @@ public abstract class QuerydslUtils {
 
         System.arraycopy(baseSort, 0, result, 1, baseSort.length);
         return result;
+    }
+
+    public static <T> Slice<T> createSlice(List<T> contents, Pageable pageable) {
+        boolean hasNext = false;
+        int size = pageable.getPageSize();
+
+        if (contents.size() > size) {
+            hasNext = true;
+            contents.remove(size);
+        }
+
+        return new SliceImpl<>(contents, pageable, hasNext);
     }
 }

@@ -4,6 +4,7 @@ import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveyWithEligibility;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
@@ -15,10 +16,12 @@ import java.util.Optional;
 public interface SurveyRepository {
     Optional<Survey> getSurveyById(Long surveyId);
     List<Survey> getSurveyListByMemberId(Long memberId);
-    Slice<Survey> getSurveyListByFilters(
+    List<Long> getSurveyIdListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
-        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation,
-        boolean filterByScreeningAnswer);
+        SurveyStatus status, Long creatorId, Collection<Long> excludedIds);
+    Slice<SurveyWithEligibility> getSurveyListWithEligibility(
+        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
+        SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation);
 
     Survey save(Survey survey);
 
