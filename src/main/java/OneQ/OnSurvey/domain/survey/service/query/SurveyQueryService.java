@@ -116,8 +116,8 @@ public class SurveyQueryService implements SurveyQuery {
     public SurveyParticipationResponse getParticipationSurveySlice(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     ) {
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 설문 조회 - "
-                + "lastSurveyId: {}, size: {}, status: {}, userKey: {}",
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 제작자 제외 필터에 따른 설문 조회 - "
+            + "lastSurveyId: {}, size: {}, status: {}, creator: {}",
             lastSurveyId, pageable.getPageSize(), status.name(), userKey
         );
 
@@ -129,7 +129,7 @@ public class SurveyQueryService implements SurveyQuery {
         Slice<SurveyWithEligibility> surveySlice = surveyRepository.getSurveyListWithEligibility(
             lastSurveyId, null, pageable, status, memberId, excludedIdList, memberSegmentation
         );
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 추천 설문 조회 결과 - recommended: {}", surveySlice);
+        log.info("[SURVEY:QUERY:getParticipationSurveyList] 필터에 맞는 설문 조회 결과 - surveys: {}", surveySlice);
 
         return SurveyParticipationResponse.builder()
             .surveys(surveySlice.stream().map(SurveyParticipationResponse::from).toList())
