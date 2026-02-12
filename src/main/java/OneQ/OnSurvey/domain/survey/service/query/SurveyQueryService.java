@@ -4,7 +4,6 @@ import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
-import OneQ.OnSurvey.domain.participation.repository.answer.ScreeningAnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
@@ -39,7 +38,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.ONGOING;
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
@@ -57,7 +55,6 @@ public class SurveyQueryService implements SurveyQuery {
     private final ScreeningRepository screeningRepository;
     private final ResponseRepository responseRepository;
     private final MemberRepository memberRepository;
-    private final ScreeningAnswerRepository screeningAnswerRepository;
 
     private final QuestionQueryService questionQueryService;
 
@@ -193,28 +190,13 @@ public class SurveyQueryService implements SurveyQuery {
             lastSurveyId, pageable.getPageSize(), userKey
         );
 
-        List<Long> respondedSurveyIds = responseRepository.getExcludedSurveyIdList(memberId, false);
-        List<Long> screenedSurveyIds = screeningAnswerRepository.findAnsweredSurveyIds(memberId);
-        List<Long> excludedIdList = Stream.concat(respondedSurveyIds.stream(), screenedSurveyIds.stream())
-                .distinct()
-                .toList();
-
-        /* TODO: 스크리닝 조회 로직 개선 필요
-         * ScreeningRepository 내에서 설문 상태에 따라 스크리닝 퀴즈를 조회하도록 수정
-         */
-        List<Long> surveyIdList = surveyRepository.getSurveyIdListByFilters(
-            lastSurveyId, null, pageable, SurveyStatus.ONGOING, memberId, excludedIdList);
-        boolean hasNext = surveyIdList.size() > pageable.getPageSize();
-        if (hasNext) {
-            surveyIdList.remove(pageable.getPageSize());
-        }
-        log.info("[SURVEY:QUERY:getScreeningList] 스크리닝을 조회할 설문 IDs: {}", surveyIdList);
-
-        List<ScreeningIntroData> screeningList = screeningRepository.getScreeningListBySurveyIdList(surveyIdList);
+        Slice<ScreeningIntroData> screeningSlice = screeningRepository.getScreeningSliceByFilters(
+            lastSurveyId, pageable, SurveyStatus.ONGOING, memberId
+        );
 
         return ParticipationScreeningListResponse.builder()
-            .data(screeningList)
-            .hasNext(hasNext)
+            .data(screeningSlice.map(Function.identity()).toList())
+            .hasNext(screeningSlice.hasNext())
             .build();
     }
 
