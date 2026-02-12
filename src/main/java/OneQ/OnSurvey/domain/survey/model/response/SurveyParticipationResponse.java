@@ -1,7 +1,7 @@
 package OneQ.OnSurvey.domain.survey.model.response;
 
 import OneQ.OnSurvey.domain.member.value.Interest;
-import OneQ.OnSurvey.domain.survey.entity.Survey;
+import OneQ.OnSurvey.domain.survey.model.dto.SurveyWithEligibility;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +13,11 @@ import java.util.Set;
 
 @Getter @Builder
 public class SurveyParticipationResponse {
+    @Schema(description = "전체 설문")
+    private List<SurveyData> surveys;
+    @Schema(description = "다음 설문 페이지 존재 여부")
+    private Boolean hasNext;
+
     @Schema(description = "사용자 추천 설문")
     private List<SurveyData> recommended;
     @Schema(description = "마감 임박 설문")
@@ -30,21 +35,23 @@ public class SurveyParticipationResponse {
         private String title;
         private String description;
         private Boolean isFree;
-
         private Set<Interest> interests;
-
         private LocalDateTime deadline;
+
+        @Schema(description = "사용자 세그멘테이션 적격 여부")
+        private Boolean isEligible;
     }
 
-    public static SurveyData fromEntity(Survey survey) {
+    public static SurveyData from(SurveyWithEligibility surveyWithEligibility) {
         return SurveyData.builder()
-            .surveyId(survey.getId())
-            .memberId(survey.getMemberId())
-            .title(survey.getTitle())
-            .description(survey.getDescription())
-            .isFree(survey.getIsFree())
-            .interests(survey.getInterests())
-            .deadline(survey.getDeadline())
+            .surveyId(surveyWithEligibility.getSurveyId())
+            .memberId(surveyWithEligibility.getMemberId())
+            .title(surveyWithEligibility.getTitle())
+            .description(surveyWithEligibility.getDescription())
+            .isFree(surveyWithEligibility.getIsFree())
+            .interests(surveyWithEligibility.getInterests())
+            .deadline(surveyWithEligibility.getDeadline())
+            .isEligible(surveyWithEligibility.getIsEligible())
             .build();
     }
 

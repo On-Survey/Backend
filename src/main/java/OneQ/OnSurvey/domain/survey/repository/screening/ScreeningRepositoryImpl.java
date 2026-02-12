@@ -1,18 +1,25 @@
 package OneQ.OnSurvey.domain.survey.repository.screening;
 
 import OneQ.OnSurvey.domain.survey.entity.Screening;
+import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningFormData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
+import OneQ.OnSurvey.global.common.util.QuerydslUtils;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
+import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
 @Repository
 @RequiredArgsConstructor
@@ -27,12 +34,26 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
     }
 
     @Override
-    public List<ScreeningIntroData> getScreeningListBySurveyIdList(List<Long> surveyIdList) {
-        if (surveyIdList == null || surveyIdList.isEmpty()) {
-            return List.of();
-        }
+    public Slice<ScreeningIntroData> getScreeningSliceByFilters(
+        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long creatorId
+    ) {
 
-        return jpaQueryFactory.select(Projections.constructor(ScreeningIntroData.class,
+        BooleanBuilder screenedCondition = new BooleanBuilder();
+        screenedCondition.and(
+            response.isScreened.isNull() // 스크리닝 퀴즈 응답이 없는 설문
+        );
+        BooleanBuilder surveyCondition = new BooleanBuilder();
+        surveyCondition.and(
+            survey.status.eq(status)
+        );
+        surveyCondition.and(
+            survey.memberId.ne(creatorId) // 본인이 생성한 설문 제외
+        );
+        surveyCondition.and(
+            survey.id.gt(lastSurveyId) // 마지막으로 조회한 설문 이후의 설문
+        );
+
+        List<ScreeningIntroData> results = jpaQueryFactory.select(Projections.constructor(ScreeningIntroData.class,
             screening.id,
             screening.surveyId,
             screening.content,
@@ -41,13 +62,18 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
         ))
             .from(screening)
             .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId))
-            .where(
-                screening.surveyId.goe(surveyIdList.getFirst()),
-                screening.surveyId.in(surveyIdList)
+            .leftJoin(response).on(
+                screening.surveyId.eq(response.surveyId),
+                response.memberId.eq(creatorId)
             )
+            .leftJoin(survey).on(screening.surveyId.eq(survey.id))
+            .where(screenedCondition, surveyCondition)
             .groupBy(screening.id)
-            .orderBy(screening.surveyId.asc())
+            .orderBy(QuerydslUtils.getSortPaidFirst(pageable, survey, survey.isFree))
+            .limit(pageable.getPageSize() + 1)
             .fetch();
+
+        return QuerydslUtils.createSlice(results, pageable);
     }
 
     @Override

@@ -17,6 +17,10 @@ import java.util.List;
 public interface SurveyQuery {
     SurveyManagementDetailResponse getSurvey(Long surveyId);
     List<SurveyManagementResponse.SurveyInformation> getSurveyListByMemberId(Long memberId);
+    SurveyParticipationResponse getParticipationSurveySlice(
+        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
+    );
+
     SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     );
