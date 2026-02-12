@@ -1,14 +1,17 @@
 package OneQ.OnSurvey.domain.survey.repository.screening;
 
 import OneQ.OnSurvey.domain.survey.entity.Screening;
+import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningFormData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
-
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 
 public interface ScreeningRepository {
     Screening getScreeningBySurveyId(Long surveyId);
-    List<ScreeningIntroData> getScreeningListBySurveyIdList(List<Long> surveyIdList);
+    Slice<ScreeningIntroData> getScreeningSliceByFilters(
+        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long creatorId
+    );
     ScreeningFormData getScreeningFormDataBySurveyId(Long surveyId);
 
     ScreeningIntroData getScreeningIntroDataByScreeningId(Long screeningId);
