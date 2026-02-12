@@ -47,6 +47,25 @@ public class ParticipationController {
     private final QuestionQueryService questionQueryService;
     private final SurveyRepository surveyRepository;
 
+    @GetMapping("surveys/ongoing/all")
+    @Operation(summary = "열려있는 설문을 모두 조회합니다.")
+    public SuccessResponse<SurveyParticipationResponse> getOngoingSurveyList(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
+        @RequestParam(defaultValue = "15") Integer size
+    ) {
+        log.info("[PARTICIPATION] 열려있는 설문 전체 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
+
+        Pageable pageable = PageRequest.of(0, size, Sort.by("id"));
+
+        SurveyParticipationResponse results = surveyQueryService.getParticipationSurveySlice(
+            lastSurveyId, pageable, SurveyStatus.ONGOING, principal.getMemberId(), principal.getUserKey()
+        );
+
+        return SuccessResponse.ok(results);
+    }
+
+    @Deprecated(forRemoval = true)
     @GetMapping("surveys/ongoing")
     @Operation(summary = "노출 중인 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getSurveyListOnGoing(
@@ -79,6 +98,7 @@ public class ParticipationController {
         return SuccessResponse.ok(response);
     }
 
+    @Deprecated(forRemoval = true)
     @GetMapping("surveys/ongoing/recommended")
     @Operation(summary = "사용자 추천 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getRecommendedSurveyList(
@@ -101,6 +121,7 @@ public class ParticipationController {
         return SuccessResponse.ok(response);
     }
 
+    @Deprecated(forRemoval = true)
     @GetMapping("surveys/ongoing/impending")
     @Operation(summary = "마감 임박 설문을 조회합니다.")
     public SuccessResponse<SurveyParticipationResponse> getImpendingSurveyList(
@@ -187,7 +208,7 @@ public class ParticipationController {
         @RequestParam(required = false, defaultValue = "0") Long lastSurveyId,
         @RequestParam(defaultValue = "5") Integer size
     ) {
-        log.info("[PARTICIPATION] 세그멘테이션 일치 스크리닝 문항 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
+        log.info("[PARTICIPATION] 페이지네이션 스크리닝 문항 조회 - lastSurveyId: {}, size: {}", lastSurveyId, size);
 
         Pageable pageable = PageRequest.of(0, size);
         return SuccessResponse.ok(surveyQueryService.getScreeningList(lastSurveyId, pageable, principal.getMemberId(), principal.getUserKey()));
