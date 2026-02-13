@@ -17,7 +17,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
-import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
@@ -58,10 +57,9 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             screening.surveyId,
             screening.content,
             screening.answer,
-            screeningAnswer.answerId.count()
+            response.memberId.count()
         ))
             .from(screening)
-            .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId))
             .leftJoin(response).on(
                 screening.surveyId.eq(response.surveyId),
                 response.memberId.eq(creatorId)
@@ -106,10 +104,10 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             screening.surveyId,
             screening.content,
             screening.answer,
-            screeningAnswer.answerId.count()
+            response.memberId.count()
         ))
             .from(screening)
-            .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId))
+            .leftJoin(response).on(screening.surveyId.eq(response.surveyId))
             .where(screening.id.eq(screeningId))
             .groupBy(screening.id)
             .fetchOne();
