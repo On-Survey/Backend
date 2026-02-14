@@ -32,7 +32,10 @@ public class ResponseRepositoryImpl implements ResponseRepository {
         Long cnt = jpaQueryFactory
                 .select(response.count())
                 .from(response)
-                .where(response.surveyId.eq(surveyId))
+                .where(
+                    response.surveyId.eq(surveyId),
+                    response.isResponded.isTrue()
+                )
                 .fetchOne();
         return cnt == null ? 0 : cnt.intValue();
     }
@@ -51,6 +54,7 @@ public class ResponseRepositoryImpl implements ResponseRepository {
                 .join(member).on(member.id.eq(response.memberId))
                 .where(
                         response.surveyId.eq(surveyId),
+                        response.isResponded.isTrue(),
                         buildAgeCondition(member.birthDay, f.ages()),
                         buildGenderCondition(member.gender, f.genders()),
                         buildResidenceCondition(member.residence, f.residences())

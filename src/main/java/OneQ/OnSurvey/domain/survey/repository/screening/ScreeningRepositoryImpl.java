@@ -8,6 +8,7 @@ import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
 import OneQ.OnSurvey.global.common.util.QuerydslUtils;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
-import static OneQ.OnSurvey.domain.participation.entity.QScreeningAnswer.screeningAnswer;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
@@ -37,11 +37,6 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
     public Slice<ScreeningIntroData> getScreeningSliceByFilters(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long creatorId
     ) {
-
-        BooleanBuilder screenedCondition = new BooleanBuilder();
-        screenedCondition.and(
-            response.isScreened.isNull() // 스크리닝 퀴즈 응답이 없는 설문
-        );
         BooleanBuilder surveyCondition = new BooleanBuilder();
         surveyCondition.and(
             survey.status.eq(status)
@@ -58,17 +53,23 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             screening.surveyId,
             screening.content,
             screening.answer,
-            screeningAnswer.answerId.count()
+            response.memberId.count()
         ))
             .from(screening)
-            .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId))
-            .leftJoin(response).on(
-                screening.surveyId.eq(response.surveyId),
-                response.memberId.eq(creatorId)
+            .join(survey).on(screening.surveyId.eq(survey.id))
+            .leftJoin(response).on(screening.surveyId.eq(response.surveyId))
+            .where(
+                surveyCondition,
+                JPAExpressions
+                    .selectOne()
+                    .from(response)
+                    .where(
+                        response.surveyId.eq(screening.surveyId),
+                        response.memberId.eq(creatorId)
+                    )
+                    .notExists()
             )
-            .leftJoin(survey).on(screening.surveyId.eq(survey.id))
-            .where(screenedCondition, surveyCondition)
-            .groupBy(screening.id)
+            .groupBy(screening.id, screening.surveyId, screening.content, screening.answer)
             .orderBy(QuerydslUtils.getSortPaidFirst(pageable, survey, survey.isFree))
             .limit(pageable.getPageSize() + 1)
             .fetch();
@@ -106,10 +107,10 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
             screening.surveyId,
             screening.content,
             screening.answer,
-            screeningAnswer.answerId.count()
+            response.memberId.count()
         ))
             .from(screening)
-            .leftJoin(screeningAnswer).on(screening.id.eq(screeningAnswer.screeningId))
+            .leftJoin(response).on(screening.surveyId.eq(response.surveyId))
             .where(screening.id.eq(screeningId))
             .groupBy(screening.id)
             .fetchOne();
