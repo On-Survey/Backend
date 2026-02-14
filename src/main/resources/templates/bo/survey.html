@@ -852,6 +852,17 @@
             });
         });
 
+        // 기존 옵션(optionId 있음)을 먼저, 새 옵션(optionId 없음)을 나중에 정렬
+        // 백엔드에서 update 대상 먼저, insert 대상 나중에 처리하고
+        // choice_option_id ASC 정렬로 조회하므로, UI 순서와 일치시키기 위함
+        options.sort((a, b) => {
+            const aHasId = a.optionId !== null;
+            const bHasId = b.optionId !== null;
+            if (aHasId && !bHasId) return -1;
+            if (!aHasId && bHasId) return 1;
+            return 0; // 같은 그룹 내에서는 원래 순서 유지
+        });
+
         return options;
     }
 
