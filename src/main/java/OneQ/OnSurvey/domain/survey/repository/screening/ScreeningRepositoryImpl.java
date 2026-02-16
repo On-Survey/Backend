@@ -141,4 +141,9 @@ public class ScreeningRepositoryImpl implements ScreeningRepository {
     public void delete(Screening screening) {
         screeningJpaRepository.delete(screening);
     }
+
+    @Override
+    public void deleteBySurveyId(Long surveyId) {
+        screeningJpaRepository.deleteBySurveyId(surveyId);
+    }
 }

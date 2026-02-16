@@ -9,4 +9,6 @@ import java.util.List;
 public interface ScreeningJpaRepository extends JpaRepository<Screening, Long> {
     Screening getScreeningBySurveyId(Long surveyId);
     List<Screening> getScreeningBySurveyIdGreaterThanEqualAndSurveyIdIsIn(Long surveyIdIsGreaterThan, Collection<Long> surveyIds);
+
+    void deleteBySurveyId(Long surveyId);
 }
