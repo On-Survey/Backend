@@ -66,18 +66,16 @@ public class SurveyQueryService implements SurveyQuery {
 
     private final QuestionQueryService questionQueryService;
 
+    @Value("${redis.survey-key-prefix.lock}")
+    private String lockKey;
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
-
     @Value("${redis.survey-key-prefix.completed-count}")
     private String completedKey;
-
     @Value("${redis.survey-key-prefix.due-count}")
     private String dueCountKey;
-
     @Value("${redis.survey-key-prefix.creator-userkey}")
     private String creatorKey;
-
     @Value("${redis.survey-potential-expiration-seconds}")
     private Integer potentialTimeout;
 
@@ -221,7 +219,7 @@ public class SurveyQueryService implements SurveyQuery {
     public ParticipationInfoResponse getParticipationInfo(Long surveyId, Long userKey, Long memberId) {
         log.info("[SURVEY:QUERY:getParticipationInfo] 설문 기본정보 조회 - surveyId: {}", surveyId);
 
-        if (checkValidSegmentation(surveyId, userKey) && AuthorizationUtils.validateOwnershipOrAdmin(surveyId, userKey)) {
+        if (checkValidSegmentation(surveyId, userKey)) {
             log.warn("[SURVEY:QUERY] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
@@ -253,7 +251,7 @@ public class SurveyQueryService implements SurveyQuery {
     public ParticipationQuestionResponse getParticipationQuestionInfo(Long surveyId, Integer sectionOrder, Long userKey) {
         log.info("[SURVEY:QUERY] 설문 문항정보 조회 - surveyId: {}, userKey: {}", surveyId, userKey);
 
-        if (AuthorizationUtils.validateNonOwnershipOrAdmin(userKey, RedisUtils.getLongValue(this.creatorKey + surveyId))) {
+        if (AuthorizationUtils.validateOwnershipOrAdmin(userKey, RedisUtils.getLongValue(this.creatorKey + surveyId))) {
             log.warn("[SURVEY:QUERY] 설문 제작자는 참여 불가 - surveyId: {}, userKey: {}", surveyId, userKey);
             throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_OWN_SURVEY);
         }
@@ -342,7 +340,7 @@ public class SurveyQueryService implements SurveyQuery {
         Survey survey = surveyRepository.getSurveyById(surveyId)
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
-        if (AuthorizationUtils.validateNonOwnershipOrAdmin(survey.getMemberId(), memberId)) {
+        if (AuthorizationUtils.validateOwnershipOrAdmin(survey.getMemberId(), memberId)) {
             log.warn("[SURVEY:QUERY:VALIDATE] 접근 권한 없음 - surveyId: {}, memberId: {}, surveyMemberId: {}",
                     surveyId, memberId, survey.getMemberId());
             throw new CustomException(SurveyErrorCode.SURVEY_FORBIDDEN);
@@ -371,8 +369,6 @@ public class SurveyQueryService implements SurveyQuery {
      * <p> 등록불가능: false
      */
     private boolean isActivationAvailable(Long surveyId, Long userKey) {
-        log.info("[SURVEY:QUERY] 활성 참여자 등록 및 등록가능 여부 판단 - surveyId: {}, userKey: {}", surveyId, userKey);
-
         final String potentialKey = this.potentialKey + surveyId;
         final String memberValue = String.valueOf(userKey);
 
@@ -385,7 +381,7 @@ public class SurveyQueryService implements SurveyQuery {
         boolean result;
         try {
             Integer finalDueCount = dueCount;
-            result = RedisUtils.executeWithLock("lock:survey:" + surveyId, 5, 10, () -> {
+            result = RedisUtils.executeWithLock(lockKey + surveyId, 5, 10, () -> {
                 Double existingScore = RedisUtils.getZSetScore(potentialKey, memberValue);
 
                 // 새로운 참여자인 경우
@@ -429,7 +425,7 @@ public class SurveyQueryService implements SurveyQuery {
 
     private Integer initialDueCount(Long surveyId) {
         try {
-             return RedisUtils.executeWithLock("lock:survey:" + surveyId, 3, 6, () -> {
+             return RedisUtils.executeWithLock(lockKey + surveyId, 3, 6, () -> {
                 int dueCount = RedisUtils.getIntValue(this.dueCountKey + surveyId);
 
                 // 다른 스레드에서 값이 설정된 경우, 재조회하지 않고 그대로 값 반환하도록 더블체크
