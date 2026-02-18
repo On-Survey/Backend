@@ -26,13 +26,13 @@ import OneQ.OnSurvey.domain.survey.service.refund.SurveyRefundPolicy;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import OneQ.OnSurvey.global.common.util.AuthorizationUtils;
+import OneQ.OnSurvey.global.common.util.RedisUtils;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,8 +49,6 @@ import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 @Transactional
 public class SurveyCommandService implements SurveyCommand {
 
-    private final StringRedisTemplate redisTemplate;
-
     private final SurveyRepository surveyRepository;
     private final ScreeningRepository screeningRepository;
     private final SurveyInfoRepository surveyInfoRepository;
@@ -63,13 +61,10 @@ public class SurveyCommandService implements SurveyCommand {
 
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
-
     @Value("${redis.survey-key-prefix.completed-count}")
     private String completedKey;
-
     @Value("${redis.survey-key-prefix.due-count}")
     private String dueCountKey;
-
     @Value("${redis.survey-key-prefix.creator-userkey}")
     private String creatorKey;
 
@@ -244,11 +239,11 @@ public class SurveyCommandService implements SurveyCommand {
         String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
-        if (redisTemplate.opsForZSet().score(potentialKey, memberValue) == null) {
+        if (RedisUtils.getZSetScore(potentialKey, memberValue) == null) {
             return false;
         }
         // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신
-        redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
+        RedisUtils.addToZSet(potentialKey, memberValue, System.currentTimeMillis());
         return true;
     }
 
@@ -262,18 +257,6 @@ public class SurveyCommandService implements SurveyCommand {
 
         log.info("[SURVEY:COMMAND:updateSurveyOwner] 설문 소유자 변경 완료 - surveyId: {}, newMemberId: {}",
             changeDto.surveyId(), changeDto.newMemberId());
-    }
-
-    private void setValue(String keyPrefix, Long surveyId, String value, Duration duration) {
-        redisTemplate.opsForValue().set(
-            keyPrefix + surveyId, value, duration
-        );
-    }
-
-    private void addZSetValue(String keyPrefix, Long surveyId, String value) {
-        redisTemplate.opsForZSet().add(
-            keyPrefix + surveyId, value, System.currentTimeMillis()
-        );
     }
 
     private Survey getSurvey(Long surveyId) {
@@ -338,10 +321,11 @@ public class SurveyCommandService implements SurveyCommand {
     }
 
     private void applySurveyRuntimeCache(Long surveyId, Long userKey, Integer dueCount, LocalDateTime deadline) {
-        Duration duration = Duration.between(LocalDateTime.now(), deadline);
-        setValue(this.dueCountKey, surveyId, String.valueOf(dueCount), duration);
-        setValue(this.completedKey, surveyId, "0", duration);
-        addZSetValue(this.potentialKey, surveyId, String.valueOf(userKey));
-        setValue(this.creatorKey, surveyId, String.valueOf(userKey), duration);
+        Duration ttl = Duration.between(LocalDateTime.now(), deadline);
+
+        RedisUtils.setValue(this.dueCountKey + surveyId, String.valueOf(dueCount), ttl);
+        RedisUtils.setValue(this.completedKey + surveyId, "0", ttl);
+        RedisUtils.addToZSet(this.potentialKey + surveyId, String.valueOf(userKey), System.currentTimeMillis());
+        RedisUtils.setValue(this.creatorKey + surveyId, String.valueOf(userKey), ttl);
     }
 }

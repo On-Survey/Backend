@@ -9,6 +9,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -28,7 +29,7 @@ public final class RedisUtils {
         staticRedisTemplate = this.redisTemplate;
     }
 
-    public static RLock getLock(String lockKey) {
+    private static RLock getLock(String lockKey) {
         return staticRedisson.getLock(lockKey);
     }
 
@@ -39,6 +40,7 @@ public final class RedisUtils {
      * @param leaseTime 분산락 최대 점유시간 (단위: 초)
      * @param action 분산락 획득 후 실행할 로직
      * @return {@code action}의 실행 결과
+     * @throws RedisException 락 획득 실패 시 예외
      * @throws InterruptedException 락 획득 대기 중 인터럽트 발생 시 예외
      */
     public static <R> R executeWithLock(
@@ -91,10 +93,70 @@ public final class RedisUtils {
      * 값을 저장하는 유틸리티 메서드
      * @param key 저장할 키 (keyPrefix + id 형태로 사용)
      * @param value 저장할 값
-     * @param duration TTL, 예: {@code Duration.ofSeconds(60)} - 60초 동안 유효
+     * @param ttl TTL, 예: {@code Duration.ofSeconds(60)} - 60초 동안 유효
      */
-    public static void setValue(String key, String value, Duration duration) {
-        staticRedisTemplate.opsForValue().set(key, value, duration);
+    public static void setValue(String key, String value, Duration ttl) {
+        staticRedisTemplate.opsForValue().set(key, value, ttl);
+    }
+
+    /**
+     * 키가 존재하지 않을 때에만 값을 저장하는 유틸리티 메서드
+     * @param key 저장할 키 (keyPrefix + id 형태로 사용)
+     * @param value 저장할 값
+     * @param ttl TTL, 예: {@code Duration.ofSeconds(60)} - 60초 동안 유효
+     * @return 값이 저장됨 : true
+     * <p> 이미 키가 존재하여 저장되지 않음 : false
+     */
+    public static Boolean setValueIfAbsent(String key, String value, Duration ttl) {
+        return staticRedisTemplate.opsForValue().setIfAbsent(key, value, ttl);
+    }
+
+    /**
+     * 값을 1 증가시키는 유틸리티 메서드
+     * @param key 조회할 키 (keyPrefix + id 형태로 사용)
+     * @return 증가된 값
+     */
+    public static Long incrementValue(String key) {
+        return staticRedisTemplate.opsForValue().increment(key);
+    }
+
+    /**
+     * 값을 증가시키는 유틸리티 메서드
+     * @param key 조회할 키 (keyPrefix + id 형태로 사용)
+     * @param delta 증가시킬 값
+     * @return 증가된 값
+     */
+    public static Long incrementValue(String key, long delta) {
+        return staticRedisTemplate.opsForValue().increment(key, delta);
+    }
+
+    /**
+     * 값을 1 감소시키는 유틸리티 메서드
+     * @param key 조회할 키 (keyPrefix + id 형태로 사용)
+     * @return 감소된 값
+     */
+    public static Long decrementValue(String key) {
+        return staticRedisTemplate.opsForValue().decrement(key);
+    }
+
+    /**
+     * 값을 감소시키는 유틸리티 메서드
+     * @param key 조회할 키 (keyPrefix + id 형태로 사용)
+     * @param delta 감소시킬 값
+     * @return 감소된 값
+     */
+    public static Long decrementValue(String key, long delta) {
+        return staticRedisTemplate.opsForValue().decrement(key, delta);
+    }
+
+    /**
+     * 키를 삭제하는 유틸리티 메서드
+     * @param keyList 삭제할 키 리스트 (keyPrefix + id 형태로 사용)
+     */
+    public static void deleteKeys(List<String> keyList) {
+        if (keyList != null && !keyList.isEmpty()) {
+            staticRedisTemplate.delete(keyList);
+        }
     }
 
     /**
@@ -127,6 +189,25 @@ public final class RedisUtils {
      */
     public static void addToZSet(String key, String value, long score) {
         staticRedisTemplate.opsForZSet().add(key, value, score);
+    }
+
+    /**
+     * Sorted Set에 요소를 추가하는 유틸리티 메서드 (값을 갱신하지는 않음)
+     * @param key - 요소를 추가할 키 (keyPrefix + id 형태로 사용)
+     * @param value - Sorted Set에 추가할 값
+     * @param score - Sorted Set에 추가할 값의 score
+     */
+    public static void addToZSetIfAbsent(String key, String value, long score) {
+        staticRedisTemplate.opsForZSet().addIfAbsent(key, value, score);
+    }
+
+    /**
+     * Sorted Set에서 특정 요소를 제거하는 유틸리티 메서드
+     * @param key 삭제할 키 (keyPrefix + id 형태로 사용)
+     * @param value 삭제할 요소 값
+     */
+    public static void removeFromZSet(String key, String value) {
+        staticRedisTemplate.opsForZSet().remove(key, value);
     }
 
     /**
