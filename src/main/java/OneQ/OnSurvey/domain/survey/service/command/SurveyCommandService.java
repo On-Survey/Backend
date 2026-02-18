@@ -325,6 +325,9 @@ public class SurveyCommandService implements SurveyCommand {
         surveyRepository.save(survey);
         surveyInfoRepository.save(info);
         surveyGlobalStatsService.addDueCount(info.getDueCount());
+        if (survey.getIsFree()) {
+            screeningRepository.deleteBySurveyId(surveyId);
+        }
 
         applySurveyRuntimeCache(surveyId, userKey, dueCount, deadline);
 
