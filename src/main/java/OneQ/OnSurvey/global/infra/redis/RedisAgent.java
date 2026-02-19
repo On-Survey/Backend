@@ -1,6 +1,9 @@
 package OneQ.OnSurvey.global.infra.redis;
 
+import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisException;
@@ -15,6 +18,7 @@ import java.util.function.Supplier;
 /*
  Lettuce, Embedded Redis 등 다른 환경별 다른 Redis 클라이언트로 변경 시에 새로운 구현체를 구현하면 됨
  */
+@Slf4j
 @Component("RedisAgent")
 @RequiredArgsConstructor
 public class RedisAgent implements RedisLockAction, RedisCacheAction {
@@ -34,7 +38,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
     /**
      * 락 획득 후 실행할 로직을 인자로 받아 분산락을 이용하여 실행
      * @param lockKey   분산락 설정을 위한 키
-     * @param waitTIme  분산락 획득 대기시간 (단위: 초)
+     * @param waitTime  분산락 획득 대기시간 (단위: 초)
      * @param leaseTime 분산락 최대 점유시간 (단위: 초)
      * @param action    분산락 획득 후 실행할 로직
      * @return {@code action}의 실행 결과
@@ -42,10 +46,10 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @throws InterruptedException 락 획득 대기 중 인터럽트 발생 시 예외
      */
     public <R> R executeWithLock(
-        String lockKey, long waitTIme, long leaseTime, Supplier<R> action
+        String lockKey, long waitTime, long leaseTime, Supplier<R> action
     ) throws InterruptedException, RedisException {
         RLock lock = getLock(lockKey);
-        boolean available = lock.tryLock(waitTIme, leaseTime, TimeUnit.SECONDS);
+        boolean available = lock.tryLock(waitTime, leaseTime, TimeUnit.SECONDS);
 
         if (!available) {
             throw new RedisException("락 획득 실패");
@@ -54,7 +58,9 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
         try {
             return action.get();
         } finally {
-            lock.unlock();
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
     }
 
@@ -76,7 +82,12 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      */
     public int getIntValue(String key) {
         String value = redisTemplate.opsForValue().get(key);
-        return value != null ? Integer.parseInt(value) : 0;
+        try {
+            return value != null ? Integer.parseInt(value) : 0;
+        } catch (NumberFormatException e) {
+            log.warn("[RedisAgent] 캐시값 Integer 파싱 실패 - key: {}, value: {}", key, value);
+            throw new CustomException(ErrorCode.SERVER_UNTRACKED_ERROR);
+        }
     }
 
     /**
@@ -87,7 +98,12 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      */
     public long getLongValue(String key) {
         String value = redisTemplate.opsForValue().get(key);
-        return value != null ? Long.parseLong(value) : 0L;
+        try {
+            return value != null ? Long.parseLong(value) : 0L;
+        } catch (NumberFormatException e) {
+            log.warn("[RedisAgent] 캐시값 Long 파싱 실패 - key: {}, value: {}", key, value);
+            throw new CustomException(ErrorCode.SERVER_UNTRACKED_ERROR);
+        }
     }
 
     /**
