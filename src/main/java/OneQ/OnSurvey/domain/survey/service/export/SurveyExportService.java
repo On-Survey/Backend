@@ -38,7 +38,7 @@ public class SurveyExportService implements SurveyExport {
     public SurveyExportFile exportCsv(Long surveyId, Long requesterMemberId) {
         log.info("[SurveyExport] CSV export start. surveyId={}", surveyId);
 
-        if (AuthorizationUtils.isAdmin() ||
+        if (!AuthorizationUtils.isAdmin() &&
             !surveyExportRepository.existsOwnedSurvey(surveyId, requesterMemberId)
         ) {
             throw new CustomException(SURVEY_FORBIDDEN);
