@@ -323,6 +323,10 @@ public class SurveyCommandService implements SurveyCommand {
 
     private void applySurveyRuntimeCache(Long surveyId, Long userKey, Integer dueCount, LocalDateTime deadline) {
         Duration ttl = Duration.between(LocalDateTime.now(), deadline);
+        if (ttl.isNegative() || ttl.isZero()) {
+            log.warn("[SURVEY:COMMAND] 이미 지난 날짜가 마감기한으로 설정  - surveyId: {}, deadline: {}", surveyId, deadline);
+            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
+        }
 
         redisAgent.setValue(this.dueCountKey + surveyId, String.valueOf(dueCount), ttl);
         redisAgent.setValue(this.completedKey + surveyId, "0", ttl);

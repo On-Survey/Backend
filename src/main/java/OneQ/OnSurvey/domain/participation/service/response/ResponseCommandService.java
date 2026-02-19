@@ -10,6 +10,7 @@ import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -44,8 +44,8 @@ public class ResponseCommandService implements ResponseCommand {
     @Override
     public Boolean createResponse(Long surveyId, Long memberId, Long userKey) {
         Response response = responseRepository
-                .findBySurveyIdAndMemberId(surveyId, memberId)
-                .orElseGet(() -> Response.of(surveyId, memberId));
+            .findBySurveyIdAndMemberId(surveyId, memberId)
+            .orElseGet(() -> Response.of(surveyId, memberId));
 
         if (Boolean.TRUE.equals(response.getIsResponded())) {
             throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
@@ -57,11 +57,11 @@ public class ResponseCommandService implements ResponseCommand {
         surveyGlobalStatsService.addCompletedCount(1);
 
         SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
-                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
 
         surveyInfo.increaseCompletedCount();
         int currCompleted = updateCounter(surveyId, userKey);
-        if (Objects.equals(currCompleted, surveyInfo.getDueCount())) {
+        if (currCompleted >= surveyInfo.getDueCount()) {
             Survey survey = surveyRepository.getSurveyById(surveyId)
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
@@ -82,7 +82,11 @@ public class ResponseCommandService implements ResponseCommand {
         Long currCompleted = regisAgent.incrementValue(this.completedKey + surveyId);
         // 잠재 응답자 Sorted Set에서 제거
         regisAgent.removeFromZSet(this.potentialKey + surveyId, String.valueOf(userKey));
-        // 완료 인원이 없어 증가가 되지 않은 경우 (null), 기존 완료 인원을 0으로 간주하여 1로 반환
-        return currCompleted != null ? currCompleted.intValue() : 1;
+
+        if (currCompleted == null) {
+            log.error("[RESPONSE:COMMAND] 레디스 완료 값 갱신 실패 - surveyId: {}, userKey: {}", surveyId, userKey);
+            throw new CustomException(ErrorCode.SERVER_UNTRACKED_ERROR);
+        }
+        return currCompleted.intValue();
     }
 }
