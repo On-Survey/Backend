@@ -7,9 +7,9 @@ import OneQ.OnSurvey.global.auth.dto.DecryptedLoginMeResponse;
 import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.util.JwtDecodeUtils;
-import OneQ.OnSurvey.global.common.util.RedisUtils;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
+import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import OneQ.OnSurvey.global.infra.toss.auth.TossMemberInfoDecryptService;
 import OneQ.OnSurvey.global.infra.toss.auth.TossUnlinkValue;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.*;
@@ -49,6 +49,7 @@ public class TossAuthFacade implements AuthUseCase {
     private final TossMemberInfoDecryptService tossMemberInfoDecryptService;
     private final WithdrawalService withdrawalService;
     private final MemberQueryService memberQueryService;
+    private final RedisAgent redisAgent;
 
     private final AlertNotifier alertNotifier;
 
@@ -167,7 +168,7 @@ public class TossAuthFacade implements AuthUseCase {
 
     private void updateDailyUser(Long userKey) {
         try {
-            RedisUtils.addToZSetIfAbsent(dailyUserKey, String.valueOf(userKey), System.currentTimeMillis());
+            redisAgent.addToZSetIfAbsent(dailyUserKey, String.valueOf(userKey), System.currentTimeMillis());
         } catch (Exception e) {
             log.warn("[TossAuthFacade] 일간 활성 사용자 업데이트 실패 - userKey: {}", userKey, e);
         }

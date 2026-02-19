@@ -3,7 +3,7 @@ package OneQ.OnSurvey.domain.survey.service;
 import OneQ.OnSurvey.domain.survey.entity.SurveyGlobalStats;
 import OneQ.OnSurvey.domain.survey.model.dto.GlobalStats;
 import OneQ.OnSurvey.domain.survey.repository.SurveyGlobalStatsRepository;
-import OneQ.OnSurvey.global.common.util.RedisUtils;
+import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SurveyGlobalStatsService {
 
     private final SurveyGlobalStatsRepository statsRepository;
+    private final RedisAgent redisAgent;
 
     @Value("${redis.global-key-prefix.daily-user}")
     private String dailyUserKey;
@@ -47,7 +48,7 @@ public class SurveyGlobalStatsService {
             .orElse(SurveyGlobalStats.init());
 
         // 24시간 동안 활동한 유저 수 계산
-        Long dailyUserCount = RedisUtils.getZSetCount(
+        Long dailyUserCount = redisAgent.getZSetCount(
             dailyUserKey,
             System.currentTimeMillis() - (24 * 60 * 60 * 1000L),
             Long.MAX_VALUE);
@@ -62,7 +63,7 @@ public class SurveyGlobalStatsService {
     @Scheduled(fixedRate = 3600000) // 매 시간 실행
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void removeOldDailyUsers() {
-        RedisUtils.rangeRemoveFromZSet(
+        redisAgent.rangeRemoveFromZSet(
             dailyUserKey,
             0,
             System.currentTimeMillis() - (24 * 60 * 60 * 1000L));

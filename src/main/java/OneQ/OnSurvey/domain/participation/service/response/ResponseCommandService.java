@@ -10,7 +10,7 @@ import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
 import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.global.common.exception.CustomException;
-import OneQ.OnSurvey.global.common.util.RedisUtils;
+import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +30,7 @@ public class ResponseCommandService implements ResponseCommand {
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
+    private final RedisAgent regisAgent;
 
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
@@ -65,7 +66,7 @@ public class ResponseCommandService implements ResponseCommand {
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
             survey.updateSurveyStatus(SurveyStatus.CLOSED);
-            RedisUtils.deleteKeys(List.of(
+            regisAgent.deleteKeys(List.of(
                 this.dueCountKey + surveyId,
                 this.completedKey + surveyId,
                 this.potentialKey + surveyId,
@@ -78,9 +79,9 @@ public class ResponseCommandService implements ResponseCommand {
 
     private int updateCounter(Long surveyId, Long userKey) {
         // 완료 인원 추가
-        Long currCompleted = RedisUtils.incrementValue(this.completedKey + surveyId);
+        Long currCompleted = regisAgent.incrementValue(this.completedKey + surveyId);
         // 잠재 응답자 Sorted Set에서 제거
-        RedisUtils.removeFromZSet(this.potentialKey + surveyId, String.valueOf(userKey));
+        regisAgent.removeFromZSet(this.potentialKey + surveyId, String.valueOf(userKey));
         // 완료 인원이 없어 증가가 되지 않은 경우 (null), 기존 완료 인원을 0으로 간주하여 1로 반환
         return currCompleted != null ? currCompleted.intValue() : 1;
     }
