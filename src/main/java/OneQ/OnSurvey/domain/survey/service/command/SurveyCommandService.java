@@ -26,9 +26,9 @@ import OneQ.OnSurvey.domain.survey.service.refund.SurveyRefundPolicy;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import OneQ.OnSurvey.global.common.util.AuthorizationUtils;
-import OneQ.OnSurvey.global.common.util.RedisUtils;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
+import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +56,7 @@ public class SurveyCommandService implements SurveyCommand {
     private final MemberRepository memberRepository;
     private final SurveyRefundPolicy surveyRefundPolicy;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
+    private final RedisAgent redisAgent;
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
@@ -241,11 +242,11 @@ public class SurveyCommandService implements SurveyCommand {
         String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
-        if (RedisUtils.getZSetScore(potentialKey, memberValue) == null) {
+        if (redisAgent.getZSetScore(potentialKey, memberValue) == null) {
             return false;
         }
         // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신
-        RedisUtils.addToZSet(potentialKey, memberValue, System.currentTimeMillis());
+        redisAgent.addToZSet(potentialKey, memberValue, System.currentTimeMillis());
         return true;
     }
 
@@ -328,9 +329,9 @@ public class SurveyCommandService implements SurveyCommand {
     private void applySurveyRuntimeCache(Long surveyId, Long userKey, Integer dueCount, LocalDateTime deadline) {
         Duration ttl = Duration.between(LocalDateTime.now(), deadline);
 
-        RedisUtils.setValue(this.dueCountKey + surveyId, String.valueOf(dueCount), ttl);
-        RedisUtils.setValue(this.completedKey + surveyId, "0", ttl);
-        RedisUtils.addToZSet(this.potentialKey + surveyId, String.valueOf(userKey), System.currentTimeMillis());
-        RedisUtils.setValue(this.creatorKey + surveyId, String.valueOf(userKey), ttl);
+        redisAgent.setValue(this.dueCountKey + surveyId, String.valueOf(dueCount), ttl);
+        redisAgent.setValue(this.completedKey + surveyId, "0", ttl);
+        redisAgent.addToZSet(this.potentialKey + surveyId, String.valueOf(userKey), System.currentTimeMillis());
+        redisAgent.setValue(this.creatorKey + surveyId, String.valueOf(userKey), ttl);
     }
 }
