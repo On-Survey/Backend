@@ -470,8 +470,6 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
 
-        log.info("{}", !(checkAgeSegmentation(surveySegmentation.getAges(), memberSegmentation.convertBirthDayIntoAgeRange())
-            && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender())));
         return !(checkAgeSegmentation(surveySegmentation.getAges(), memberSegmentation.convertBirthDayIntoAgeRange())
             && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender()));
             // || checkResidenceSegmentation(surveySegmentation.residence(), memberSegmentation.residence());
