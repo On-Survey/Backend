@@ -54,6 +54,18 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
         log.info("[QUESTION_ANSWER_SERVICE] 응답을 조회할 문항 IDs - 주관식: {}, 비주관식: {}",
                 textQuestionIdList, nonTextQuestionIdList);
 
+        List<Long> allQuestionIdList = detailInfoList.stream()
+                .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
+                .toList();
+
+        List<AnswerStats> respondentCountStats = answerRepository.getRespondentCountsByQuestionIds(allQuestionIdList, filter);
+        Map<Long, Long> respondentCountMap = respondentCountStats.stream()
+                .collect(Collectors.toMap(AnswerStats::getQuestionId, AnswerStats::getCount));
+
+        detailInfoList.forEach(detailInfo ->
+                detailInfo.setRespondentCount(respondentCountMap.getOrDefault(detailInfo.getQuestionId(), 0L))
+        );
+
         List<AnswerStats> nonTextAnswerStats = nonTextQuestionIdList.isEmpty()
                 ? List.of()
                 : answerRepository.getAggregatedAnswersByQuestionIds(nonTextQuestionIdList, filter);
