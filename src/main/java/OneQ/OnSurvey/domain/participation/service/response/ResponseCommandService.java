@@ -14,6 +14,7 @@ import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.client.RedisException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,8 +31,10 @@ public class ResponseCommandService implements ResponseCommand {
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
-    private final RedisAgent regisAgent;
+    private final RedisAgent redisAgent;
 
+    @Value("${redis.survey-key-prefix.lock}")
+    private String surveyLockKeyPrefix;
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
     @Value("${redis.survey-key-prefix.completed-count}")
@@ -43,45 +46,56 @@ public class ResponseCommandService implements ResponseCommand {
 
     @Override
     public Boolean createResponse(Long surveyId, Long memberId, Long userKey) {
-        Response response = responseRepository
-            .findBySurveyIdAndMemberId(surveyId, memberId)
-            .orElseGet(() -> Response.of(surveyId, memberId));
+        try {
+            return redisAgent.executeWithLock(surveyLockKeyPrefix + surveyId + ":" + userKey, 3, 5, () -> {
+                Response response = responseRepository
+                    .findBySurveyIdAndMemberId(surveyId, memberId)
+                    .orElseGet(() -> Response.of(surveyId, memberId));
 
-        if (Boolean.TRUE.equals(response.getIsResponded())) {
-            throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
+                if (Boolean.TRUE.equals(response.getIsResponded())) {
+                    throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
+                }
+
+                response.markResponded();
+                responseRepository.save(response);
+
+                surveyGlobalStatsService.addCompletedCount(1);
+
+                SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
+                    .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
+
+                surveyInfo.increaseCompletedCount();
+                int currCompleted = updateCounter(surveyId, userKey);
+                if (currCompleted >= surveyInfo.getDueCount()) {
+                    Survey survey = surveyRepository.getSurveyById(surveyId)
+                        .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+
+                    survey.updateSurveyStatus(SurveyStatus.CLOSED);
+                    redisAgent.deleteKeys(List.of(
+                        this.dueCountKey + surveyId,
+                        this.completedKey + surveyId,
+                        this.potentialKey + surveyId,
+                        this.creatorKey + surveyId
+                    ));
+                }
+
+                return true;
+            });
+        } catch (RedisException e) {
+            log.warn("[RESPONSE:COMMAND] 응답완료 처리 중 레디스 락 획득 실패 - surveyId: {}, userKey: {}. 잠시 후 다시 시도해주세요.", surveyId, userKey, e);
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_IN_PROCESS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("[RESPONSE:COMMAND] 응답완료 처리 중 인터럽트 발생 - surveyId: {}, userKey: {}", surveyId, userKey, e);
+            throw new CustomException(ErrorCode.SERVER_UNTRACKED_ERROR);
         }
-
-        response.markResponded();
-        responseRepository.save(response);
-
-        surveyGlobalStatsService.addCompletedCount(1);
-
-        SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
-            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
-
-        surveyInfo.increaseCompletedCount();
-        int currCompleted = updateCounter(surveyId, userKey);
-        if (currCompleted >= surveyInfo.getDueCount()) {
-            Survey survey = surveyRepository.getSurveyById(surveyId)
-                .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
-
-            survey.updateSurveyStatus(SurveyStatus.CLOSED);
-            regisAgent.deleteKeys(List.of(
-                this.dueCountKey + surveyId,
-                this.completedKey + surveyId,
-                this.potentialKey + surveyId,
-                this.creatorKey + surveyId
-            ));
-        }
-
-        return true;
     }
 
     private int updateCounter(Long surveyId, Long userKey) {
         // 완료 인원 추가
-        Long currCompleted = regisAgent.incrementValue(this.completedKey + surveyId);
+        Long currCompleted = redisAgent.incrementValue(this.completedKey + surveyId);
         // 잠재 응답자 Sorted Set에서 제거
-        regisAgent.removeFromZSet(this.potentialKey + surveyId, String.valueOf(userKey));
+        redisAgent.removeFromZSet(this.potentialKey + surveyId, String.valueOf(userKey));
 
         if (currCompleted == null) {
             log.error("[RESPONSE:COMMAND] 레디스 완료 값 갱신 실패 - surveyId: {}, userKey: {}", surveyId, userKey);
