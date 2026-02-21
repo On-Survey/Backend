@@ -5,6 +5,9 @@ import OneQ.OnSurvey.domain.participation.entity.Response;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.client.RedisException;
@@ -57,7 +60,7 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
 
         String lockKey = surveyLockKeyPrefix + surveyId + ":" + userKey;
         try {
-            return redisAgent.executeWithLock(lockKey, 3, 5, () -> {
+            return redisAgent.executeNewTransactionAfterLock(lockKey, 3, 5, () -> {
                 /*
                     새로운 응답의 questionId로부터 기존 응답 조회 및 그룹화
                     Phantom Read 방지를 위해 조회 로직도 락 내부에서 실행
@@ -117,10 +120,11 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
             });
         } catch (RedisException e) {
             log.warn("[QUESTION_ANSWER:COMMAND] 문항 응답 저장 락 획득 실패 - memberId: {}, error: {}", memberId, e.getMessage());
-            return false;
+            throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_IN_PROCESS);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.error("[QUESTION_ANSWER:COMMAND] 문항 응답 저장 중 오류 발생 - memberId: {}, error: {}", memberId, e.getMessage());
-            return false;
+            throw new CustomException(ErrorCode.SERVER_UNTRACKED_ERROR);
         }
     }
 
@@ -132,6 +136,9 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
                 .findBySurveyIdAndMemberId(surveyId, memberId)
                 .orElseGet(() -> Response.of(surveyId, memberId));
 
-        responseRepository.save(response);
+        // 완료된 응답이 잘못 업데이트 되는 것을 방지하기 위해, 응답이 완료되지 않은 경우에만 저장
+        if (Boolean.FALSE.equals(response.getIsResponded())) {
+            responseRepository.save(response);
+        }
     }
 }
