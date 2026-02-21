@@ -17,14 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.client.RedisException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ResponseCommandService implements ResponseCommand {
 
     private final ResponseRepository responseRepository;
@@ -47,7 +45,7 @@ public class ResponseCommandService implements ResponseCommand {
     @Override
     public Boolean createResponse(Long surveyId, Long memberId, Long userKey) {
         try {
-            return redisAgent.executeWithLock(surveyLockKeyPrefix + surveyId + ":" + userKey, 3, 5, () -> {
+            return redisAgent.executeNewTransactionAfterLock(surveyLockKeyPrefix + surveyId + ":" + userKey, 3, 5, () -> {
                 Response response = responseRepository
                     .findBySurveyIdAndMemberId(surveyId, memberId)
                     .orElseGet(() -> Response.of(surveyId, memberId));
