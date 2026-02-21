@@ -2,6 +2,7 @@ package OneQ.OnSurvey.global.infra.redis;
 
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import OneQ.OnSurvey.global.infra.transaction.TransactionHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
@@ -25,6 +26,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
 
     private final RedissonClient redisson;
     private final StringRedisTemplate redisTemplate;
+    private final TransactionHandler transactionhandler;
 
     /**
      * 락 획득을 위한 RLock 객체를 반환
@@ -57,6 +59,37 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
 
         try {
             return action.get();
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
+    /**
+     * 락 획득 후 실행할 트랜잭션 로직을 인자로 받아 분산락을 이용하여 실행
+     * <p> 락 획득 후 DB에 접근하여 값을 수정하는 로직을 실행해야 할 때 사용,
+     * <br> 강력한 일관성이 필요한 데이터에 대해서는 단순 조회 로직에도 사용해야 함
+     * @param lockKey   분산락 설정을 위한 키
+     * @param waitTime  분산락 획득 대기시간 (단위: 초)
+     * @param leaseTime 분산락 최대 점유시간 (단위: 초)
+     * @param action    분산락 획득 후 실행할 로직
+     * @return {@code action}의 실행 결과
+     * @throws RedisException       락 획득 실패 시 예외
+     * @throws InterruptedException 락 획득 대기 중 인터럽트 발생 시 예외
+     */
+    public <R> R executeNewTransactionAfterLock(
+        String lockKey, long waitTime, long leaseTime, Supplier<R> action
+    ) throws InterruptedException, RedisException {
+        RLock lock = getLock(lockKey);
+        boolean available = lock.tryLock(waitTime, leaseTime, TimeUnit.SECONDS);
+
+        if (!available) {
+            throw new RedisException("락 획득 실패");
+        }
+
+        try {
+            return transactionhandler.runInTransaction(action);
         } finally {
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();

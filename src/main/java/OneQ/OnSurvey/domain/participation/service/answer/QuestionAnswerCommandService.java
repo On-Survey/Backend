@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@Transactional
 public class QuestionAnswerCommandService extends AnswerCommandService<QuestionAnswer> {
 
     @Value("${redis.survey-key-prefix.lock}")
@@ -43,6 +42,7 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
     }
 
     @Override
+    @Transactional
     public QuestionAnswer createAnswerFromDto(AnswerInsertDto.AnswerInfo answerInfo) {
         return QuestionAnswer.from(answerInfo);
     }
