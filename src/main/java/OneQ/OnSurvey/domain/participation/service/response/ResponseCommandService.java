@@ -61,9 +61,9 @@ public class ResponseCommandService implements ResponseCommand {
 
                 SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
                     .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
-
-                surveyInfo.increaseCompletedCount();
                 int currCompleted = updateCounter(surveyId, userKey);
+                surveyInfo.updateCompletedCount(currCompleted);
+
                 if (currCompleted >= surveyInfo.getDueCount()) {
                     Survey survey = surveyRepository.getSurveyById(surveyId)
                         .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));

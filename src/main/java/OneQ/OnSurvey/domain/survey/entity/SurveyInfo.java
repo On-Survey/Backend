@@ -109,5 +109,9 @@ public class SurveyInfo {
         }
         this.completedCount++;
     }
+
+    public void updateCompletedCount(Integer count) {
+        this.completedCount = count;
+    }
 }
 
