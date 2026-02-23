@@ -33,6 +33,7 @@ import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -258,6 +259,12 @@ public class SurveyCommandService implements SurveyCommand {
 
         log.info("[SURVEY:COMMAND:updateSurveyOwner] 설문 소유자 변경 완료 - surveyId: {}, newMemberId: {}",
             changeDto.surveyId(), changeDto.newMemberId());
+    }
+
+    @Override
+    @Scheduled(cron = "0 0 0 * * *") // 매 자정마다 실행
+    public void closeDueSurveys() {
+        surveyRepository.closeDueSurveys();
     }
 
     private Survey getSurvey(Long surveyId) {

@@ -278,4 +278,14 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .limit(pageable.getPageSize() + 1)
             .fetch();
     }
+
+    @Override
+    public void closeDueSurveys() {
+        jpaQueryFactory.update(survey)
+            .set(survey.status, SurveyStatus.CLOSED)
+            .where(
+                survey.status.eq(SurveyStatus.ONGOING),
+                survey.deadline.before(LocalDateTime.now()))
+            .execute();
+    }
 }
