@@ -56,10 +56,11 @@ public class SurveyExportService implements SurveyExport {
             log.info("[SurveyExport] fetched. surveyId={}, questions={}, members={}, answers={}",
                     surveyId, headers.size(), members.size(), answers.size());
 
-            Map<Long, Map<Long, String>> answerMap = new HashMap<>();
+            Map<Long, Map<Long, Set<String>>> answerMap = new HashMap<>();
             for (SurveyAnswerProjection a : answers) {
                 answerMap.computeIfAbsent(a.getMemberId(), k -> new HashMap<>())
-                        .put(a.getQuestionId(), a.getContent());
+                    .computeIfAbsent(a.getQuestionId(), k -> new TreeSet<>())
+                    .add(a.getContent());
             }
 
             StringBuilder sb = new StringBuilder();
@@ -89,9 +90,9 @@ public class SurveyExportService implements SurveyExport {
 
                 row.add(nvl(m.getResidence()));
 
-                Map<Long, String> memberAnswers = answerMap.getOrDefault(m.getMemberId(), Map.of());
+                Map<Long, Set<String>> memberAnswers = answerMap.getOrDefault(m.getMemberId(), Map.of());
                 for (SurveyQuestionHeader h : headers) {
-                    row.add(nvl(memberAnswers.get(h.getQuestionId())));
+                    row.add(nvl(String.join(",", memberAnswers.getOrDefault(h.getQuestionId(), Set.of()))));
                 }
 
                 sb.append(String.join(",", escapeCsv(row))).append("\n");
