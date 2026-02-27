@@ -5,6 +5,6 @@ public record PushAlimAlert(
     String templateSetCode,
     long completedCount,
     long failedCount,
-    String contentFailureDetails
+    String errorReason
 ) {
 }

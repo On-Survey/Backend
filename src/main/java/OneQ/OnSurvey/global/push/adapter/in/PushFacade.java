@@ -1,16 +1,28 @@
 package OneQ.OnSurvey.global.push.adapter.in;
 
+import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushTemplateAddRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushTemplateModifyRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushTemplateSendRequest;
+import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
 import OneQ.OnSurvey.global.push.application.port.in.PushUseCase;
 import OneQ.OnSurvey.global.push.application.port.out.PushPropertyRepository;
 import OneQ.OnSurvey.global.push.application.port.out.TossPushPort;
+import OneQ.OnSurvey.global.push.domain.entity.PushProperty;
+import OneQ.OnSurvey.global.push.domain.vo.PushTemplateAddVO;
+import OneQ.OnSurvey.global.push.domain.vo.PushTemplateModifyVO;
+import OneQ.OnSurvey.global.push.domain.vo.PushTemplateVO;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -33,21 +45,39 @@ public class PushFacade implements PushUseCase {
     }
 
     @Override
-    public boolean fillTemplateAndSendPush(long userKey, String templateCode, Map<String, String> templateCtx) {
+    public void fillTemplateAndSendPush(PushCommand command) {
+        long userKey = command.userKey();
+        Map<String, String> templateCtx = command.templateCtx();
 
-        Map<String, String> pushProperties = pushPropertyRepository.findPushTemplateContextByCode(templateCode);
-        if (pushProperties != null && !pushProperties.isEmpty()) {
-            // DB에 저장된 기본값 이외의 templateCtx가 있으면 갱신
-            pushProperties.keySet().forEach(
-                key -> pushProperties.put(key, templateCtx.getOrDefault(key, pushProperties.get(key)))
-            );
+        PushTemplateVO pushProperties = pushPropertyRepository.findPushTemplateContextByName(command.templateName());
+        if (pushProperties == null) {
+            throw new CustomException(TossErrorCode.TOSS_PUSH_NOT_FOUND);
         }
+
+        // DB에 저장된 컨텍스트 기본값과 전달받은 컨텍스트 값을 병합하여 최종 컨텍스트 생성
+        if (pushProperties.context() != null && !pushProperties.context().isEmpty()) {
+            pushProperties.context().remove(null);
+
+            if (command.templateCtx() != null && !command.templateCtx().isEmpty()) {
+                pushProperties.context().keySet()
+                    .forEach(
+                        key -> pushProperties.context().put(
+                            key,
+                            templateCtx.getOrDefault(key, pushProperties.context().get(key))
+                        )
+                    );
+            }
+        }
+        PushTemplateSendRequest request = PushTemplateSendRequest.builder()
+            .userKey(userKey)
+            .templateSetCode(pushProperties.code())
+            .templateCtx(pushProperties.context())
+            .build();
 
         try {
-            tossPushPort.sendPush(sslContext, userKey, templateCode, pushProperties);
+            tossPushPort.sendPush(sslContext, request);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new CustomException(TossErrorCode.TOSS_PUSH_SEND_ERROR);
         }
-        return true;
     }
 }

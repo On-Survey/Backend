@@ -126,16 +126,19 @@ public class DiscordAlarmService {
             : errorWebhookUrl;
         if (url == null || url.isBlank()) return;
 
-        String title = "🔔 푸시 알림 발생";
-        String description = "• userKey: `" + alert.userKey() + "`\n" +
-            "• 템플릿: `" + safe(alert.templateSetCode()) + "`\n" +
-            "• 성공: `" + alert.completedCount() + "`\n" +
-            "• 실패: `" + alert.failedCount() + "`\n";
-
-        if (alert.failedCount() > 0 && !alert.contentFailureDetails().isEmpty()) {
-            description = description.concat(
-                "• 실패 상세: `" + String.join("\n", safe(alert.contentFailureDetails()).split(",", 3))
-            );
+        String title, description;
+        if (alert.failedCount() <= 0) {
+            title = "🔔 푸시 알림 발생";
+            description = "• userKey: `" + alert.userKey() + "`\n" +
+                "• 템플릿: `" + safe(alert.templateSetCode()) + "`\n" +
+                "• 성공: `" + alert.completedCount() + "`\n";
+        } else {
+            title = "🔔 푸시 알림 실패건 발생";
+            description = "• userKey: `" + alert.userKey() + "`\n" +
+                "• 템플릿: `" + safe(alert.templateSetCode()) + "`\n" +
+                "• 성공: `" + alert.completedCount() + "`\n" +
+                "• 실패: `" + alert.failedCount() + "`\n" +
+                "• 실패 상세: `" + safe(alert.errorReason()) + "`\n";
         }
         post(url, title, description);
     }

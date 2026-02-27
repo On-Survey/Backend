@@ -14,6 +14,7 @@ import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutePromotionResp
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutionResultResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.PromotionKeyResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushResultResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushTemplateSendRequest;
 import OneQ.OnSurvey.global.infra.toss.common.exception.TossApiException;
 import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
 import OneQ.OnSurvey.global.payment.port.out.TossIapPort;
@@ -373,18 +374,22 @@ public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPo
 
     /* ===================== 푸시알림 ===================== */
     @Override
-    public PushResultResponse sendPush(SSLContext ctx, long userKey, String templateSetCode, Map<String, String> templateCtx) throws IOException {
+    public PushResultResponse sendPush(SSLContext ctx, PushTemplateSendRequest request) throws IOException {
+        long userKey = request.userKey();
+        String templateSetCode = request.templateSetCode();
+        Map<String, String> templateCtx = request.templateCtx();
+
         HttpsURLConnection conn = open(sendMessageUrl, ctx, "POST", true);
         conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
 
         try {
              ObjectNode body = objectMapper.createObjectNode()
-                .put("templateSetCode", templateSetCode)
-                .set("templateContext", objectMapper.valueToTree(templateCtx));
+                 .put("templateSetCode", templateSetCode)
+                 .set("context", objectMapper.valueToTree(templateCtx));
              writeJson(conn, body);
              JsonNode root = readJson(conn);
 
-            JsonNode resultRoot = root.path("result");
+            JsonNode successRoot = root.path("success");
             if (!isSuccess(root)) {
                 int code = root.path("error").path("errorType").asInt(-1);
                 String msg = root.path("error").path("errorCode").asText("unknown");
@@ -393,16 +398,26 @@ public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPo
                     new PushAlimAlert(
                         userKey,
                         templateSetCode,
-                        resultRoot.path("sentPushCount").asLong(0),
-                        resultRoot.path("fail").path("sentPush").size(),
-                        resultRoot.path("fail").path("sentPush").toPrettyString()
+                        successRoot.path("sentPushCount").asLong(0),
+                        successRoot.path("fail").path("sentPush").size(),
+                        root.path("error").path("reason").asText("unknown")
                     )
                 );
                 throw new CustomException(TossErrorCode.TOSS_PUSH_SEND_ERROR);
             }
+            alertNotifier.sendPushAlimAsync(
+                new PushAlimAlert(
+                    userKey,
+                    templateSetCode,
+                    successRoot.path("sentPushCount").asLong(0),
+                    successRoot.path("fail").path("sentPush").size(),
+                    "none"
+                )
+            );
+
             return PushResultResponse.of(
-                resultRoot.path("sentPushCount").asLong(),
-                resultRoot.path("detail").path("sentPush").toPrettyString()
+                successRoot.path("sentPushCount").asLong(),
+                successRoot.path("detail").path("sentPush").toPrettyString()
             );
         } finally {
             conn.disconnect();

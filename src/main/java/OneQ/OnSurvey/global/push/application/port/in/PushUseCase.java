@@ -1,6 +1,17 @@
 package OneQ.OnSurvey.global.push.application.port.in;
 
+import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushTemplateAddRequest;
+import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushTemplateModifyRequest;
+
+import java.util.Map;
+
 public interface PushUseCase {
 
-    boolean fillTemplateAndSendPush(long userKey, String code, Map<String, String> templateContext);
+    void fillTemplateAndSendPush(PushCommand command);
+
+    record PushCommand(
+        long userKey,
+        String templateName,
+        Map<String, String> templateCtx
+    ) {}
 }

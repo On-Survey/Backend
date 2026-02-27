@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.participation.service.response;
 
 import OneQ.OnSurvey.domain.participation.entity.Response;
+import OneQ.OnSurvey.domain.participation.model.event.SurveyCompletedEvent;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
@@ -12,11 +13,14 @@ import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,7 @@ public class ResponseCommandService implements ResponseCommand {
 
     private final StringRedisTemplate redisTemplate;
 
+    private final ApplicationEventPublisher eventPublisher;
     private final ResponseRepository responseRepository;
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
@@ -67,7 +72,10 @@ public class ResponseCommandService implements ResponseCommand {
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
 
             survey.updateSurveyStatus(SurveyStatus.CLOSED);
+            Long creator = Long.parseLong(Objects.requireNonNull(redisTemplate.opsForValue().get(creatorKey + surveyId)));
             deleteAllRedisKeys(surveyId);
+
+            eventPublisher.publishEvent(new SurveyCompletedEvent(creator, Map.of()));
         }
 
         return true;
