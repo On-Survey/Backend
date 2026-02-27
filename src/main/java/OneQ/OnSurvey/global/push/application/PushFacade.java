@@ -44,6 +44,10 @@ public class PushFacade implements PushUseCase {
         this.sslContext = tossPushPort.createSSLContext(publicCrt, privateKey);
     }
 
+    /**
+     * 템플릿 이름으로 템플릿 코드, 기본 컨텍스트를 조회하고 인자로 받은 컨텍스트를 오버라이드하여 토스 푸시 API를 비동기로 호출하는 메서드
+     * @param command 사용자 키, 템플릿 이름, 템플릿 컨텍스트를 포함하는 커맨드 객체
+     */
     @Override
     public void fillTemplateAndSendPush(PushCommand command) {
         long userKey = command.userKey();
