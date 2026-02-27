@@ -13,5 +13,7 @@ public interface PushPropertyRepository {
 
     PushTemplateVO findPushTemplateContextByName(String name);
 
+    void addNewPushTemplate(PushTemplateAddVO addTemplateVO);
+
     void saveAll(Collection<PushProperty> pushProperties);
 }

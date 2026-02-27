@@ -9,6 +9,10 @@ public interface PushUseCase {
 
     void fillTemplateAndSendPush(PushCommand command);
 
+    void addPushTemplate(PushTemplateAddRequest request);
+
+    void modifyTemplateContext(PushTemplateModifyRequest request);
+
     record PushCommand(
         long userKey,
         String templateName,

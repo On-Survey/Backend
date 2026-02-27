@@ -1,4 +1,4 @@
-package OneQ.OnSurvey.global.push.adapter.in;
+package OneQ.OnSurvey.global.push.application;
 
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushTemplateAddRequest;
@@ -79,5 +79,30 @@ public class PushFacade implements PushUseCase {
         } catch (IOException e) {
             throw new CustomException(TossErrorCode.TOSS_PUSH_SEND_ERROR);
         }
+    }
+
+    @Override
+    @Transactional
+    public void addPushTemplate(PushTemplateAddRequest request) {
+        pushPropertyRepository.addNewPushTemplate(PushTemplateAddVO.of(request));
+    }
+
+    @Override
+    @Transactional
+    public void modifyTemplateContext(PushTemplateModifyRequest request) {
+        PushTemplateModifyVO vo = PushTemplateModifyVO.of(request);
+
+        Map<String, PushProperty> pushPropertyMap = pushPropertyRepository.findPushPropertiesByCode(vo.code())
+            .stream()
+            .collect(Collectors.toMap(PushProperty::getContextKey, Function.identity()));
+
+        vo.modifyTemplateList().forEach(
+            modify -> {
+                PushProperty property = pushPropertyMap.get(modify.contextKey());
+                property.updateContext(modify.contextValue(), modify.description());
+            }
+        );
+
+        pushPropertyRepository.saveAll(pushPropertyMap.values());
     }
 }
