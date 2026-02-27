@@ -21,4 +21,15 @@ public class AsyncConfig {
         exec.initialize();
         return exec;
     }
+
+    @Bean(name = "pushAlimExecutor")
+    public Executor pushAlimExecutor() {
+        ThreadPoolTaskExecutor exec = new ThreadPoolTaskExecutor();
+        exec.setCorePoolSize(4);
+        exec.setMaxPoolSize(8);
+        exec.setQueueCapacity(100);
+        exec.setThreadNamePrefix("pushalim-async");
+        exec.initialize();
+        return exec;
+    }
 }
