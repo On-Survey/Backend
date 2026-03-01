@@ -49,7 +49,8 @@ public class Choice extends Question {
         Boolean hasNoneOption,
         Boolean hasCustomInput,
         Boolean isSectionDecidable,
-        QuestionType type
+        QuestionType type,
+        String imageUrl
     ) {
         return Choice.builder()
             .surveyId(surveyId)
@@ -64,6 +65,7 @@ public class Choice extends Question {
             .hasCustomInput(hasCustomInput)
             .isSectionDecidable(isSectionDecidable)
             .type(type.name())
+            .imageUrl(imageUrl)
             .build();
     }
 
@@ -77,9 +79,10 @@ public class Choice extends Question {
         Integer maxChoice,
         Boolean hasNoneOption,
         Boolean hasCustomInput,
-        Boolean isSectionDecidable
+        Boolean isSectionDecidable,
+        String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, nextSection);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection, imageUrl);
         this.maxChoice = maxChoice;
         this.hasNoneOption = (hasNoneOption != null) ? hasNoneOption : this.hasNoneOption;
         this.hasCustomInput = (hasCustomInput != null) ? hasCustomInput : this.hasCustomInput;

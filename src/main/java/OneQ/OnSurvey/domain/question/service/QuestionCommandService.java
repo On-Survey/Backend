@@ -136,7 +136,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getMaxChoice(),
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput(),
-                upsertInfo.getIsSectionDecidable()
+                upsertInfo.getIsSectionDecidable(),
+                upsertInfo.getImageUrl()
             );
         } else if (question instanceof Rating rating) {
             rating.updateQuestion(
@@ -148,7 +149,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getNextSection(),
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
-                upsertInfo.getRate()
+                upsertInfo.getRate(),
+                upsertInfo.getImageUrl()
             );
         } else if (question instanceof NPS nps) {
             nps.updateQuestion(
@@ -157,7 +159,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
-                upsertInfo.getNextSection()
+                upsertInfo.getNextSection(),
+                upsertInfo.getImageUrl()
             );
         } else if (question instanceof DateAnswer date) {
             date.updateQuestion(
@@ -167,7 +170,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
                 upsertInfo.getNextSection(),
-                upsertInfo.getDefaultDate()
+                upsertInfo.getDefaultDate(),
+                upsertInfo.getImageUrl()
             );
         } else if (question instanceof ShortAnswer shortAnswer) {
             shortAnswer.updateQuestion(
@@ -176,7 +180,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
-                upsertInfo.getNextSection()
+                upsertInfo.getNextSection(),
+                upsertInfo.getImageUrl()
             );
         } else if (question instanceof LongAnswer longAnswer) {
             longAnswer.updateQuestion(
@@ -185,7 +190,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
-                upsertInfo.getNextSection()
+                upsertInfo.getNextSection(),
+                upsertInfo.getImageUrl()
             );
         } else if (question instanceof NumberAnswer numberAnswer) {
             numberAnswer.updateQuestion(
@@ -194,7 +200,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
-                upsertInfo.getNextSection()
+                upsertInfo.getNextSection(),
+                upsertInfo.getImageUrl()
             );
         }
     }
@@ -212,7 +219,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getSection(),
                 upsertInfo.getNextSection(),
                 upsertInfo.getDefaultDate(),
-                type
+                type,
+                upsertInfo.getImageUrl()
             );
         } else if (QuestionType.NPS.equals(type)) {
             return NPS.of(
@@ -223,7 +231,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
                 upsertInfo.getNextSection(),
-                type
+                type,
+                upsertInfo.getImageUrl()
             );
         } else if (QuestionType.RATING.equals(type)) {
             return Rating.of(
@@ -237,7 +246,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getMaxValue(),
                 upsertInfo.getMinValue(),
                 upsertInfo.getRate(),
-                type
+                type,
+                upsertInfo.getImageUrl()
             );
         } else if (QuestionType.CHOICE.equals(type)) {
             return Choice.of(
@@ -252,7 +262,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getHasNoneOption(),
                 upsertInfo.getHasCustomInput(),
                 upsertInfo.getIsSectionDecidable(),
-                type
+                type,
+                upsertInfo.getImageUrl()
             );
         } else if (QuestionType.SHORT.equals(type)) {
             return ShortAnswer.of(
@@ -263,7 +274,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
                 upsertInfo.getNextSection(),
-                type
+                type,
+                upsertInfo.getImageUrl()
             );
         } else if (QuestionType.LONG.equals(type)) {
             return LongAnswer.of(
@@ -274,7 +286,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
                 upsertInfo.getNextSection(),
-                type
+                type,
+                upsertInfo.getImageUrl()
             );
         } else if (QuestionType.NUMBER.equals(type)) {
             return NumberAnswer.of(
@@ -285,7 +298,8 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
                 upsertInfo.getNextSection(),
-                type
+                type,
+                upsertInfo.getImageUrl()
             );
         } else {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
@@ -346,7 +360,8 @@ public class QuestionCommandService implements QuestionCommand {
                 OptionDto optionInfo = updateInfoMap.get(id);
                 option.updateOption(
                     optionInfo.getContent(),
-                    optionInfo.getNextSection()
+                    optionInfo.getNextSection(),
+                    optionInfo.getImageUrl()
                 );
             });
 
@@ -355,7 +370,8 @@ public class QuestionCommandService implements QuestionCommand {
                 .map(upsertInfo -> ChoiceOption.of(
                     questionId,
                     upsertInfo.getContent(),
-                    upsertInfo.getNextSection()
+                    upsertInfo.getNextSection(),
+                    upsertInfo.getImageUrl()
                 )).toList();
 
             finalList.addAll(updateList);
@@ -400,11 +416,13 @@ public class QuestionCommandService implements QuestionCommand {
                     .description(sectionDto.description())
                     .sectionOrder(sectionDto.order())
                     .nextSection(sectionDto.nextSection())
+                    .imageUrl(sectionDto.imageUrl())
                     .build();
             } else {
                 Section section = orderSectionMap.get(sectionDto.order());
                 section.updateSection(
-                    sectionDto.title(), sectionDto.description(), sectionDto.order(), sectionDto.nextSection()
+                    sectionDto.title(), sectionDto.description(), sectionDto.order(), sectionDto.nextSection(),
+                    sectionDto.imageUrl()
                 );
                 orderSectionMap.remove(sectionDto.order());
                 return section;

@@ -59,6 +59,9 @@ public class Survey extends BaseEntity {
     @Builder.Default
     private Boolean isFree = false;
 
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
     public static Survey of(
         Long memberId,
         String title,
@@ -84,12 +87,14 @@ public class Survey extends BaseEntity {
             String title,
             String description,
             LocalDateTime deadline,
-            Integer totalCoin
+            Integer totalCoin,
+            String imageUrl
     ) {
         this.title = title;
         this.description = description;
         this.deadline = deadline;
         this.totalCoin = totalCoin;
+        this.imageUrl = imageUrl;
     }
 
     public void updateInterests(Set<Interest> interests) {

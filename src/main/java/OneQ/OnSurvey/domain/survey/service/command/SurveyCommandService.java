@@ -107,7 +107,8 @@ public class SurveyCommandService implements SurveyCommand {
                     request.title(),
                     request.description(),
                     survey.getDeadline(),
-                    survey.getTotalCoin()
+                    survey.getTotalCoin(),
+                    survey.getImageUrl()
             );
             survey = surveyRepository.save(survey);
             log.info("[SURVEY:COMMAND:upsertSurvey] 설문 수정 완료 - surveyId={}", surveyId);
@@ -123,7 +124,7 @@ public class SurveyCommandService implements SurveyCommand {
 
         Set<AgeRange> ages = (request.ages() == null) ? Set.of() : new HashSet<>(request.ages());
 
-        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin(), request.imageUrl());
 
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,
@@ -150,7 +151,7 @@ public class SurveyCommandService implements SurveyCommand {
         validateMember(userKey);
 
         survey.markFree();
-        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), 0);
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), 0, request.imageUrl());
 
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,

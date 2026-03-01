@@ -11,6 +11,7 @@ public class OptionDto {
     private Long questionId;
     private String content;
     private Integer nextSection;
+    private String imageUrl;
 
     public static OptionDto fromEntity(ChoiceOption choiceOption) {
         return OptionDto.builder()
@@ -18,6 +19,7 @@ public class OptionDto {
             .questionId(choiceOption.getQuestionId())
             .content(choiceOption.getContent())
             .nextSection(choiceOption.getNextSection())
+            .imageUrl(choiceOption.getImageUrl())
             .build();
     }
 }

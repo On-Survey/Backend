@@ -44,10 +44,13 @@ public class ImageModifyService {
     private final NcpPublicUrlStrategy urlStrategy;
 
     public ImageUploadResponse upload(MultipartFile file, Long userKey) {
+        return upload(file, userKey, ImageSubFolder.MEMBER);
+    }
+
+    public ImageUploadResponse upload(MultipartFile file, Long userKey, ImageSubFolder sub) {
         validate(file);
 
         ImageRootFolder root = ImageRootFolder.PUBLIC;
-        ImageSubFolder sub = ImageSubFolder.MEMBER;
 
         String objectKey = ObjectKeyFactory.build(root, sub, userKey, file.getOriginalFilename());
         String contentType = chooseContentType(file);

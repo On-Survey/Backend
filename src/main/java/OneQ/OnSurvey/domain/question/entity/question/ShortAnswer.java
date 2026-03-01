@@ -23,7 +23,8 @@ public class ShortAnswer extends Question {
         Boolean isRequired,
         Integer section,
         Integer nextSection,
-        QuestionType type
+        QuestionType type,
+        String imageUrl
     ) {
         return ShortAnswer.builder()
             .surveyId(surveyId)
@@ -34,6 +35,7 @@ public class ShortAnswer extends Question {
             .section(section)
             .nextSection(nextSection)
             .type(type.name())
+            .imageUrl(imageUrl)
             .build();
     }
 
@@ -43,8 +45,9 @@ public class ShortAnswer extends Question {
         Boolean isRequired,
         Integer order,
         Integer section,
-        Integer nextSection
+        Integer nextSection,
+        String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, nextSection);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection, imageUrl);
     }
 }
