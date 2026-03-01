@@ -155,7 +155,7 @@ public class DiscordAlarmService {
             title = "⚠️ 설문 전환 실패";
             desc.append("* 설문 변환 시도: ").append(alert.totalCount()).append('\n')
                 .append("* 설문 변환 성공: ").append(alert.successCount()).append('\n')
-                .append("* error: ").append(safe(alert.error())).append("`\n");
+                .append("* error: ").append(safe(alert.error())).append("\n");
         }
 
         post(url, title, desc.toString());
