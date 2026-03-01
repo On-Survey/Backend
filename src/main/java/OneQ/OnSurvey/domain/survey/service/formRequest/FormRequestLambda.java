@@ -17,6 +17,7 @@ import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.transaction.TransactionHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,8 +67,17 @@ public class FormRequestLambda {
 
         if (response == null || response.results() == null) {
             log.error("[FormRequestLambda] 구글폼 변환 실패 - 응답이 null입니다. requestId: {}", event.requestId());
+            alertNotifier.sendSurveyConversionAsync(
+                response == null
+                    ? SurveyConversionAlert.error(1, 0, "변환 요청에 대한 응답이 null입니다.")
+                    : SurveyConversionAlert.error(response.totalCount(), response.successCount(), response.error())
+            );
             throw new CustomException(SurveyErrorCode.FORM_CONVERSION_FAILED);
         }
+
+        SurveyConversionAlert alert = SurveyConversionAlert.success(
+            response.totalCount(), response.successCount(), new ArrayList<>()
+        );
 
         List<MemberSearchResult> memberResultList = memberFinder.searchMembers(event.email(), null, null, null);
         if (memberResultList.size() != 1) {
@@ -79,19 +89,30 @@ public class FormRequestLambda {
         response.results().forEach(result -> {
             if (result.isSuccess()) {
                 try {
-                    transactionHandler.runInTransaction(() -> {
-                        Long surveyId = createSurveyFromConversionResult(result, memberId);
-                        formUpdater.markAsRegistered(event.requestId(), surveyId);
+                    alert.details().add(
+                        transactionHandler.runInTransaction(() -> {
+                            Long surveyId = createSurveyFromConversionResult(result, memberId);
+                            formUpdater.markAsRegistered(event.requestId(), surveyId);
 
-                        log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}", event.requestId(), surveyId);
+                            log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}", event.requestId(), surveyId);
 
-                        if (result.unsupportedQuestions() != null && !result.unsupportedQuestions().isEmpty()) {
-                            log.warn("[FormRequestLambda] 지원하지 않는 문항 존재 - requestId: {}, count: {}",
-                                event.requestId(), result.unsupportedQuestions().size());
-                        }
+                            if (result.unsupportedQuestions() != null && !result.unsupportedQuestions().isEmpty()) {
+                                log.warn("[FormRequestLambda] 지원하지 않는 문항 존재 - requestId: {}, count: {}",
+                                    event.requestId(), result.unsupportedQuestions().size());
+                            }
 
-                        return null;
-                    });
+                            return SurveyConversionAlert.SurveyDetails.success(
+                                result.url(),
+                                result.survey().title(),
+                                surveyId,
+                                memberId,
+                                result.survey().sections() != null ? result.survey().sections().stream().mapToInt(s -> s.questions() != null ? s.questions().size() : 0).sum() : 0,
+                                result.unsupportedQuestions() != null ? result.unsupportedQuestions().stream()
+                                    .map(q -> new SurveyConversionAlert.SurveyDetails.UnsupportedQuestion(q.order(), q.type(), q.reason()))
+                                    .toList() : List.of()
+                            );
+                        })
+                    );
                 } catch (Exception e) {
                     log.error("[FormRequestLambda] 설문 생성 중 오류 발생 - requestId: {}, error: {}",
                         event.requestId(), e.getMessage(), e);
@@ -99,8 +120,10 @@ public class FormRequestLambda {
             } else {
                 log.error("[FormRequestLambda] 구글폼 변환 실패 - requestId: {}, url: {}, message: {}",
                     event.requestId(), result.url(), result.message());
+                alert.details().add(SurveyConversionAlert.SurveyDetails.failure(result.url(), result.message()));
             }
         });
+        alertNotifier.sendSurveyConversionAsync(alert);
     }
 
     private Long createSurveyFromConversionResult(FormConversionResponse.Result result, Long memberId) {
