@@ -31,7 +31,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 @Slf4j
 @Component
@@ -63,6 +65,14 @@ public class FormRequestLambda {
             .bodyValue(payload)
             .retrieve()
             .bodyToMono(FormConversionResponse.class)
+            .retry(3)
+            .doOnError(e -> {
+                log.error("[FormRequestLambda] 구글폼 변환 중 오류 발생 - requestId: {}, error: {}", event.requestId(), e.getMessage(), e);
+                alertNotifier.sendSurveyConversionAsync(
+                    SurveyConversionAlert.error(1, 0, "구글폼 변환 중 오류가 발생했습니다. error: " + e.getMessage())
+                );
+                throw new CustomException(SurveyErrorCode.FORM_CONVERSION_FAILED);
+            })
             .block();
 
         if (response == null || response.results() == null) {
@@ -106,7 +116,11 @@ public class FormRequestLambda {
                                 result.survey().title(),
                                 surveyId,
                                 memberId,
-                                result.survey().sections() != null ? result.survey().sections().stream().mapToInt(s -> s.questions() != null ? s.questions().size() : 0).sum() : 0,
+                                result.survey().sections() != null
+                                    ? result.survey().sections().stream().mapToInt(s -> s.questions() != null
+                                        ? s.questions().size()
+                                        : 0).sum()
+                                    : 0,
                                 result.unsupportedQuestions() != null ? result.unsupportedQuestions().stream()
                                     .map(q -> new SurveyConversionAlert.SurveyDetails.UnsupportedQuestion(q.order(), q.type(), q.reason()))
                                     .toList() : List.of()
@@ -116,6 +130,7 @@ public class FormRequestLambda {
                 } catch (Exception e) {
                     log.error("[FormRequestLambda] 설문 생성 중 오류 발생 - requestId: {}, error: {}",
                         event.requestId(), e.getMessage(), e);
+                    alert.details().add(SurveyConversionAlert.SurveyDetails.failure(result.url(), "설문 생성 중 오류가 발생했습니다."));
                 }
             } else {
                 log.error("[FormRequestLambda] 구글폼 변환 실패 - requestId: {}, url: {}, message: {}",
@@ -178,7 +193,7 @@ public class FormRequestLambda {
                             .questionType(questionType)
                             .questionOrder(questionOrder.getAndIncrement())
                             .section(section.order())
-                            .nextSection(section.nextSectionOrder());
+                            .nextSection(section.nextSectionOrder() != null ? section.nextSectionOrder() : 0);
 
                         // Choice 타입인 경우 옵션 설정
                         if (questionType == QuestionType.CHOICE && question.options() != null) {
@@ -224,10 +239,11 @@ public class FormRequestLambda {
             // 4. Choice 문항의 옵션 저장
             List<OptionUpsertDto> optionUpsertDtoList = new ArrayList<>();
             List<QuestionUpsertDto.UpsertInfo> savedInfoList = savedQuestions.getUpsertInfoList();
+            Map<Integer, QuestionUpsertDto.UpsertInfo> originalInfoMap = questionUpsertInfoList.stream()
+                .collect(java.util.stream.Collectors.toMap(QuestionUpsertDto.UpsertInfo::getQuestionOrder, Function.identity()));
 
-            for (int i = 0; i < savedInfoList.size(); i++) {
-                QuestionUpsertDto.UpsertInfo savedInfo = savedInfoList.get(i);
-                QuestionUpsertDto.UpsertInfo originalInfo = questionUpsertInfoList.get(i);
+            for (QuestionUpsertDto.UpsertInfo savedInfo : savedInfoList) {
+                QuestionUpsertDto.UpsertInfo originalInfo = originalInfoMap.get(savedInfo.getQuestionOrder());
 
                 if (savedInfo.getQuestionType() == QuestionType.CHOICE && originalInfo.getOptions() != null) {
                     List<OptionDto> options = originalInfo.getOptions().stream()
