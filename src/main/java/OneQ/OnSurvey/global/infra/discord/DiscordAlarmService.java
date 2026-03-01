@@ -137,7 +137,7 @@ public class DiscordAlarmService {
 
                 desc.append("\u3000[\n")
                     .append("\u3000 URL: ").append(safe(d.url())).append('\n')
-                    .append("\u3000 tittle: ").append(safe(d.title())).append('\n')
+                    .append("\u3000 title: ").append(safe(d.title())).append('\n')
                     .append("\u3000 surveyId: ").append(d.surveyId()).append('\n')
                     .append("\u3000 memberId: ").append(d.memberId()).append('\n')
                     .append("\u3000 questionCount: ").append(d.questionCount()).append('\n');
