@@ -4,6 +4,7 @@ import java.util.List;
 
 public record FormRequestConversionEvent (
     Long requestId,
+    String email,
     List<String> formUrls
 ) {
 }

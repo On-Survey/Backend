@@ -1,5 +1,7 @@
 package OneQ.OnSurvey.domain.survey.service.formRequest;
 
+import OneQ.OnSurvey.domain.member.dto.MemberSearchResult;
+import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
@@ -15,13 +17,13 @@ import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.transaction.TransactionHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -35,25 +37,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class FormRequestLambda {
 
-    private static final Long SYSTEM_MEMBER_ID = 1L; // 시스템 사용자 ID
-
     @Value("${external.lambda.survey-conversion.url}")
     private String lambdaUrl;
 
     private final AlertNotifier alertNotifier;
+    private final TransactionHandler transactionHandler;
     private final WebClient webClient;
 
+    private final MemberFinder memberFinder;
     private final FormUpdater formUpdater;
     private final SurveyCommand surveyCommand;
     private final QuestionCommand questionCommand;
 
     @Async
-    @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void convertGoogleFormIntoSurvey(FormRequestConversionEvent event) {
         log.info("[FormRequestLambda] 구글폼 변환 시작 - requestId: {}, formUrl: {}", event.requestId(), event.formUrls());
 
-        FormConversionPayload payload = new FormConversionPayload(event.requestId(), event.formUrls());
+        FormConversionPayload payload = new FormConversionPayload(event.formUrls());
 
         FormConversionResponse response = webClient.post()
             .uri(lambdaUrl)
@@ -68,17 +69,29 @@ public class FormRequestLambda {
             throw new CustomException(SurveyErrorCode.FORM_CONVERSION_FAILED);
         }
 
+        List<MemberSearchResult> memberResultList = memberFinder.searchMembers(event.email(), null, null, null);
+        if (memberResultList.size() != 1) {
+            log.warn("[FormRequestLambda] 설문 생성 실패 - 요청자 이메일로 회원을 찾을 수 없습니다. email: {}", event.email());
+            throw new CustomException(SurveyErrorCode.FORM_REQUEST_NOT_FOUND);
+        }
+        Long memberId = memberResultList.getFirst().id();
+
         response.results().forEach(result -> {
             if (result.isSuccess()) {
                 try {
-                    Long surveyId = createSurveyFromConversionResult(result);
-                    formUpdater.markAsRegistered(event.requestId(), surveyId);
-                    log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}", event.requestId(), surveyId);
+                    transactionHandler.runInTransaction(() -> {
+                        Long surveyId = createSurveyFromConversionResult(result, memberId);
+                        formUpdater.markAsRegistered(event.requestId(), surveyId);
 
-                    if (result.unsupportedQuestions() != null && !result.unsupportedQuestions().isEmpty()) {
-                        log.warn("[FormRequestLambda] 지원하지 않는 문항 존재 - requestId: {}, count: {}",
-                            event.requestId(), result.unsupportedQuestions().size());
-                    }
+                        log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}", event.requestId(), surveyId);
+
+                        if (result.unsupportedQuestions() != null && !result.unsupportedQuestions().isEmpty()) {
+                            log.warn("[FormRequestLambda] 지원하지 않는 문항 존재 - requestId: {}, count: {}",
+                                event.requestId(), result.unsupportedQuestions().size());
+                        }
+
+                        return null;
+                    });
                 } catch (Exception e) {
                     log.error("[FormRequestLambda] 설문 생성 중 오류 발생 - requestId: {}, error: {}",
                         event.requestId(), e.getMessage(), e);
@@ -90,7 +103,7 @@ public class FormRequestLambda {
         });
     }
 
-    private Long createSurveyFromConversionResult(FormConversionResponse.Result result) {
+    private Long createSurveyFromConversionResult(FormConversionResponse.Result result, Long memberId) {
         FormConversionResponse.Survey survey = result.survey();
 
         // 1. 설문 생성
@@ -98,7 +111,7 @@ public class FormRequestLambda {
             survey.title(),
             survey.description()
         );
-        SurveyFormResponse surveyResponse = surveyCommand.upsertSurvey(SYSTEM_MEMBER_ID, null, surveyRequest);
+        SurveyFormResponse surveyResponse = surveyCommand.upsertSurvey(memberId, null, surveyRequest);
         Long surveyId = surveyResponse.surveyId();
 
         log.info("[FormRequestLambda] 설문 생성 완료 - surveyId: {}, title: {}", surveyId, survey.title());
@@ -111,7 +124,7 @@ public class FormRequestLambda {
                     section.title(),
                     section.description(),
                     section.order(),
-                    section.nextSectionOrder()
+                    section.nextSectionOrder() != null ? section.nextSectionOrder() : 0
                 ))
                 .toList();
 
@@ -150,12 +163,18 @@ public class FormRequestLambda {
                                 .anyMatch(FormConversionResponse.Option::isOther);
                             boolean isSectionDecidable = question.options().stream()
                                 .anyMatch(opt -> opt.goToSectionOrder() != null);
+                            int maxChoice = switch (question.type().toUpperCase()) {
+                                case "CHECKBOX" -> question.options().size(); // 체크박스는 여러 개 선택 가능
+                                case "DROPDOWN", "MULTIPLE_CHOICE" -> 1; // 드롭다운, 객관식은 하나만 선택 가능
+                                default -> 1; // 기본적으로 하나만 선택 가능하도록 설정
+                            };
 
-                            builder.maxChoice(1)
+                            builder.maxChoice(maxChoice)
                                 .hasNoneOption(false)
                                 .hasCustomInput(hasOtherOption)
                                 .isSectionDecidable(isSectionDecidable)
                                 .options(question.options().stream()
+                                    .filter(opt -> !opt.isOther())
                                     .map(opt -> OptionDto.builder()
                                         .content(opt.text())
                                         .nextSection(opt.goToSectionOrder())
@@ -219,16 +238,13 @@ public class FormRequestLambda {
         }
 
         return switch (googleFormType.toUpperCase()) {
-            case "MULTIPLE_CHOICE", "CHECKBOX", "DROPDOWN", "LIST" -> QuestionType.CHOICE;
+            case "MULTIPLE_CHOICE", "CHECKBOX" -> QuestionType.CHOICE;
             case "SHORT_ANSWER", "SHORT" -> QuestionType.SHORT;
             case "PARAGRAPH", "LONG" -> QuestionType.LONG;
             case "LINEAR_SCALE", "SCALE" -> QuestionType.RATING;
             case "DATE" -> QuestionType.DATE;
             case "NUMBER" -> QuestionType.NUMBER;
-            default -> {
-                log.warn("[FormRequestLambda] 알 수 없는 문항 타입 - type: {}", googleFormType);
-                yield null;
-            }
+            default -> null;
         };
     }
 }
