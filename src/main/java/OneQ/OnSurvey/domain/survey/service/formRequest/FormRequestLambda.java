@@ -29,6 +29,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,8 @@ import java.util.function.Function;
 @Component
 @RequiredArgsConstructor
 public class FormRequestLambda {
+
+    private static final long FORM_CONVERSION_REQUEST_TIMEOUT = 20L;
 
     @Value("${external.lambda.survey-conversion.url}")
     private String lambdaUrl;
@@ -66,6 +69,7 @@ public class FormRequestLambda {
             .retrieve()
             .bodyToMono(FormConversionResponse.class)
             .retry(3)
+            .timeout(Duration.ofSeconds(FORM_CONVERSION_REQUEST_TIMEOUT))
             .doOnError(e -> {
                 log.error("[FormRequestLambda] 구글폼 변환 중 오류 발생 - requestId: {}, error: {}", event.requestId(), e.getMessage(), e);
                 alertNotifier.sendSurveyConversionAsync(
