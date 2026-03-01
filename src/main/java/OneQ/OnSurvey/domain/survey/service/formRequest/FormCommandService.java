@@ -29,7 +29,11 @@ public class FormCommandService implements FormCreator, FormUpdater {
         FormRequest request = dto.toEntity();
         FormRequest savedRequest = formRequestRepository.save(request);
 
-        eventPublisher.publishEvent(new FormRequestConversionEvent(savedRequest.getId(), List.of(savedRequest.getFormLink())));
+        eventPublisher.publishEvent(new FormRequestConversionEvent(
+            savedRequest.getId(),
+            savedRequest.getRequesterEmail(),
+            List.of(savedRequest.getFormLink()))
+        );
         return savedRequest.getId();
     }
 
