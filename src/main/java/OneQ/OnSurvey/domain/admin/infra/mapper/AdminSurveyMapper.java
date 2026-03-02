@@ -54,6 +54,7 @@ public final class AdminSurveyMapper {
             surveyDetailData.getTitle(),
             surveyDetailData.getDescription(),
             surveyDetailData.getDeadline() != null ? surveyDetailData.getDeadline().toLocalDate() : null,
+            surveyDetailData.getImageUrl(),
             surveyDetailData.getAges().stream().map(Enum::name).collect(Collectors.toSet()),
             surveyDetailData.getGender() != null ? surveyDetailData.getGender().name() : null,
             surveyDetailData.getResidence() != null ? surveyDetailData.getResidence().name() : null,
@@ -72,7 +73,8 @@ public final class AdminSurveyMapper {
             .description(questionDto.getDescription())
             .isRequired(questionDto.getIsRequired())
             .questionOrder(questionDto.getQuestionOrder())
-            .section(questionDto.getSection());
+            .section(questionDto.getSection())
+            .imageUrl(questionDto.getImageUrl());
 
         return switch (questionDto.getQuestionType()) {
             case "CHOICE" -> {
@@ -86,7 +88,8 @@ public final class AdminSurveyMapper {
                         choice.getOptions().stream()
                             .map(optionDto -> new SurveyQuestion.ChoiceProp.Option(
                                 optionDto.getContent(),
-                                optionDto.getNextSection()
+                                optionDto.getNextSection(),
+                                optionDto.getImageUrl()
                             ))
                             .collect(Collectors.toSet()
                         )
@@ -133,7 +136,8 @@ public final class AdminSurveyMapper {
             sectionDto.title(),
             sectionDto.description(),
             sectionDto.order(),
-            sectionDto.nextSection()
+            sectionDto.nextSection(),
+            sectionDto.imageUrl()
         );
     }
 }

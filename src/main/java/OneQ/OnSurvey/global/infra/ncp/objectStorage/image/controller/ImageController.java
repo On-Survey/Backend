@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.infra.ncp.objectStorage.image.controller;
 
-import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.auth.custom.Authenticatable;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.dto.ImageUploadResponse;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.service.ImageModifyService;
@@ -34,7 +34,7 @@ public class ImageController {
 
             @RequestParam(required = false, defaultValue = "MEMBER") ImageSubFolder context,
 
-            @AuthenticationPrincipal CustomUserDetails principal
+            @AuthenticationPrincipal Authenticatable principal
     ) {
         ImageUploadResponse res = imageModifyService.upload(file, principal.getUserKey(), context);
         return SuccessResponse.ok(res);
