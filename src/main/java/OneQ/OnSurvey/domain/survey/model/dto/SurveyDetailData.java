@@ -20,6 +20,7 @@ public class SurveyDetailData {
     private String title;
     private String description;
     private LocalDateTime deadline;
+    private String imageUrl;
 
     // 설문 상세 정보
     private Integer dueCount;

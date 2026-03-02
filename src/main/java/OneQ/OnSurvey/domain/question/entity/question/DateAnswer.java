@@ -32,7 +32,8 @@ public class DateAnswer extends Question {
         Integer section,
         Integer nextSection,
         LocalDateTime defaultDate,
-        QuestionType type
+        QuestionType type,
+        String imageUrl
     ) {
         return DateAnswer.builder()
             .surveyId(surveyId)
@@ -44,6 +45,7 @@ public class DateAnswer extends Question {
             .nextSection(nextSection)
             .defaultDate(defaultDate)
             .type(type.name())
+            .imageUrl(imageUrl)
             .build();
     }
 
@@ -54,9 +56,10 @@ public class DateAnswer extends Question {
         Integer order,
         Integer section,
         Integer nextSection,
-        LocalDateTime defaultDate
+        LocalDateTime defaultDate,
+        String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, nextSection);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection, imageUrl);
         this.defaultDate = defaultDate;
     }
 }

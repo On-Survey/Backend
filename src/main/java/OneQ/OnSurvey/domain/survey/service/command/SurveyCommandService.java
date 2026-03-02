@@ -39,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
@@ -98,8 +99,8 @@ public class SurveyCommandService implements SurveyCommand {
             }
             if (survey.getTitle().equals(request.title())
                 && survey.getDescription().equals(request.description())
+                && Objects.equals(survey.getImageUrl(), request.imageUrl())
             ) {
-                log.info("[SURVEY:COMMAND:upsertSurvey] 설문 수정 사항 없음 - surveyId={}", surveyId);
                 return SurveyFormResponse.fromEntity(survey);
             }
 
@@ -107,7 +108,8 @@ public class SurveyCommandService implements SurveyCommand {
                     request.title(),
                     request.description(),
                     survey.getDeadline(),
-                    survey.getTotalCoin()
+                    survey.getTotalCoin(),
+                    request.imageUrl()
             );
             survey = surveyRepository.save(survey);
             log.info("[SURVEY:COMMAND:upsertSurvey] 설문 수정 완료 - surveyId={}", surveyId);
@@ -123,7 +125,7 @@ public class SurveyCommandService implements SurveyCommand {
 
         Set<AgeRange> ages = (request.ages() == null) ? Set.of() : new HashSet<>(request.ages());
 
-        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin(), request.imageUrl());
 
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,
@@ -150,7 +152,7 @@ public class SurveyCommandService implements SurveyCommand {
         validateMember(userKey);
 
         survey.markFree();
-        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), 0);
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), 0, request.imageUrl());
 
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,

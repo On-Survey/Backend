@@ -31,6 +31,8 @@ public class QuestionUpsertDto {
         // 임시 필드
         Integer nextSection;
 
+        String imageUrl;
+
         // Choice 필드
         Integer maxChoice;
         Boolean hasNoneOption;
@@ -56,7 +58,8 @@ public class QuestionUpsertDto {
             .isRequired(question.getIsRequired())
             .questionOrder(question.getOrder())
             .section(question.getSection())
-            .questionType(QuestionType.valueOf(question.getType()));
+            .questionType(QuestionType.valueOf(question.getType()))
+            .imageUrl(question.getImageUrl());
 
         return switch (QuestionType.valueOf(question.getType())) {
             case CHOICE -> {

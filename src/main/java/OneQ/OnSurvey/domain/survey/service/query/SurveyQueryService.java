@@ -279,7 +279,8 @@ public class SurveyQueryService implements SurveyQuery {
 
         return section != null
             ? ParticipationQuestionResponse.of(
-                section.title(), section.description(), section.order(), section.nextSection(), questionDtoList
+                section.title(), section.description(), section.imageUrl(),
+                section.order(), section.nextSection(), questionDtoList
             )
             : ParticipationQuestionResponse.of(questionDtoList);
     }

@@ -46,6 +46,8 @@ public class DefaultQuestionDto {
     // 임시 필드
     private Integer nextSection;
 
+    private String imageUrl;
+
     public static DefaultQuestionDto fromEntity(Question question) {
         return DefaultQuestionDto.builder()
             .questionId(question.getQuestionId())
@@ -57,6 +59,7 @@ public class DefaultQuestionDto {
             .questionOrder(question.getOrder())
             .section(question.getSection() != null ? question.getSection() : 1)
             .nextSection(question.getNextSection())
+            .imageUrl(question.getImageUrl())
             .build();
     }
 

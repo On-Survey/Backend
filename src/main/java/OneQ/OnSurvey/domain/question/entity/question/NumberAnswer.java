@@ -23,7 +23,8 @@ public class NumberAnswer extends Question {
         Boolean isRequired,
         Integer section,
         Integer nextSection,
-        QuestionType type
+        QuestionType type,
+        String imageUrl
     ) {
         return NumberAnswer.builder()
             .surveyId(surveyId)
@@ -34,6 +35,7 @@ public class NumberAnswer extends Question {
             .type(type.name())
             .section(section)
             .nextSection(nextSection)
+            .imageUrl(imageUrl)
             .build();
     }
 
@@ -43,8 +45,9 @@ public class NumberAnswer extends Question {
         Boolean isRequired,
         Integer order,
         Integer section,
-        Integer nextSection
+        Integer nextSection,
+        String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, nextSection);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection, imageUrl);
     }
 }

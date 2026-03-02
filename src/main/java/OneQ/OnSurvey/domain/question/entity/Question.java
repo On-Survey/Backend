@@ -49,13 +49,17 @@ public abstract class Question extends BaseEntity {
     protected Integer nextSection;
     /* 섹션 엔티티 분리 후 제거 예정 */
 
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    protected String imageUrl;
+
     public void updateQuestion(
         String title,
         String description,
         Boolean isRequired,
         Integer order,
         Integer section,
-        Integer nextSection
+        Integer nextSection,
+        String imageUrl
     ) {
         this.title = title;
         this.description = description;
@@ -63,6 +67,7 @@ public abstract class Question extends BaseEntity {
         this.order = order;
         this.section = (section != null) ? section : this.section;
         this.nextSection = nextSection;
+        this.imageUrl = imageUrl;
     }
 
     public void updateOrder(Integer order) {

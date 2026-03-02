@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.infra.ncp.objectStorage.image.controller;
 
-import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.auth.custom.Authenticatable;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.dto.ImageUploadResponse;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.service.ImageModifyService;
@@ -8,10 +8,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
+import OneQ.OnSurvey.global.infra.ncp.objectStorage.image.enums.ImageSubFolder;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,9 +32,11 @@ public class ImageController {
                     schema = @Schema(type = "string", format = "binary"))
             @RequestPart("file") MultipartFile file,
 
-            @AuthenticationPrincipal CustomUserDetails principal
+            @RequestParam(required = false, defaultValue = "MEMBER") ImageSubFolder context,
+
+            @AuthenticationPrincipal Authenticatable principal
     ) {
-        ImageUploadResponse res = imageModifyService.upload(file, principal.getUserKey());
+        ImageUploadResponse res = imageModifyService.upload(file, principal.getUserKey(), context);
         return SuccessResponse.ok(res);
     }
 }

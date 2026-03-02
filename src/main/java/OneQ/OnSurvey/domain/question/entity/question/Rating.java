@@ -36,7 +36,8 @@ public class Rating extends Question {
         String maxValue,
         String minValue,
         Integer rate,
-        QuestionType type
+        QuestionType type,
+        String imageUrl
     ) {
         return Rating.builder()
             .surveyId(surveyId)
@@ -50,6 +51,7 @@ public class Rating extends Question {
             .minValue(minValue)
             .rate(rate)
             .type(type.name())
+            .imageUrl(imageUrl)
             .build();
     }
 
@@ -62,9 +64,10 @@ public class Rating extends Question {
         Integer nextSection,
         String maxValue,
         String minValue,
-        Integer rate
+        Integer rate,
+        String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, nextSection);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection, imageUrl);
         this.maxValue = maxValue;
         this.minValue = minValue;
         this.rate = rate;

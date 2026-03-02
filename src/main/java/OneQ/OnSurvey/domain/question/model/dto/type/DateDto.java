@@ -26,6 +26,7 @@ public class DateDto extends DefaultQuestionDto {
             .questionOrder(date.getOrder())
             .section(date.getSection() != null ? date.getSection() : 1)
             .nextSection(date.getNextSection())
+            .imageUrl(date.getImageUrl())
             .build();
     }
 }

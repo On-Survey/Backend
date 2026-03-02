@@ -28,6 +28,7 @@ public class RatingDto extends DefaultQuestionDto {
             .questionOrder(rating.getOrder())
             .section(rating.getSection() != null ? rating.getSection() : 1)
             .nextSection(rating.getNextSection())
+            .imageUrl(rating.getImageUrl())
             .build();
     }
 }
