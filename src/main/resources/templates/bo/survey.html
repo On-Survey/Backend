@@ -1478,6 +1478,43 @@
 
     // ==================== 하이퍼링크 삽입 ====================
 
+    // <a> 태그만 허용하는 HTML 새니타이저 (XSS 방지)
+    function sanitizeDescHtml(html) {
+        const allowedSchemes = ['http:', 'https:', 'mailto:'];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const wrapper = document.createElement('span');
+
+        function processNode(src, dest) {
+            for (const child of src.childNodes) {
+                if (child.nodeType === Node.TEXT_NODE) {
+                    dest.appendChild(document.createTextNode(child.textContent));
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    if (child.tagName.toLowerCase() === 'a') {
+                        const a = document.createElement('a');
+                        const href = child.getAttribute('href') || '';
+                        try {
+                            const parsed = new URL(href);
+                            if (allowedSchemes.includes(parsed.protocol)) {
+                                a.href = parsed.href;
+                            }
+                        } catch (e) { /* 잘못된 URL — href 미설정 */ }
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        a.textContent = child.textContent;
+                        dest.appendChild(a);
+                    } else {
+                        // 허용되지 않는 태그: 자식 텍스트만 유지
+                        processNode(child, dest);
+                    }
+                }
+            }
+        }
+
+        processNode(doc.body, wrapper);
+        return wrapper.innerHTML;
+    }
+
     // 섹션/문항 description textarea 아래에 HTML 렌더링 미리보기를 동기화
     function syncDescHtmlPreview(textarea) {
         if (!textarea) return;
@@ -1490,7 +1527,7 @@
             parentNode.insertBefore(preview, textarea.nextSibling);
         }
         if (textarea.value && textarea.value.includes('<')) {
-            preview.innerHTML = textarea.value;
+            preview.innerHTML = sanitizeDescHtml(textarea.value);
             preview.classList.remove('hidden');
         } else {
             preview.innerHTML = '';
@@ -1516,7 +1553,7 @@
             }
         }
         if (input.value && input.value.includes('<')) {
-            preview.innerHTML = input.value;
+            preview.innerHTML = sanitizeDescHtml(input.value);
             preview.classList.remove('hidden');
         } else {
             preview.innerHTML = '';
@@ -1544,8 +1581,21 @@
             showToast('텍스트와 URL을 모두 입력해주세요.', 'error');
             return;
         }
+        const allowedSchemes = ['http:', 'https:', 'mailto:'];
+        function tryParseUrl(s) { try { return new URL(s); } catch (e) { return null; } }
+        let parsedUrl = tryParseUrl(url);
+        if (!parsedUrl || !allowedSchemes.includes(parsedUrl.protocol)) {
+            parsedUrl = tryParseUrl('https://' + url);
+        }
+        if (!parsedUrl || !allowedSchemes.includes(parsedUrl.protocol)) {
+            showToast('올바른 URL을 입력해주세요. (예: https://example.com)', 'error');
+            return;
+        }
         if (_hyperlinkTargetTextarea) {
-            const link = `<a href="${url}">${text}</a>`;
+            const a = document.createElement('a');
+            a.href = parsedUrl.href;
+            a.textContent = text;
+            const link = a.outerHTML;
             const start = _hyperlinkTargetTextarea.selectionStart;
             const end = _hyperlinkTargetTextarea.selectionEnd;
             const value = _hyperlinkTargetTextarea.value;
