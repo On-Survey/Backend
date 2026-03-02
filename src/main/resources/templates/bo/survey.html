@@ -805,11 +805,13 @@
 
         const title = document.getElementById('survey-title').value.trim();
         const description = document.getElementById('survey-description').value.trim();
+        const imageUrl = document.getElementById('survey-image-url-input').value.trim();
 
         try {
             const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/display`, 'PATCH', {
                 title,
-                description
+                description,
+                imageUrl
             });
 
             showToast('설문 정보가 수정되었습니다.', 'success');
