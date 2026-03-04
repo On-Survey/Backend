@@ -4,9 +4,11 @@ services:
     container_name: nginx
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - /deploy/nginx/conf.d:/etc/nginx/conf.d:ro
       - /deploy/nginx/upstreams:/etc/nginx/upstreams
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks: [web]
     restart: unless-stopped
 
