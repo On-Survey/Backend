@@ -2,9 +2,9 @@ name: Java CI/CD with Docker and GitHub Actions
 
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "develop", "main" ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "develop", "main" ]
   workflow_dispatch:
 
 
@@ -55,10 +55,72 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ steps.vars.outputs.tag }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:latest
 
+  deploy-dev:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name != 'pull_request'
+    steps:
+      - name: Checkout code (for docker-compose.dev.yml)
+        uses: actions/checkout@v4
+
+      - name: Create dev config from secrets
+        run: |
+          mkdir -p config
+          printf "%s" "${{ secrets.ONSURVEY_APP_DEV_YML }}" > config/application-dev.yml
+          chmod 600 config/application-dev.yml
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEV_EC2_HOST }}
+          username: ${{ secrets.DEV_EC2_USER }}
+          key: ${{ secrets.DEV_EC2_SSH_KEY }}
+          source: "docker-compose.dev.yml,config/application-dev.yml,blue-green.sh"
+          target: "/deploy/"
+
+      - name: Deploy on EC2 (blue-green)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEV_EC2_HOST }}
+          username: ${{ secrets.DEV_EC2_USER }}
+          key: ${{ secrets.DEV_EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            DEPLOY_DIR=/deploy
+            cd "$DEPLOY_DIR"
+
+            cat > .env <<EOF
+            COMPOSE_PROJECT_NAME=deploy-dev
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            SPRING_IMAGE_TAG=${{ needs.build-and-push.outputs.tag }}
+            MYSQL_ROOT_PASSWORD=${{ secrets.DEV_MYSQL_ROOT_PASSWORD }}
+            MYSQL_DATABASE=onsurvey
+            MYSQL_USER=${{ secrets.DEV_MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.DEV_MYSQL_PASSWORD }}
+            REDIS_PASSWORD=${{ secrets.DEV_REDIS_PASSWORD }}
+            TZ=Asia/Seoul
+            EOF
+
+            chmod 600 config/application-dev.yml || true
+            chmod +x blue-green.sh || true
+
+            if [ ! -L nginx/upstreams/spring-upstream.conf ]; then
+              ( cd nginx/upstreams && ln -s spring-8080.conf spring-upstream.conf )
+            fi
+
+            docker compose -p deploy-dev -f docker-compose.dev.yml up -d nginx mysql redis
+
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ needs.build-and-push.outputs.tag }} || true
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:latest || true
+
+            bash ./blue-green.sh "${{ needs.build-and-push.outputs.tag }}" deploy-dev docker-compose.dev.yml
+
+            echo "✅ DEV deploy done (tag=${{ needs.build-and-push.outputs.tag }})"
+
   deploy-ncp:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' }}
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     steps:
       - name: Checkout code (for docker-compose.yml)
         uses: actions/checkout@v4
