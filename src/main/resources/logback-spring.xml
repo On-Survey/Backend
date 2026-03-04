@@ -6,7 +6,7 @@
         </encoder>
     </appender>
 
-    <springProfile name="local">
+    <springProfile name="local | dev">
         <root level="INFO">
             <appender-ref ref="Console"/>
         </root>
