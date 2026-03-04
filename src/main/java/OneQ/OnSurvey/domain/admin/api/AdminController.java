@@ -59,7 +59,7 @@ public class AdminController {
         return SuccessResponse.ok(adminFacade.getSurveyDetail(surveyId));
     }
 
-    @PatchMapping("/{surveyId}/owner")
+    @PatchMapping("/surveys/{surveyId}/owner")
     @Operation(summary = "설문 소유자 변경 (어드민)", description = "어드민 권한으로 설문의 소유자를 변경합니다.")
     public SuccessResponse<String> changeSurveyOwner(
         @PathVariable Long surveyId,
