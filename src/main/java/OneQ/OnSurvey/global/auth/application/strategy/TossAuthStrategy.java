@@ -13,7 +13,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
 @Slf4j
-@Profile("prod")
+@Profile({"prod", "dev"})
 @Component
 @RequiredArgsConstructor
 public class TossAuthStrategy implements AuthStrategy {
