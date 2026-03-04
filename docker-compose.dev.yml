@@ -19,6 +19,7 @@ services:
       SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
     volumes:
       - ./config:/etc/onsurvey/config:ro
+      - /etc/onsurvey/certs:/etc/onsurvey/certs:ro
     ports:
       - "8080:8080"
     networks: [web]
@@ -38,6 +39,7 @@ services:
       SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
     volumes:
       - ./config:/etc/onsurvey/config:ro
+      - /etc/onsurvey/certs:/etc/onsurvey/certs:ro
     ports:
       - "8081:8080"
     networks: [web]
