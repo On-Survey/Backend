@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public record PushTemplateAddRequest(
-    @Schema(description = "메시지 템플릿 이름 및 설명", example = "설문 참여 푸시 알림")
+    @Schema(description = "메시지 템플릿 이름 (이벤트 클래스 명)", example = "SurveyCompletedEvent")
     String name,
 
     @Schema(description = "발송할 메시지 템플릿 코드", example = "test_01")
