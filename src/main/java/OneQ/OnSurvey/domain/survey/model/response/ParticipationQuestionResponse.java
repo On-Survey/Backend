@@ -7,7 +7,6 @@ import java.util.List;
 public record ParticipationQuestionResponse(
     String sectionTitle,
     String sectionDescription,
-    String sectionImageUrl,
     Integer currSection,
     Integer nextSection,
     List<DefaultQuestionDto> info
@@ -16,7 +15,7 @@ public record ParticipationQuestionResponse(
         List<DefaultQuestionDto> info
     ) {
         return new ParticipationQuestionResponse(
-            null, null, null,
+            null, null,
             1, 0,
             info
         );
@@ -30,23 +29,7 @@ public record ParticipationQuestionResponse(
         List<DefaultQuestionDto> info
     ) {
         return new ParticipationQuestionResponse(
-            title, description, null,
-            currSection != null ? currSection : 1,
-            currSection != null ? nextSection : 0,
-            info
-        );
-    }
-
-    public static ParticipationQuestionResponse of(
-        String title,
-        String description,
-        String imageUrl,
-        Integer currSection,
-        Integer nextSection,
-        List<DefaultQuestionDto> info
-    ) {
-        return new ParticipationQuestionResponse(
-            title, description, imageUrl,
+            title, description,
             currSection != null ? currSection : 1,
             currSection != null ? nextSection : 0,
             info

@@ -11,8 +11,7 @@ public record SurveyFormResponse (
     String title,
     String description,
     Integer totalCoin,
-    LocalDateTime createdAt,
-    String imageUrl
+    LocalDateTime createdAt
 ) {
 
     public static SurveyFormResponse fromEntity(Survey survey) {
@@ -22,7 +21,6 @@ public record SurveyFormResponse (
             .description(survey.getDescription())
             .totalCoin(survey.getTotalCoin())
             .createdAt(survey.getCreatedAt())
-            .imageUrl(survey.getImageUrl())
             .build();
     }
 }

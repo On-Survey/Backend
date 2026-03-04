@@ -29,8 +29,6 @@ public class QuestionUpsertDto {
         Integer section;
         String imageUrl;
 
-        String imageUrl;
-
         // Choice 필드
         Integer maxChoice;
         Boolean hasNoneOption;
