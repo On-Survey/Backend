@@ -22,24 +22,31 @@ public class ChoiceOption {
     @Column(name = "next_section")
     private Integer nextSection;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     public static ChoiceOption of(
         Long questionId,
         String content,
-        Integer nextSection
+        Integer nextSection,
+        String imageUrl
     ) {
         return ChoiceOption.builder()
             .questionId(questionId)
             .content(content)
             .nextSection(nextSection)
+            .imageUrl(imageUrl)
             .build();
     }
 
     public void updateOption(
         String content,
-        Integer nextSection
+        Integer nextSection,
+        String imageUrl
     ) {
         this.content = content;
         this.nextSection = nextSection;
+        this.imageUrl = imageUrl;
     }
 
     public void updateChoiceOption(String content) {

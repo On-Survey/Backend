@@ -12,10 +12,10 @@ import lombok.experimental.SuperBuilder;
 @Getter @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@DiscriminatorValue(value = QuestionType.Values.NUMBER)
-public class NumberAnswer extends Question {
+@DiscriminatorValue(value = QuestionType.Values.IMAGE)
+public class Image extends Question {
 
-    public static NumberAnswer of(
+    public static Image of(
         Long surveyId,
         Integer order,
         String title,
@@ -25,7 +25,7 @@ public class NumberAnswer extends Question {
         QuestionType type,
         String imageUrl
     ) {
-        return NumberAnswer.builder()
+        return Image.builder()
             .surveyId(surveyId)
             .order(order)
             .title(title)

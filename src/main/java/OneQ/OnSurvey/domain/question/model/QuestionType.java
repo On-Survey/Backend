@@ -13,6 +13,7 @@ public enum QuestionType {
     LONG("장문형", Values.LONG),
     NUMBER("숫자형", Values.NUMBER),
     DATE("날짜형", Values.DATE),
+    IMAGE("이미지형", Values.IMAGE),
     TEXT("주관식", Values.TEXT);
     private final String description;
     private final String value;
@@ -26,6 +27,7 @@ public enum QuestionType {
         public static final String NUMBER = "NUMBER";
         public static final String DATE = "DATE";
         public static final String TEXT = "TEXT";
+        public static final String IMAGE = "IMAGE";
     }
 
     public boolean isText() {

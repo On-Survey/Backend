@@ -54,14 +54,16 @@ public record FormConversionResponse(
         String description,
         String type,
         boolean required,
-        List<Option> options
+        List<Option> options,
+        String imageUrl
     ) { }
 
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record Option(
         String text,
         Integer goToSectionOrder,
-        boolean isOther
+        boolean isOther,
+        String imageUrl
     ) { }
 
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
