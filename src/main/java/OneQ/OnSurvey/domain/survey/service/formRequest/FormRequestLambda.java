@@ -21,6 +21,7 @@ import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.transaction.TransactionHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -39,16 +41,17 @@ import java.util.function.Function;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Qualifier("lambdaWebClient")
 public class FormRequestLambda {
 
     private static final long FORM_CONVERSION_REQUEST_TIMEOUT = 20L;
 
-    @Value("${external.lambda.survey-conversion.url}")
+    @Value("${external.lambda.survey-conversion.url:}")
     private String lambdaUrl;
 
     private final AlertNotifier alertNotifier;
     private final TransactionHandler transactionHandler;
-    private final WebClient webClient;
+    private final WebClient lambdaWebClient;
 
     private final MemberFinder memberFinder;
     private final FormUpdater formUpdater;
@@ -62,14 +65,14 @@ public class FormRequestLambda {
 
         FormConversionPayload payload = new FormConversionPayload(event.formUrls());
 
-        FormConversionResponse response = webClient.post()
+        FormConversionResponse response = lambdaWebClient.post()
             .uri(lambdaUrl)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
             .bodyToMono(FormConversionResponse.class)
-            .retry(3)
             .timeout(Duration.ofSeconds(FORM_CONVERSION_REQUEST_TIMEOUT))
+            .retryWhen(Retry.backoff(3, Duration.ofSeconds(3)))
             .doOnError(e -> {
                 log.error("[FormRequestLambda] 구글폼 변환 중 오류 발생 - requestId: {}, error: {}", event.requestId(), e.getMessage(), e);
                 alertNotifier.sendSurveyConversionAsync(
@@ -196,8 +199,8 @@ public class FormRequestLambda {
                             .isRequired(question.required())
                             .questionType(questionType)
                             .questionOrder(questionOrder.getAndIncrement())
-                            .section(section.order())
-                            .nextSection(section.nextSectionOrder() != null ? section.nextSectionOrder() : 0);
+                            .imageUrl(question.imageUrl())
+                            .section(section.order());
 
                         // Choice 타입인 경우 옵션 설정
                         if (questionType == QuestionType.CHOICE && question.options() != null) {
@@ -220,6 +223,7 @@ public class FormRequestLambda {
                                     .map(opt -> OptionDto.builder()
                                         .content(opt.text())
                                         .nextSection(opt.goToSectionOrder())
+                                        .imageUrl(opt.imageUrl())
                                         .build())
                                     .toList());
                         }
@@ -255,6 +259,7 @@ public class FormRequestLambda {
                             .questionId(savedInfo.getQuestionId())
                             .content(opt.getContent())
                             .nextSection(opt.getNextSection())
+                            .imageUrl(opt.getImageUrl())
                             .build())
                         .toList();
 
@@ -287,6 +292,7 @@ public class FormRequestLambda {
             case "LINEAR_SCALE", "SCALE" -> QuestionType.RATING;
             case "DATE" -> QuestionType.DATE;
             case "NUMBER" -> QuestionType.NUMBER;
+            case "IMAGE" -> QuestionType.IMAGE;
             default -> null;
         };
     }
