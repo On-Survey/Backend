@@ -14,6 +14,7 @@ public record SurveyQuestion(
     Boolean isRequired,
     Integer questionOrder,
     Integer section,
+    String imageUrl,
 
     ChoiceProp choiceProperty,
     RatingProp ratingProperty,
@@ -29,7 +30,8 @@ public record SurveyQuestion(
     ) {
         public record Option (
             String content,
-            Integer nextSection
+            Integer nextSection,
+            String imageUrl
         ) {}
     }
 

@@ -21,10 +21,7 @@ public class AdminAuthService {
     public String authenticate(String username, String rawPassword) {
 
         Admin admin = adminRepository.findByUsername(username);
-        if (admin == null
-//            || !admin.matchPassword(passwordEncoder, rawPassword)
-            || !admin.getPassword().equals(rawPassword)
-        ) {
+        if (admin == null || !admin.matchPassword(passwordEncoder, rawPassword)) {
             return null;
         }
 

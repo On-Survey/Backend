@@ -40,7 +40,8 @@ public class QuestionConverter {
             .isRequired(dto.getIsRequired())
             .questionOrder(dto.getQuestionOrder())
             .questionType(QuestionType.valueOf(dto.getQuestionType()))
-            .section(dto.getSection() != null ? dto.getSection() : 1); // section이 null인 경우 기본값 1 설정
+            .section(dto.getSection() != null ? dto.getSection() : 1) // section이 null인 경우 기본값 1 설정
+            .imageUrl(dto.getImageUrl());
 
         // 2. 타입별 특정 필드 매핑
         switch (dto) {
@@ -52,7 +53,8 @@ public class QuestionConverter {
                     OptionDto.builder()
                         .optionId(option.getOptionId())
                         .content(option.getContent())
-                        .nextSection(option.getNextSection()).build()
+                        .nextSection(option.getNextSection())
+                        .imageUrl(option.getImageUrl()).build()
                     ).toList()
                 );
             case RatingDto ratingDto -> builder.minValue(ratingDto.getMinValue())

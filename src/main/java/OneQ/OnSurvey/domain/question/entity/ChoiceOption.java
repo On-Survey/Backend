@@ -22,7 +22,7 @@ public class ChoiceOption {
     @Column(name = "next_section")
     private Integer nextSection;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
     public static ChoiceOption of(

@@ -33,4 +33,11 @@ public interface AnswerRepository<E> {
     ) {
         return getAnswersByQuestionIds(questionIds);
     }
+
+    default List<AnswerStats> getRespondentCountsByQuestionIds(
+            List<Long> questionIds,
+            SurveyResponseFilterCondition filter
+    ) {
+        return List.of();
+    }
 }
