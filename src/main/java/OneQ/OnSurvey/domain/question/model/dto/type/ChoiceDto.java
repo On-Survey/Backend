@@ -34,6 +34,7 @@ public class ChoiceDto extends DefaultQuestionDto {
             .isRequired(choice.getIsRequired())
             .questionOrder(choice.getOrder())
             .section(choice.getSection() != null ? choice.getSection() : 1)
+            .nextSection(choice.getNextSection())
             .imageUrl(choice.getImageUrl())
             .build();
     }

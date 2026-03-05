@@ -2,7 +2,6 @@ package OneQ.OnSurvey.global.infra.discord.notifier;
 
 import OneQ.OnSurvey.global.infra.discord.DiscordAlarmAsyncFacade;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import lombok.RequiredArgsConstructor;
@@ -34,10 +33,5 @@ public class DiscordAlertNotifier implements AlertNotifier {
     @Override
     public void sendTossAccessTokenAsync(TossAccessTokenAlert alert) {
         discord.sendTossAccessTokenAsync(alert);
-    }
-
-    @Override
-    public void sendSurveyConversionAsync(SurveyConversionAlert alert) {
-        discord.sendSurveyConversionAsync(alert);
     }
 }
