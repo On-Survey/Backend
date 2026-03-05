@@ -1,4 +1,4 @@
-.services:
+services:
   nginx:
     image: nginx:1.25-alpine
     container_name: nginx
@@ -77,8 +77,8 @@
     image: redis:7-alpine
     container_name: onsurvey-redis
     environment:
-      - REDIS_PASSWORD=${DEV_REDIS_PASSWORD}
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+      - DEV_REDIS_PASSWORD=${DEV_REDIS_PASSWORD}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${DEV_REDIS_PASSWORD}"]
     ports:
       - "6379:6379"
     volumes:
