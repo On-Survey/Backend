@@ -17,7 +17,6 @@ public enum SurveyErrorCode implements ApiErrorCode {
 
     SURVEY_PARTICIPATION_TEMP_EXCEEDED("SURVEY_PARTICIPATION_TEMP_EXCEEDED_409", "설문 참여 가능 인원이 일시적으로 초과되었습니다.", HttpStatus.CONFLICT),
     SURVEY_PARTICIPATION_OWN_SURVEY("SURVEY_PARTICIPATION_OWN_403", "본인이 생성한 설문에는 참여할 수 없습니다.", HttpStatus.FORBIDDEN),
-    SURVEY_PARTICIPATION_IN_PROCESS("SURVEY_PARTICIPATION_IN_409", "제출한 설문 응답이 처리 중입니다.", HttpStatus.CONFLICT),
 
     SURVEY_INCORRECT_STATUS("SURVEY_STATUS_400", "요청과 설문 상태가 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
     SURVEY_FORM_INVALID_QUESTION_TYPE("SURVEY_FORM_QUESTION_TYPE_400", "문항 타입이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),

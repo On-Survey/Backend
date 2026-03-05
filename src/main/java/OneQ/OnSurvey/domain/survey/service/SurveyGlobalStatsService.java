@@ -3,9 +3,9 @@ package OneQ.OnSurvey.domain.survey.service;
 import OneQ.OnSurvey.domain.survey.entity.SurveyGlobalStats;
 import OneQ.OnSurvey.domain.survey.model.dto.GlobalStats;
 import OneQ.OnSurvey.domain.survey.repository.SurveyGlobalStatsRepository;
-import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -16,11 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class SurveyGlobalStatsService {
 
+    private final StringRedisTemplate redisTemplate;
     private final SurveyGlobalStatsRepository statsRepository;
-    private final RedisAgent redisAgent;
 
     @Value("${redis.global-key-prefix.daily-user}")
-    private String dailyUserKey;
+    private String dailyUserKeyPrefix;
 
     private SurveyGlobalStats getOrInit() {
         return statsRepository.findById(1L)
@@ -47,11 +47,7 @@ public class SurveyGlobalStatsService {
         SurveyGlobalStats surveyGlobalStats = statsRepository.findById(1L)
             .orElse(SurveyGlobalStats.init());
 
-        // 24시간 동안 활동한 유저 수 계산
-        Long dailyUserCount = redisAgent.getZSetCount(
-            dailyUserKey,
-            System.currentTimeMillis() - (24 * 60 * 60 * 1000L),
-            Long.MAX_VALUE);
+        Long dailyUserCount = redisTemplate.opsForZSet().zCard(dailyUserKeyPrefix);
         return GlobalStats.of(
             surveyGlobalStats.getTotalDueCount(),
             surveyGlobalStats.getTotalCompletedCount(),
@@ -63,9 +59,7 @@ public class SurveyGlobalStatsService {
     @Scheduled(fixedRate = 3600000) // 매 시간 실행
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void removeOldDailyUsers() {
-        redisAgent.rangeRemoveFromZSet(
-            dailyUserKey,
-            0,
-            System.currentTimeMillis() - (24 * 60 * 60 * 1000L));
+        long dailyRange = System.currentTimeMillis() - (24 * 60 * 60 * 1000L);
+        redisTemplate.opsForZSet().removeRangeByScore(dailyUserKeyPrefix, 0, dailyRange);
     }
 }

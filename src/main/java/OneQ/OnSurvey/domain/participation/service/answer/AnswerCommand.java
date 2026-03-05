@@ -4,6 +4,6 @@ import OneQ.OnSurvey.domain.participation.entity.AbstractAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 
 public interface AnswerCommand<E extends AbstractAnswer> {
-    Boolean upsertAnswers(AnswerInsertDto insertDto, Long surveyId, Long userKey, Long memberId);
+    Boolean upsertAnswers(AnswerInsertDto insertDto);
     Boolean insertAnswer(AnswerInsertDto.AnswerInfo answerInfo);
 }
