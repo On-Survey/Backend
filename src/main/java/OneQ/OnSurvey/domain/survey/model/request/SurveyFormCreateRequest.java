@@ -6,8 +6,6 @@ public record SurveyFormCreateRequest(
         @Schema(description = "설문 제목", example = "설문1")
         String title,
         @Schema(description = "설문 설명", example = "설문1에 대한 설명입니다.")
-        String description,
-        @Schema(description = "설문 이미지 url", example = "https://example.com/survey1.png")
-        String imageUrl
+        String description
 ) {
 }

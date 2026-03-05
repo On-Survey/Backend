@@ -39,14 +39,10 @@ public class Section extends BaseEntity {
     @Column(name = "NEXT_SECTION", nullable = false)
     private Integer nextSection;
 
-    @Column(name = "image_url", columnDefinition = "TEXT")
-    private String imageUrl;
-
-    public void updateSection(String title, String description, Integer order, Integer nextSection, String imageUrl) {
+    public void updateSection(String title, String description, Integer order, Integer nextSection) {
         this.title = title;
         this.description = description;
         this.sectionOrder = order;
         this.nextSection = nextSection;
-        this.imageUrl = imageUrl;
     }
 }
