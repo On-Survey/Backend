@@ -76,7 +76,9 @@ services:
   redis:
     image: redis:7-alpine
     container_name: onsurvey-redis
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      - DEV_REDIS_PASSWORD=${DEV_REDIS_PASSWORD}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${DEV_REDIS_PASSWORD}"]
     ports:
       - "6379:6379"
     volumes:
