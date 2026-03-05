@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="scripts">
+<script src="/bo/scripts/navigation.js"></script>
+<script src="/bo/scripts/toast.js"></script>
+<script src="/bo/scripts/api-call.js"></script>
+<script>
+    // 초기화: 현재 페이지를 히스토리에 등록
+    document.addEventListener('DOMContentLoaded', function() {
+        const initialPage = document.querySelector('[data-initial-page]')?.dataset.initialPage || 'dashboard';
+        history.replaceState({ pageId: initialPage }, '', `#${initialPage}`);
+    });
+</script>
+</th:block>
+</html>

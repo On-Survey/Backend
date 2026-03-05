@@ -1,0 +1,4028 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>설문 관리 시스템 - 업그레이드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/bo/scripts/navigation.js"></script>
+    <script src="/bo/scripts/toast.js"></script>
+    <script src="/bo/scripts/api-call.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .logic-line { border-bottom: 2px dotted #cbd5e1; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        /* 드래그 앤 드롭 스타일 */
+        .question-item[draggable="true"] { cursor: default; }
+        .question-item .drag-handle { cursor: grab; }
+        .question-item .drag-handle:active { cursor: grabbing; }
+        .question-item.drag-over-top { border-top: 4px solid #6366f1 !important; margin-top: -4px; }
+        .question-item.drag-over-bottom { border-bottom: 4px solid #6366f1 !important; margin-bottom: -4px; }
+        /* 문항 설명 textarea 스타일 */
+        .question-desc-input {
+            line-height: 1.5;
+            min-height: 28px;
+            max-height: 28px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .question-desc-input:focus {
+            max-height: 150px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+        /* 하이퍼링크 미리보기 */
+        .desc-html-preview a,
+        .option-text-html-preview a {
+            color: #4f46e5;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+        .desc-html-preview a:hover,
+        .option-text-html-preview a:hover {
+            color: #3730a3;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col overflow-hidden">
+
+<header class="flex justify-between items-center px-8 py-4 bg-slate-100 shrink-0">
+    <h1 class="text-2xl font-bold text-slate-800"><i class="fas fa-tasks mr-2 text-indigo-600"></i>설문 관리</h1>
+    <button onclick="goToPage('list')" class="text-sm text-slate-500 hover:text-indigo-600 underline">
+        <i class="fas fa-home"></i> 설문 목록으로 돌아가기
+    </button>
+</header>
+
+<div id="view-list" class="flex-1 overflow-y-auto px-8 pb-8">
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex gap-2">
+            <select id="status-filter" class="border border-slate-300 rounded px-3 py-2 text-sm" onchange="handleFilterChange()">
+                <option value="">전체 상태</option>
+                <option value="WRITING">작성중</option>
+                <option value="NON_WRITING">작성완료</option>
+            </select>
+            <div class="flex relative">
+                <select id="search-type" class="border border-r-0 border-slate-300 rounded-l px-3 py-2 text-sm bg-slate-50 focus:outline-none">
+                    <option value="title">제목</option>
+                    <option value="creator">소유자</option>
+                </select>
+                <input type="text" id="search-input" placeholder="검색어 입력" class="border border-slate-300 rounded-r px-3 py-2 text-sm pl-2 w-64 focus:outline-none focus:border-indigo-500" onkeyup="handleSearchKeyup(event)">
+                <button onclick="handleFilterChange()" class="ml-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded text-sm text-slate-600">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <select id="page-size" class="border border-slate-300 rounded px-3 py-2 text-sm" onchange="handlePageSizeChange()">
+                <option value="10">10개</option>
+                <option value="20">20개</option>
+                <option value="50">50개</option>
+            </select>
+        </div>
+        <button onclick="toggleCreateForm()" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 text-sm font-bold transition-colors">
+            <i class="fas fa-plus mr-1"></i> 새 설문 만들기
+        </button>
+    </div>
+
+    <div id="create-survey-form" class="hidden bg-white border border-indigo-100 rounded-lg p-5 shadow-md animate-fade-in-down">
+        <h3 class="text-sm font-bold text-indigo-800 mb-3"><i class="fas fa-pen-nib mr-2"></i>기본 정보 입력</h3>
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">설문 제목</label>
+                <input type="text" id="new-survey-title" class="w-full text-sm border border-slate-300 rounded px-3 py-2 focus:border-indigo-500 outline-none" placeholder="설문 제목을 입력하세요">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">설문 설명</label>
+                <textarea id="new-survey-description" class="w-full text-sm border border-slate-300 rounded px-3 py-2 focus:border-indigo-500 outline-none resize-none" rows="2" placeholder="설문 설명을 입력하세요"></textarea>
+            </div>
+            <div class="flex justify-end gap-2 mt-2">
+                <button onclick="toggleCreateForm()" class="px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100 rounded">취소</button>
+                <button onclick="createSurvey()" class="px-4 py-1.5 text-xs bg-indigo-600 text-white font-bold rounded hover:bg-indigo-700">확인 (생성)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-slate-500 border-b uppercase text-xs">
+            <tr>
+                <th class="px-6 py-4">ID</th>
+                <th class="px-6 py-4">설문 제목</th>
+                <th class="px-6 py-4">상태</th>
+                <th class="px-6 py-4">소유자</th>
+                <th class="px-6 py-4">등록일</th>
+                <th class="px-6 py-4 text-center">관리</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 페이지네이션 UI -->
+    <div id="pagination-container" class="flex justify-between items-center mt-4 px-2">
+        <div id="pagination-info" class="text-sm text-slate-500">
+            <!-- 예: 총 205건 중 1-10 -->
+        </div>
+        <div id="pagination-buttons" class="flex gap-1">
+            <!-- 페이지 버튼이 여기에 렌더링됨 -->
+        </div>
+    </div>
+</div>
+
+
+<div id="view-builder" class="hidden flex-1 overflow-y-auto px-8 pb-8">
+
+    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 sticky top-0 z-10 mt-4">
+        <div class="flex justify-between items-start gap-4">
+            <div class="flex-1">
+                <span id="mode-badge" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block">EDIT MODE</span>
+                <input type="text" id="survey-title" class="w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors" value="" placeholder="설문 제목을 입력하세요">
+            </div>
+            <!-- 편집 모드 버튼 -->
+            <div id="edit-mode-buttons" class="flex flex-col gap-2 shrink-0">
+                <button onclick="updateSurveyDisplay()" class="px-4 py-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 text-sm">
+                    <i class="fas fa-pen mr-1"></i>설문 정보 수정
+                </button>
+                <button onclick="saveQuestions()" class="px-4 py-2 bg-indigo-600 text-white rounded shadow hover:bg-indigo-700 text-sm font-bold">
+                    <i class="fas fa-save mr-1"></i>문항 저장
+                </button>
+                <button onclick="openPublishModal()" class="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 text-sm font-bold">
+                    <i class="fas fa-paper-plane mr-1"></i>설문 게시
+                </button>
+            </div>
+            <!-- 읽기 전용 모드 버튼 -->
+            <div id="view-mode-buttons" class="hidden flex flex-col gap-2 shrink-0">
+                <button onclick="openSurveyInfoModal()" class="px-4 py-2 bg-slate-600 text-white rounded shadow hover:bg-slate-700 text-sm font-bold">
+                    <i class="fas fa-info-circle mr-1"></i>설문 정보 확인
+                </button>
+                <button onclick="openOwnerChangeModal()" class="px-4 py-2 bg-orange-500 text-white rounded shadow hover:bg-orange-600 text-sm font-bold">
+                    <i class="fas fa-user-edit mr-1"></i>설문 소유자 변경
+                </button>
+            </div>
+        </div>
+        <!-- 설문 설명 영역 -->
+        <div class="mt-3">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="toggleDescription()">
+                <button id="desc-toggle-btn" class="text-slate-400 hover:text-slate-600 transition-transform duration-200 flex items-center justify-center w-4 h-5">
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <div id="desc-preview" class="text-sm text-slate-500 truncate flex-1 leading-5">
+                </div>
+            </div>
+            <div id="desc-edit" class="hidden mt-2">
+                <div class="flex items-start gap-2">
+                    <div class="flex items-center justify-center w-4 h-9">
+                        <button id="desc-toggle-btn-edit" class="text-slate-400 hover:text-slate-600 transition-transform duration-200" style="transform: rotate(180deg);" onclick="event.stopPropagation(); toggleDescription();">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1">
+                        <textarea id="survey-description" class="w-full text-sm text-slate-600 border border-slate-200 rounded-lg p-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none leading-5" rows="3" placeholder="설문 설명을 입력하세요"></textarea>
+                        <div class="flex items-center justify-between mt-2">
+                            <div class="flex gap-2">
+                                <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
+                                    <i class="fas fa-image text-xs"></i> 이미지
+                                    <input type="file" class="hidden" accept="image/*" onchange="handleSurveyImageUpload(this)">
+                                </label>
+                                <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialog(document.getElementById('survey-description'))">
+                                    <i class="fas fa-link text-xs"></i> 하이퍼링크
+                                </button>
+                            </div>
+                            <button onclick="saveDescription()" class="text-xs text-indigo-600 font-bold hover:bg-indigo-50 px-3 py-1 rounded">확인</button>
+                        </div>
+                        <input type="hidden" id="survey-image-url-input" value="">
+                        <div id="survey-image-preview" class="hidden mt-2">
+                            <div class="relative inline-block">
+                                <img class="max-h-32 rounded border border-slate-200" src="" alt="설문 이미지">
+                                <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeSurveyImage()">
+                                    <i class="fas fa-times text-[8px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="section-list" class="space-y-8 pb-8 mt-6"></div>
+
+    <div id="add-section-btn" class="flex justify-center pb-10">
+        <button onclick="addSection()" class="flex items-center gap-2 text-slate-500 hover:text-indigo-600 bg-white border border-slate-300 hover:border-indigo-400 px-6 py-2 rounded-full shadow-sm transition-all text-sm font-bold">
+            <i class="fas fa-layer-group"></i> 새 섹션 추가
+        </button>
+    </div>
+</div>
+
+<!-- 설문 게시 모달 -->
+<div id="publishModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-paper-plane mr-2 text-green-600"></i>설문 게시</h2>
+            <button onclick="closePublishModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- 1. 스크리닝 퀴즈 섹션 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-slate-700"><i class="fas fa-filter mr-2 text-indigo-500"></i>스크리닝 퀴즈 (선택)</h3>
+                    <span id="screeningStatus" class="text-xs px-2 py-1 rounded bg-slate-100 text-slate-500">미설정</span>
+                </div>
+                <p class="text-xs text-slate-500 mb-3">스크리닝 퀴즈를 통해 설문 응답자 필터링이 가능합니다.</p>
+
+                <div id="screeningForm" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">스크리닝 질문</label>
+                        <input type="text" id="screeningContent" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="예: 본 설문의 대상인 20대 여성이 맞습니까?">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">정답 (설문 진행 가능 응답)</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="screeningAnswer" value="true" class="text-indigo-600">
+                                <span class="text-sm">예</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="screeningAnswer" value="false" class="text-indigo-600">
+                                <span class="text-sm">아니오</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="saveScreening()" class="px-4 py-2 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700">
+                            <i class="fas fa-save mr-1"></i>스크리닝 저장
+                        </button>
+                        <button onclick="deleteScreening()" class="px-4 py-2 bg-slate-200 text-slate-600 rounded text-xs hover:bg-slate-300">
+                            <i class="fas fa-trash mr-1"></i>삭제
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 관심사 선택 섹션 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-heart mr-2 text-pink-500"></i>관심사 (필수, 최소 1개)</h3>
+                <p class="text-xs text-slate-500 mb-3">설문 대상자의 관심사를 선택하세요.</p>
+
+                <div id="interestGrid" class="grid grid-cols-3 gap-2">
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="CAREER" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">커리어</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="BUSINESS" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">비즈니스</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="FINANCE" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">재테크/금융</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="HEALTH" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">건강</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="CULTURE" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">문화/예술</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="FASHION" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">패션/뷰티</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="SOCIETY" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">사회/시사</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="SELF_IMPROVEMENT" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">자기개발</span>
+                    </label>
+                    <label class="interest-item flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                        <input type="checkbox" value="DAILY_LIFE" class="interest-checkbox text-indigo-600 rounded">
+                        <span class="text-sm">일상생활</span>
+                    </label>
+                </div>
+                <button onclick="saveInterests()" class="mt-3 px-4 py-2 bg-pink-600 text-white rounded text-xs font-bold hover:bg-pink-700">
+                    <i class="fas fa-save mr-1"></i>관심사 저장
+                </button>
+            </div>
+
+            <!-- 3. 타겟 설정 섹션 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-crosshairs mr-2 text-orange-500"></i>타겟 설정</h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 성별 -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">타겟 성별</label>
+                        <select id="targetGender" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                            <option value="ALL">전체</option>
+                            <option value="MALE">남성</option>
+                            <option value="FEMALE">여성</option>
+                        </select>
+                    </div>
+
+                    <!-- 거주지 -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">타겟 거주지</label>
+                        <select id="targetResidence" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                            <option value="ALL">전체</option>
+                            <option value="SEOUL">서울</option>
+                            <option value="GYEONGGI">경기</option>
+                            <option value="INCHEON">인천</option>
+                            <option value="BUSAN">부산</option>
+                            <option value="DAEGU">대구</option>
+                            <option value="DAEJEON">대전</option>
+                            <option value="GWANGJU">광주</option>
+                            <option value="ULSAN">울산</option>
+                            <option value="SEJONG">세종</option>
+                            <option value="GANGWON">강원</option>
+                            <option value="CHUNGNAM">충남</option>
+                            <option value="CHUNGBUK">충북</option>
+                            <option value="JEONNAM">전남</option>
+                            <option value="JEONBUK">전북</option>
+                            <option value="GYEONGNAM">경남</option>
+                            <option value="GYEONGBUK">경북</option>
+                            <option value="JEJU">제주</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 연령대 -->
+                <div class="mt-4">
+                    <label class="block text-xs font-medium text-slate-600 mb-2">타겟 연령대 (복수 선택 가능)</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="ALL" class="age-checkbox text-indigo-600 rounded" onchange="handleAgeAllSelect(this)">
+                            <span>전체</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="TEN" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>10대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="TWENTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>20대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="THIRTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>30대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="FOURTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>40대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="FIFTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>50대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="SIXTY" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>60대</span>
+                        </label>
+                        <label class="age-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                            <input type="checkbox" value="OVER" class="age-checkbox age-specific text-indigo-600 rounded">
+                            <span>70세 이상</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 응답 수 & 마감일 설정 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-chart-bar mr-2 text-blue-500"></i>응답 설정</h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">목표 응답 수</label>
+                        <select id="targetDueCount" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                            <option value="50">50명</option>
+                            <option value="100">100명</option>
+                            <option value="150">150명</option>
+                            <option value="200">200명</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">마감일</label>
+                        <input type="date" id="targetDeadline" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. 설문 이미지 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-image mr-2 text-purple-500"></i>설문 대표 이미지 (선택)</h3>
+                <p class="text-xs text-slate-500 mb-3">설문 목록에서 표시될 대표 이미지를 설정합니다.</p>
+                <div class="flex items-start gap-4">
+                    <label class="cursor-pointer flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100 transition-colors">
+                        <i class="fas fa-upload"></i> 이미지 업로드
+                        <input type="file" class="hidden" accept="image/*" onchange="handlePublishImageUpload(this)">
+                    </label>
+                    <button type="button" id="publish-image-remove-btn" onclick="removePublishImage()" class="hidden text-xs text-red-500 hover:text-red-700 px-3 py-2 rounded border border-red-200 hover:bg-red-50">
+                        <i class="fas fa-trash mr-1"></i>이미지 삭제
+                    </button>
+                </div>
+                <input type="hidden" id="publish-image-url-input" value="">
+                <div id="publish-image-preview" class="hidden mt-3">
+                    <img id="publish-image-tag" class="max-h-32 rounded border border-slate-200" src="" alt="설문 이미지">
+                </div>
+            </div>
+
+            <!-- 6. 가격 정보 (읽기 전용) -->
+            <div class="border border-green-200 bg-green-50 rounded-xl p-4">
+                <h3 class="font-bold text-green-700 mb-3"><i class="fas fa-coins mr-2"></i>예상 비용</h3>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">성별 타겟:</span>
+                        <span id="priceGender" class="font-medium">0 코인</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">연령대 타겟:</span>
+                        <span id="priceAge" class="font-medium">0 코인</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">거주지 타겟:</span>
+                        <span id="priceResidence" class="font-medium">0 코인</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-600">응답 수:</span>
+                        <span id="priceDueCount" class="font-medium">0 코인</span>
+                    </div>
+                </div>
+                <div class="border-t border-green-300 mt-3 pt-3 flex justify-between">
+                    <span class="font-bold text-green-800">총 비용:</span>
+                    <span id="priceTotal" class="font-bold text-green-800 text-lg">0 코인</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 모달 하단 버튼 -->
+        <div class="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+            <button onclick="closePublishModal()" class="px-6 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 text-sm font-medium">
+                취소
+            </button>
+            <button onclick="publishSurvey()" class="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 text-sm font-bold">
+                <i class="fas fa-paper-plane mr-1"></i>설문 게시하기
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 설문 정보 확인 모달 (읽기 전용) -->
+<div id="surveyInfoModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-info-circle mr-2 text-slate-600"></i>설문 정보</h2>
+            <button onclick="closeSurveyInfoModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- 스크리닝 퀴즈 정보 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-filter mr-2 text-indigo-500"></i>스크리닝 퀴즈</h3>
+                <div id="infoScreening" class="text-sm text-slate-600">
+                    <p class="text-slate-400">로딩 중...</p>
+                </div>
+            </div>
+
+            <!-- 관심사 정보 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-heart mr-2 text-pink-500"></i>관심사</h3>
+                <div id="infoInterests" class="flex flex-wrap gap-2">
+                    <p class="text-slate-400 text-sm">로딩 중...</p>
+                </div>
+            </div>
+
+            <!-- 타겟 설정 정보 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-crosshairs mr-2 text-orange-500"></i>타겟 설정</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-slate-500">성별:</span>
+                        <span id="infoGender" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">거주지:</span>
+                        <span id="infoResidence" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-500">연령대:</span>
+                        <span id="infoAges" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 응답 설정 정보 -->
+            <div class="border border-slate-200 rounded-xl p-4">
+                <h3 class="font-bold text-slate-700 mb-3"><i class="fas fa-chart-bar mr-2 text-blue-500"></i>응답 설정</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-slate-500">목표 응답 수:</span>
+                        <span id="infoDueCount" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">현재 응답 수:</span>
+                        <span id="infoCurrentCount" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">마감일:</span>
+                        <span id="infoDeadline" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">설문 상태:</span>
+                        <span id="infoStatus" class="ml-2 font-medium text-slate-700">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 비용 정보 -->
+            <div class="border border-green-200 bg-green-50 rounded-xl p-4">
+                <h3 class="font-bold text-green-700 mb-3"><i class="fas fa-coins mr-2"></i>결제 정보</h3>
+                <div class="text-sm">
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-600">총 결제 코인:</span>
+                        <span id="infoTotalCoin" class="font-bold text-green-700">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 모달 하단 버튼 -->
+        <div class="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex justify-end">
+            <button onclick="closeSurveyInfoModal()" class="px-6 py-2 bg-slate-600 text-white rounded-lg shadow hover:bg-slate-700 text-sm font-bold">
+                닫기
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 설문 소유자 변경 모달 -->
+<div id="ownerChangeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-orange-500 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+            <h2 class="text-lg font-bold text-white"><i class="fas fa-user-edit mr-2"></i>설문 소유자 변경</h2>
+            <button onclick="closeOwnerChangeModal()" class="text-white hover:text-orange-200 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+            <!-- 현재 소유자 정보 -->
+            <div class="bg-slate-50 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-slate-600 mb-2">현재 소유자</h3>
+                <div id="currentOwnerInfo" class="text-sm text-slate-700">
+                    <p class="text-slate-400">설문 정보를 불러오는 중...</p>
+                </div>
+            </div>
+
+            <!-- 회원 검색 영역 -->
+            <div class="border border-slate-200 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-slate-600 mb-3">새 소유자 검색</h3>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <input type="text" id="ownerSearchMemberId" placeholder="회원 ID"
+                           class="flex-1 min-w-[100px] border border-slate-300 rounded px-3 py-2 text-sm focus:border-orange-500 outline-none">
+                    <input type="text" id="ownerSearchName" placeholder="이름"
+                           class="flex-1 min-w-[100px] border border-slate-300 rounded px-3 py-2 text-sm focus:border-orange-500 outline-none">
+                    <input type="text" id="ownerSearchEmail" placeholder="이메일"
+                           class="flex-1 min-w-[150px] border border-slate-300 rounded px-3 py-2 text-sm focus:border-orange-500 outline-none">
+                </div>
+                <button onclick="searchMembersForOwner()" class="w-full px-4 py-2 bg-slate-600 text-white rounded text-sm font-bold hover:bg-slate-700">
+                    <i class="fas fa-search mr-1"></i>회원 검색
+                </button>
+            </div>
+
+            <!-- 검색 결과 -->
+            <div id="ownerSearchResults" class="hidden border border-slate-200 rounded-lg overflow-hidden">
+                <div class="bg-slate-50 px-4 py-2 border-b border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-600">검색 결과</h3>
+                </div>
+                <div id="ownerSearchResultsList" class="max-h-60 overflow-y-auto">
+                    <!-- 검색 결과가 여기에 렌더링됨 -->
+                </div>
+            </div>
+
+            <!-- 선택된 새 소유자 -->
+            <div id="selectedNewOwner" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h3 class="text-sm font-bold text-orange-600 mb-2">선택된 새 소유자</h3>
+                <div id="selectedOwnerInfo" class="text-sm text-slate-700"></div>
+                <input type="hidden" id="selectedNewMemberId">
+            </div>
+        </div>
+
+        <!-- 모달 하단 버튼 -->
+        <div class="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
+            <button onclick="closeOwnerChangeModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">
+                취소
+            </button>
+            <button id="confirmOwnerChangeBtn" onclick="confirmOwnerChange()" disabled
+                    class="px-6 py-2 bg-orange-500 text-white rounded-lg shadow hover:bg-orange-600 text-sm font-bold disabled:bg-slate-300 disabled:cursor-not-allowed">
+                <i class="fas fa-check mr-1"></i>소유자 변경
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 하이퍼링크 삽입 다이얼로그 -->
+<div id="hyperlinkDialog" class="hidden fixed inset-0 bg-black bg-opacity-30 z-[60] flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-96">
+        <h3 class="font-bold text-slate-700 mb-4"><i class="fas fa-link mr-2 text-indigo-600"></i>하이퍼링크 삽입</h3>
+        <div class="space-y-3 mb-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">표시 텍스트</label>
+                <input type="text" id="hyperlinkText" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="링크에 표시할 텍스트">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">URL</label>
+                <input type="text" id="hyperlinkUrl" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="https://...">
+            </div>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button onclick="closeHyperlinkDialog()" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded">취소</button>
+            <button onclick="confirmHyperlink()" class="px-4 py-2 text-sm bg-indigo-600 text-white font-bold rounded hover:bg-indigo-700">삽입</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==================== API 설정 및 전역 변수 ====================
+
+    // 설문 상태 관리
+    let currentSurveyId = null;           // 현재 편집 중인 설문 ID
+    let isNewSurvey = true;               // 새 설문 여부
+    let isSaving = false;                 // 저장 중 여부
+    let isReadOnlyMode = false;           // 읽기 전용 모드 여부
+    let questionIdMap = new Map();        // 프론트엔드 questionCounter → 백엔드 questionId 매핑
+    let optionIdMap = new Map();          // 프론트엔드 옵션 → 백엔드 optionId 매핑
+    let globalSurveyList = [];
+    let isFromFormRequest = false;        // 설문 변환 요청에서 접근했는지 여부
+    let currentFormRequestId = null;      // 현재 설문 변환 요청 ID
+    let currentSurveyInfo = null;         // 현재 설문 상세 정보 (읽기 전용 모드용)
+
+    // 설문 게시 관련 상태
+    let currentScreeningId = null;        // 현재 스크리닝 퀴즈 ID
+    let savedInterests = new Set();       // 저장된 관심사 목록
+
+    // 하이퍼링크 다이얼로그 상태
+    let _hyperlinkTargetTextarea = null;
+
+    // 가격 매핑 (추후 실제 값으로 교체 예정)
+    const PRICE_MAP = {
+        gender: {
+            ALL: 0,
+            MALE: 100,
+            FEMALE: 100
+        },
+        age: {
+            ALL: 0,
+            TEN: 50,
+            TWENTY: 50,
+            THIRTY: 50,
+            FOURTY: 50,
+            FIFTY: 50,
+            SIXTY: 50,
+            OVER: 50
+        },
+        residence: {
+            ALL: 0,
+            SEOUL: 100,
+            GYEONGGI: 100,
+            // ... 기타 지역도 동일
+            DEFAULT: 100
+        },
+        dueCountPerPerson: 100  // 1명당 비용
+    };
+
+    // 페이지네이션 상태 관리
+    let currentPage = 0;                  // 현재 페이지 (0-based)
+    let currentPageSize = 10;             // 페이지 크기
+    let totalElements = 0;                // 전체 요소 개수
+    let totalPages = 0;                   // 전체 페이지 개수
+    let isLastPage = false;               // 마지막 페이지 여부
+
+    // 문항 타입 표시용 텍스트 매핑
+    const QUESTION_TYPE_LABEL = {
+        'choice': '객관식',
+        'text': '단답형',
+        'textarea': '장문형',
+        'rating': '평가형',
+        'nps': 'NPS',
+        'number': '숫자형',
+        'date': '날짜형'
+    };
+
+    // 문항 타입 매핑 (프론트엔드 → 백엔드)
+    const QUESTION_TYPE_MAP = {
+        'choice': 'CHOICE',
+        'text': 'SHORT',
+        'textarea': 'LONG',
+        'rating': 'RATING',
+        'nps': 'NPS',
+        'number': 'NUMBER',
+        'date': 'DATE'
+    };
+
+    // 문항 타입 역매핑 (백엔드 → 프론트엔드)
+    const QUESTION_TYPE_REVERSE_MAP = {
+        'CHOICE': 'choice',
+        'SHORT': 'text',
+        'LONG': 'textarea',
+        'RATING': 'rating',
+        'NPS': 'nps',
+        'NUMBER': 'number',
+        'DATE': 'date'
+    };
+
+    // 생성 폼 토글
+    function toggleCreateForm() {
+        const form = document.getElementById('create-survey-form');
+        form.classList.toggle('hidden');
+        if (!form.classList.contains('hidden')) {
+            document.getElementById('new-survey-title').focus();
+        }
+    }
+
+    // ==================== 설문 API ====================
+
+    // 설문 생성
+    async function createSurvey() {
+        const titleInput = document.getElementById('new-survey-title');
+        const descriptionInput = document.getElementById('new-survey-description');
+
+        if (!titleInput || !descriptionInput) {
+            console.error("HTML 요소를 찾을 수 없습니다. HTML ID를 확인하세요.");
+            return null;
+        }
+
+        const title = titleInput.value.trim();
+        const description = descriptionInput.value.trim();
+
+        if (!title) {
+            showToast('설문 제목을 입력해주세요.', 'error');
+            titleInput.focus();
+            return null;
+        }
+
+        try {
+            const response = await apiCall('/survey-form/surveys', 'POST',
+                {
+                    title: title,
+                    description: description
+                }
+            );
+
+            const builderData = {
+                surveyId: response.surveyId,
+                title: response.title,
+                description: response.description,
+                totalCoin: response.totalCoin,
+                createdAt: response.createdAt
+            }
+
+            currentSurveyId = builderData.surveyId;
+            isNewSurvey = false;
+
+            await openBuilder('new', builderData);
+
+            titleInput.value = '';
+            descriptionInput.value = '';
+            toggleCreateForm();
+            showToast('설문이 생성되었습니다.', 'success');
+            return response;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    // 설문 정보 수정 (제목, 설명)
+    async function updateSurveyDisplay() {
+        if (!currentSurveyId) return null;
+
+        const title = document.getElementById('survey-title').value.trim();
+        const description = document.getElementById('survey-description').value.trim();
+        const imageUrl = document.getElementById('survey-image-url-input').value.trim();
+
+        try {
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/display`, 'PATCH', {
+                title,
+                description,
+                imageUrl
+            });
+
+            showToast('설문 정보가 수정되었습니다.', 'success');
+            return response;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    // 문항 데이터 수집
+    function collectQuestionData() {
+        const questions = [];
+        const sectionItems = document.querySelectorAll('.section-item');
+
+        let globalOrder = 0;
+        sectionItems.forEach((section, secIndex) => {
+            const sectionOrder = secIndex + 1;
+
+            const questionItems = section.querySelectorAll('.question-item');
+            questionItems.forEach((item) => {
+                globalOrder++;
+
+                const questionId = item.getAttribute('data-question-id');
+
+                const frontendType = item.getAttribute('data-question-type') || 'choice';
+                const questionType = QUESTION_TYPE_MAP[frontendType];
+
+                const titleInput = item.querySelector('.question-title-input');
+                const descInput = item.querySelector('.question-desc-input');
+                const requiredCheckbox = item.querySelector('.required-checkbox');
+
+                // [신규] 분기 설정 체크박스
+                const routeCheckbox = item.querySelector('.route-checkbox');
+                const isSectionDecidable = routeCheckbox ? routeCheckbox.checked : false;
+
+                // [신규] 직접 입력 체크박스 값 수집
+                const customInputOption = item.querySelector('.option-item[data-option-type="direct-input"]');
+                const hasCustomInput = !!customInputOption;
+
+                const imageUrlInput = item.querySelector('.question-image-url-input');
+                const questionData = {
+                    questionId: questionId,
+                    questionType: questionType,
+                    title: titleInput ? titleInput.value : '',
+                    description: descInput ? descInput.value : '',
+                    isRequired: requiredCheckbox ? requiredCheckbox.checked : false,
+                    isSectionDecidable: isSectionDecidable,
+                    questionOrder: globalOrder,
+                    section: sectionOrder,
+                    imageUrl: imageUrlInput ? (imageUrlInput.value.trim() || null) : null
+                };
+
+                // 객관식인 경우 옵션 데이터 추가
+                if (questionType === 'CHOICE') {
+                    const maxSelectDropdown = item.querySelector('.max-select-count');
+                    questionData.maxChoice = maxSelectDropdown ? parseInt(maxSelectDropdown.value) : 1;
+                    questionData.hasNoneOption = false;
+                    questionData.hasCustomInput = hasCustomInput;
+                    questionData.options = collectOptionData(item, isSectionDecidable);
+                }
+
+                // 평가형인 경우
+                if (questionType === 'RATING') {
+                    const ratingCircles = item.querySelector('.rating-circles');
+                    const leftLabel = item.querySelector('.rating-label-left');
+                    const rightLabel = item.querySelector('.rating-label-right');
+
+                    questionData.rate = ratingCircles ? parseInt(ratingCircles.getAttribute('data-count')) : 5;
+                    questionData.minValue = leftLabel ? leftLabel.value : '낮음';
+                    questionData.maxValue = rightLabel ? rightLabel.value : '높음';
+                }
+
+                // 날짜형인 경우
+                if (questionType === 'DATE') {
+                    const dateInput = item.querySelector('.default-date-input');
+
+                    questionData.date = dateInput ? dateInput.value + "T00:00:00" : null;
+                }
+
+                questions.push(questionData);
+            });
+        });
+
+        return questions;
+    }
+
+    // 옵션 데이터 수집
+    function collectOptionData(questionItem, isBranchingEnabled) {
+        const options = [];
+        const optionItems = questionItem.querySelectorAll('.option-item[data-option-type="normal"]');
+
+        optionItems.forEach((optionItem, index) => {
+            const textInput = optionItem.querySelector('.option-text-input');
+
+            // textInput이 없거나 비어있는 옵션은 수집하지 않음
+            if (!textInput) return;
+
+            const jumpSelect = optionItem.querySelector('.jump-select');
+
+            let nextSection = null;
+
+            const storedOptionId = optionItem.getAttribute('data-option-id');
+            const optionId = storedOptionId ? parseInt(storedOptionId) : null;
+
+            // 분기 설정이 켜져있고, 값이 선택된 경우에만 수집
+            if (isBranchingEnabled && jumpSelect && jumpSelect.value !== "") {
+                nextSection = parseInt(jumpSelect.value);
+            }
+
+            const imageUrlInput = optionItem.querySelector('.option-image-url-input');
+
+            options.push({
+                optionId: optionId,
+                content: textInput.value || '',
+                nextSection: nextSection,
+                imageUrl: imageUrlInput ? (imageUrlInput.value.trim() || null) : null
+            });
+        });
+
+        // 기존 옵션(optionId 있음)을 먼저, 새 옵션(optionId 없음)을 나중에 정렬
+        // 백엔드에서 update 대상 먼저, insert 대상 나중에 처리하고
+        // choice_option_id ASC 정렬로 조회하므로, UI 순서와 일치시키기 위함
+        options.sort((a, b) => {
+            const aHasId = a.optionId !== null;
+            const bHasId = b.optionId !== null;
+            if (aHasId && !bHasId) return -1;
+            if (!aHasId && bHasId) return 1;
+            return 0; // 같은 그룹 내에서는 원래 순서 유지
+        });
+
+        return options;
+    }
+
+    // 문항 일괄 저장 (임시저장)
+    async function saveQuestions() {
+        if (!currentSurveyId) {
+            // 설문이 아직 생성되지 않았으면 먼저 생성
+            const surveyResponse = await createSurvey();
+            if (!surveyResponse) return null;
+        }
+
+        if (isSaving) return null;
+
+        // 유효성 검사
+        const validationResult = validateBeforeSave();
+        if (!validationResult.isValid) {
+            return null;
+        }
+
+        isSaving = true;
+
+        try {
+            const questions = collectQuestionData();
+
+            if (questions.length === 0) {
+                showToast('저장할 문항이 없습니다.', 'error');
+                return null;
+            }
+
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/questions`, 'PUT', {
+                questions
+            });
+
+            // 반환된 questionId 및 optionId 매핑 업데이트
+            if (response && response.questions) {
+                const questionItems = document.querySelectorAll('.question-item');
+                questionItems.forEach((qItem, qIndex) => {
+                    const savedQuestion = response.questions[qIndex];
+                    if (!savedQuestion) return;
+
+                    // 1. 문항 ID 업데이트
+                    if (savedQuestion.questionId) {
+                        qItem.setAttribute('data-question-id', savedQuestion.questionId);
+                    }
+
+                    // 2. 옵션 ID 업데이트 (객관식인 경우)
+                    if (savedQuestion.questionType === 'CHOICE' && savedQuestion.options) {
+                        const optionItems = qItem.querySelectorAll('.option-item[data-option-type="normal"]');
+
+                        optionItems.forEach((optItem, optIndex) => {
+                            const savedOption = savedQuestion.options[optIndex];
+                            if (savedOption && savedOption.optionId) {
+                                optItem.setAttribute('data-option-id', savedOption.optionId);
+                            }
+                        });
+                    }
+                });
+            }
+
+            showToast('문항이 저장되었습니다.', 'success');
+            return response;
+        } catch (error) {
+            console.error(error);
+            showToast('저장 중 오류가 발생했습니다.', 'error');
+            return null;
+        } finally {
+            isSaving = false;
+        }
+    }
+
+    // 저장 전 유효성 검사
+    function validateBeforeSave() {
+        let isValid = true;
+        let firstInvalidElement = null;
+
+        // 1. 섹션 제목 검사
+        const sectionItems = document.querySelectorAll('.section-item');
+        for (const section of sectionItems) {
+            const titleInput = section.querySelector('.section-title-input');
+            if (titleInput && !titleInput.value.trim()) {
+                isValid = false;
+                titleInput.classList.add('border-red-400', 'border', 'ring-1', 'ring-red-400');
+                if (!firstInvalidElement) firstInvalidElement = titleInput;
+
+                // 3초 후 빨간색 제거
+                setTimeout(() => {
+                    titleInput.classList.remove('border-red-400', 'border', 'ring-1', 'ring-red-400');
+                }, 3000);
+            }
+        }
+
+        // 2. 문항 제목 검사
+        const questionItems = document.querySelectorAll('.question-item');
+        for (const question of questionItems) {
+            const titleInput = question.querySelector('.question-title-input');
+            if (titleInput && !titleInput.value.trim()) {
+                isValid = false;
+                titleInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+                if (!firstInvalidElement) firstInvalidElement = titleInput;
+
+                setTimeout(() => {
+                    titleInput.classList.remove('border-red-400', 'ring-1', 'ring-red-400');
+                }, 3000);
+            }
+
+            // 3. 객관식 문항인 경우 최소 1개 이상의 보기가 있는지 검사 (직접입력 보기 포함)
+            const questionType = question.getAttribute('data-question-type');
+            if (questionType === 'choice') {
+                const optionsContainer = question.querySelector('.options-container');
+                const normalOptions = optionsContainer ? optionsContainer.querySelectorAll('.option-item[data-option-type="normal"]') : [];
+                const directInputOption = optionsContainer ? optionsContainer.querySelector('.option-item[data-option-type="direct-input"]') : null;
+
+                // 일반 보기 또는 직접입력 보기 중 하나라도 있으면 OK
+                if (normalOptions.length === 0 && !directInputOption) {
+                    isValid = false;
+                    // 옵션 추가 버튼 영역에 빨간색 표시
+                    const addOptionBtn = question.querySelector('.choice-options .flex.gap-2');
+                    if (addOptionBtn) {
+                        addOptionBtn.classList.add('border', 'border-red-400', 'rounded', 'p-1');
+                        if (!firstInvalidElement) firstInvalidElement = addOptionBtn;
+
+                        setTimeout(() => {
+                            addOptionBtn.classList.remove('border', 'border-red-400', 'rounded', 'p-1');
+                        }, 3000);
+                    }
+                    showToast('객관식 문항에는 최소 1개 이상의 보기가 필요합니다.', 'error');
+                }
+            }
+
+            // 4. 객관식 보기 제목 검사
+            const optionInputs = question.querySelectorAll('.option-item[data-option-type="normal"] .option-text-input');
+            for (const optionInput of optionInputs) {
+                if (!optionInput.value.trim()) {
+                    isValid = false;
+                    optionInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+                    if (!firstInvalidElement) firstInvalidElement = optionInput;
+
+                    setTimeout(() => {
+                        optionInput.classList.remove('border-red-400', 'ring-1', 'ring-red-400');
+                    }, 3000);
+                }
+            }
+        }
+
+        if (!isValid && firstInvalidElement) {
+            showToast('필수 입력값이 비어있습니다. 빨간색으로 표시된 항목을 확인해주세요.', 'error');
+            firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (firstInvalidElement.focus) firstInvalidElement.focus();
+        }
+
+        return { isValid, firstInvalidElement };
+    }
+
+
+
+    // 설문 완성 (게시)
+    async function completeSurvey() {
+        if (!currentSurveyId) {
+            showToast('먼저 설문을 생성해주세요.', 'error');
+            return null;
+        }
+
+        // 먼저 문항 저장
+        const saveResult = await saveQuestions();
+        if (!saveResult) return null;
+
+        try {
+            // 무료 설문으로 완성 (기본)
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}`, 'PATCH', {
+                targetCount: 100  // 기본 목표 응답 수
+            });
+
+            showToast('설문이 게시되었습니다!', 'success');
+
+            // 목록으로 이동
+            setTimeout(() => {
+                goToPage('list');
+                loadSurveyList();
+            }, 1000);
+
+            return response;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    // 설문 조회 (어드민 API 사용)
+    async function loadSurveyForEdit(survey) {
+        try {
+            // 어드민 API로 설문 상세 조회
+            const response = await apiCall(`/admin/surveys/${survey.surveyId}`, 'GET');
+
+            currentSurveyId = survey.surveyId;
+            isNewSurvey = false;
+
+            // 문항 및 섹션 데이터 로드
+            if (response) {
+                const sections = response.sections || [];
+                const questions = response.questions || [];
+
+                // survey 객체에 title, description, imageUrl 업데이트 (API 응답에서)
+                if (response.information) {
+                    survey.title = response.information.title || survey.title;
+                    survey.description = response.information.description || survey.description;
+                    survey.imageUrl = response.information.imageUrl || null;
+                }
+
+                await openBuilder('edit', survey);
+                await renderLoadedQuestions(questions, sections);
+            }
+
+            return response;
+        } catch (error) {
+            console.error('설문 조회 실패:', error);
+            return null;
+        }
+    }
+
+    // 조회된 문항 렌더링 (AdminSurveyDetailResponse 구조 지원)
+    async function renderLoadedQuestions(questions, sections = []) {
+        // 기존 섹션 비우기
+        const sectionList = document.getElementById('section-list');
+        sectionList.innerHTML = '';
+
+        // 섹션 개수 결정 (섹션 데이터가 있으면 그 수, 없으면 문항 기반)
+        let sectionCount = sections.length;
+        if (sectionCount === 0) {
+            // 최대 섹션 번호 찾기 (레거시 지원)
+            let maxSection = 0;
+            questions.forEach(q => {
+                if(q.section > maxSection) maxSection = q.section;
+            });
+            sectionCount = maxSection > 0 ? maxSection : 0;
+        }
+
+        // 섹션 UI 생성 (섹션 API 호출 없이 UI만 생성)
+        sectionCounter = 0;
+        for(let i = 0; i < sectionCount; i++) {
+            await addSectionWithoutSave(sections[i] || { title: `섹션 ${i+1}`, description: '' });
+        }
+
+        // 모든 섹션이 추가된 후 다음 섹션 드롭다운 갱신 (nextSection 값 적용)
+        refreshAllJumpSelects();
+
+        // questionCounter 리셋
+        questionCounter = 0;
+        questionIdMap.clear();
+
+        // 문항 순서대로 정렬
+        questions.sort((a, b) => a.questionOrder - b.questionOrder);
+        const sectionItems = document.querySelectorAll('.section-item');
+
+        for (const q of questions) {
+            questionCounter++;
+            const frontendType = QUESTION_TYPE_REVERSE_MAP[q.questionType] || 'choice';
+
+            // AdminSurveyDetailResponse 구조: choiceProperty, ratingProperty, dateProperty
+            const choiceProp = q.choiceProperty || {};
+            const ratingProp = q.ratingProperty || {};
+            const dateProp = q.dateProperty || {};
+
+            const isSectionDecidable = choiceProp.isSectionDecidable || false;
+            const hasCustomInput = choiceProp.hasCustomInput || false;
+            const defaultDate = dateProp.defaultDate || null;
+
+            // DOM 생성 (append는 아직)
+            const newQuestionEl = addNewQuestion(q.questionId, q.title, q.description, questionCounter, frontendType, isSectionDecidable, hasCustomInput, defaultDate, q.imageUrl || null);
+
+            // 적절한 섹션 찾기 (q.section이 1이면 index 0)
+            const targetSection = sectionItems[(q.section || 1) - 1];
+            if(targetSection) {
+                targetSection.querySelector('.section-questions').appendChild(newQuestionEl);
+            }
+
+            // 필수값 체크
+            const reqCheck = newQuestionEl.querySelector('.required-checkbox');
+            if (reqCheck) reqCheck.checked = q.isRequired || false;
+
+            // 옵션 및 분기 설정 로드
+            if (q.questionType === 'CHOICE' && choiceProp.options) {
+                const container = newQuestionEl.querySelector('.options-container');
+                container.innerHTML = '';
+
+                // 분기 설정이 켜져있다면 옵션 목록을 미리 채워둬야 값을 세팅할 수 있음
+                if (isSectionDecidable) {
+                    updateSectionJumpOptions(newQuestionEl, true);
+                }
+
+                // options는 Set이므로 Array로 변환
+                const optionsArray = Array.isArray(choiceProp.options) ? choiceProp.options : Array.from(choiceProp.options || []);
+                optionsArray.forEach(opt => {
+                    // 옵션 추가 (optionId가 없으므로 null 전달)
+                    addOptionWithData(newQuestionEl, opt.content, null, opt.nextSection, isSectionDecidable, opt.imageUrl || null);
+                });
+
+                if (hasCustomInput) {
+                    addDirectInputOption(q.questionId);
+                }
+
+                // Max Choice 설정
+                const maxSel = newQuestionEl.querySelector('.max-select-count');
+                if (maxSel && choiceProp.maxChoice) {
+                    updateMaxSelectOptions(q.questionId); // 옵션 수 기반 리스트 갱신
+                    maxSel.value = choiceProp.maxChoice;
+                }
+            }
+
+            // 평가형 설정
+            if (q.questionType === 'RATING') {
+                const ratingCircles = newQuestionEl.querySelector('.rating-circles');
+                const leftLabel = newQuestionEl.querySelector('.rating-label-left');
+                const rightLabel = newQuestionEl.querySelector('.rating-label-right');
+
+                if (ratingCircles && ratingProp.rate) {
+                    ratingCircles.setAttribute('data-count', ratingProp.rate);
+                    // 동그라미 다시 렌더링
+                    let circlesHTML = '';
+                    for (let i = 1; i <= ratingProp.rate; i++) {
+                        circlesHTML += `<span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">${i}</span>`;
+                    }
+                    ratingCircles.innerHTML = circlesHTML;
+                }
+
+                if (leftLabel && ratingProp.minValue) leftLabel.value = ratingProp.minValue;
+                if (rightLabel && ratingProp.maxValue) rightLabel.value = ratingProp.maxValue;
+            }
+        }
+
+        updateQuestionNumbers();
+
+        // 렌더링 완료 후 일괄 업데이트 권장
+        refreshAllJumpSelects();
+    }
+
+    // 옵션 추가 (데이터 포함)
+    // [보조] 옵션 데이터와 함께 추가 (render용)
+    function addOptionWithData(questionEl, content, optionId, nextSection, isBranching, imageUrl = null) {
+        const container = questionEl.querySelector('.options-container');
+        const visibilityClass = isBranching ? '' : 'hidden';
+
+        const newOption = document.createElement('div');
+        newOption.className = 'option-item flex flex-col gap-1 mb-3';
+        newOption.setAttribute('data-option-type', 'normal');
+
+        if (optionId) {
+            newOption.setAttribute('data-option-id', optionId);
+        }
+
+        const qId = questionEl.getAttribute('data-question-id');
+
+        newOption.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="far fa-circle text-slate-300 shrink-0"></i>
+                <input type="hidden" class="option-image-url-input" value="${escapeHtml(imageUrl || '')}">
+                <input type="text" value="${escapeHtml(content)}" class="option-text-input w-1/3 text-sm border border-slate-200 rounded px-2 py-1.5 hover:border-slate-300 focus:border-indigo-500 outline-none" oninput="updateMaxSelectOptions('${qId}')">
+                <div class="flex items-center gap-1 shrink-0">
+                    <label class="cursor-pointer text-slate-400 hover:text-indigo-600 px-1 py-0.5 rounded hover:bg-indigo-50 inline-flex items-center" title="이미지 추가">
+                        <i class="fas fa-image text-xs"></i>
+                        <input type="file" class="hidden option-image-file-input" accept="image/*" onchange="handleOptionImageUpload(this)">
+                    </label>
+                    <button type="button" class="text-slate-400 hover:text-indigo-600 px-1 py-0.5 rounded hover:bg-indigo-50" title="하이퍼링크 삽입" onclick="openHyperlinkDialog(this.closest('.option-item').querySelector('.option-text-input'))">
+                        <i class="fas fa-link text-xs"></i>
+                    </button>
+                </div>
+                <div class="jump-select-wrapper flex items-center gap-2 flex-1 ${visibilityClass}">
+                    <i class="fas fa-arrow-right text-orange-400 text-xs"></i>
+                    <select class="jump-select w-48 text-xs border border-orange-200 rounded px-2 py-1.5 text-slate-600 bg-orange-50 hover:bg-white focus:ring-1 focus:ring-orange-500">
+                        <option value="">이동할 섹션 선택</option>
+                    </select>
+                </div>
+                <button class="text-slate-300 hover:text-red-400 shrink-0" onclick="deleteOption(this, '${qId}')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="option-image-preview ${imageUrl ? '' : 'hidden'} ml-6">
+                <div class="relative inline-block">
+                    <img class="option-image-tag max-h-16 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="보기 이미지">
+                    <button type="button" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeOptionImage(this)">
+                        <i class="fas fa-times text-[7px]"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(newOption);
+
+        // 기존 content에 HTML이 있으면 미리보기 동기화
+        if (content) {
+            const textInput = newOption.querySelector('.option-text-input');
+            if (textInput) syncOptionHtmlPreview(textInput);
+        }
+
+        // 분기 설정이 켜져있으면 드롭다운 채우고 값 세팅
+        if (isBranching) {
+            updateSectionJumpOptions(questionEl, true); // 드롭다운 option 생성
+            if (nextSection !== null && nextSection !== undefined) {
+                const select = newOption.querySelector('.jump-select');
+                select.value = nextSection;
+            }
+        }
+    }
+
+    // HTML 이스케이프
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/"/g, '&quot;');
+    }
+
+    // ==================== 이미지 업로드 ====================
+
+    async function uploadImageFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const response = await fetch('/v1/images?context=SURVEY', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.message || '업로드 실패');
+            }
+            const result = await response.json();
+            return result.result ? result.result.url : null;
+        } catch (e) {
+            showToast('이미지 업로드 실패: ' + e.message, 'error');
+            return null;
+        }
+    }
+
+    async function handleSectionImageUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showToast('이미지 업로드 중...', 'info');
+        const url = await uploadImageFile(file);
+        if (!url) return;
+        const sectionItem = input.closest('.section-item');
+        sectionItem.querySelector('.section-image-url-input').value = url;
+        const preview = sectionItem.querySelector('.section-image-preview');
+        preview.querySelector('.section-image-tag').src = url;
+        preview.classList.remove('hidden');
+        input.value = '';
+        await saveSectionsToServer();
+        showToast('이미지가 업로드되었습니다.', 'success');
+    }
+
+    async function removeSectionImage(btn) {
+        const sectionItem = btn.closest('.section-item');
+        sectionItem.querySelector('.section-image-url-input').value = '';
+        btn.closest('.section-image-preview').classList.add('hidden');
+        await saveSectionsToServer();
+    }
+
+    async function handleQuestionImageUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showToast('이미지 업로드 중...', 'info');
+        const url = await uploadImageFile(file);
+        if (!url) return;
+        const questionItem = input.closest('.question-item');
+        questionItem.querySelector('.question-image-url-input').value = url;
+        const preview = questionItem.querySelector('.question-image-preview');
+        preview.querySelector('.question-image-tag').src = url;
+        preview.classList.remove('hidden');
+        input.value = '';
+        showToast('이미지가 업로드되었습니다. 문항을 저장해주세요.', 'success');
+    }
+
+    function removeQuestionImage(btn) {
+        const questionItem = btn.closest('.question-item');
+        questionItem.querySelector('.question-image-url-input').value = '';
+        btn.closest('.question-image-preview').classList.add('hidden');
+    }
+
+    async function handleOptionImageUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showToast('이미지 업로드 중...', 'info');
+        const url = await uploadImageFile(file);
+        if (!url) return;
+        const optionItem = input.closest('.option-item');
+        optionItem.querySelector('.option-image-url-input').value = url;
+        const preview = optionItem.querySelector('.option-image-preview');
+        preview.querySelector('.option-image-tag').src = url;
+        preview.classList.remove('hidden');
+        input.value = '';
+        showToast('이미지가 업로드되었습니다. 문항을 저장해주세요.', 'success');
+    }
+
+    function removeOptionImage(btn) {
+        const optionItem = btn.closest('.option-item');
+        optionItem.querySelector('.option-image-url-input').value = '';
+        btn.closest('.option-image-preview').classList.add('hidden');
+    }
+
+    async function handleSurveyImageUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showToast('이미지 업로드 중...', 'info');
+        const url = await uploadImageFile(file);
+        if (!url) return;
+        document.getElementById('survey-image-url-input').value = url;
+        const preview = document.getElementById('survey-image-preview');
+        preview.querySelector('img').src = url;
+        preview.classList.remove('hidden');
+        input.value = '';
+        showToast('이미지가 업로드되었습니다.', 'success');
+    }
+
+    function removeSurveyImage() {
+        document.getElementById('survey-image-url-input').value = '';
+        document.getElementById('survey-image-preview').classList.add('hidden');
+    }
+
+    async function handlePublishImageUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showToast('이미지 업로드 중...', 'info');
+        const url = await uploadImageFile(file);
+        if (!url) return;
+        document.getElementById('publish-image-url-input').value = url;
+        document.getElementById('publish-image-tag').src = url;
+        document.getElementById('publish-image-preview').classList.remove('hidden');
+        document.getElementById('publish-image-remove-btn').classList.remove('hidden');
+        input.value = '';
+        showToast('이미지가 업로드되었습니다.', 'success');
+    }
+
+    function removePublishImage() {
+        document.getElementById('publish-image-url-input').value = '';
+        document.getElementById('publish-image-tag').src = '';
+        document.getElementById('publish-image-preview').classList.add('hidden');
+        document.getElementById('publish-image-remove-btn').classList.add('hidden');
+    }
+
+    // ==================== 하이퍼링크 삽입 ====================
+
+    // <a> 태그만 허용하는 HTML 새니타이저 (XSS 방지)
+    function sanitizeDescHtml(html) {
+        const allowedSchemes = ['http:', 'https:', 'mailto:'];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const wrapper = document.createElement('span');
+
+        function processNode(src, dest) {
+            for (const child of src.childNodes) {
+                if (child.nodeType === Node.TEXT_NODE) {
+                    dest.appendChild(document.createTextNode(child.textContent));
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    if (child.tagName.toLowerCase() === 'a') {
+                        const a = document.createElement('a');
+                        const href = child.getAttribute('href') || '';
+                        try {
+                            const parsed = new URL(href);
+                            if (allowedSchemes.includes(parsed.protocol)) {
+                                a.href = parsed.href;
+                            }
+                        } catch (e) { /* 잘못된 URL — href 미설정 */ }
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        a.textContent = child.textContent;
+                        dest.appendChild(a);
+                    } else {
+                        // 허용되지 않는 태그: 자식 텍스트만 유지
+                        processNode(child, dest);
+                    }
+                }
+            }
+        }
+
+        processNode(doc.body, wrapper);
+        return wrapper.innerHTML;
+    }
+
+    // 섹션/문항 description textarea 아래에 HTML 렌더링 미리보기를 동기화
+    function syncDescHtmlPreview(textarea) {
+        if (!textarea) return;
+        const parentNode = textarea.parentNode;
+        let preview = parentNode.querySelector('.desc-html-preview');
+        if (!preview) {
+            preview = document.createElement('div');
+            preview.className = 'desc-html-preview text-sm text-slate-700 px-3 py-2 mt-1 border-l-4 border-indigo-400 rounded-r bg-indigo-50';
+            preview.style.cssText = 'color: #3730a3;';
+            parentNode.insertBefore(preview, textarea.nextSibling);
+        }
+        if (textarea.value && textarea.value.includes('<')) {
+            preview.innerHTML = sanitizeDescHtml(textarea.value);
+            preview.classList.remove('hidden');
+        } else {
+            preview.innerHTML = '';
+            preview.classList.add('hidden');
+        }
+    }
+
+    // 객관식 옵션 텍스트 input에 HTML 렌더링 미리보기를 동기화
+    function syncOptionHtmlPreview(input) {
+        if (!input) return;
+        const optionItem = input.closest('.option-item');
+        if (!optionItem) return;
+        let preview = optionItem.querySelector('.option-text-html-preview');
+        if (!preview) {
+            preview = document.createElement('div');
+            preview.className = 'option-text-html-preview text-sm px-3 py-1.5 ml-5 border-l-4 border-indigo-400 rounded-r bg-indigo-50';
+            preview.style.cssText = 'color: #3730a3;';
+            const imagePrev = optionItem.querySelector('.option-image-preview');
+            if (imagePrev) {
+                optionItem.insertBefore(preview, imagePrev);
+            } else {
+                optionItem.appendChild(preview);
+            }
+        }
+        if (input.value && input.value.includes('<')) {
+            preview.innerHTML = sanitizeDescHtml(input.value);
+            preview.classList.remove('hidden');
+        } else {
+            preview.innerHTML = '';
+            preview.classList.add('hidden');
+        }
+    }
+
+    function openHyperlinkDialog(textarea) {
+        _hyperlinkTargetTextarea = textarea;
+        document.getElementById('hyperlinkText').value = '';
+        document.getElementById('hyperlinkUrl').value = '';
+        document.getElementById('hyperlinkDialog').classList.remove('hidden');
+        document.getElementById('hyperlinkText').focus();
+    }
+
+    function closeHyperlinkDialog() {
+        document.getElementById('hyperlinkDialog').classList.add('hidden');
+        _hyperlinkTargetTextarea = null;
+    }
+
+    function confirmHyperlink() {
+        const text = document.getElementById('hyperlinkText').value.trim();
+        const url = document.getElementById('hyperlinkUrl').value.trim();
+        if (!text || !url) {
+            showToast('텍스트와 URL을 모두 입력해주세요.', 'error');
+            return;
+        }
+        const allowedSchemes = ['http:', 'https:', 'mailto:'];
+        function tryParseUrl(s) { try { return new URL(s); } catch (e) { return null; } }
+        let parsedUrl = tryParseUrl(url);
+        if (!parsedUrl || !allowedSchemes.includes(parsedUrl.protocol)) {
+            parsedUrl = tryParseUrl('https://' + url);
+        }
+        if (!parsedUrl || !allowedSchemes.includes(parsedUrl.protocol)) {
+            showToast('올바른 URL을 입력해주세요. (예: https://example.com)', 'error');
+            return;
+        }
+        if (_hyperlinkTargetTextarea) {
+            const a = document.createElement('a');
+            a.href = parsedUrl.href;
+            a.textContent = text;
+            const link = a.outerHTML;
+            const start = _hyperlinkTargetTextarea.selectionStart;
+            const end = _hyperlinkTargetTextarea.selectionEnd;
+            const value = _hyperlinkTargetTextarea.value;
+            _hyperlinkTargetTextarea.value = value.substring(0, start) + link + value.substring(end);
+            _hyperlinkTargetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            _hyperlinkTargetTextarea.focus();
+
+            if (_hyperlinkTargetTextarea.classList.contains('section-desc-input') ||
+                _hyperlinkTargetTextarea.classList.contains('question-desc-input')) {
+                syncDescHtmlPreview(_hyperlinkTargetTextarea);
+            } else if (_hyperlinkTargetTextarea.classList.contains('option-text-input')) {
+                syncOptionHtmlPreview(_hyperlinkTargetTextarea);
+            }
+        }
+        closeHyperlinkDialog();
+    }
+
+    // 설문 목록 조회 (페이지네이션 지원)
+    async function loadSurveyList(page = 0) {
+        try {
+            // 필터 값 가져오기
+            const statusFilter = document.getElementById('status-filter').value;
+            const searchType = document.getElementById('search-type').value;
+            const searchInput = document.getElementById('search-input').value.trim();
+            const pageSize = document.getElementById('page-size').value;
+
+            // URL 쿼리 파라미터 구성
+            const params = new URLSearchParams();
+            params.append('page', page);
+            params.append('size', pageSize);
+            params.append('sort', 'createdAt,desc');
+
+            if (statusFilter && statusFilter !== "") {
+                params.append('status', statusFilter);
+            }
+            if (searchInput && searchType === 'title') {
+                params.append('keyword', searchInput);
+            }
+            // creator 검색은 현재 백엔드가 ID만 지원하므로 생략
+
+            const response = await apiCallPaged(`/admin/surveys?${params.toString()}`);
+
+            if (response && response.result) {
+                // 페이지네이션 상태 업데이트
+                currentPage = response.pageNumber;
+                currentPageSize = response.pageSize;
+                totalElements = response.totalElements;
+                totalPages = response.totalPages;
+                isLastPage = response.last;
+
+                renderSurveyList(response.result);
+                renderPagination();
+            }
+        } catch (error) {
+            console.error('설문 목록 조회 실패:', error);
+        }
+    }
+
+    // 설문 목록 렌더링
+    function renderSurveyList(surveyList) {
+        globalSurveyList = surveyList || [];
+
+        const tbody = document.querySelector('#view-list tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = surveyList.map(survey => `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-6 py-4 text-slate-400">#${survey.surveyId}</td>
+                <td class="px-6 py-4 font-bold text-slate-800 cursor-pointer hover:text-indigo-600" onclick="openBuilderWithSurvey(${survey.surveyId})">
+                    ${escapeHtml(survey.title)}
+                </td>
+                <td class="px-6 py-4">
+                    <span class="${getStatusBadgeClass(survey.status)} px-2 py-1 rounded text-xs font-bold">
+                        ${getStatusText(survey.status)}
+                    </span>
+                </td>
+                <td class="px-6 py-4">${survey.memberId || '-'}</td>
+                <td class="px-6 py-4 text-slate-500">${formatDate(survey.createdAt)}</td>
+                <td class="px-6 py-4 text-center">
+                    ${survey.status === 'WRITING'
+                        ? `<button onclick="openBuilderWithSurvey(${survey.surveyId})" class="text-indigo-600 hover:underline font-medium">수정</button>`
+                        : `<button onclick="viewSurvey(${survey.surveyId})" class="text-slate-500 hover:text-slate-800 font-medium">조회</button>`
+                    }
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // 페이지네이션 UI 렌더링
+    function renderPagination() {
+        const infoContainer = document.getElementById('pagination-info');
+        const buttonsContainer = document.getElementById('pagination-buttons');
+
+        // 페이지 정보 표시
+        const startItem = totalElements === 0 ? 0 : (currentPage * currentPageSize) + 1;
+        const endItem = Math.min((currentPage + 1) * currentPageSize, totalElements);
+        infoContainer.innerHTML = `총 <span class="font-medium">${totalElements}</span>건 중 <span class="font-medium">${startItem}-${endItem}</span>`;
+
+        // 페이지 버튼 생성
+        let buttonsHtml = '';
+
+        // 이전 버튼
+        buttonsHtml += `
+            <button onclick="goToSurveyPage(${currentPage - 1})"
+                    class="px-3 py-1.5 text-sm border rounded ${currentPage === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white hover:bg-slate-50 text-slate-600'}"
+                    ${currentPage === 0 ? 'disabled' : ''}>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        `;
+
+        // 페이지 번호 버튼들
+        const maxVisiblePages = 5;
+        let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 1);
+
+        // startPage 조정
+        if (endPage - startPage < maxVisiblePages - 1) {
+            startPage = Math.max(0, endPage - maxVisiblePages + 1);
+        }
+
+        // 첫 페이지 버튼 (필요한 경우)
+        if (startPage > 0) {
+            buttonsHtml += `
+                <button onclick="goToSurveyPage(0)" class="px-3 py-1.5 text-sm border rounded bg-white hover:bg-slate-50 text-slate-600">1</button>
+            `;
+            if (startPage > 1) {
+                buttonsHtml += `<span class="px-2 text-slate-400">...</span>`;
+            }
+        }
+
+        // 중간 페이지 버튼들
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === currentPage;
+            buttonsHtml += `
+                <button onclick="goToSurveyPage(${i})"
+                        class="px-3 py-1.5 text-sm border rounded ${isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white hover:bg-slate-50 text-slate-600'}">
+                    ${i + 1}
+                </button>
+            `;
+        }
+
+        // 마지막 페이지 버튼 (필요한 경우)
+        if (endPage < totalPages - 1) {
+            if (endPage < totalPages - 2) {
+                buttonsHtml += `<span class="px-2 text-slate-400">...</span>`;
+            }
+            buttonsHtml += `
+                <button onclick="goToSurveyPage(${totalPages - 1})" class="px-3 py-1.5 text-sm border rounded bg-white hover:bg-slate-50 text-slate-600">${totalPages}</button>
+            `;
+        }
+
+        // 다음 버튼
+        buttonsHtml += `
+            <button onclick="goToSurveyPage(${currentPage + 1})"
+                    class="px-3 py-1.5 text-sm border rounded ${isLastPage ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white hover:bg-slate-50 text-slate-600'}"
+                    ${isLastPage ? 'disabled' : ''}>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        `;
+
+        buttonsContainer.innerHTML = buttonsHtml;
+    }
+
+    // 페이지 이동
+    function goToSurveyPage(page) {
+        if (page < 0 || page >= totalPages || page === currentPage) return;
+        loadSurveyList(page);
+    }
+
+    // 필터 변경 핸들러
+    function handleFilterChange() {
+        currentPage = 0;  // 필터 변경 시 첫 페이지로
+        loadSurveyList(0);
+    }
+
+    // 페이지 크기 변경 핸들러
+    function handlePageSizeChange() {
+        currentPage = 0;  // 페이지 크기 변경 시 첫 페이지로
+        loadSurveyList(0);
+    }
+
+    // 검색 입력 키업 핸들러 (Enter 키)
+    function handleSearchKeyup(event) {
+        if (event.key === 'Enter') {
+            handleFilterChange();
+        }
+    }
+
+    // 상태 배지 클래스
+    function getStatusBadgeClass(status) {
+        switch(status) {
+            case 'WRITING': return 'bg-slate-100 text-slate-600';
+            case 'ACTIVE': return 'bg-green-100 text-green-700';
+            case 'CLOSED': return 'bg-red-100 text-red-600';
+            default: return 'bg-slate-100 text-slate-600';
+        }
+    }
+
+    // 상태 텍스트
+    function getStatusText(status) {
+        switch(status) {
+            case 'WRITING': return '작성중';
+            case 'NON_WRITING': return '작성완료';
+            case 'CLOSED': return '종료';
+            default: return status;
+        }
+    }
+
+    // 날짜 포맷
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    // 기존 설문 편집 모드로 열기
+    async function openBuilderWithSurvey(surveyId) {
+        document.getElementById('view-list').classList.add('hidden');
+        document.getElementById('view-builder').classList.remove('hidden');
+
+        // 설문 데이터 로드
+        const survey = globalSurveyList.find(s => s.surveyId === surveyId);
+        await loadSurveyForEdit(survey);
+
+        // 상태에 따라 읽기 전용 모드 설정
+        // WRITING 상태가 아니면 읽기 전용
+        const isCompleted = survey && survey.status !== 'WRITING';
+        setReadOnlyMode(isCompleted);
+    }
+
+    // 설문 조회 (읽기 전용) - 목록에서 직접 호출
+    async function viewSurvey(surveyId) {
+        document.getElementById('view-list').classList.add('hidden');
+        document.getElementById('view-builder').classList.remove('hidden');
+
+        // 설문 데이터 로드
+        const survey = globalSurveyList.find(s => s.surveyId === surveyId);
+        await loadSurveyForEdit(survey);
+
+        // 읽기 전용 모드 강제 설정
+        setReadOnlyMode(true);
+    }
+
+    // ==================== 화면 전환 ====================
+
+    function goToPage(page) {
+        if(page === 'list') {
+            // 설문 변환 요청에서 접근한 경우 부모(index.html)에게 뒤로가기 요청
+            if (isFromFormRequest && window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'goBack' }, '*');
+                // 플래그 초기화
+                isFromFormRequest = false;
+                currentFormRequestId = null;
+                return;
+            }
+
+            document.getElementById('view-list').classList.remove('hidden');
+            document.getElementById('view-builder').classList.add('hidden');
+
+            // 상태 초기화
+            currentSurveyId = null;
+            isNewSurvey = true;
+            isReadOnlyMode = false;
+            currentSurveyInfo = null;
+            questionIdMap.clear();
+            questionCounter = 0;
+
+            // 읽기 전용 모드 해제
+            setReadOnlyMode(false);
+        }
+    }
+
+    async function openBuilder(mode, data) {
+        document.getElementById('view-list').classList.add('hidden');
+        document.getElementById('view-builder').classList.remove('hidden');
+
+        if (mode === 'new') {
+            // 새 설문 모드 - 초기화
+            questionIdMap.clear();
+            questionCounter = 0;
+
+            // 입력 필드 초기화
+            document.getElementById('survey-title').value = data.title;
+            document.getElementById('survey-description').value = data.description;
+            document.getElementById('desc-preview').innerHTML = data.description === null
+                ? '설문 설명을 입력하세요' : data.description;
+
+            document.getElementById('section-list').innerHTML = '';
+            sectionCounter = 0;
+            questionCounter = 0;
+            questionIdMap.clear();
+
+            // 이미지 초기화
+            document.getElementById('survey-image-url-input').value = '';
+            document.getElementById('survey-image-preview').classList.add('hidden');
+
+            // 기존 문항 제거
+            const existingQuestions = document.querySelectorAll('.question-item');
+            existingQuestions.forEach(q => q.remove());
+        } else if (mode === 'edit') {
+            document.getElementById('survey-title').value = data.title;
+            document.getElementById('survey-description').value = data.description;
+            document.getElementById('desc-preview').innerHTML = data.description === null
+                ? '설문 설명을 입력하세요' : data.description;
+
+            // 설문 이미지 표시
+            const surveyImageUrl = data.imageUrl || null;
+            document.getElementById('survey-image-url-input').value = surveyImageUrl || '';
+            const surveyImagePreview = document.getElementById('survey-image-preview');
+            if (surveyImageUrl) {
+                surveyImagePreview.querySelector('img').src = surveyImageUrl;
+                surveyImagePreview.classList.remove('hidden');
+            } else {
+                surveyImagePreview.classList.add('hidden');
+            }
+        }
+    }
+
+    // ==================== [신규] 섹션 추가 함수 ====================
+    async function addSection() {
+        const sectionList = document.getElementById('section-list');
+        // 현재 섹션 수 + 1로 새 섹션 번호 계산 (삭제 후에도 올바른 번호 부여)
+        const currentSectionCount = sectionList.querySelectorAll('.section-item').length;
+        const newSectionNumber = currentSectionCount + 1;
+
+        const sectionItem = document.createElement('div');
+        sectionItem.className = 'section-item bg-slate-50 border border-slate-300 rounded-xl p-6 relative transition-all';
+        sectionItem.setAttribute('data-section-order', newSectionNumber);
+        sectionItem.setAttribute('data-section-id', ''); // 새 섹션은 ID 없음, API 응답 후 설정
+
+        // 섹션 내부 HTML 구조
+        // 1. 섹션 헤더 (구분선 역할)
+        // 2. 문항 리스트 컨테이너 (.section-questions)
+        // 3. 문항 추가 폼 (각 섹션마다 별도 존재)
+        sectionItem.innerHTML = `
+        <div class="flex justify-between items-start mb-4 border-b border-slate-200 pb-3">
+            <div class="flex items-start gap-2 flex-1">
+                <span class="bg-slate-700 text-white text-xs px-2 py-1 rounded font-bold mt-1">SECTION <span class="section-display-num">${newSectionNumber}</span></span>
+                <div class="flex flex-col gap-2 flex-1">
+                    <textarea class="section-title-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 text-sm font-bold text-slate-700 placeholder-slate-400 w-full focus:outline-none focus:border-indigo-500 resize-none px-2 py-1" placeholder="섹션 제목 입력 (필수)" rows="1" oninput="onSectionInfoChange(this); autoResizeTextarea(this);" required>섹션 ${newSectionNumber}</textarea>
+                    <textarea class="section-desc-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-400 text-sm text-slate-500 placeholder-slate-400 w-full focus:outline-none focus:border-indigo-400 resize-none px-2 py-1" placeholder="섹션 설명 (선택사항)" rows="1" oninput="onSectionInfoChange(this); autoResizeTextarea(this);"></textarea>
+                    <div class="flex gap-2 mt-1">
+                        <input type="hidden" class="section-image-url-input" value="">
+                        <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
+                            <i class="fas fa-image text-xs"></i> 이미지
+                            <input type="file" class="hidden section-image-file-input" accept="image/*" onchange="handleSectionImageUpload(this)">
+                        </label>
+                        <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialog(this.closest('.section-item').querySelector('.section-desc-input'))">
+                            <i class="fas fa-link text-xs"></i> 하이퍼링크
+                        </button>
+                    </div>
+                    <div class="section-image-preview hidden">
+                        <div class="relative inline-block">
+                            <img class="section-image-tag max-h-24 rounded border border-slate-200" src="" alt="섹션 이미지">
+                            <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeSectionImage(this)">
+                                <i class="fas fa-times text-[8px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 ml-4 mt-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500">다음 섹션:</span>
+                    <select class="section-next-select text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 bg-white focus:border-indigo-500 outline-none" onchange="onSectionInfoChange(this)">
+                        <option value="0">설문 제출 (종료)</option>
+                    </select>
+                </div>
+                <button onclick="deleteSection(this)" class="text-xs text-red-400 hover:text-red-600 font-medium ml-2"><i class="fas fa-trash"></i> 섹션 삭제</button>
+            </div>
+        </div>
+
+        <div class="section-questions space-y-4 min-h-[50px]" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+            <div class="empty-placeholder hidden text-center py-4 text-xs text-slate-400 border border-dashed border-slate-300 rounded">
+                문항을 이곳으로 드래그하거나 아래에서 추가하세요.
+            </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-200">
+            <div class="add-question-form flex items-start gap-4 bg-white border border-slate-200 rounded-lg p-4 hover:border-indigo-300 transition-all">
+                <div class="flex flex-col gap-2 shrink-0">
+                    <button onclick="addNewQuestionToSection(this)" class="group flex items-center justify-center rounded-lg border-2 border-slate-200 bg-slate-50 px-6 py-3 hover:border-indigo-500 hover:bg-indigo-50 transition-all">
+                        <i class="fas fa-plus text-slate-400 group-hover:text-indigo-600 mr-2"></i>
+                        <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600">추가</span>
+                    </button>
+                    <select class="new-question-type text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white">
+                        <option value="choice" selected>객관식</option>
+                        <option value="text">단답형</option>
+                        <option value="textarea">장문형</option>
+                        <option value="rating">평가형</option>
+                        <option value="nps">NPS</option>
+                        <option value="number">숫자형</option>
+                        <option value="date">날짜형</option>
+                    </select>
+                </div>
+                <div class="flex-1 flex flex-col gap-2">
+                    <input type="text" class="new-question-title w-full text-sm font-medium border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="이 섹션에 추가할 문항 제목">
+                    <textarea class="new-question-desc w-full text-sm text-slate-600 border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none" rows="1" placeholder="설명 (선택사항)"></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+
+        sectionList.appendChild(sectionItem);
+        updateSectionNumbers(); // 섹션 번호 재정렬
+
+        // 다음 섹션 선택 드롭다운 갱신
+        refreshAllJumpSelects();
+
+        // 섹션 API 즉시 호출
+        const response = await saveSectionsToServer();
+    }
+
+    // 섹션 UI만 추가 (API 호출 없음 - 데이터 로드 시 사용)
+    async function addSectionWithoutSave(sectionData = {}) {
+        const sectionList = document.getElementById('section-list');
+        const currentSectionCount = sectionList.querySelectorAll('.section-item').length;
+        const newSectionNumber = currentSectionCount + 1;
+
+        const title = sectionData.title || `섹션 ${newSectionNumber}`;
+        const description = sectionData.description || '';
+        const sectionId = sectionData.sectionId || '';
+        const nextSection = (sectionData.nextSection !== undefined && sectionData.nextSection !== null)
+            ? sectionData.nextSection : 0;
+        const imageUrl = sectionData.imageUrl || null;
+
+        const sectionItem = document.createElement('div');
+        sectionItem.className = 'section-item bg-slate-50 border border-slate-300 rounded-xl p-6 relative transition-all';
+        sectionItem.setAttribute('data-section-order', newSectionNumber);
+        sectionItem.setAttribute('data-section-id', sectionId);
+        sectionItem.setAttribute('data-next-section', nextSection); // 나중에 드롭다운 갱신 시 사용
+
+        sectionItem.innerHTML = `
+        <div class="flex justify-between items-start mb-4 border-b border-slate-200 pb-3">
+            <div class="flex items-start gap-2 flex-1">
+                <span class="bg-slate-700 text-white text-xs px-2 py-1 rounded font-bold mt-1">SECTION <span class="section-display-num">${newSectionNumber}</span></span>
+                <div class="flex flex-col gap-2 flex-1">
+                    <textarea class="section-title-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 text-sm font-bold text-slate-700 placeholder-slate-400 w-full focus:outline-none focus:border-indigo-500 resize-none px-2 py-1" placeholder="섹션 제목 입력 (필수)" rows="1" oninput="onSectionInfoChange(this); autoResizeTextarea(this);" required>${escapeHtml(title)}</textarea>
+                    <textarea class="section-desc-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-400 text-sm text-slate-500 placeholder-slate-400 w-full focus:outline-none focus:border-indigo-400 resize-none px-2 py-1" placeholder="섹션 설명 (선택사항)" rows="1" oninput="onSectionInfoChange(this); autoResizeTextarea(this);">${escapeHtml(description)}</textarea>
+                    <div class="flex gap-2 mt-1">
+                        <input type="hidden" class="section-image-url-input" value="${escapeHtml(imageUrl || '')}">
+                        <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
+                            <i class="fas fa-image text-xs"></i> 이미지
+                            <input type="file" class="hidden section-image-file-input" accept="image/*" onchange="handleSectionImageUpload(this)">
+                        </label>
+                        <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialog(this.closest('.section-item').querySelector('.section-desc-input'))">
+                            <i class="fas fa-link text-xs"></i> 하이퍼링크
+                        </button>
+                    </div>
+                    <div class="section-image-preview ${imageUrl ? '' : 'hidden'}">
+                        <div class="relative inline-block">
+                            <img class="section-image-tag max-h-24 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="섹션 이미지">
+                            <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeSectionImage(this)">
+                                <i class="fas fa-times text-[8px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 ml-4 mt-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500">다음 섹션:</span>
+                    <select class="section-next-select text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 bg-white focus:border-indigo-500 outline-none" onchange="onSectionInfoChange(this)">
+                        <option value="0">설문 제출 (종료)</option>
+                    </select>
+                </div>
+                <button onclick="deleteSection(this)" class="text-xs text-red-400 hover:text-red-600 font-medium ml-2"><i class="fas fa-trash"></i> 섹션 삭제</button>
+            </div>
+        </div>
+
+        <div class="section-questions space-y-4 min-h-[50px]" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+            <div class="empty-placeholder hidden text-center py-4 text-xs text-slate-400 border border-dashed border-slate-300 rounded">
+                문항을 이곳으로 드래그하거나 아래에서 추가하세요.
+            </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-200">
+            <div class="add-question-form flex items-start gap-4 bg-white border border-slate-200 rounded-lg p-4 hover:border-indigo-300 transition-all">
+                <div class="flex flex-col gap-2 shrink-0">
+                    <button onclick="addNewQuestionToSection(this)" class="group flex items-center justify-center rounded-lg border-2 border-slate-200 bg-slate-50 px-6 py-3 hover:border-indigo-500 hover:bg-indigo-50 transition-all">
+                        <i class="fas fa-plus text-slate-400 group-hover:text-indigo-600 mr-2"></i>
+                        <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600">추가</span>
+                    </button>
+                    <select class="new-question-type text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white">
+                        <option value="choice" selected>객관식</option>
+                        <option value="text">단답형</option>
+                        <option value="textarea">장문형</option>
+                        <option value="rating">평가형</option>
+                        <option value="nps">NPS</option>
+                        <option value="number">숫자형</option>
+                        <option value="date">날짜형</option>
+                    </select>
+                </div>
+                <div class="flex-1 flex flex-col gap-2">
+                    <input type="text" class="new-question-title w-full text-sm font-medium border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="이 섹션에 추가할 문항 제목">
+                    <textarea class="new-question-desc w-full text-sm text-slate-600 border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none" rows="1" placeholder="설명 (선택사항)"></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+
+        sectionList.appendChild(sectionItem);
+        updateSectionNumbers();
+        // refreshAllJumpSelects();
+        // refreshAllJumpSelects()는 호출하지 않음 - 모든 섹션 추가 후 renderLoadedQuestions에서 한 번만 호출
+
+        // 기존 description에 HTML이 있으면 미리보기 동기화
+        if (description) {
+            const descInput = sectionItem.querySelector('.section-desc-input');
+            if (descInput) syncDescHtmlPreview(descInput);
+        }
+    }
+
+    // [신규] 모든 문항의 점프 셀렉트 박스 일괄 갱신 (섹션 추가/삭제 시 호출)
+    function refreshAllJumpSelects() {
+        // 섹션의 다음 섹션 드롭다운 갱신
+        refreshAllSectionNextSelects();
+
+        // 모든 문항 아이템을 찾음
+        const allQuestions = document.querySelectorAll('.question-item');
+
+        allQuestions.forEach(qItem => {
+            // 분기 설정이 켜져있는지 확인
+            const routeCheckbox = qItem.querySelector('.route-checkbox');
+            if (routeCheckbox && routeCheckbox.checked) {
+                // 해당 문항의 옵션들을 업데이트
+                updateSectionJumpOptions(qItem, true);
+            }
+        });
+    }
+
+    // 섹션 삭제
+    async function deleteSection(btn) {
+        if (!confirm('섹션과 내부의 모든 문항이 삭제됩니다. 계속하시겠습니까?')) return;
+        const sectionItem = btn.closest('.section-item');
+        sectionItem.remove();
+        updateSectionNumbers();
+        updateQuestionNumbers(); // 문항 번호도 전체 재정렬
+
+        refreshAllJumpSelects(); // 섹션 선택 드롭다운 갱신
+
+        // 섹션 삭제 시: 문항을 먼저 저장하여 section 값을 업데이트한 후 섹션 저장
+        // (백엔드에서 섹션에 포함되지 않는 문항을 삭제하므로, 문항의 section 값을 먼저 업데이트해야 함)
+        await saveQuestions();
+        await saveSectionsToServer();
+    }
+
+    // 섹션 번호 UI 업데이트
+    function updateSectionNumbers() {
+        const sections = document.querySelectorAll('.section-item');
+        sections.forEach((sec, index) => {
+            sec.querySelector('.section-display-num').textContent = index + 1;
+            sec.setAttribute('data-section-order', index + 1);
+        });
+    }
+
+    // 섹션 정보(제목/설명/다음섹션) 변경 시 디바운스 처리
+    function onSectionInfoChange(inputElement) {
+        // 기존 타이머 취소
+        if (sectionSaveTimer) {
+            clearTimeout(sectionSaveTimer);
+        }
+
+        // 드롭다운(select) 변경은 즉시 저장
+        if (inputElement.tagName === 'SELECT') {
+            saveSectionsToServer();
+            return;
+        }
+
+        // 텍스트 입력은 5초 후 저장 예약
+        sectionSaveTimer = setTimeout(async () => {
+            await saveSectionsToServer();
+            sectionSaveTimer = null;
+        }, SECTION_SAVE_DEBOUNCE_MS);
+    }
+
+    // 섹션 데이터 수집 및 서버 저장
+    async function saveSectionsToServer() {
+        if (!currentSurveyId) return;
+
+        // 디바운스 타이머 취소 (즉시 저장 시)
+        if (sectionSaveTimer) {
+            clearTimeout(sectionSaveTimer);
+            sectionSaveTimer = null;
+        }
+
+        const sections = collectSectionData();
+
+        try {
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/sections`, 'PUT', {
+                sectionInfoList: sections
+            });
+            console.log('섹션 저장 완료:', response);
+
+            const savedSections = Array.isArray(response) ? response : (response.sectionInfoList || []);
+
+            const sectionItems = document.querySelectorAll('.section-item');
+
+            // 화면의 섹션 개수와 저장된 섹션 개수가 다를 수 있으므로 안전하게 처리
+            sectionItems.forEach((item, index) => {
+                // 저장된 데이터가 존재할 때만 ID 업데이트
+                if (savedSections[index] && savedSections[index].sectionId) {
+                    item.setAttribute('data-section-id', savedSections[index].sectionId);
+                }
+            });
+
+            return response;
+        } catch (error) {
+            console.error('섹션 저장 실패:', error);
+            return null;
+        }
+    }
+
+    // 섹션 데이터 수집
+    function collectSectionData() {
+        const sectionItems = document.querySelectorAll('.section-item');
+        const sections = [];
+
+        sectionItems.forEach((section, index) => {
+            const sectionId = section.getAttribute('data-section-id') || null;
+            const order = index + 1;
+            const titleInput = section.querySelector('.section-title-input');
+            const descInput = section.querySelector('.section-desc-input');
+            const nextSectionSelect = section.querySelector('.section-next-select');
+
+            // 드롭다운에서 선택된 다음 섹션 값 사용
+            const nextSection = nextSectionSelect ? parseInt(nextSectionSelect.value) : 0;
+
+            const imageUrlInput = section.querySelector('.section-image-url-input');
+            sections.push({
+                sectionId: (sectionId !== null) ? Number(sectionId) : null,
+                title: titleInput ? titleInput.value.trim() : `섹션 ${order}`,
+                description: descInput ? descInput.value.trim() : '',
+                order: order,
+                nextSection: nextSection,
+                imageUrl: imageUrlInput ? (imageUrlInput.value.trim() || null) : null
+            });
+        });
+
+        return sections;
+    }
+
+    // 모든 섹션의 다음 섹션 드롭다운 갱신
+    function refreshAllSectionNextSelects() {
+        const sectionItems = document.querySelectorAll('.section-item');
+        const totalSections = sectionItems.length;
+
+        sectionItems.forEach((section, index) => {
+            const currentOrder = index + 1;
+            const nextSelect = section.querySelector('.section-next-select');
+            if (!nextSelect) return;
+
+            // 기존 선택값을 먼저 저장 (드롭다운 비우기 전에!)
+            // 단, 옵션이 1개(설문제출)만 있는 경우는 초기 로드 상태이므로 무시
+            const hasMultipleOptions = nextSelect.options.length > 1;
+            const currentSelectedValue = hasMultipleOptions ? nextSelect.value : null;
+
+            // data 속성에서 저장된 값 (문자열로 변환)
+            const savedNextSection = section.getAttribute('data-next-section');
+
+            nextSelect.innerHTML = '';
+
+            // 설문 제출 (0)
+            const submitOpt = document.createElement('option');
+            submitOpt.value = "0";
+            submitOpt.text = "설문 제출 (종료)";
+            nextSelect.appendChild(submitOpt);
+
+            // 다른 섹션들 (자기 자신 제외)
+            for (let i = 1; i <= totalSections; i++) {
+                if (i === currentOrder) continue;
+
+                const opt = document.createElement('option');
+                opt.value = String(i);
+                opt.text = `섹션 ${i}로 이동`;
+                nextSelect.appendChild(opt);
+            }
+
+            // 기본값: 다음 섹션 (마지막 섹션이면 0)
+            const defaultNext = (currentOrder < totalSections) ? String(currentOrder + 1) : "0";
+
+            // 우선순위: 1) 기존 선택값 유지 (여러 옵션이 있었던 경우만), 2) data 속성 값, 3) 기본값
+            if (currentSelectedValue && isValidSectionNextValue(currentSelectedValue, totalSections, currentOrder)) {
+                nextSelect.value = currentSelectedValue;
+            } else if (savedNextSection !== null && savedNextSection !== '') {
+                const savedValue = String(savedNextSection);
+                if (isValidSectionNextValue(savedValue, totalSections, currentOrder)) {
+                    nextSelect.value = savedValue;
+                } else {
+                    nextSelect.value = defaultNext;
+                }
+            } else {
+                nextSelect.value = defaultNext;
+            }
+        });
+    }
+
+    // 섹션 다음 값이 유효한지 확인
+    function isValidSectionNextValue(value, totalSections, currentOrder) {
+        if (value === "0") return true;
+        const numValue = parseInt(value);
+        return numValue !== currentOrder && numValue >= 1 && numValue <= totalSections;
+    }
+
+    // 설문 설명 토글 기능
+    let isDescriptionExpanded = false;
+
+    function toggleDescription() {
+        const toggleBtn = document.getElementById('desc-toggle-btn');
+        const preview = document.getElementById('desc-preview');
+        const editArea = document.getElementById('desc-edit');
+        const textarea = document.getElementById('survey-description');
+
+        isDescriptionExpanded = !isDescriptionExpanded;
+
+        if (isDescriptionExpanded) {
+            toggleBtn.style.transform = 'rotate(180deg)';
+            toggleBtn.parentElement.classList.add('hidden');
+            preview.classList.add('hidden');
+            editArea.classList.remove('hidden');
+            textarea.focus();
+        } else {
+            toggleBtn.style.transform = 'rotate(0deg)';
+            toggleBtn.parentElement.classList.remove('hidden');
+            preview.classList.remove('hidden');
+            editArea.classList.add('hidden');
+        }
+    }
+
+    function saveDescription() {
+        const textarea = document.getElementById('survey-description');
+        const preview = document.getElementById('desc-preview');
+
+        preview.innerHTML = textarea.value.split('\n')[0] || '설문 설명을 입력하세요';
+        toggleDescription();
+    }
+
+    // 문항 설명 textarea 확장
+    function expandDescTextarea(textarea) {
+        textarea.style.maxHeight = '150px';
+        textarea.style.whiteSpace = 'pre-wrap';
+        textarea.style.overflowY = 'auto';
+        // 내용에 맞게 높이 조절
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+    }
+
+    // 문항 설명 textarea 축소
+    function collapseDescTextarea(textarea) {
+        textarea.style.maxHeight = '28px';
+        textarea.style.whiteSpace = 'nowrap';
+        textarea.style.overflowY = 'hidden';
+        textarea.style.height = '28px';
+    }
+
+    // 섹션 제목/설명 textarea 자동 높이 조절
+    function autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    // 문항 관련 변수
+    let questionCounter = 0;
+    // 섹션 번호 카운터
+    let sectionCounter = 0;
+
+    // 섹션 수정 디바운스 타이머
+    let sectionSaveTimer = null;
+    const SECTION_SAVE_DEBOUNCE_MS = 5000;
+
+    // 특정 섹션에 문항 추가 (버튼 클릭 시 호출)
+    async function addNewQuestionToSection(btnElement) {
+        // 1. 클릭된 버튼이 속한 섹션 찾기
+        const sectionItem = btnElement.closest('.section-item');
+        const formContainer = btnElement.closest('.add-question-form');
+
+        // 2. 입력값 찾기
+        const titleInput = formContainer.querySelector('.new-question-title');
+        const descInput = formContainer.querySelector('.new-question-desc');
+        const typeInput = formContainer.querySelector('.new-question-type');
+
+        const title = titleInput.value.trim();
+        const description = descInput.value.trim();
+        const frontendType = typeInput.value;
+        const section = parseInt(sectionItem.getAttribute('data-section-order'));
+
+        if (!title) {
+            titleInput.focus();
+            titleInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+            setTimeout(() => {
+                titleInput.classList.remove('border-red-400', 'ring-1', 'ring-red-400');
+            }, 2000);
+            return;
+        }
+
+        try {
+            // 전체 문항 수 계산 (순서용)
+            const totalQuestions = document.querySelectorAll('.question-item').length;
+
+            // 3. API 호출
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/questions`, 'POST',
+                {
+                    questions: [
+                        {
+                            title: title,
+                            description: description,
+                            questionType: QUESTION_TYPE_MAP[frontendType],
+                            questionOrder: totalQuestions + 1,
+                            section: section
+                        }
+                    ]
+                }
+            );
+
+            // 4. UI 생성 및 추가 (여기가 수정됨)
+            const questionsContainer = sectionItem.querySelector('.section-questions');
+
+            // addNewQuestion은 이제 요소를 반환만 함. appendChild는 여기서 수행.
+            // description은 API 응답에 없을 수 있으므로 입력된 값 사용
+            const newQuestionEl = addNewQuestion(
+                response.questionId,
+                response.title || title,
+                description,  // 입력된 description 값 사용
+                totalQuestions + 1, // order (UI 표시용)
+                QUESTION_TYPE_REVERSE_MAP[response.type] || frontendType
+            );
+
+            // 비어있음 안내문구가 있다면 숨김 처리
+            const emptyPlaceholder = questionsContainer.querySelector('.empty-placeholder');
+            if (emptyPlaceholder) emptyPlaceholder.classList.add('hidden');
+
+            questionsContainer.appendChild(newQuestionEl);
+
+            // 5. 입력란 초기화
+            titleInput.value = '';
+            descInput.value = '';
+
+            updateQuestionNumbers();
+            // 새 문항에 대한 섹션 이동 옵션 초기화 (분기 설정이 꺼져있으므로 숨김 상태로 시작)
+            updateSectionJumpOptions(newQuestionEl, false);
+
+            showToast('새 문항이 생성되었습니다.', 'success');
+            return response;
+        } catch (error) {
+            console.error(error);
+            showToast('문항 생성에 실패했습니다.', 'error');
+            return null;
+        }
+    }
+
+    // 새 문항 DOM 생성 (반환만 수행)
+    function addNewQuestion(questionId = null, title = '', description = '', order = 0, type = 'choice', isSectionDecidable = false, hasCustomInput = false, defaultDate = null, imageUrl = null) {
+        const newQuestion = document.createElement('div');
+        newQuestion.className = 'question-item group flex bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden hover:border-indigo-300 transition-all mb-4';
+        newQuestion.setAttribute('data-question-id', questionId);
+        newQuestion.setAttribute('data-question-type', type);
+
+        // 드래그 이벤트
+        newQuestion.setAttribute('draggable', 'true');
+        newQuestion.addEventListener('dragstart', handleDragStart);
+        newQuestion.addEventListener('dragend', handleDragEnd);
+        // dragover/drop은 섹션 컨테이너에서 처리하므로 여기서 제거하거나 유지해도 무방
+
+        // 타입별 표시 클래스
+        const showChoice = type === 'choice' ? '' : 'hidden';
+        const showText = type === 'text' ? '' : 'hidden';
+        const showTextarea = type === 'textarea' ? '' : 'hidden';
+        const showRating = type === 'rating' ? '' : 'hidden';
+        const showNps = type === 'nps' ? '' : 'hidden';
+        const showNumber = type === 'number' ? '' : 'hidden';
+        const showDate = type === 'date' ? '' : 'hidden';
+
+        // [신규] 섹션 분기 설정 체크박스 표시 여부 (객관식일 때만)
+        const showRouteConfig = type === 'choice' ? '' : 'hidden';
+
+        // 객관식일 때만: 분기 설정, 직접 입력 설정 표시
+        const directBtnDisabled = hasCustomInput ? 'disabled class="direct-input-btn text-xs text-slate-300 cursor-not-allowed px-2 py-1 rounded inline-block"' : 'class="direct-input-btn text-xs text-emerald-600 font-bold hover:bg-emerald-50 px-2 py-1 rounded inline-block"';
+
+        // 분기 설정이 true이면 옵션의 select box를 보여줌
+        const jumpSelectClass = isSectionDecidable ? '' : 'hidden';
+
+        newQuestion.innerHTML = `
+            <div class="w-64 bg-slate-50 border-r border-slate-200 p-4 flex flex-col gap-4 shrink-0">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <div class="drag-handle cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 mr-1">
+                            <i class="fas fa-grip-vertical"></i>
+                        </div>
+                        <span class="question-number bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded font-bold">Q${order}</span>
+                        <span class="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded font-bold border border-indigo-200">
+                            ${QUESTION_TYPE_LABEL[type]}
+                        </span>
+                    </div>
+                    <button class="text-slate-400 hover:text-red-500 transition-colors" title="문항 삭제" onclick="deleteQuestion('${questionId}')">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+
+                <input type="hidden" class="question-type-value" value="${type}">
+
+                <div class="max-select-container" style="${type === 'choice' ? '' : 'display:none'}">
+                    <label class="text-xs text-slate-500 font-bold block mb-1">최대 선택 개수</label>
+                    <select class="max-select-count w-full text-sm border-slate-300 rounded p-1.5 border bg-white focus:ring-indigo-500">
+                        <option value="1">1개</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-600 font-medium">필수 응답</span>
+                        <input type="checkbox" class="required-checkbox w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                    </div>
+
+                    <div class="route-config-container flex items-center justify-between ${showRouteConfig}">
+                        <span class="text-xs text-slate-600 font-medium text-orange-600">섹션 분기 설정</span>
+                        <input type="checkbox" class="route-checkbox w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+                               ${isSectionDecidable ? 'checked' : ''}
+                               onchange="toggleSectionBranching(this)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 p-6">
+                <input type="text" class="question-title-input w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 mb-2 transition-colors" placeholder="질문을 입력하세요" value="${escapeHtml(title)}">
+                <textarea class="question-desc-input w-full text-sm text-slate-500 border-b border-slate-100 focus:border-indigo-400 outline-none pb-2 transition-all resize-none overflow-hidden" placeholder="문항에 대한 설명을 입력하세요 (선택사항)" rows="1" onfocus="expandDescTextarea(this)" onblur="collapseDescTextarea(this)">${escapeHtml(description)}</textarea>
+                <div class="flex gap-2 mt-2 mb-3">
+                    <input type="hidden" class="question-image-url-input" value="${escapeHtml(imageUrl || '')}">
+                    <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
+                        <i class="fas fa-image text-xs"></i> 이미지
+                        <input type="file" class="hidden question-image-file-input" accept="image/*" onchange="handleQuestionImageUpload(this)">
+                    </label>
+                    <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialog(this.closest('.question-item').querySelector('.question-desc-input'))">
+                        <i class="fas fa-link text-xs"></i> 하이퍼링크
+                    </button>
+                </div>
+                <div class="question-image-preview ${imageUrl ? '' : 'hidden'} mb-3">
+                    <div class="relative inline-block">
+                        <img class="question-image-tag max-h-32 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="문항 이미지">
+                        <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeQuestionImage(this)">
+                            <i class="fas fa-times text-[8px]"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="choice-options space-y-3 pl-2 ${showChoice}">
+                    <div class="options-container" data-question-id="${questionId}">
+                        ${type === 'choice' ? getInitialOptionHTML(questionId, jumpSelectClass) : ''}
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="text-xs text-indigo-600 font-bold hover:bg-indigo-50 px-2 py-1 rounded inline-block" onclick="addOption('${questionId}')">+ 옵션 추가</button>
+                        <button ${directBtnDisabled} onclick="addDirectInputOption('${questionId}')">+ 직접 입력 추가</button>
+                    </div>
+                </div>
+
+                <div class="text-options ${showText}"><div class="bg-slate-50 border border-dashed border-slate-300 rounded p-4 text-slate-400 text-sm">단답형 입력 영역</div></div>
+                <div class="textarea-options ${showTextarea}"><div class="bg-slate-50 border border-dashed border-slate-300 rounded p-4 text-slate-400 text-sm h-24">장문형 입력 영역</div></div>
+                <div class="rating-options ${showRating}">
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center gap-3">
+                            <!-- 조절 버튼 (+/-) -->
+                            <div class="flex flex-col gap-0.5">
+                                <button type="button" class="rating-plus-btn w-5 h-5 bg-slate-100 border border-slate-300 rounded-t text-xs text-slate-500 hover:bg-slate-200 flex items-center justify-center" onclick="adjustRatingCount('${questionId}', 1)">
+                                    <i class="fas fa-plus text-[8px]"></i>
+                                </button>
+                                <button type="button" class="rating-minus-btn w-5 h-5 bg-slate-100 border border-slate-300 rounded-b text-xs text-slate-500 hover:bg-slate-200 flex items-center justify-center" onclick="adjustRatingCount('${questionId}', -1)">
+                                    <i class="fas fa-minus text-[8px]"></i>
+                                </button>
+                            </div>
+                            <!-- 왼쪽 라벨 -->
+                            <input type="text" class="rating-label-left text-xs border border-slate-200 rounded px-2 py-1 w-16 text-center focus:border-indigo-500 outline-none" value="낮음" maxlength="6" placeholder="낮음">
+                            <!-- 동그라미들 -->
+                            <div class="rating-circles flex items-center gap-2" data-count="5">
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">1</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">2</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">3</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">4</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">5</span>
+                            </div>
+                            <!-- 오른쪽 라벨 -->
+                            <input type="text" class="rating-label-right text-xs border border-slate-200 rounded px-2 py-1 w-16 text-center focus:border-indigo-500 outline-none" value="높음" maxlength="6" placeholder="높음">
+                        </div>
+                        <div class="text-xs text-slate-400 pl-6">
+                            <i class="fas fa-info-circle mr-1"></i> +/- 버튼으로 선택 항목 수를 2~10개로 조절할 수 있습니다. 라벨을 클릭하여 수정하세요.
+                        </div>
+                    </div>
+                </div>
+                <div class="nps-options ${showNps}">
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center gap-3">
+                            <!-- 왼쪽 표시 -->
+                            <span class="text-xs text-slate-500 font-medium">1</span>
+                            <!-- 10개의 동그라미 -->
+                            <div class="nps-circles flex items-center gap-2">
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">1</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">2</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">3</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">4</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">5</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">6</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">7</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">8</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">9</span>
+                                <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">10</span>
+                            </div>
+                            <!-- 오른쪽 표시 -->
+                            <span class="text-xs text-slate-500 font-medium">10</span>
+                        </div>
+                        <div class="text-xs text-slate-400">
+                            <i class="fas fa-info-circle mr-1"></i> NPS(Net Promoter Score)는 1~10점으로 고정됩니다.
+                        </div>
+                    </div>
+                </div>
+                <div class="number-options ${showNumber}">
+                    <div class="bg-slate-50 border border-dashed border-slate-300 rounded p-4 text-slate-400 text-sm flex items-center gap-2">
+                        <i class="fas fa-hashtag"></i> 사용자가 숫자를 입력하는 영역입니다.
+                    </div>
+                </div>
+                <div class="date-options ${showDate}">
+                     <div class="flex flex-col gap-3">
+                        <div class="bg-slate-50 border border-dashed border-slate-300 rounded p-4 text-slate-400 text-sm flex items-center gap-2"><i class="fas fa-calendar-alt"></i> 사용자가 날짜를 선택하는 영역입니다.</div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-slate-500 font-medium">기본 날짜 설정:</span>
+                            <input type="date" class="default-date-input text-sm border border-slate-200 rounded px-2 py-1.5 focus:border-indigo-500 outline-none" value="${defaultDate || ''}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 주의: 이 함수는 appendChild를 하지 않고 요소를 반환만 합니다.
+        // 호출자가 적절한 위치에 append 해야 합니다.
+
+        // 기존 description에 HTML이 있으면 미리보기 동기화
+        if (description) {
+            const descInput = newQuestion.querySelector('.question-desc-input');
+            if (descInput) syncDescHtmlPreview(descInput);
+        }
+
+        return newQuestion;
+    }
+
+    // 객관식 초기 옵션 HTML 생성 (분기 select 표시 여부 포함)
+    function getInitialOptionHTML(qid, visibilityClass = 'hidden') {
+        // 새 문항 생성 시 빈 옵션 없이 시작 - 사용자가 직접 옵션 추가 버튼을 눌러야 함
+        return '';
+    }
+
+    // [신규] 섹션 분기 체크박스 토글
+    function toggleSectionBranching(checkbox) {
+        const questionItem = checkbox.closest('.question-item');
+        const isChecked = checkbox.checked;
+        const jumpWrappers = questionItem.querySelectorAll('.jump-select-wrapper');
+
+        jumpWrappers.forEach(wrapper => {
+            if (isChecked) {
+                wrapper.classList.remove('hidden');
+            } else {
+                wrapper.classList.add('hidden');
+                // 체크 해제 시 select 값 초기화 (null로)
+                const select = wrapper.querySelector('select');
+                if (select) select.value = "";
+            }
+        });
+
+        // 분기 설정이 켜지면 섹션 목록 업데이트 및 기본값 설정
+        if (isChecked) {
+            updateSectionJumpOptions(questionItem, true, true); // resetToDefault = true
+        }
+    }
+
+    // [신규] 문항 내의 모든 점프 셀렉트 박스에 섹션 목록 업데이트
+    function updateSectionJumpOptions(questionItem, isBranchingOn, resetToDefault = false) {
+        if (!isBranchingOn) return;
+
+        const currentSectionItem = questionItem.closest('.section-item');
+        if (!currentSectionItem) return;
+
+        const currentSectionOrder = parseInt(currentSectionItem.getAttribute('data-section-order'));
+        const totalSections = document.querySelectorAll('.section-item').length;
+
+        // [로직] 다음 섹션 계산 (마지막 섹션이면 0:설문 제출, 아니면 다음 섹션)
+        const defaultNextSection = (currentSectionOrder < totalSections) ? (currentSectionOrder + 1).toString() : "0";
+
+        const selects = questionItem.querySelectorAll('.jump-select');
+
+        selects.forEach(select => {
+            const currentValue = resetToDefault ? null : select.value;
+            select.innerHTML = ''; // 초기화
+
+            // 설문 제출 (0)
+            const submitOpt = document.createElement('option');
+            submitOpt.value = "0";
+            submitOpt.text = "설문 제출 (종료)";
+            submitOpt.classList.add('font-bold', 'text-indigo-600');
+            select.appendChild(submitOpt);
+
+            // 섹션 목록 (자기 자신 제외)
+            for (let i = 1; i <= totalSections; i++) {
+                if (i === currentSectionOrder) continue;
+
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.text = `섹션 ${i}로 이동`;
+                select.appendChild(opt);
+            }
+
+            // 값 설정
+            if (resetToDefault) {
+                // 강제 기본값 설정 (섹션 이동 시)
+                select.value = defaultNextSection;
+            } else if (currentValue && isValidSectionValue(currentValue, totalSections, currentSectionOrder)) {
+                // 기존 값이 유효하면 복원
+                select.value = currentValue;
+            } else {
+                // 기존 값이 없거나 유효하지 않으면 기본값
+                select.value = defaultNextSection;
+            }
+        });
+    }
+
+    // 섹션 값이 유효한지 확인하는 헬퍼 함수
+    function isValidSectionValue(value, totalSections, currentSectionOrder) {
+        if (value === "" || value === null || value === undefined) return false;
+        if (value === "0") return true; // 설문 제출은 항상 유효
+
+        const numValue = parseInt(value);
+        // 현재 섹션이 아니고, 존재하는 섹션 범위 내에 있어야 함
+        return numValue !== currentSectionOrder && numValue >= 1 && numValue <= totalSections;
+    }
+
+    // 단일 jump-select에 섹션 옵션을 채우고 기본값 설정하는 헬퍼 함수
+    function populateJumpSelectWithDefault(questionItem, select) {
+        const currentSectionItem = questionItem.closest('.section-item');
+        if (!currentSectionItem) return;
+
+        const currentSectionOrder = parseInt(currentSectionItem.getAttribute('data-section-order'));
+        const totalSections = document.querySelectorAll('.section-item').length;
+
+        // 기본 다음 섹션 계산 (마지막 섹션이면 0:설문 제출)
+        const defaultNextSection = (currentSectionOrder < totalSections) ? (currentSectionOrder + 1).toString() : "0";
+
+        select.innerHTML = '';
+
+        // 설문 제출 (0)
+        const submitOpt = document.createElement('option');
+        submitOpt.value = "0";
+        submitOpt.text = "설문 제출 (종료)";
+        submitOpt.classList.add('font-bold', 'text-indigo-600');
+        select.appendChild(submitOpt);
+
+        // 섹션 목록 (자기 자신 제외)
+        for (let i = 1; i <= totalSections; i++) {
+            if (i === currentSectionOrder) continue;
+
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.text = `섹션 ${i}로 이동`;
+            select.appendChild(opt);
+        }
+
+        // 기본값 설정
+        select.value = defaultNextSection;
+    }
+
+    // 문항 삭제
+    function deleteQuestion(questionId) {
+        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
+        if (question) {
+            question.remove();
+            updateQuestionNumbers();
+            refreshAllJumpSelects(); // 섹션 기반 드롭다운 갱신
+        }
+    }
+
+    // 문항 번호 업데이트
+    function updateQuestionNumbers() {
+        const questions = document.querySelectorAll('.question-item');
+        questions.forEach((q, index) => {
+            const numberSpan = q.querySelector('.question-number');
+            if (numberSpan) {
+                numberSpan.textContent = `Q${index + 1}`;
+            }
+        });
+    }
+
+    // 문항 위로 이동
+    function moveQuestionUp(questionId) {
+        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
+        if (!question) return;
+
+        const prevQuestion = question.previousElementSibling;
+        if (prevQuestion && prevQuestion.classList.contains('question-item')) {
+            question.parentNode.insertBefore(question, prevQuestion);
+            updateQuestionNumbers();
+            refreshAllJumpSelects(); // 섹션 기반 드롭다운 갱신
+        }
+    }
+
+    // 문항 아래로 이동
+    function moveQuestionDown(questionId) {
+        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
+        if (!question) return;
+
+        const nextQuestion = question.nextElementSibling;
+        if (nextQuestion && nextQuestion.classList.contains('question-item')) {
+            question.parentNode.insertBefore(nextQuestion, question);
+            updateQuestionNumbers();
+            refreshAllJumpSelects(); // 섹션 기반 드롭다운 갱신
+        }
+    }
+
+    // 드래그 앤 드롭 관련 변수
+    let draggedQuestion = null;
+
+    // 드래그 시작
+    function handleDragStart(e) {
+        draggedQuestion = this;
+        this.classList.add('opacity-50');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.getAttribute('data-question-id'));
+
+        // 약간의 딜레이 후 스타일 적용 (드래그 이미지가 제대로 생성되도록)
+        setTimeout(() => {
+            this.classList.add('border-indigo-500', 'border-2');
+        }, 0);
+    }
+
+    // 드래그 종료
+    function handleDragEnd(e) {
+        this.classList.remove('opacity-50', 'border-indigo-500', 'border-2');
+        document.querySelectorAll('.question-item').forEach(item => {
+            item.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+        draggedQuestion = null;
+    }
+
+    // 드래그 오버 (드롭 허용)
+    function handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+
+        // 문항 위로 드래그하는지, 섹션 빈 공간으로 드래그하는지 확인
+        const targetSection = e.target.closest('.section-questions');
+        if (targetSection) {
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        // 드래그 위치에 따라 상단/하단 표시
+        const rect = this.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+
+        this.classList.remove('drag-over-top', 'drag-over-bottom');
+
+        if (e.clientY < midY) {
+            this.classList.add('drag-over-top');
+        } else {
+            this.classList.add('drag-over-bottom');
+        }
+
+        return false;
+    }
+
+    // 드래그 진입
+    function handleDragEnter(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+    }
+
+    // 드롭
+    function handleDrop(e) {
+        e.stopPropagation();
+
+        const draggedId = e.dataTransfer.getData('text/plain'); // dragStart에서 id 저장했다고 가정
+        if (!draggedQuestion) return; // 전역 변수 draggedQuestion 사용 시
+
+        // 원래 섹션 저장
+        const originalSection = draggedQuestion.closest('.section-item');
+        const originalSectionOrder = originalSection ? originalSection.getAttribute('data-section-order') : null;
+
+        // 드롭된 위치 찾기
+        const dropTarget = e.target;
+        const targetSectionList = dropTarget.closest('.section-questions');
+        const targetQuestionItem = dropTarget.closest('.question-item');
+
+        if (targetSectionList) {
+            // 드롭 대상 섹션
+            const targetSection = targetSectionList.closest('.section-item');
+            const targetSectionOrder = targetSection ? targetSection.getAttribute('data-section-order') : null;
+
+            if (targetQuestionItem && targetQuestionItem !== draggedQuestion) {
+                // 다른 문항 위/아래로 드롭
+                const rect = targetQuestionItem.getBoundingClientRect();
+                if (e.clientY < rect.top + rect.height / 2) {
+                    targetSectionList.insertBefore(draggedQuestion, targetQuestionItem);
+                } else {
+                    targetSectionList.insertBefore(draggedQuestion, targetQuestionItem.nextSibling);
+                }
+            } else {
+                // 섹션의 빈 공간(맨 끝)으로 드롭
+                targetSectionList.appendChild(draggedQuestion);
+            }
+
+            // 다른 섹션으로 이동한 경우 분기 드롭다운 기본값으로 리셋
+            if (originalSectionOrder && targetSectionOrder && originalSectionOrder !== targetSectionOrder) {
+                const routeCheckbox = draggedQuestion.querySelector('.route-checkbox');
+                if (routeCheckbox && routeCheckbox.checked) {
+                    // 분기 설정이 켜져 있는 경우 모든 드롭다운을 기본값으로 세팅
+                    updateSectionJumpOptions(draggedQuestion, true, true); // resetToDefault = true
+                }
+            }
+
+            // 이동 후 전체 재정렬
+            updateQuestionNumbers();
+            refreshAllJumpSelects(); // 섹션 기반 드롭다운 갱신
+        }
+
+        draggedQuestion.classList.remove('opacity-50', 'border-indigo-500', 'border-2');
+        draggedQuestion = null;
+    }
+
+    // 문항 타입 토글
+    function toggleQuestionType(questionId) {
+        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
+        const select = question.querySelector('.question-type');
+        const choiceOptions = question.querySelector('.choice-options');
+        const textOptions = question.querySelector('.text-options');
+        const textareaOptions = question.querySelector('.textarea-options');
+        const ratingOptions = question.querySelector('.rating-options');
+        const npsOptions = question.querySelector('.nps-options');
+        const numberOptions = question.querySelector('.number-options');
+        const dateOptions = question.querySelector('.date-options');
+        const maxSelectContainer = question.querySelector('.max-select-container');
+
+        // 모든 옵션 숨기기
+        const allOptions = [choiceOptions, textOptions, textareaOptions, ratingOptions, npsOptions, numberOptions, dateOptions];
+        allOptions.forEach(opt => {
+            if (opt) opt.classList.add('hidden');
+        });
+
+        // 최대 선택 개수는 기본적으로 숨기기
+        if (maxSelectContainer) maxSelectContainer.classList.add('hidden');
+
+        // 선택된 타입에 따라 표시
+        switch (select.value) {
+            case 'choice':
+                if (choiceOptions) choiceOptions.classList.remove('hidden');
+                if (maxSelectContainer) maxSelectContainer.classList.remove('hidden');
+                break;
+            case 'text':
+                if (textOptions) textOptions.classList.remove('hidden');
+                break;
+            case 'textarea':
+                if (textareaOptions) textareaOptions.classList.remove('hidden');
+                break;
+            case 'rating':
+                if (ratingOptions) ratingOptions.classList.remove('hidden');
+                break;
+            case 'nps':
+                if (npsOptions) npsOptions.classList.remove('hidden');
+                break;
+            case 'number':
+                if (numberOptions) numberOptions.classList.remove('hidden');
+                break;
+            case 'date':
+                if (dateOptions) dateOptions.classList.remove('hidden');
+                break;
+        }
+    }
+
+    // 평가형 동그라미 개수 조절
+    function adjustRatingCount(questionId, delta) {
+        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
+        const ratingCircles = question.querySelector('.rating-circles');
+        let count = parseInt(ratingCircles.getAttribute('data-count')) || 5;
+
+        count += delta;
+
+        // 2개에서 10개까지만 허용
+        if (count < 2) count = 2;
+        if (count > 10) count = 10;
+
+        ratingCircles.setAttribute('data-count', count);
+
+        // 동그라미 다시 렌더링
+        let circlesHTML = '';
+        for (let i = 1; i <= count; i++) {
+            circlesHTML += `<span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">${i}</span>`;
+        }
+        ratingCircles.innerHTML = circlesHTML;
+    }
+
+    // 최대 선택 개수 옵션 업데이트
+    function updateMaxSelectOptions(questionId) {
+        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
+        const container = question.querySelector('.options-container');
+        const maxSelectDropdown = question.querySelector('.max-select-count');
+
+        if (!maxSelectDropdown || !container) return;
+
+        // 일반 보기 + 직접입력 보기 모두 카운트
+        const normalOptionCount = container.querySelectorAll('.option-item[data-option-type="normal"]').length;
+        const directInputOption = container.querySelector('.option-item[data-option-type="direct-input"]');
+        const optionCount = normalOptionCount + (directInputOption ? 1 : 0);
+        const currentValue = parseInt(maxSelectDropdown.value) || 1;
+
+        maxSelectDropdown.innerHTML = '';
+
+        // 보기 개수만큼 표시 (최소 1개)
+        const limit = Math.max(optionCount, 1);
+
+        for (let i = 1; i <= limit; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `${i}개`;
+
+            if (i === currentValue) option.selected = true;
+            maxSelectDropdown.appendChild(option);
+        }
+
+        // 현재 선택값이 보기 개수보다 크면 보기 개수로 조정
+        if (currentValue > optionCount && optionCount > 0) {
+            maxSelectDropdown.value = optionCount;
+        }
+    }
+
+    // 문항 제목 15자 제한 함수
+    function truncateTitle(title, maxLength = 15) {
+        if (!title || title.trim() === '') return '제목 없음';
+        return title.length > maxLength ? title.substring(0, maxLength) + '...' : title;
+    }
+
+    // 모든 이동 문항 드롭다운 업데이트
+    function updateAllJumpSelects() {
+        const questions = document.querySelectorAll('.question-item');
+        const jumpSelects = document.querySelectorAll('.jump-select');
+
+        jumpSelects.forEach(select => {
+            const currentValue = select.value;
+            const currentQuestionItem = select.closest('.question-item');
+            const currentQuestionId = currentQuestionItem ? currentQuestionItem.getAttribute('data-question-id') : null;
+
+            // 현재 문항의 순서(인덱스) 찾기
+            let currentQuestionIndex = -1;
+            questions.forEach((q, idx) => {
+                if (q.getAttribute('data-question-id') === currentQuestionId) {
+                    currentQuestionIndex = idx;
+                }
+            });
+
+            select.innerHTML = `
+                <option value="next">다음 섹션으로 이동 (기본)</option>
+            `;
+
+            questions.forEach((q, index) => {
+                const qId = q.getAttribute('data-question-id');
+                // 자기 자신 문항은 제외
+                if (qId === currentQuestionId) return;
+
+                // 현재 문항보다 이전 문항은 제외 (이전 문항으로 이동 불가)
+                if (index <= currentQuestionIndex) return;
+
+                const titleInput = q.querySelector('.question-title-input');
+                const title = titleInput ? titleInput.value : '';
+                const truncatedTitle = truncateTitle(title);
+                const questionNum = index + 1;
+
+                const option = document.createElement('option');
+                option.value = `q${qId}`;
+                option.textContent = `Q${questionNum}. ${truncatedTitle} 로 이동`;
+                select.appendChild(option);
+            });
+
+            // 설문 종료 옵션 추가 (비활성화)
+            const endOption = document.createElement('option');
+            endOption.value = 'end';
+            endOption.textContent = '설문 종료 (Screen Out)';
+            endOption.disabled = true;
+            endOption.className = 'text-slate-300';
+            select.appendChild(endOption);
+
+            // 기존 선택값 복원 (이전 문항으로 가는 값이었다면 기본값으로 리셋)
+            if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+                select.value = currentValue;
+            } else {
+                select.value = 'next';
+            }
+        });
+    }
+
+    // 옵션 추가
+    function addOption(questionId) {
+        const container = document.querySelector(`.options-container[data-question-id="${questionId}"]`);
+        const questionItem = container.closest('.question-item');
+
+        // 현재 분기 설정 여부 확인
+        const routeCheckbox = questionItem.querySelector('.route-checkbox');
+        const isBranching = routeCheckbox ? routeCheckbox.checked : false;
+        const visibilityClass = isBranching ? '' : 'hidden';
+
+        const newOption = document.createElement('div');
+        newOption.className = 'option-item flex flex-col gap-1 mb-3';
+        newOption.setAttribute('data-option-type', 'normal');
+        newOption.setAttribute('data-option-id', ''); // 새 옵션은 ID 없음
+
+        newOption.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="far fa-circle text-slate-300 shrink-0"></i>
+                <input type="hidden" class="option-image-url-input" value="">
+                <input type="text" placeholder="보기 내용 입력" class="option-text-input w-1/3 text-sm border border-slate-200 rounded px-2 py-1.5 hover:border-slate-300 focus:border-indigo-500 outline-none" oninput="updateMaxSelectOptions('${questionId}')">
+                <div class="flex items-center gap-1 shrink-0">
+                    <label class="cursor-pointer text-slate-400 hover:text-indigo-600 px-1 py-0.5 rounded hover:bg-indigo-50 inline-flex items-center" title="이미지 추가">
+                        <i class="fas fa-image text-xs"></i>
+                        <input type="file" class="hidden option-image-file-input" accept="image/*" onchange="handleOptionImageUpload(this)">
+                    </label>
+                    <button type="button" class="text-slate-400 hover:text-indigo-600 px-1 py-0.5 rounded hover:bg-indigo-50" title="하이퍼링크 삽입" onclick="openHyperlinkDialog(this.closest('.option-item').querySelector('.option-text-input'))">
+                        <i class="fas fa-link text-xs"></i>
+                    </button>
+                </div>
+                <div class="jump-select-wrapper flex items-center gap-2 flex-1 ${visibilityClass}">
+                    <i class="fas fa-arrow-right text-orange-400 text-xs"></i>
+                    <select class="jump-select w-48 text-xs border border-orange-200 rounded px-2 py-1.5 text-slate-600 bg-orange-50 hover:bg-white focus:ring-1 focus:ring-orange-500">
+                        <option value="0">설문 제출 (종료)</option>
+                    </select>
+                </div>
+                <button class="text-slate-300 hover:text-red-400 shrink-0" onclick="deleteOption(this, '${questionId}')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="option-image-preview hidden ml-6">
+                <div class="relative inline-block">
+                    <img class="option-image-tag max-h-16 rounded border border-slate-200" src="" alt="보기 이미지">
+                    <button type="button" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeOptionImage(this)">
+                        <i class="fas fa-times text-[7px]"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // 직접입력 옵션이 있으면 그 앞에 삽입, 없으면 맨 뒤에 추가
+        const directInputOption = container.querySelector('.option-item[data-option-type="direct-input"]');
+        if (directInputOption) {
+            container.insertBefore(newOption, directInputOption);
+        } else {
+            container.appendChild(newOption);
+        }
+
+        // 분기 설정이 켜져있으면 드롭다운 내용 채우고 새 옵션에 기본값 설정
+        if (isBranching) {
+            // 새로 추가된 옵션의 select만 기본값 설정
+            const newSelect = newOption.querySelector('.jump-select');
+            populateJumpSelectWithDefault(questionItem, newSelect);
+        }
+
+        updateMaxSelectOptions(questionId);
+    }
+
+    // 직접 입력 보기 추가
+    function addDirectInputOption(questionId) {
+        const container = document.querySelector(`.options-container[data-question-id="${questionId}"]`);
+        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
+        const directInputBtn = question.querySelector('.direct-input-btn');
+
+        const directOption = document.createElement('div');
+        directOption.className = 'option-item flex items-center gap-3 mb-3';
+        directOption.setAttribute('data-option-type', 'direct-input');
+        directOption.setAttribute('data-option-id', ''); // 새 직접입력 옵션은 ID 없음
+
+        // 직접 입력 보기는 섹션 분기 불가 - UI 없음
+        directOption.innerHTML = `
+            <i class="far fa-edit text-emerald-400"></i>
+            <div class="w-1/3 text-sm border border-emerald-200 bg-emerald-50 rounded px-2 py-1.5 text-emerald-600 font-medium">
+                <i class="fas fa-keyboard mr-1"></i> 직접 입력
+            </div>
+
+            <div class="flex-1"></div>
+
+            <button class="text-slate-300 hover:text-red-400" onclick="deleteDirectInputOption(this, '${questionId}')"><i class="fas fa-times"></i></button>
+        `;
+
+        // 항상 맨 뒤에 추가
+        container.appendChild(directOption);
+
+
+        // 버튼 비활성화 (하나만 가능하므로)
+        directInputBtn.disabled = true;
+        directInputBtn.classList.remove('text-emerald-600', 'hover:bg-emerald-50');
+        directInputBtn.classList.add('text-slate-300', 'cursor-not-allowed');
+
+        updateMaxSelectOptions(questionId);
+    }
+
+    // 일반 옵션 삭제
+    function deleteOption(button, questionId) {
+        const optionItem = button.closest('.option-item');
+        optionItem.remove();
+        updateMaxSelectOptions(questionId);
+        refreshAllJumpSelects(); // 섹션 기반 드롭다운 갱신
+    }
+
+    // 직접 입력 보기 삭제
+    function deleteDirectInputOption(button, questionId) {
+        const optionItem = button.closest('.option-item');
+        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
+        const directInputBtn = question.querySelector('.direct-input-btn');
+
+        optionItem.remove();
+
+        // 버튼 다시 활성화
+        directInputBtn.disabled = false;
+        directInputBtn.classList.remove('text-slate-300', 'cursor-not-allowed');
+        directInputBtn.classList.add('text-emerald-600', 'hover:bg-emerald-50');
+
+        updateMaxSelectOptions(questionId);
+    }
+
+    // 날짜 입력 동기화 함수
+    function syncDateInputs(inputElement, source) {
+        const dateOptions = inputElement.closest('.date-options');
+        const dateInput = dateOptions.querySelector('.default-date-input');
+        const textInput = dateOptions.querySelector('.default-date-text');
+
+        if (source === 'calendar') {
+            // 캘린더에서 선택한 경우 텍스트 입력란에 동기화
+            textInput.value = dateInput.value;
+        } else if (source === 'text') {
+            // 텍스트로 입력한 경우 캘린더에 동기화
+            const dateValue = textInput.value;
+            // YYYY-MM-DD 형식 검증
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (dateRegex.test(dateValue)) {
+                const date = new Date(dateValue);
+                if (!isNaN(date.getTime())) {
+                    dateInput.value = dateValue;
+                }
+            }
+        }
+    }
+
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', async function() {
+        // 설문 목록 로드
+        await loadSurveyList();
+
+        // URL 파라미터에서 surveyId, formRequestId, title, description 확인
+        const urlParams = new URLSearchParams(window.location.search);
+        const surveyIdParam = urlParams.get('surveyId');
+        const formRequestIdParam = urlParams.get('formRequestId');
+        const titleParam = urlParams.get('title');
+        const descriptionParam = urlParams.get('description');
+
+        // 설문 변환 요청에서 접근한 경우 플래그 설정
+        if (formRequestIdParam) {
+            isFromFormRequest = true;
+            currentFormRequestId = parseInt(formRequestIdParam);
+        }
+
+        if (surveyIdParam) {
+            const surveyId = parseInt(surveyIdParam);
+            // 설문 목록에서 해당 설문 찾기
+            let survey = globalSurveyList.find(s => s.surveyId === surveyId);
+
+            if (survey) {
+                // 설문이 목록에 있으면 바로 편집 모드로 열기
+                await openBuilderWithSurvey(surveyId);
+            } else {
+                // 목록에 없으면 가상의 survey 객체를 만들어서 열기
+                try {
+                    // URL 파라미터에서 title/description이 있으면 우선 사용
+                    const title = titleParam || '';
+                    const description = descriptionParam || '';
+
+                    // survey 객체 형태로 변환
+                    survey = {
+                        surveyId: surveyId,
+                        title: title,
+                        description: description,
+                        status: 'WRITING'
+                    };
+
+                    // 목록에 추가 (편집 후 목록으로 돌아갈 때 사용)
+                    globalSurveyList.push(survey);
+
+                    currentSurveyId = surveyId;
+                    isNewSurvey = false;
+
+                    // 편집 모드로 전환
+                    document.getElementById('view-list').classList.add('hidden');
+                    document.getElementById('view-builder').classList.remove('hidden');
+
+                    // UI에 제목과 설명 설정
+                    document.getElementById('survey-title').value = title;
+                    document.getElementById('survey-description').value = description;
+                    document.getElementById('desc-preview').innerHTML = description || '설문 설명이 없습니다.';
+
+                    // 기본 섹션 추가
+                    await addSection();
+
+                    showToast(`설문 #${surveyId}을(를) 불러왔습니다.`, 'success');
+                } catch (error) {
+                    console.error('설문 조회 실패:', error);
+                    showToast('설문을 불러오는데 실패했습니다.', 'error');
+                }
+            }
+        }
+
+        // Enter 키로 문항 추가
+        const newQuestionTitle = document.getElementById('new-question-title');
+        if (newQuestionTitle) {
+            newQuestionTitle.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addNewQuestionWithData();
+                }
+            });
+        }
+
+        // 자동 저장 (5분마다)
+        // setInterval(() => {
+        //     if (currentSurveyId && !isSaving) {
+        //         console.log('자동 저장 실행...');
+        //         saveQuestions();
+        //     }
+        // }, 300000); // 5분 = 300000ms
+    });
+
+    // ==================== 설문 게시 관련 함수 ====================
+
+    // 설문 게시 모달 열기
+    async function openPublishModal() {
+        if (!currentSurveyId) {
+            showToast('먼저 설문을 저장해주세요.', 'error');
+            return;
+        }
+
+        // 기존 스크리닝 데이터 로드
+        await loadScreeningData();
+
+        // 기존 관심사 데이터 로드 (survey info에서)
+        // TODO: 관심사 로드 API가 있다면 여기서 호출
+
+        // 마감일 기본값 설정 (현재로부터 2주 후)
+        const defaultDeadline = new Date();
+        defaultDeadline.setDate(defaultDeadline.getDate() + 14);
+        document.getElementById('targetDeadline').value = defaultDeadline.toISOString().slice(0, 10);
+
+        // 가격 계산 이벤트 리스너 설정
+        setupPriceCalculation();
+
+        // 가격 초기 계산
+        calculateTotalPrice();
+
+        // 설문 이미지 초기화 (builder에서 설정한 이미지 또는 기존 이미지)
+        const builderImageUrl = document.getElementById('survey-image-url-input')?.value?.trim() || '';
+        document.getElementById('publish-image-url-input').value = builderImageUrl;
+        if (builderImageUrl) {
+            document.getElementById('publish-image-tag').src = builderImageUrl;
+            document.getElementById('publish-image-preview').classList.remove('hidden');
+            document.getElementById('publish-image-remove-btn').classList.remove('hidden');
+        } else {
+            document.getElementById('publish-image-preview').classList.add('hidden');
+            document.getElementById('publish-image-remove-btn').classList.add('hidden');
+        }
+
+        document.getElementById('publishModal').classList.remove('hidden');
+    }
+
+    // 설문 게시 모달 닫기
+    function closePublishModal() {
+        document.getElementById('publishModal').classList.add('hidden');
+    }
+
+    // 스크리닝 데이터 로드 (어드민 API 사용, content만 로드, 정답은 매번 다시 설정)
+    async function loadScreeningData() {
+        // 정답 라디오 버튼 초기화 (매번 새로 설정하도록)
+        document.querySelector('input[name="screeningAnswer"][value="true"]').checked = false;
+        document.querySelector('input[name="screeningAnswer"][value="false"]').checked = false;
+
+        try {
+            // 어드민 API를 통해 설문 정보 및 스크리닝 조회
+            const response = await apiCall(`/admin/surveys/${currentSurveyId}`);
+
+            if (response && response.screening && response.screening.content) {
+                const screening = response.screening;
+                currentScreeningId = screening.screeningId;
+
+                // content만 설정 (정답은 매번 새로 설정해야 함)
+                document.getElementById('screeningContent').value = screening.content;
+
+                document.getElementById('screeningStatus').textContent = '내용만 로드됨 (정답 재설정 필요)';
+                document.getElementById('screeningStatus').className = 'text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700';
+
+                showToast('스크리닝 질문을 불러왔습니다. 정답을 다시 설정해주세요.', 'info');
+            } else {
+                currentScreeningId = null;
+                document.getElementById('screeningContent').value = '';
+                document.getElementById('screeningStatus').textContent = '미설정';
+                document.getElementById('screeningStatus').className = 'text-xs px-2 py-1 rounded bg-slate-100 text-slate-500';
+            }
+        } catch (error) {
+            console.error('스크리닝 데이터 로드 실패:', error);
+        }
+    }
+
+    // 스크리닝 퀴즈 저장
+    async function saveScreening() {
+        const content = document.getElementById('screeningContent').value.trim();
+        const answerRadio = document.querySelector('input[name="screeningAnswer"]:checked');
+
+        if (!content) {
+            showToast('스크리닝 질문을 입력해주세요.', 'error');
+            return;
+        }
+
+        if (!answerRadio) {
+            showToast('정답을 선택해주세요.', 'error');
+            return;
+        }
+
+        const answer = answerRadio.value === 'true';
+
+        try {
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/screenings`, 'POST', {
+                content: content,
+                answer: answer
+            });
+
+            if (response && response.screeningId) {
+                currentScreeningId = response.screeningId;
+                document.getElementById('screeningStatus').textContent = '설정됨';
+                document.getElementById('screeningStatus').className = 'text-xs px-2 py-1 rounded bg-green-100 text-green-700';
+                showToast('스크리닝 퀴즈가 저장되었습니다.', 'success');
+            }
+        } catch (error) {
+            console.error('스크리닝 저장 실패:', error);
+        }
+    }
+
+    // 스크리닝 퀴즈 삭제
+    async function deleteScreening() {
+        if (!currentScreeningId) {
+            showToast('삭제할 스크리닝 퀴즈가 없습니다.', 'info');
+            return;
+        }
+
+        if (!confirm('스크리닝 퀴즈를 삭제하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            // content가 null이면 삭제
+            await apiCall(`/survey-form/surveys/${currentSurveyId}/screenings`, 'POST', {
+                content: null,
+                answer: null
+            });
+
+            currentScreeningId = null;
+            document.getElementById('screeningContent').value = '';
+            document.querySelector('input[name="screeningAnswer"][value="true"]').checked = false;
+            document.querySelector('input[name="screeningAnswer"][value="false"]').checked = false;
+            document.getElementById('screeningStatus').textContent = '미설정';
+            document.getElementById('screeningStatus').className = 'text-xs px-2 py-1 rounded bg-slate-100 text-slate-500';
+
+            showToast('스크리닝 퀴즈가 삭제되었습니다.', 'success');
+        } catch (error) {
+            console.error('스크리닝 삭제 실패:', error);
+        }
+    }
+
+    // 관심사 저장
+    async function saveInterests() {
+        const checkboxes = document.querySelectorAll('.interest-checkbox:checked');
+        const interests = Array.from(checkboxes).map(cb => cb.value);
+
+        if (interests.length === 0) {
+            showToast('관심사를 최소 1개 이상 선택해주세요.', 'error');
+            return;
+        }
+
+        try {
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/interests`, 'PATCH', {
+                interests: interests
+            });
+
+            if (response) {
+                savedInterests = new Set(interests);
+                showToast('관심사가 저장되었습니다.', 'success');
+            }
+        } catch (error) {
+            console.error('관심사 저장 실패:', error);
+        }
+    }
+
+    // 연령대 "전체" 선택 시 처리
+    function handleAgeAllSelect(checkbox) {
+        const specificCheckboxes = document.querySelectorAll('.age-specific');
+        if (checkbox.checked) {
+            specificCheckboxes.forEach(cb => {
+                cb.checked = false;
+                cb.disabled = true;
+            });
+        } else {
+            specificCheckboxes.forEach(cb => {
+                cb.disabled = false;
+            });
+        }
+        calculateTotalPrice();
+    }
+
+    // 가격 계산 이벤트 리스너 설정
+    function setupPriceCalculation() {
+        // 성별, 거주지 변경
+        document.getElementById('targetGender').addEventListener('change', calculateTotalPrice);
+        document.getElementById('targetResidence').addEventListener('change', calculateTotalPrice);
+
+        // 연령대 체크박스 변경
+        document.querySelectorAll('.age-checkbox').forEach(cb => {
+            cb.addEventListener('change', calculateTotalPrice);
+        });
+
+        // 응답 수 변경
+        document.getElementById('targetDueCount').addEventListener('change', calculateTotalPrice);
+    }
+
+    // 총 가격 계산
+    function calculateTotalPrice() {
+        const gender = document.getElementById('targetGender').value;
+        const residence = document.getElementById('targetResidence').value;
+        const dueCount = parseInt(document.getElementById('targetDueCount').value) || 0;
+
+        // 선택된 연령대
+        const ageAllChecked = document.querySelector('.age-checkbox[value="ALL"]').checked;
+        const selectedAges = ageAllChecked
+            ? ['ALL']
+            : Array.from(document.querySelectorAll('.age-specific:checked')).map(cb => cb.value);
+
+        // 가격 계산
+        const genderPrice = PRICE_MAP.gender[gender] || 0;
+
+        let agePrice;
+        if (ageAllChecked || selectedAges.length === 0) {
+            agePrice = PRICE_MAP.age.ALL;
+        } else {
+            agePrice = selectedAges.reduce((sum, age) => sum + (PRICE_MAP.age[age] || 0), 0);
+        }
+
+        const residencePrice = PRICE_MAP.residence[residence] || PRICE_MAP.residence.DEFAULT || 0;
+        const dueCountPrice = dueCount * PRICE_MAP.dueCountPerPerson;
+
+        const total = genderPrice + agePrice + residencePrice + dueCountPrice;
+
+        // UI 업데이트
+        document.getElementById('priceGender').textContent = `${genderPrice.toLocaleString()} 코인`;
+        document.getElementById('priceAge').textContent = `${agePrice.toLocaleString()} 코인`;
+        document.getElementById('priceResidence').textContent = `${residencePrice.toLocaleString()} 코인`;
+        document.getElementById('priceDueCount').textContent = `${dueCountPrice.toLocaleString()} 코인`;
+        document.getElementById('priceTotal').textContent = `${total.toLocaleString()} 코인`;
+
+        return {
+            genderPrice,
+            agePrice,
+            residencePrice,
+            dueCountPrice,
+            total
+        };
+    }
+
+    // 설문 게시
+    async function publishSurvey() {
+        // 관심사 확인
+        const checkedInterests = document.querySelectorAll('.interest-checkbox:checked');
+        if (checkedInterests.length === 0) {
+            showToast('관심사를 최소 1개 이상 선택하고 저장해주세요.', 'error');
+            return;
+        }
+
+        // 연령대 확인
+        const ageAllChecked = document.querySelector('.age-checkbox[value="ALL"]').checked;
+        const selectedAges = ageAllChecked
+            ? ['ALL']
+            : Array.from(document.querySelectorAll('.age-specific:checked')).map(cb => cb.value);
+
+        if (!ageAllChecked && selectedAges.length === 0) {
+            showToast('타겟 연령대를 선택해주세요.', 'error');
+            return;
+        }
+
+        // 마감일 확인
+        const deadlineStr = document.getElementById('targetDeadline').value;
+        if (!deadlineStr) {
+            showToast('마감일을 설정해주세요.', 'error');
+            return;
+        }
+
+        // 마감일은 선택한 날짜의 23:59:59로 설정
+        const deadlineDate = new Date(deadlineStr + 'T23:59:59');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);  // 오늘 날짜의 시작 시간
+
+        if (deadlineDate <= today) {
+            showToast('마감일은 오늘 이후 날짜여야 합니다.', 'error');
+            return;
+        }
+
+        const gender = document.getElementById('targetGender').value;
+        const residence = document.getElementById('targetResidence').value;
+        const dueCount = parseInt(document.getElementById('targetDueCount').value) || 50;
+
+        // 가격 계산
+        const prices = calculateTotalPrice();
+
+        // 설문 이미지 URL (publish modal에서 업로드한 이미지 또는 builder에서 설정한 이미지)
+        const publishImageUrl = document.getElementById('publish-image-url-input')?.value?.trim() || null;
+
+        // 요청 데이터 구성 (마감일은 23:59:59로 고정)
+        const requestData = {
+            deadline: deadlineStr + 'T23:59:59',  // LocalDateTime 형식
+            gender: gender,
+            genderPrice: prices.genderPrice,
+            ages: selectedAges,
+            agePrice: prices.agePrice,
+            residence: residence,
+            residencePrice: prices.residencePrice,
+            dueCount: dueCount,
+            dueCountPrice: prices.dueCountPrice,
+            totalCoin: prices.total,
+            imageUrl: publishImageUrl
+        };
+
+        if (!confirm(`설문을 게시하시겠습니까?\n\n총 비용: ${prices.total.toLocaleString()} 코인`)) {
+            return;
+        }
+
+        try {
+            const response = await apiCall(`/survey-form/surveys/${currentSurveyId}`, 'PATCH', requestData);
+
+            if (response) {
+                showToast('설문이 성공적으로 게시되었습니다!', 'success');
+                closePublishModal();
+
+                // 설문 목록 새로고침
+                await loadSurveyList();
+                goToPage('list');
+            }
+        } catch (error) {
+            console.error('설문 게시 실패:', error);
+        }
+    }
+
+    // ==================== 읽기 전용 모드 관련 함수 ====================
+
+    // 읽기 전용 모드 설정
+    function setReadOnlyMode(enabled) {
+        isReadOnlyMode = enabled;
+
+        const modeBadge = document.getElementById('mode-badge');
+        const editButtons = document.getElementById('edit-mode-buttons');
+        const viewButtons = document.getElementById('view-mode-buttons');
+        const addSectionBtn = document.getElementById('add-section-btn');
+        const surveyTitle = document.getElementById('survey-title');
+        const surveyDescription = document.getElementById('survey-description');
+
+        if (enabled) {
+            // 읽기 전용 모드
+            modeBadge.textContent = 'VIEW MODE';
+            modeBadge.className = 'text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded mb-2 inline-block';
+
+            editButtons.classList.add('hidden');
+            viewButtons.classList.remove('hidden');
+            addSectionBtn.classList.add('hidden');
+
+            surveyTitle.readOnly = true;
+            surveyTitle.classList.add('bg-slate-50', 'cursor-not-allowed');
+            surveyDescription.readOnly = true;
+            surveyDescription.classList.add('bg-slate-50', 'cursor-not-allowed');
+
+            // 모든 입력 필드 비활성화
+            disableAllInputs();
+
+            // 섹션/문항 description textarea를 렌더링된 div로 교체
+            document.querySelectorAll('.section-desc-input, .question-desc-input').forEach(textarea => {
+                const rendered = document.createElement('div');
+                rendered.className = 'desc-rendered-preview text-sm text-slate-500 px-2 py-1 leading-relaxed';
+                rendered.innerHTML = textarea.value || '';
+                textarea.classList.add('hidden');
+                textarea.parentNode.insertBefore(rendered, textarea.nextSibling);
+            });
+        } else {
+            // 편집 모드
+            modeBadge.textContent = 'EDIT MODE';
+            modeBadge.className = 'text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block';
+
+            editButtons.classList.remove('hidden');
+            viewButtons.classList.add('hidden');
+            addSectionBtn.classList.remove('hidden');
+
+            surveyTitle.readOnly = false;
+            surveyTitle.classList.remove('bg-slate-50', 'cursor-not-allowed');
+            surveyDescription.readOnly = false;
+            surveyDescription.classList.remove('bg-slate-50', 'cursor-not-allowed');
+
+            // 렌더링 div 제거하고 textarea 복원
+            document.querySelectorAll('.desc-rendered-preview').forEach(div => div.remove());
+            document.querySelectorAll('.section-desc-input, .question-desc-input').forEach(textarea => {
+                textarea.classList.remove('hidden');
+            });
+        }
+    }
+
+    // 모든 입력 필드 비활성화 (읽기 전용 모드)
+    function disableAllInputs() {
+        const sectionList = document.getElementById('section-list');
+
+        // 섹션 내 모든 입력 필드 비활성화
+        sectionList.querySelectorAll('input, textarea, select').forEach(el => {
+            el.readOnly = true;
+            el.disabled = true;
+            el.classList.add('bg-slate-50', 'cursor-not-allowed');
+        });
+
+        // 버튼 비활성화/숨기기
+        sectionList.querySelectorAll('button').forEach(btn => {
+            btn.style.display = 'none';
+        });
+
+        // 드래그 핸들 숨기기
+        sectionList.querySelectorAll('.drag-handle').forEach(handle => {
+            handle.style.display = 'none';
+        });
+    }
+
+    // ==================== 설문 정보 확인 모달 관련 함수 ====================
+
+    // 설문 정보 모달 열기 (어드민 API 사용)
+    async function openSurveyInfoModal() {
+        if (!currentSurveyId) {
+            showToast('설문 정보를 불러올 수 없습니다.', 'error');
+            return;
+        }
+
+        try {
+            // 어드민 API로 설문 상세 정보 조회 (스크리닝 포함)
+            const response = await apiCall(`/admin/surveys/${currentSurveyId}`);
+
+            if (response) {
+                currentSurveyInfo = response;
+                renderSurveyInfo(response);
+                document.getElementById('surveyInfoModal').classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('설문 정보 조회 실패:', error);
+            showToast('설문 정보를 불러오는데 실패했습니다.', 'error');
+        }
+    }
+
+    // 설문 정보 모달 닫기
+    function closeSurveyInfoModal() {
+        document.getElementById('surveyInfoModal').classList.add('hidden');
+    }
+
+    // 설문 정보 렌더링 (AdminSurveyDetailResponse 구조)
+    function renderSurveyInfo(response) {
+        const info = response.information || {};
+        const screening = response.screening;
+
+        // 스크리닝 퀴즈
+        const screeningEl = document.getElementById('infoScreening');
+        if (screening && screening.content) {
+            const answerText = screening.answer === 'true' || screening.answer === true ? '예' : '아니오';
+            screeningEl.innerHTML = `
+                <p class="mb-1"><strong>질문:</strong> ${screening.content}</p>
+                <p><strong>정답:</strong> ${answerText}</p>
+            `;
+        } else {
+            screeningEl.innerHTML = '<p class="text-slate-400">스크리닝 퀴즈가 설정되지 않았습니다.</p>';
+        }
+
+        // 관심사
+        const interestsEl = document.getElementById('infoInterests');
+        if (info.interests && info.interests.length > 0) {
+            const interestLabels = {
+                'CAREER': '커리어', 'BUSINESS': '비즈니스', 'FINANCE': '재테크/금융',
+                'HEALTH': '건강', 'CULTURE': '문화/예술', 'FASHION': '패션/뷰티',
+                'SOCIETY': '사회/시사', 'SELF_IMPROVEMENT': '자기계발', 'DAILY_LIFE': '일상생활'
+            };
+            const interestsArray = Array.isArray(info.interests) ? info.interests : Array.from(info.interests);
+            interestsEl.innerHTML = interestsArray.map(i =>
+                `<span class="px-2 py-1 bg-pink-100 text-pink-700 rounded text-xs font-medium">${interestLabels[i] || i}</span>`
+            ).join('');
+        } else {
+            interestsEl.innerHTML = '<p class="text-slate-400 text-sm">관심사가 설정되지 않았습니다.</p>';
+        }
+
+        // 타겟 설정
+        const genderLabels = { 'ALL': '전체', 'MALE': '남성', 'FEMALE': '여성' };
+        const residenceLabels = {
+            'ALL': '전체', 'SEOUL': '서울', 'GYEONGGI': '경기', 'INCHEON': '인천',
+            'BUSAN': '부산', 'DAEGU': '대구', 'DAEJEON': '대전', 'GWANGJU': '광주',
+            'ULSAN': '울산', 'SEJONG': '세종', 'GANGWON': '강원', 'CHUNGNAM': '충남',
+            'CHUNGBUK': '충북', 'JEONNAM': '전남', 'JEONBUK': '전북', 'GYEONGNAM': '경남',
+            'GYEONGBUK': '경북', 'JEJU': '제주'
+        };
+        const ageLabels = {
+            'ALL': '전체', 'TEN': '10대', 'TWENTY': '20대', 'THIRTY': '30대',
+            'FOURTY': '40대', 'FIFTY': '50대', 'SIXTY': '60대', 'OVER': '70세 이상'
+        };
+
+        document.getElementById('infoGender').textContent = genderLabels[info.gender] || info.gender || '-';
+        document.getElementById('infoResidence').textContent = residenceLabels[info.residence] || info.residence || '-';
+
+        if (info.ages && (info.ages.length > 0 || info.ages.size > 0)) {
+            const agesArray = Array.isArray(info.ages) ? info.ages : Array.from(info.ages);
+            document.getElementById('infoAges').textContent = agesArray.map(a => ageLabels[a] || a).join(', ');
+        } else {
+            document.getElementById('infoAges').textContent = '-';
+        }
+
+        // 응답 설정
+        document.getElementById('infoDueCount').textContent = info.dueCount ? `${info.dueCount}명` : '-';
+        document.getElementById('infoCurrentCount').textContent = '-';  // 현재 응답 수는 별도 API 필요
+
+        // 마감일
+        if (info.deadline) {
+            const deadline = new Date(info.deadline);
+            document.getElementById('infoDeadline').textContent = deadline.toLocaleDateString('ko-KR', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+        } else {
+            document.getElementById('infoDeadline').textContent = '-';
+        }
+
+        // 상태 (information에서 가져올 수 없으므로 globalSurveyList에서 찾기)
+        const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
+        const status = survey?.status || '-';
+
+        const statusLabels = {
+            'WRITING': '작성중', 'PENDING': '검토중', 'ACTIVE': '진행중',
+            'NON_WRITING': '작성완료', 'COMPLETED': '완료', 'CLOSED': '마감', 'REFUNDED': '환불됨'
+        };
+        const statusEl = document.getElementById('infoStatus');
+        statusEl.textContent = statusLabels[status] || status;
+
+        // 상태에 따른 색상
+        const statusColors = {
+            'WRITING': 'text-yellow-600', 'PENDING': 'text-blue-600', 'ACTIVE': 'text-green-600',
+            'NON_WRITING': 'text-indigo-600', 'COMPLETED': 'text-slate-600', 'CLOSED': 'text-red-600', 'REFUNDED': 'text-orange-600'
+        };
+        statusEl.className = `ml-2 font-medium ${statusColors[status] || 'text-slate-700'}`;
+
+        // 비용 정보 (globalSurveyList에서)
+        const totalCoin = survey?.totalCoin;
+        document.getElementById('infoTotalCoin').textContent = totalCoin ? `${totalCoin.toLocaleString()} 코인` : '-';
+    }
+
+    // ==================== 설문 소유자 변경 관련 함수 ====================
+
+    // 소유자 변경 모달 열기
+    function openOwnerChangeModal() {
+        if (!currentSurveyId) {
+            showToast('설문 정보를 불러올 수 없습니다.', 'error');
+            return;
+        }
+
+        // 모달 초기화
+        document.getElementById('ownerSearchMemberId').value = '';
+        document.getElementById('ownerSearchName').value = '';
+        document.getElementById('ownerSearchEmail').value = '';
+        document.getElementById('ownerSearchResults').classList.add('hidden');
+        document.getElementById('selectedNewOwner').classList.add('hidden');
+        document.getElementById('selectedNewMemberId').value = '';
+        document.getElementById('confirmOwnerChangeBtn').disabled = true;
+
+        // 현재 소유자 정보 표시
+        const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
+        const currentOwnerEl = document.getElementById('currentOwnerInfo');
+        if (survey && survey.memberId) {
+            currentOwnerEl.innerHTML = `
+                <p><strong>회원 ID:</strong> ${survey.memberId}</p>
+                <p><strong>작성자:</strong> ${survey.creatorName || '-'}</p>
+            `;
+        } else {
+            currentOwnerEl.innerHTML = '<p class="text-slate-400">소유자 정보를 불러올 수 없습니다.</p>';
+        }
+
+        document.getElementById('ownerChangeModal').classList.remove('hidden');
+    }
+
+    // 소유자 변경 모달 닫기
+    function closeOwnerChangeModal() {
+        document.getElementById('ownerChangeModal').classList.add('hidden');
+    }
+
+    // 회원 검색 (소유자 변경용)
+    async function searchMembersForOwner() {
+        const memberId = document.getElementById('ownerSearchMemberId').value.trim();
+        const name = document.getElementById('ownerSearchName').value.trim();
+        const email = document.getElementById('ownerSearchEmail').value.trim();
+
+        if (!memberId && !name && !email) {
+            showToast('검색 조건을 하나 이상 입력해주세요.', 'warning');
+            return;
+        }
+
+        try {
+            const params = new URLSearchParams();
+            if (memberId) params.append('memberId', memberId);
+            if (name) params.append('name', name);
+            if (email) params.append('email', email);
+
+            const response = await apiCall(`/admin/search?${params.toString()}`);
+
+            if (response && response.members) {
+                renderOwnerSearchResults(response.members);
+            } else {
+                renderOwnerSearchResults([]);
+            }
+        } catch (error) {
+            console.error('회원 검색 실패:', error);
+            showToast('회원 검색에 실패했습니다.', 'error');
+        }
+    }
+
+    // 검색 결과 렌더링
+    function renderOwnerSearchResults(members) {
+        const resultsContainer = document.getElementById('ownerSearchResults');
+        const resultsList = document.getElementById('ownerSearchResultsList');
+
+        if (!members || members.length === 0) {
+            resultsList.innerHTML = '<p class="p-4 text-center text-slate-400 text-sm">검색 결과가 없습니다.</p>';
+            resultsContainer.classList.remove('hidden');
+            return;
+        }
+
+        // 현재 소유자 ID 가져오기
+        const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
+        const currentOwnerId = survey?.memberId;
+
+        resultsList.innerHTML = members.map(member => {
+            const isCurrentOwner = member.id === currentOwnerId;
+
+            if (isCurrentOwner) {
+                return `
+                    <div class="flex items-center justify-between px-4 py-3 bg-slate-100 border-b border-slate-100 last:border-b-0 cursor-not-allowed opacity-60">
+                        <div class="flex-1">
+                            <p class="font-medium text-slate-700">${member.name || '이름 없음'} <span class="text-orange-500 text-xs">(현재 소유자)</span></p>
+                            <p class="text-xs text-slate-500">ID: ${member.id} | ${member.email || '이메일 없음'}</p>
+                        </div>
+                        <span class="px-3 py-1 bg-slate-200 text-slate-500 rounded text-xs font-bold">
+                            선택 불가
+                        </span>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 cursor-pointer"
+                     onclick="selectNewOwner(${member.id}, '${member.name || ''}', '${member.email || ''}')">
+                    <div class="flex-1">
+                        <p class="font-medium text-slate-700">${member.name || '이름 없음'}</p>
+                        <p class="text-xs text-slate-500">ID: ${member.id} | ${member.email || '이메일 없음'}</p>
+                    </div>
+                    <button class="px-3 py-1 bg-orange-100 text-orange-600 rounded text-xs font-bold hover:bg-orange-200">
+                        선택
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        resultsContainer.classList.remove('hidden');
+    }
+
+    // 새 소유자 선택
+    function selectNewOwner(memberId, name, email) {
+        // 현재 소유자와 동일한지 확인
+        const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
+        const currentOwnerId = survey?.memberId;
+
+        if (memberId === currentOwnerId) {
+            showToast('현재 소유자와 동일한 사용자입니다.', 'warning');
+            return;
+        }
+
+        document.getElementById('selectedNewMemberId').value = memberId;
+        document.getElementById('selectedOwnerInfo').innerHTML = `
+            <p><strong>회원 ID:</strong> ${memberId}</p>
+            <p><strong>이름:</strong> ${name || '-'}</p>
+            <p><strong>이메일:</strong> ${email || '-'}</p>
+        `;
+        document.getElementById('selectedNewOwner').classList.remove('hidden');
+        document.getElementById('confirmOwnerChangeBtn').disabled = false;
+
+        // 검색 결과에서 선택된 항목 하이라이트
+        document.querySelectorAll('#ownerSearchResultsList > div').forEach(el => {
+            el.classList.remove('bg-orange-50');
+        });
+        event.currentTarget.classList.add('bg-orange-50');
+    }
+
+    // 소유자 변경 확인
+    async function confirmOwnerChange() {
+        const newMemberId = document.getElementById('selectedNewMemberId').value;
+
+        if (!newMemberId) {
+            showToast('새 소유자를 선택해주세요.', 'warning');
+            return;
+        }
+
+        if (!confirm('정말 설문 소유자를 변경하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+            return;
+        }
+
+        try {
+            await apiCall(`/admin/surveys/${currentSurveyId}/owner`, 'PATCH', {
+                newMemberId: parseInt(newMemberId)
+            });
+
+            showToast('설문 소유자가 변경되었습니다.', 'success');
+            closeOwnerChangeModal();
+
+            // 설문 목록 새로고침
+            await loadSurveyList();
+        } catch (error) {
+            console.error('소유자 변경 실패:', error);
+            showToast('소유자 변경에 실패했습니다.', 'error');
+        }
+    }
+</script>
+</body>
+</html>

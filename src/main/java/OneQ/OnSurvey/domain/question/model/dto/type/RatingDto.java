@@ -1,0 +1,34 @@
+package OneQ.OnSurvey.domain.question.model.dto.type;
+
+import OneQ.OnSurvey.domain.question.entity.question.Rating;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+
+@Getter @SuperBuilder @ToString(callSuper = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class RatingDto extends DefaultQuestionDto {
+    private String minValue;
+    private String maxValue;
+    private Integer rate;
+
+    public static RatingDto fromEntity(Rating rating) {
+        return RatingDto.builder()
+            .minValue(rating.getMinValue())
+            .maxValue(rating.getMaxValue())
+            .rate(rating.getRate())
+            .questionId(rating.getQuestionId())
+            .surveyId(rating.getSurveyId())
+            .questionType(rating.getType())
+            .title(rating.getTitle())
+            .description(rating.getDescription())
+            .isRequired(rating.getIsRequired())
+            .questionOrder(rating.getOrder())
+            .section(rating.getSection() != null ? rating.getSection() : 1)
+            .nextSection(rating.getNextSection())
+            .imageUrl(rating.getImageUrl())
+            .build();
+    }
+}

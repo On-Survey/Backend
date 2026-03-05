@@ -1,4 +1,7 @@
 *.pem
+./onsurvey-mTLS_private.key
+./onsurvey-mTLS_public.crt
+./docker-compose.local.yml
 
 HELP.md
 .gradle

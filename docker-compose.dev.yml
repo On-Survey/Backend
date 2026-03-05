@@ -1,0 +1,93 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /deploy/nginx/upstreams:/etc/nginx/upstreams
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks: [web]
+    restart: unless-stopped
+
+  onsurvey-blue:
+    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-latest}
+    container_name: onsurvey-blue
+    environment:
+      TZ: Asia/Seoul
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
+    volumes:
+      - ./config:/etc/onsurvey/config:ro
+      - /etc/onsurvey/certs:/etc/onsurvey/certs:ro
+    ports:
+      - "8080:8080"
+    networks: [web]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  onsurvey-green:
+    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-latest}
+    container_name: onsurvey-green
+    environment:
+      TZ: Asia/Seoul
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
+    volumes:
+      - ./config:/etc/onsurvey/config:ro
+      - /etc/onsurvey/certs:/etc/onsurvey/certs:ro
+    ports:
+      - "8081:8080"
+    networks: [web]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  mysql:
+    image: mysql:8.0
+    container_name: onsurvey-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-onsurvey}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Seoul
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks: [web]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: onsurvey-redis
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks: [web]
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  web:
+    driver: bridge

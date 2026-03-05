@@ -1,0 +1,76 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    depends_on:
+      - onsurvey-blue
+      - onsurvey-green
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /deploy/nginx/upstreams:/etc/nginx/upstreams
+      - /deploy/nginx/www:/usr/share/nginx/html
+      - /deploy/nginx/cert:/etc/letsencrypt
+    networks: [web]
+    restart: unless-stopped
+
+  onsurvey-blue:
+    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-latest}
+    container_name: onsurvey-blue
+    environment:
+      TZ: Asia/Seoul
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
+    volumes:
+      - ./config:/etc/onsurvey/config:ro
+      - /etc/onsurvey/certs:/etc/onsurvey/certs:ro
+    ports:
+      - "8080:8080"
+    networks: [web]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  onsurvey-green:
+    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-latest}
+    container_name: onsurvey-green
+    environment:
+      TZ: Asia/Seoul
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_CONFIG_ADDITIONAL_LOCATION: optional:file:/etc/onsurvey/config/
+    volumes:
+      - ./config:/etc/onsurvey/config:ro
+      - /etc/onsurvey/certs:/etc/onsurvey/certs:ro
+    ports:
+      - "8081:8080"
+    networks: [web]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: onsurvey-redis
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - '6379:6379'
+    command: [ "redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    networks: [web]
+
+volumes:
+  redis_data:
+
+networks:
+  web:
+    driver: bridge

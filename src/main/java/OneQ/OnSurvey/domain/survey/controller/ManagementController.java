@@ -1,0 +1,178 @@
+package OneQ.OnSurvey.domain.survey.controller;
+
+import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
+import OneQ.OnSurvey.domain.participation.service.answer.AnswerQuery;
+import OneQ.OnSurvey.domain.participation.service.response.ResponseQuery;
+import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.repository.section.SectionRepository;
+import OneQ.OnSurvey.domain.question.service.QuestionQuery;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import OneQ.OnSurvey.domain.survey.model.*;
+import OneQ.OnSurvey.domain.survey.model.dto.ScreeningFormData;
+import OneQ.OnSurvey.domain.survey.model.response.*;
+import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
+import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
+import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
+import OneQ.OnSurvey.domain.survey.service.query.SurveyQuery;
+import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
+import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.ErrorCode;
+import OneQ.OnSurvey.global.common.response.SuccessResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
+@RestController
+@RequestMapping("/v1/survey-management")
+@RequiredArgsConstructor
+public class ManagementController {
+
+    private final SurveyQuery surveyQuery;
+    private final SurveyCommand surveyCommand;
+    private final QuestionQuery questionQuery;
+    private final ResponseQuery responseQuery;
+    private final AnswerQuery<QuestionAnswer> answerQuery;
+    private final SurveyInfoRepository surveyInfoRepository;
+    private final ScreeningRepository screeningRepository;
+    private final SectionRepository sectionRepository;
+
+    @GetMapping("/surveys")
+    @Operation(summary = "사용자가 생성한 설문을 조회합니다.")
+    public SuccessResponse<SurveyManagementResponse> getSurveyManagementList(
+        @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        log.info("[MANAGEMENT] 사용자 생성 설문 조회 - memberId: {}", principal.getMemberId());
+
+        List<SurveyManagementResponse.SurveyInformation> surveyInfoList = surveyQuery.getSurveyListByMemberId(principal.getMemberId());
+
+        return SuccessResponse.ok(new SurveyManagementResponse(surveyInfoList));
+    }
+
+    @GetMapping("/surveys/answers")
+    @Operation(summary = "사용자가 응답을 확인할 설문을 상세 조회합니다.")
+    public SuccessResponse<SurveyManagementDetailResponse> getSurveyManagementDetailInfo(
+        @RequestParam Long surveyId,
+        @RequestParam(required = false) List<AgeRange> ages,
+        @RequestParam(required = false) List<Gender> genders,
+        @RequestParam(required = false) List<Residence> residences,
+        @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        log.info("[MANAGEMENT] 응답을 확인할 설문 상세조회 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
+
+        SurveyManagementDetailResponse response = surveyQuery.getSurvey(surveyId);
+        SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId).orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
+        List<SectionDto> sections = sectionRepository.findAllSectionDtoBySurveyId(surveyId);
+
+        if (!principal.getMemberId().equals(response.getMemberId())) {
+            throw new CustomException(ErrorCode.FORBIDDEN);
+        }
+
+        SurveyResponseFilterCondition filter =
+                new SurveyResponseFilterCondition(ages, genders, residences).normalize();
+
+        int count = responseQuery.getResponseCountBySurveyId(surveyId, filter);
+        response.updateCurrentCount(count);
+
+        List<SurveyManagementDetailResponse.DetailInfo> detailInfoList = questionQuery.getQuestionDtoListBySurveyId(surveyId).stream()
+            .map(dto -> new SurveyManagementDetailResponse.DetailInfo(
+                    dto.getQuestionId(),
+                    dto.getQuestionOrder(),
+                    QuestionType.valueOf(dto.getQuestionType()),
+                    dto.getTitle(),
+                    dto.getDescription(),
+                    dto.getIsRequired(),
+                    dto.getSection()
+                ))
+            .toList();
+
+        List<Long> choiceIdList = detailInfoList.stream()
+            .filter(dto -> dto.getType().isChoice())
+            .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
+            .toList();
+
+        if (!choiceIdList.isEmpty()) {
+            List<OptionDto> optionInfoList = questionQuery.getOptionsByQuestionIdList(choiceIdList);
+            Map<Long, List<OptionDto>> questionIdOptionInfoMap = optionInfoList.stream()
+                .collect(Collectors.groupingBy(OptionDto::getQuestionId));
+
+            detailInfoList.forEach(detailInfo -> {
+                List<OptionDto> optionDtoList = questionIdOptionInfoMap.getOrDefault(detailInfo.getQuestionId(), List.of());
+
+                Map<String, Long> contentMap = optionDtoList.stream()
+                    .sorted(Comparator.comparingLong(OptionDto::getOptionId))
+                    .collect(Collectors.toMap(
+                        OptionDto::getContent,
+                        dto -> 0L,
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                    ));
+                detailInfo.setAnswerMap(contentMap.isEmpty() ? Map.of() : contentMap);
+            });
+        }
+
+        detailInfoList = answerQuery.getDetailInfo(surveyId, filter, detailInfoList);
+        response.updateSections(sections);
+        response.updateDetailInfoList(detailInfoList);
+        response.updateSurveyInfo(surveyInfo);
+
+        return SuccessResponse.ok(response);
+    }
+
+    @GetMapping("/writing")
+    @Operation(summary = "작성 중인 설문을 조회합니다.")
+    public SuccessResponse<FormQuestionResponse> getQuestionsInWriting(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestParam Long surveyId
+    ) {
+        log.info("[MANAGEMENT] 작성 중인 설문 조회 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
+
+        surveyQuery.validateSurveyRequest(surveyId, principal.getMemberId(), SurveyStatus.WRITING);
+        List<DefaultQuestionDto> questionDto = questionQuery.getQuestionDtoListBySurveyId(surveyId);
+        ScreeningFormData screeningFormData = screeningRepository.getScreeningFormDataBySurveyId(surveyId);
+        List<SectionDto> sections = sectionRepository.findAllSectionDtoBySurveyId(surveyId);
+
+        return SuccessResponse.ok(new FormQuestionResponse(surveyId, questionDto, screeningFormData, sections));
+    }
+
+    @GetMapping
+    @Operation(summary = "내 설문 목록 조회",
+            description = "코인으로 결제한 설문들을 노출중/환불로 구분하여 조회합니다.")
+    public SuccessResponse<MySurveyListResponse> getMySurveys(
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        return SuccessResponse.ok(surveyQuery.getMySurveys(principal.getMemberId()));
+    }
+
+    @GetMapping("/{surveyId}")
+    @Operation(summary = "내 설문 결제 상세 조회",
+            description = "선택한 설문의 코인 결제 및 타겟 정보를 조회합니다.")
+    public SuccessResponse<SurveyDetailResponse> getMySurveyDetail(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable Long surveyId
+    ) {
+        return SuccessResponse.ok(surveyQuery.getMySurveyDetail(principal.getMemberId(), surveyId));
+    }
+
+    @PostMapping("/{surveyId}/refund")
+    @Operation(summary = "내 설문 결제 환불",
+            description = "선택한 설문의 코인 결제를 환불하고, survey의 totalCoin 만큼 코인을 돌려줍니다.")
+    public SuccessResponse<Boolean> refundMySurvey(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable Long surveyId
+    ) {
+        return SuccessResponse.ok(surveyCommand.refundSurvey(principal.getUserKey(), surveyId));
+    }
+}

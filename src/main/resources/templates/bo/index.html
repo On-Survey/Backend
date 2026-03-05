@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>설문 플랫폼 통합 백오피스</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/bo/bo-session.js"></script>
+    <script src="/bo/scripts/navigation.js"></script>
+    <script src="/bo/scripts/toast.js"></script>
+    <script src="/bo/scripts/api-call.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/bo/styles/common.css}">
+</head>
+<body class="bg-slate-100 h-screen overflow-hidden flex" data-initial-page="dashboard">
+
+    <!-- Sidebar Fragment -->
+    <th:block th:replace="~{bo/fragments/sidebar :: sidebar(activePage='dashboard', adminName=${adminName})}"></th:block>
+
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <!-- Header Fragment -->
+        <th:block th:replace="~{bo/fragments/header :: header(pageTitle='데이터 모니터링')}"></th:block>
+
+        <div class="flex-1 flex flex-col overflow-hidden bg-slate-100">
+            <!-- Dashboard Page -->
+            <th:block th:replace="~{bo/pages/dashboard :: content}"></th:block>
+
+            <!-- ==================== Builder Page (iframe) ==================== -->
+            <div id="page-builder" class="page-section hidden flex-1 w-full">
+                <iframe src="/v1/bo/survey" class="w-full h-full border-none"></iframe>
+            </div>
+
+            <!-- Review Page -->
+            <th:block th:replace="~{bo/pages/review :: content}"></th:block>
+
+            <!-- Promotion Page -->
+            <th:block th:replace="~{bo/pages/promotion :: content}"></th:block>
+
+            <!-- ==================== Form Request Page (iframe) ==================== -->
+            <div id="page-formRequest" class="page-section hidden flex-1 w-full">
+                <iframe src="/v1/bo/form-request" class="w-full h-full border-none"></iframe>
+            </div>
+
+            <!-- ==================== Member Search Page (iframe) ==================== -->
+            <div id="page-memberSearch" class="page-section hidden flex-1 w-full">
+                <iframe src="/v1/bo/member-search" class="w-full h-full border-none"></iframe>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Scripts Fragment -->
+    <th:block th:replace="~{bo/fragments/scripts :: scripts}"></th:block>
+</body>
+</html>
+
