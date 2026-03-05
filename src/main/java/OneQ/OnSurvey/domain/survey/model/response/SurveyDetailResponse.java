@@ -14,7 +14,8 @@ public record SurveyDetailResponse(
         int totalCoin,
         @DateFormat LocalDateTime createdAt,
         @DateFormat LocalDateTime deadline,
-        SurveyInfoResponse surveyInfo
+        SurveyInfoResponse surveyInfo,
+        String imageUrl
 ) {
     public static SurveyDetailResponse from(Survey survey, SurveyInfo info) {
         return new SurveyDetailResponse(
@@ -24,7 +25,8 @@ public record SurveyDetailResponse(
                 survey.getTotalCoin(),
                 survey.getCreatedAt(),
                 survey.getDeadline(),
-                SurveyInfoResponse.from(info)
+                SurveyInfoResponse.from(info),
+                survey.getImageUrl()
         );
     }
 }

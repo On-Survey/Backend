@@ -27,6 +27,10 @@ public class QuestionUpsertDto {
         QuestionType questionType;
         Integer questionOrder;
         Integer section;
+
+        // 임시 필드
+        Integer nextSection;
+
         String imageUrl;
 
         // Choice 필드
