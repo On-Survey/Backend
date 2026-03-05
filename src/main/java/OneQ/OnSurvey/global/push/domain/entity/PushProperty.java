@@ -44,7 +44,20 @@ public class PushProperty extends BaseEntity {
     @Column(name = "default_value", columnDefinition = "TEXT")
     private String defaultValue;
 
+    @Column
     private String description;
+
+    public static PushProperty of(
+        String templateName, String templateSetCode
+    ) {
+        return new PushProperty(null, templateName, templateSetCode, null, null, null);
+    }
+
+    public static PushProperty of(
+        String templateName, String templateSetCode, String contextKey, String defaultValue, String description
+    ) {
+        return new PushProperty(null, templateName, templateSetCode, contextKey, defaultValue, description);
+    }
 
     public void updateContext(String value, String description) {
         this.defaultValue = value;

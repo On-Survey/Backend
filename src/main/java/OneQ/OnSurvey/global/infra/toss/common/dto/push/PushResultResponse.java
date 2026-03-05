@@ -2,10 +2,10 @@ package OneQ.OnSurvey.global.infra.toss.common.dto.push;
 
 public record PushResultResponse (
     Long sentPushCount,
-    String sentPushContent
+    String sentPushContentIds
 ) {
 
-    public static PushResultResponse of(Long sentPushCount, String sentPushContentId) {
-        return new PushResultResponse(sentPushCount, sentPushContentId);
+    public static PushResultResponse of(Long sentPushCount, String sentPushContentIds) {
+        return new PushResultResponse(sentPushCount, sentPushContentIds);
     }
 }

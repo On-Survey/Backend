@@ -1,15 +1,19 @@
 package OneQ.OnSurvey.global.infra.toss.common.dto.push;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 import java.util.Map;
 
 public record PushTemplateAddRequest(
     @Schema(description = "메시지 템플릿 이름 (이벤트 클래스 명)", example = "SurveyCompletedEvent")
+    @NotBlank
     String name,
 
     @Schema(description = "발송할 메시지 템플릿 코드", example = "test_01")
+    @NotBlank
     String code,
 
     @Schema(
@@ -19,6 +23,7 @@ public record PushTemplateAddRequest(
             "\"surveyDeadline\": [\"2024-12-31\", null]" +
         "}"
     )
-    Map<String, List<String>> defaultContext
+
+    Map<@NotBlank String, @Size(min = 1) List<String>> defaultContext
 ) {
 }

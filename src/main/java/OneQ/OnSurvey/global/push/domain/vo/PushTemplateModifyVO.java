@@ -21,8 +21,8 @@ public record PushTemplateModifyVO(
             pushTemplateModifyRequest.defaultContext().entrySet().stream().map(
                 entry -> new ModifyPushTemplate(
                     entry.getKey(),
-                    entry.getValue().get(0),
-                    entry.getValue().get(1)
+                    entry.getValue().getFirst(),
+                    entry.getValue().size() >= 2 ? entry.getValue().get(1) : null
                 )
             )
             .toList()

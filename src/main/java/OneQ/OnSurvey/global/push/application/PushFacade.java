@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -88,7 +89,20 @@ public class PushFacade implements PushUseCase {
     @Override
     @Transactional
     public void addPushTemplate(PushTemplateAddRequest request) {
-        pushPropertyRepository.addNewPushTemplate(PushTemplateAddVO.of(request));
+        PushTemplateAddVO vo = PushTemplateAddVO.of(request);
+
+        List<PushProperty> propertyList = vo.addTemplateList().stream().map(
+                addTemplate -> PushProperty.of(
+                    addTemplate.name(),
+                    addTemplate.code(),
+                    addTemplate.contextKey(),
+                    addTemplate.contextValue(),
+                    addTemplate.description()
+                )
+            )
+            .toList();
+
+        pushPropertyRepository.saveAll(propertyList);
     }
 
     @Override
@@ -103,6 +117,9 @@ public class PushFacade implements PushUseCase {
         vo.modifyTemplateList().forEach(
             modify -> {
                 PushProperty property = pushPropertyMap.get(modify.contextKey());
+                if (property == null) {
+                    return;
+                }
                 property.updateContext(modify.contextValue(), modify.description());
             }
         );

@@ -21,6 +21,8 @@ public record SurveyCompletedEvent (
 
     @Override
     public Map<String, String> getPushContext() {
-        return eventContext;
+        return eventContext == null
+            ? Map.of()
+            : eventContext;
     }
 }

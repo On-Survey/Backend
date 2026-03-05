@@ -21,15 +21,22 @@ public class PushEventListener {
     @Async("pushAlimExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePushAlimEvent(PushAlimEvent event) {
-        long userKey = event.getTargetUserKey();
-        Map<String, String> templateCtx = event.getPushContext();
 
-        PushUseCase.PushCommand command = new PushUseCase.PushCommand(
-            userKey,
-            event.getPushTemplateName(),
-            templateCtx
-        );
+        try {
+            long userKey = event.getTargetUserKey();
+            Map<String, String> templateCtx = event.getPushContext();
 
-        pushUseCase.fillTemplateAndSendPush(command);
+            PushUseCase.PushCommand command = new PushUseCase.PushCommand(
+                userKey,
+                event.getPushTemplateName(),
+                templateCtx
+            );
+
+            pushUseCase.fillTemplateAndSendPush(command);
+        } catch (Exception e) {
+            log.error("[PushEventListener] 푸시알림 비동기 처리 중 예외 발생 - event: {}, error: {}",
+                event.getPushTemplateName(), e.getMessage(), e
+            );
+        }
     }
 }

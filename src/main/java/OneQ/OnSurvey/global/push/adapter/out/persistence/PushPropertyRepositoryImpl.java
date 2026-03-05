@@ -2,7 +2,6 @@ package OneQ.OnSurvey.global.push.adapter.out.persistence;
 
 import OneQ.OnSurvey.global.push.application.port.out.PushPropertyRepository;
 import OneQ.OnSurvey.global.push.domain.entity.PushProperty;
-import OneQ.OnSurvey.global.push.domain.vo.PushTemplateAddVO;
 import OneQ.OnSurvey.global.push.domain.vo.PushTemplateVO;
 import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.Projections;
@@ -41,21 +40,6 @@ public class PushPropertyRepositoryImpl implements PushPropertyRepository {
                 )
             )
             .getOrDefault(name, null);
-    }
-
-    @Override
-    public void addNewPushTemplate(PushTemplateAddVO vo) {
-        jpaQueryFactory
-            .insert(pushProperty)
-            .columns(
-                pushProperty.templateName,
-                pushProperty.templateSetCode,
-                pushProperty.contextKey,
-                pushProperty.defaultValue,
-                pushProperty.description
-            )
-            .values(vo.addTemplateList())
-            .execute();
     }
 
     @Override

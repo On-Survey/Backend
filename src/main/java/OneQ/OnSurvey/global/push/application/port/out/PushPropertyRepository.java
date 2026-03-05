@@ -1,7 +1,6 @@
 package OneQ.OnSurvey.global.push.application.port.out;
 
 import OneQ.OnSurvey.global.push.domain.entity.PushProperty;
-import OneQ.OnSurvey.global.push.domain.vo.PushTemplateAddVO;
 import OneQ.OnSurvey.global.push.domain.vo.PushTemplateVO;
 
 import java.util.Collection;
@@ -12,8 +11,6 @@ public interface PushPropertyRepository {
     List<PushProperty> findPushPropertiesByCode(String code);
 
     PushTemplateVO findPushTemplateContextByName(String name);
-
-    void addNewPushTemplate(PushTemplateAddVO addTemplateVO);
 
     void saveAll(Collection<PushProperty> pushProperties);
 }
