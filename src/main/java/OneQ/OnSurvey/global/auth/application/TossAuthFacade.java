@@ -9,6 +9,7 @@ import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.util.JwtDecodeUtils;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
+import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import OneQ.OnSurvey.global.infra.toss.auth.TossMemberInfoDecryptService;
 import OneQ.OnSurvey.global.infra.toss.auth.TossUnlinkValue;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.*;
@@ -18,7 +19,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,14 +42,14 @@ public class TossAuthFacade implements AuthUseCase {
     private String publicCrt;
 
     @Value("${redis.global-key-prefix.daily-user}")
-    private String dailyUserKeyPrefix;
+    private String dailyUserKey;
 
-    private final StringRedisTemplate redisTemplate;
     private final TossAuthPort tossAuthPort;
     private final MemberModifyService memberModifyService;
     private final TossMemberInfoDecryptService tossMemberInfoDecryptService;
     private final WithdrawalService withdrawalService;
     private final MemberQueryService memberQueryService;
+    private final RedisAgent redisAgent;
 
     private final AlertNotifier alertNotifier;
 
@@ -168,7 +168,7 @@ public class TossAuthFacade implements AuthUseCase {
 
     private void updateDailyUser(Long userKey) {
         try {
-            redisTemplate.opsForZSet().addIfAbsent(dailyUserKeyPrefix, String.valueOf(userKey), System.currentTimeMillis());
+            redisAgent.addToZSetIfAbsent(dailyUserKey, String.valueOf(userKey), System.currentTimeMillis());
         } catch (Exception e) {
             log.warn("[TossAuthFacade] 일간 활성 사용자 업데이트 실패 - userKey: {}", userKey, e);
         }
