@@ -8,8 +8,7 @@ public record SectionDto (
     String title,
     String description,
     Integer order,
-    Integer nextSection,
-    String imageUrl
+    Integer nextSection
 ) {
 
     public static SectionDto fromEntity(Section section) {
@@ -18,8 +17,7 @@ public record SectionDto (
             section.getTitle(),
             section.getDescription(),
             section.getSectionOrder(),
-            section.getNextSection(),
-            section.getImageUrl()
+            section.getNextSection()
         );
     }
 

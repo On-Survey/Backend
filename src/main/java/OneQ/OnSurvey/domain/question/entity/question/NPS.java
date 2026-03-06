@@ -22,7 +22,6 @@ public class NPS extends Question {
         String description,
         Boolean isRequired,
         Integer section,
-        Integer nextSection,
         QuestionType type,
         String imageUrl
     ) {
@@ -34,7 +33,6 @@ public class NPS extends Question {
             .isRequired(isRequired)
             .type(type.name())
             .section(section)
-            .nextSection(nextSection)
             .imageUrl(imageUrl)
             .build();
     }
@@ -45,9 +43,8 @@ public class NPS extends Question {
         Boolean isRequired,
         Integer order,
         Integer section,
-        Integer nextSection,
         String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, nextSection, imageUrl);
+        super.updateQuestion(title, description, isRequired, order, section, imageUrl);
     }
 }
