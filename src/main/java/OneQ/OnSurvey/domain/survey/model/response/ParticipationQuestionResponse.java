@@ -31,7 +31,7 @@ public record ParticipationQuestionResponse(
         return new ParticipationQuestionResponse(
             title, description,
             currSection != null ? currSection : 1,
-            currSection != null ? nextSection : 0,
+            nextSection != null ? nextSection : 0,
             info
         );
     }

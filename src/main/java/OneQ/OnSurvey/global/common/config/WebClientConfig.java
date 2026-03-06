@@ -32,7 +32,7 @@ public class WebClientConfig {
     }
 
     @Bean
-    WebClient lambdaWebClient(@Value("${google.timeout-ms:10000}") int timeoutMs) {
+    WebClient lambdaWebClient(@Value("${lambda.timeout-ms:10000}") int timeoutMs) {
         HttpClient httpClient = HttpClient.create()
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMs)
             .responseTimeout(Duration.ofMillis(timeoutMs))

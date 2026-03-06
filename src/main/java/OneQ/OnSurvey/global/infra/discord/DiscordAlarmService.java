@@ -158,7 +158,11 @@ public class DiscordAlarmService {
                 .append("* error: ").append(safe(alert.error())).append("\n");
         }
 
-        post(url, title, desc.toString());
+        String descStr = desc.toString();
+        if (descStr.length() > MAX_EMBED_DESC) {
+            descStr = descStr.substring(0, MAX_EMBED_DESC - TRUNC_SUFFIX.length()) + TRUNC_SUFFIX;
+        }
+        post(url, title, descStr);
     }
 
 

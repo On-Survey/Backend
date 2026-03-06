@@ -41,7 +41,6 @@ import java.util.function.Function;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Qualifier("lambdaWebClient")
 public class FormRequestLambda {
 
     private static final long FORM_CONVERSION_REQUEST_TIMEOUT = 20L;
@@ -51,7 +50,8 @@ public class FormRequestLambda {
 
     private final AlertNotifier alertNotifier;
     private final TransactionHandler transactionHandler;
-    private final WebClient lambdaWebClient;
+    @Qualifier("lambdaWebClient")
+    private final WebClient webClient;
 
     private final MemberFinder memberFinder;
     private final FormUpdater formUpdater;
@@ -65,7 +65,7 @@ public class FormRequestLambda {
 
         FormConversionPayload payload = new FormConversionPayload(event.formUrls());
 
-        FormConversionResponse response = lambdaWebClient.post()
+        FormConversionResponse response = webClient.post()
             .uri(lambdaUrl)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
@@ -73,7 +73,7 @@ public class FormRequestLambda {
             .bodyToMono(FormConversionResponse.class)
             .timeout(Duration.ofSeconds(FORM_CONVERSION_REQUEST_TIMEOUT))
             .retryWhen(Retry.backoff(3, Duration.ofSeconds(3)))
-            .doOnError(e -> {
+            .onErrorMap(e -> {
                 log.error("[FormRequestLambda] 구글폼 변환 중 오류 발생 - requestId: {}, error: {}", event.requestId(), e.getMessage(), e);
                 alertNotifier.sendSurveyConversionAsync(
                     SurveyConversionAlert.error(1, 0, "구글폼 변환 중 오류가 발생했습니다. error: " + e.getMessage())
@@ -92,10 +92,6 @@ public class FormRequestLambda {
             throw new CustomException(SurveyErrorCode.FORM_CONVERSION_FAILED);
         }
 
-        SurveyConversionAlert alert = SurveyConversionAlert.success(
-            response.totalCount(), response.successCount(), new ArrayList<>()
-        );
-
         List<MemberSearchResult> memberResultList = memberFinder.searchMembers(event.email(), null, null, null);
         if (memberResultList.size() != 1) {
             log.warn("[FormRequestLambda] 설문 생성 실패 - 요청자 이메일로 회원을 찾을 수 없습니다. email: {}", event.email());
@@ -103,10 +99,11 @@ public class FormRequestLambda {
         }
         Long memberId = memberResultList.getFirst().id();
 
+        List<SurveyConversionAlert.SurveyDetails> detailList = new ArrayList<>();
         response.results().forEach(result -> {
             if (result.isSuccess()) {
                 try {
-                    alert.details().add(
+                    detailList.add(
                         transactionHandler.runInTransaction(() -> {
                             Long surveyId = createSurveyFromConversionResult(result, memberId);
                             formUpdater.markAsRegistered(event.requestId(), surveyId);
@@ -137,15 +134,17 @@ public class FormRequestLambda {
                 } catch (Exception e) {
                     log.error("[FormRequestLambda] 설문 생성 중 오류 발생 - requestId: {}, error: {}",
                         event.requestId(), e.getMessage(), e);
-                    alert.details().add(SurveyConversionAlert.SurveyDetails.failure(result.url(), "설문 생성 중 오류가 발생했습니다."));
+                    detailList.add(SurveyConversionAlert.SurveyDetails.failure(result.url(), "설문 생성 중 오류가 발생했습니다."));
                 }
             } else {
                 log.error("[FormRequestLambda] 구글폼 변환 실패 - requestId: {}, url: {}, message: {}",
                     event.requestId(), result.url(), result.message());
-                alert.details().add(SurveyConversionAlert.SurveyDetails.failure(result.url(), result.message()));
+                detailList.add(SurveyConversionAlert.SurveyDetails.failure(result.url(), result.message()));
             }
         });
-        alertNotifier.sendSurveyConversionAsync(alert);
+        alertNotifier.sendSurveyConversionAsync(
+            SurveyConversionAlert.success(response.totalCount(), response.successCount(), detailList)
+        );
     }
 
     private Long createSurveyFromConversionResult(FormConversionResponse.Result result, Long memberId) {
