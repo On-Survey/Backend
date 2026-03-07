@@ -45,7 +45,7 @@ public class ResponseCommandService implements ResponseCommand {
     @Override
     public Boolean createResponse(Long surveyId, Long memberId, Long userKey) {
         try {
-            return redisAgent.executeNewTransactionAfterLock(surveyLockKeyPrefix + surveyId + ":" + userKey, 3, 5, () -> {
+            return redisAgent.executeNewTransactionAfterLock(surveyLockKeyPrefix + surveyId + ":" + userKey, 3, () -> {
                 Response response = responseRepository
                     .findBySurveyIdAndMemberId(surveyId, memberId)
                     .orElseGet(() -> Response.of(surveyId, memberId));

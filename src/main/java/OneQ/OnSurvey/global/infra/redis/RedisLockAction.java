@@ -9,5 +9,7 @@ public interface RedisLockAction {
 
     RLock getLock(String lockKey);
 
-    <R> R executeWithLock(String lockKey, long waitTIme, long leaseTime, Supplier<R> action) throws InterruptedException, RedisException;
+    <R> R executeWithLock(String lockKey, long waitTIme, Supplier<R> action) throws InterruptedException, RedisException;
+
+    <R> R executeNewTransactionAfterLock(String lockKey, long waitTime, Supplier<R> action) throws InterruptedException, RedisException;
 }

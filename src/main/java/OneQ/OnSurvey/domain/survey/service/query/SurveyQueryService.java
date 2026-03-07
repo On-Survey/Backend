@@ -382,7 +382,7 @@ public class SurveyQueryService implements SurveyQuery {
         boolean result;
         try {
             Integer finalDueCount = dueCount;
-            result = redisAgent.executeWithLock(lockKey + surveyId, 5, 10, () -> {
+            result = redisAgent.executeWithLock(lockKey + surveyId, 5, () -> {
                 Double existingScore = redisAgent.getZSetScore(potentialKey, memberValue);
 
                 // 새로운 참여자인 경우
@@ -426,7 +426,7 @@ public class SurveyQueryService implements SurveyQuery {
 
     private Integer initialDueCount(Long surveyId) {
         try {
-             return redisAgent.executeWithLock(lockKey + surveyId, 3, 6, () -> {
+             return redisAgent.executeWithLock(lockKey + surveyId, 3, () -> {
                 int dueCount = redisAgent.getIntValue(this.dueCountKey + surveyId);
 
                 // 다른 스레드에서 값이 설정된 경우, 재조회하지 않고 그대로 값 반환하도록 더블체크

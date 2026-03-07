@@ -60,7 +60,7 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
 
         String lockKey = surveyLockKeyPrefix + surveyId + ":" + userKey;
         try {
-            return redisAgent.executeNewTransactionAfterLock(lockKey, 3, 5, () -> {
+            return redisAgent.executeNewTransactionAfterLock(lockKey, 3, () -> {
                 /*
                     새로운 응답의 questionId로부터 기존 응답 조회 및 그룹화
                     Phantom Read 방지를 위해 조회 로직도 락 내부에서 실행

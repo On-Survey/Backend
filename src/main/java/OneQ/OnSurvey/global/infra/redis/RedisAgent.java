@@ -26,32 +26,33 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
 
     private final RedissonClient redisson;
     private final StringRedisTemplate redisTemplate;
-    private final TransactionHandler transactionhandler;
+    private final TransactionHandler transactionHandler;
 
     /**
      * 락 획득을 위한 RLock 객체를 반환
      * @param lockKey 분산락 설정을 위한 키
      * @return RLock
      */
+    @Override
     public RLock getLock(String lockKey) {
         return redisson.getLock(lockKey);
     }
 
     /**
-     * 락 획득 후 실행할 로직을 인자로 받아 분산락을 이용하여 실행
+     * 락 획득 후 실행할 로직을 인자로 받아 분산락을 이용하여 실행 (
      * @param lockKey   분산락 설정을 위한 키
      * @param waitTime  분산락 획득 대기시간 (단위: 초)
-     * @param leaseTime 분산락 최대 점유시간 (단위: 초)
      * @param action    분산락 획득 후 실행할 로직
      * @return {@code action}의 실행 결과
      * @throws RedisException       락 획득 실패 시 예외
      * @throws InterruptedException 락 획득 대기 중 인터럽트 발생 시 예외
      */
+    @Override
     public <R> R executeWithLock(
-        String lockKey, long waitTime, long leaseTime, Supplier<R> action
+        String lockKey, long waitTime, Supplier<R> action
     ) throws InterruptedException, RedisException {
         RLock lock = getLock(lockKey);
-        boolean available = lock.tryLock(waitTime, leaseTime, TimeUnit.SECONDS);
+        boolean available = lock.tryLock(waitTime, TimeUnit.SECONDS);
 
         if (!available) {
             throw new RedisException("락 획득 실패");
@@ -72,24 +73,24 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * <br> 강력한 일관성이 필요한 데이터에 대해서는 단순 조회 로직에도 사용해야 함
      * @param lockKey   분산락 설정을 위한 키
      * @param waitTime  분산락 획득 대기시간 (단위: 초)
-     * @param leaseTime 분산락 최대 점유시간 (단위: 초)
      * @param action    분산락 획득 후 실행할 로직
      * @return {@code action}의 실행 결과
      * @throws RedisException       락 획득 실패 시 예외
      * @throws InterruptedException 락 획득 대기 중 인터럽트 발생 시 예외
      */
+    @Override
     public <R> R executeNewTransactionAfterLock(
-        String lockKey, long waitTime, long leaseTime, Supplier<R> action
+        String lockKey, long waitTime, Supplier<R> action
     ) throws InterruptedException, RedisException {
         RLock lock = getLock(lockKey);
-        boolean available = lock.tryLock(waitTime, leaseTime, TimeUnit.SECONDS);
+        boolean available = lock.tryLock(waitTime, TimeUnit.SECONDS);
 
         if (!available) {
             throw new RedisException("락 획득 실패");
         }
 
         try {
-            return transactionhandler.runInTransaction(action);
+            return transactionHandler.runInTransaction(action);
         } finally {
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
@@ -103,6 +104,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param key 조회할 키 (keyPrefix + id 형태로 사용)
      * @return String
      */
+    @Override
     public String getValue(String key) {
         return redisTemplate.opsForValue().get(key);
     }
@@ -113,6 +115,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param key 조회할 키 (keyPrefix + id 형태로 사용)
      * @return int, 존재하지 않으면 0 반환
      */
+    @Override
     public int getIntValue(String key) {
         String value = redisTemplate.opsForValue().get(key);
         try {
@@ -129,6 +132,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param key 조회할 키 (keyPrefix + id 형태로 사용)
      * @return long, 존재하지 않으면 0 반환
      */
+    @Override
     public long getLongValue(String key) {
         String value = redisTemplate.opsForValue().get(key);
         try {
@@ -146,6 +150,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param value 저장할 값
      * @param ttl   TTL, 예: {@code Duration.ofSeconds(60)} - 60초 동안 유효
      */
+    @Override
     public void setValue(String key, String value, Duration ttl) {
         redisTemplate.opsForValue().set(key, value, ttl);
     }
@@ -159,6 +164,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @return 값이 저장됨 : true
      * <p> 이미 키가 존재하여 저장되지 않음 : false
      */
+    @Override
     public Boolean setValueIfAbsent(String key, String value, Duration ttl) {
         return redisTemplate.opsForValue().setIfAbsent(key, value, ttl);
     }
@@ -169,6 +175,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param key 조회할 키 (keyPrefix + id 형태로 사용)
      * @return 증가된 값
      */
+    @Override
     public Long incrementValue(String key) {
         return redisTemplate.opsForValue().increment(key);
     }
@@ -180,6 +187,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param delta 증가시킬 값
      * @return 증가된 값
      */
+    @Override
     public Long incrementValue(String key, long delta) {
         return redisTemplate.opsForValue().increment(key, delta);
     }
@@ -190,6 +198,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param key 조회할 키 (keyPrefix + id 형태로 사용)
      * @return 감소된 값
      */
+    @Override
     public Long decrementValue(String key) {
         return redisTemplate.opsForValue().decrement(key);
     }
@@ -201,6 +210,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param delta 감소시킬 값
      * @return 감소된 값
      */
+    @Override
     public Long decrementValue(String key, long delta) {
         return redisTemplate.opsForValue().decrement(key, delta);
     }
@@ -210,6 +220,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      *
      * @param keyList 삭제할 키 리스트 (keyPrefix + id 형태로 사용)
      */
+    @Override
     public void deleteKeys(List<String> keyList) {
         if (keyList != null && !keyList.isEmpty()) {
             redisTemplate.delete(keyList);
@@ -224,6 +235,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param max 조회할 범위(score)의 최대값
      * @return score 범위 내 요소 개수, 존재하지 않으면 0 반환
      */
+    @Override
     public long getZSetCount(String key, long min, long max) {
         Long count = redisTemplate.opsForZSet().count(key, min, max);
         return count != null ? count : 0L;
@@ -236,6 +248,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param value 조회할 요소 값
      * @return 요소의 score, 존재하지 않으면 null 반환
      */
+    @Override
     public Double getZSetScore(String key, String value) {
         return redisTemplate.opsForZSet().score(key, value);
     }
@@ -247,6 +260,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param value Sorted Set에 추가/갱신할 값
      * @param score Sorted Set에 추가/갱신할 값의 score
      */
+    @Override
     public void addToZSet(String key, String value, long score) {
         redisTemplate.opsForZSet().add(key, value, score);
     }
@@ -258,6 +272,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param value - Sorted Set에 추가할 값
      * @param score - Sorted Set에 추가할 값의 score
      */
+    @Override
     public void addToZSetIfAbsent(String key, String value, long score) {
         redisTemplate.opsForZSet().addIfAbsent(key, value, score);
     }
@@ -268,6 +283,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param key   삭제할 키 (keyPrefix + id 형태로 사용)
      * @param value 삭제할 요소 값
      */
+    @Override
     public void removeFromZSet(String key, String value) {
         redisTemplate.opsForZSet().remove(key, value);
     }
@@ -279,6 +295,7 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
      * @param min 삭제할 범위(score)의 최소값
      * @param max 삭제할 범위(score)의 최대값
      */
+    @Override
     public void rangeRemoveFromZSet(String key, long min, long max) {
         redisTemplate.opsForZSet().removeRangeByScore(key, min, max);
     }
