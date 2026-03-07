@@ -40,8 +40,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 
@@ -264,9 +266,11 @@ public class SurveyCommandService implements SurveyCommand {
     }
 
     @Override
+    @Transactional
     @Scheduled(cron = "0 0 0 * * *") // 매 자정마다 실행
     public void closeDueSurveys() {
-        surveyRepository.closeDueSurveys();
+        List<Long> dueSurveyIdList = surveyRepository.closeDueSurveys();
+        deleteSurveyRuntimeCache(dueSurveyIdList);
     }
 
     private Survey getSurvey(Long surveyId) {
@@ -344,5 +348,18 @@ public class SurveyCommandService implements SurveyCommand {
         redisAgent.setValue(this.completedKey + surveyId, "0", ttl);
         redisAgent.addToZSet(this.potentialKey + surveyId, String.valueOf(userKey), System.currentTimeMillis());
         redisAgent.setValue(this.creatorKey + surveyId, String.valueOf(userKey), ttl);
+    }
+
+    private void deleteSurveyRuntimeCache(List<Long> surveyIdList) {
+        List<String> keysToDelete = surveyIdList.stream()
+            .flatMap(id -> Stream.of(
+                this.dueCountKey + id,
+                this.completedKey + id,
+                this.potentialKey + id,
+                this.creatorKey + id
+            ))
+            .toList();
+
+        redisAgent.deleteKeys(keysToDelete);
     }
 }

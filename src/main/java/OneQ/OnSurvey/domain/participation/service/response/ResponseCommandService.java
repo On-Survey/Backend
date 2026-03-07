@@ -4,7 +4,6 @@ import OneQ.OnSurvey.domain.participation.entity.Response;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
-import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.surveyInfo.SurveyInfoRepository;
@@ -12,6 +11,8 @@ import OneQ.OnSurvey.domain.survey.service.SurveyGlobalStatsService;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import OneQ.OnSurvey.global.infra.redis.RedisAgent;
+import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
+import OneQ.OnSurvey.global.infra.transaction.AfterRollbackExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.client.RedisException;
@@ -29,6 +30,9 @@ public class ResponseCommandService implements ResponseCommand {
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
+
+    private final AfterCommitExecutor afterCommitExecutor;
+    private final AfterRollbackExecutor afterRollbackExecutor;
     private final RedisAgent redisAgent;
 
     @Value("${redis.survey-key-prefix.lock}")
@@ -56,25 +60,33 @@ public class ResponseCommandService implements ResponseCommand {
 
                 response.markResponded();
                 responseRepository.save(response);
-
                 surveyGlobalStatsService.addCompletedCount(1);
+                surveyInfoRepository.increaseCompletedCount(surveyId);
 
-                SurveyInfo surveyInfo = surveyInfoRepository.findBySurveyId(surveyId)
-                    .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
-                int currCompleted = updateCounter(surveyId, userKey);
-                surveyInfo.updateCompletedCount(currCompleted);
+                Survey survey = surveyRepository.getSurveyById(surveyId)
+                    .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+                if (SurveyStatus.ONGOING.equals(survey.getStatus())) {
+                    int currCompleted = updateCounter(surveyId, userKey);
+                    int dueCount = redisAgent.getIntValue(this.dueCountKey + surveyId);
 
-                if (currCompleted >= surveyInfo.getDueCount()) {
-                    Survey survey = surveyRepository.getSurveyById(surveyId)
-                        .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+                    if (currCompleted >= dueCount) {
+                        survey.updateSurveyStatus(SurveyStatus.CLOSED);
 
-                    survey.updateSurveyStatus(SurveyStatus.CLOSED);
-                    redisAgent.deleteKeys(List.of(
-                        this.dueCountKey + surveyId,
-                        this.completedKey + surveyId,
-                        this.potentialKey + surveyId,
-                        this.creatorKey + surveyId
-                    ));
+                        afterCommitExecutor.run(() -> {
+                            redisAgent.deleteKeys(List.of(
+                                this.dueCountKey + surveyId,
+                                this.completedKey + surveyId,
+                                this.potentialKey + surveyId,
+                                this.creatorKey + surveyId
+                            ));
+                        });
+                    }
+
+                    // DB 롤백 시 캐시 롤백을 위한 보상 트랜잭션
+                    afterRollbackExecutor.run(() -> {
+                        redisAgent.decrementValue(this.completedKey + surveyId);
+                        redisAgent.addToZSet(this.potentialKey + surveyId, String.valueOf(userKey), System.currentTimeMillis());
+                    });
                 }
 
                 return true;
