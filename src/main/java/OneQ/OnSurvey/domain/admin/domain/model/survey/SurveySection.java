@@ -5,7 +5,6 @@ public record SurveySection (
     String title,
     String description,
     Integer order,
-    Integer nextSection,
-    String imageUrl
+    Integer nextSection
 ) {
 }

@@ -33,16 +33,42 @@
             white-space: pre-wrap;
             overflow-y: auto;
         }
-        /* 하이퍼링크 미리보기 */
+        /* 하이퍼링크 미리보기 및 contenteditable 내 링크 */
         .desc-html-preview a,
-        .option-text-html-preview a {
+        .option-text-html-preview a,
+        .question-title-input[contenteditable] a,
+        .question-desc-input[contenteditable] a,
+        .section-title-input[contenteditable] a,
+        .section-desc-input[contenteditable] a,
+        #survey-title[contenteditable] a,
+        #survey-description[contenteditable] a {
             color: #4f46e5;
             text-decoration: underline;
             font-weight: 500;
+            cursor: pointer;
+            padding: 1px 4px;
+            border-radius: 3px;
+            transition: background-color 0.15s;
         }
         .desc-html-preview a:hover,
-        .option-text-html-preview a:hover {
+        .option-text-html-preview a:hover,
+        .question-title-input[contenteditable] a:hover,
+        .question-desc-input[contenteditable] a:hover,
+        .section-title-input[contenteditable] a:hover,
+        .section-desc-input[contenteditable] a:hover,
+        #survey-title[contenteditable] a:hover,
+        #survey-description[contenteditable] a:hover {
             color: #3730a3;
+            background-color: #e0e7ff;
+        }
+        /* contenteditable placeholder */
+        [contenteditable][data-placeholder]:empty:before {
+            content: attr(data-placeholder);
+            color: #9ca3af;
+            pointer-events: none;
+        }
+        [contenteditable]:focus {
+            outline: none;
         }
     </style>
 </head>
@@ -137,7 +163,22 @@
         <div class="flex justify-between items-start gap-4">
             <div class="flex-1">
                 <span id="mode-badge" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded mb-2 inline-block">EDIT MODE</span>
-                <input type="text" id="survey-title" class="w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors" value="" placeholder="설문 제목을 입력하세요">
+                <!-- 설문 제목 (contenteditable) -->
+                <input type="hidden" id="survey-title-value" value="">
+                <div id="survey-title" class="w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors" contenteditable="true" data-placeholder="설문 제목을 입력하세요" oninput="syncSurveyTitleValue(this)"></div>
+                <div class="flex items-center gap-2 mt-1 mb-2">
+                    <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(document.getElementById('survey-title'))">
+                        <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
+                    </button>
+                </div>
+                <!-- 설문 설명 (contenteditable) -->
+                <input type="hidden" id="survey-description-value" value="">
+                <div id="survey-description" class="w-full text-sm text-slate-600 border border-slate-200 rounded-lg p-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none min-h-[60px]" contenteditable="true" data-placeholder="설문 설명을 입력하세요" oninput="syncSurveyDescValue(this)"></div>
+                <div class="flex items-center gap-2 mt-1">
+                    <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(document.getElementById('survey-description'))">
+                        <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
+                    </button>
+                </div>
             </div>
             <!-- 편집 모드 버튼 -->
             <div id="edit-mode-buttons" class="flex flex-col gap-2 shrink-0">
@@ -159,49 +200,6 @@
                 <button onclick="openOwnerChangeModal()" class="px-4 py-2 bg-orange-500 text-white rounded shadow hover:bg-orange-600 text-sm font-bold">
                     <i class="fas fa-user-edit mr-1"></i>설문 소유자 변경
                 </button>
-            </div>
-        </div>
-        <!-- 설문 설명 영역 -->
-        <div class="mt-3">
-            <div class="flex items-center gap-2 cursor-pointer" onclick="toggleDescription()">
-                <button id="desc-toggle-btn" class="text-slate-400 hover:text-slate-600 transition-transform duration-200 flex items-center justify-center w-4 h-5">
-                    <i class="fas fa-chevron-down text-xs"></i>
-                </button>
-                <div id="desc-preview" class="text-sm text-slate-500 truncate flex-1 leading-5">
-                </div>
-            </div>
-            <div id="desc-edit" class="hidden mt-2">
-                <div class="flex items-start gap-2">
-                    <div class="flex items-center justify-center w-4 h-9">
-                        <button id="desc-toggle-btn-edit" class="text-slate-400 hover:text-slate-600 transition-transform duration-200" style="transform: rotate(180deg);" onclick="event.stopPropagation(); toggleDescription();">
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </button>
-                    </div>
-                    <div class="flex-1">
-                        <textarea id="survey-description" class="w-full text-sm text-slate-600 border border-slate-200 rounded-lg p-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none leading-5" rows="3" placeholder="설문 설명을 입력하세요"></textarea>
-                        <div class="flex items-center justify-between mt-2">
-                            <div class="flex gap-2">
-                                <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
-                                    <i class="fas fa-image text-xs"></i> 이미지
-                                    <input type="file" class="hidden" accept="image/*" onchange="handleSurveyImageUpload(this)">
-                                </label>
-                                <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialog(document.getElementById('survey-description'))">
-                                    <i class="fas fa-link text-xs"></i> 하이퍼링크
-                                </button>
-                            </div>
-                            <button onclick="saveDescription()" class="text-xs text-indigo-600 font-bold hover:bg-indigo-50 px-3 py-1 rounded">확인</button>
-                        </div>
-                        <input type="hidden" id="survey-image-url-input" value="">
-                        <div id="survey-image-preview" class="hidden mt-2">
-                            <div class="relative inline-block">
-                                <img class="max-h-32 rounded border border-slate-200" src="" alt="설문 이미지">
-                                <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeSurveyImage()">
-                                    <i class="fas fa-times text-[8px]"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -649,6 +647,29 @@
     </div>
 </div>
 
+<!-- 하이퍼링크 수정 팝오버 -->
+<div id="hyperlinkEditPopover" class="hidden absolute z-[70] bg-white border border-slate-200 rounded-lg shadow-lg p-3 w-72">
+    <div class="space-y-2 mb-3">
+        <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">표시 텍스트</label>
+            <input type="text" id="editLinkText" class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:border-indigo-500 outline-none">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">URL</label>
+            <input type="text" id="editLinkUrl" class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:border-indigo-500 outline-none">
+        </div>
+    </div>
+    <div class="flex justify-between">
+        <button onclick="deleteLinkFromPopover()" class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">
+            <i class="fas fa-trash-alt mr-1"></i>삭제
+        </button>
+        <div class="flex gap-1">
+            <button onclick="closeHyperlinkEditPopover()" class="px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 rounded">취소</button>
+            <button onclick="confirmEditLink()" class="px-2 py-1 text-xs bg-indigo-600 text-white font-bold rounded hover:bg-indigo-700">적용</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // ==================== API 설정 및 전역 변수 ====================
 
@@ -713,7 +734,8 @@
         'rating': '평가형',
         'nps': 'NPS',
         'number': '숫자형',
-        'date': '날짜형'
+        'date': '날짜형',
+        'image': '이미지'
     };
 
     // 문항 타입 매핑 (프론트엔드 → 백엔드)
@@ -724,7 +746,8 @@
         'rating': 'RATING',
         'nps': 'NPS',
         'number': 'NUMBER',
-        'date': 'DATE'
+        'date': 'DATE',
+        'image': 'IMAGE'
     };
 
     // 문항 타입 역매핑 (백엔드 → 프론트엔드)
@@ -735,7 +758,8 @@
         'RATING': 'rating',
         'NPS': 'nps',
         'NUMBER': 'number',
-        'DATE': 'date'
+        'DATE': 'date',
+        'IMAGE': 'image'
     };
 
     // 생성 폼 토글
@@ -803,15 +827,18 @@
     async function updateSurveyDisplay() {
         if (!currentSurveyId) return null;
 
-        const title = document.getElementById('survey-title').value.trim();
-        const description = document.getElementById('survey-description').value.trim();
-        const imageUrl = document.getElementById('survey-image-url-input').value.trim();
+        // contenteditable div에서 값 가져오기
+        const titleDiv = document.getElementById('survey-title');
+        const descDiv = document.getElementById('survey-description');
+
+        // 저장 전 HTML sanitize (a 태그와 href 속성만 허용)
+        const title = sanitizeHtmlForSave((titleDiv.innerHTML || '').trim());
+        const description = sanitizeHtmlForSave((descDiv.innerHTML || '').trim());
 
         try {
             const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/display`, 'PATCH', {
                 title,
-                description,
-                imageUrl
+                description
             });
 
             showToast('설문 정보가 수정되었습니다.', 'success');
@@ -839,9 +866,30 @@
                 const frontendType = item.getAttribute('data-question-type') || 'choice';
                 const questionType = QUESTION_TYPE_MAP[frontendType];
 
+                // contenteditable div + hidden input 조합에서 값 수집
+                const titleValueInput = item.querySelector('.question-title-value');
+                const descValueInput = item.querySelector('.question-desc-value');
                 const titleInput = item.querySelector('.question-title-input');
                 const descInput = item.querySelector('.question-desc-input');
                 const requiredCheckbox = item.querySelector('.required-checkbox');
+
+                // title/description 값 가져오기 (hidden input 우선, 없으면 contenteditable innerHTML)
+                let titleValue = '';
+                let descValue = '';
+                if (titleValueInput) {
+                    titleValue = titleValueInput.value;
+                } else if (titleInput) {
+                    titleValue = titleInput.innerHTML || titleInput.value || '';
+                }
+                if (descValueInput) {
+                    descValue = descValueInput.value;
+                } else if (descInput) {
+                    descValue = descInput.innerHTML || descInput.value || '';
+                }
+
+                // 저장 전 HTML sanitize (a 태그와 href 속성만 허용)
+                titleValue = sanitizeHtmlForSave(titleValue);
+                descValue = sanitizeHtmlForSave(descValue);
 
                 // [신규] 분기 설정 체크박스
                 const routeCheckbox = item.querySelector('.route-checkbox');
@@ -852,16 +900,25 @@
                 const hasCustomInput = !!customInputOption;
 
                 const imageUrlInput = item.querySelector('.question-image-url-input');
+                // 이미지 문항의 경우 전용 input에서 URL 수집
+                const imageTypeUrlInput = item.querySelector('.question-image-url-input-for-image-type');
+                let imageUrl = null;
+                if (frontendType === 'image' && imageTypeUrlInput) {
+                    imageUrl = imageTypeUrlInput.value.trim() || null;
+                } else if (imageUrlInput) {
+                    imageUrl = imageUrlInput.value.trim() || null;
+                }
+
                 const questionData = {
                     questionId: questionId,
                     questionType: questionType,
-                    title: titleInput ? titleInput.value : '',
-                    description: descInput ? descInput.value : '',
+                    title: titleValue,
+                    description: descValue,
                     isRequired: requiredCheckbox ? requiredCheckbox.checked : false,
                     isSectionDecidable: isSectionDecidable,
                     questionOrder: globalOrder,
                     section: sectionOrder,
-                    imageUrl: imageUrlInput ? (imageUrlInput.value.trim() || null) : null
+                    imageUrl: imageUrl
                 };
 
                 // 객관식인 경우 옵션 데이터 추가
@@ -923,9 +980,12 @@
 
             const imageUrlInput = optionItem.querySelector('.option-image-url-input');
 
+            // 저장 전 HTML sanitize (a 태그와 href 속성만 허용)
+            const sanitizedContent = sanitizeHtmlForSave(textInput.value || '');
+
             options.push({
                 optionId: optionId,
-                content: textInput.value || '',
+                content: sanitizedContent,
                 nextSection: nextSection,
                 imageUrl: imageUrlInput ? (imageUrlInput.value.trim() || null) : null
             });
@@ -1021,7 +1081,9 @@
         const sectionItems = document.querySelectorAll('.section-item');
         for (const section of sectionItems) {
             const titleInput = section.querySelector('.section-title-input');
-            if (titleInput && !titleInput.value.trim()) {
+            // contenteditable의 경우 textContent로 검사, 일반 input의 경우 value로 검사
+            const titleValue = titleInput ? (titleInput.textContent || titleInput.value || '').trim() : '';
+            if (titleInput && !titleValue) {
                 isValid = false;
                 titleInput.classList.add('border-red-400', 'border', 'ring-1', 'ring-red-400');
                 if (!firstInvalidElement) firstInvalidElement = titleInput;
@@ -1037,7 +1099,9 @@
         const questionItems = document.querySelectorAll('.question-item');
         for (const question of questionItems) {
             const titleInput = question.querySelector('.question-title-input');
-            if (titleInput && !titleInput.value.trim()) {
+            // contenteditable의 경우 textContent로 검사, 일반 input의 경우 value로 검사
+            const titleValue = titleInput ? (titleInput.textContent || titleInput.value || '').trim() : '';
+            if (titleInput && !titleValue) {
                 isValid = false;
                 titleInput.classList.add('border-red-400', 'ring-1', 'ring-red-400');
                 if (!firstInvalidElement) firstInvalidElement = titleInput;
@@ -1082,6 +1146,26 @@
                     setTimeout(() => {
                         optionInput.classList.remove('border-red-400', 'ring-1', 'ring-red-400');
                     }, 3000);
+                }
+            }
+
+            // 5. 이미지 문항인 경우 이미지가 필수인지 검사
+            if (questionType === 'image') {
+                const imageTypeUrlInput = question.querySelector('.question-image-url-input-for-image-type');
+                const imageUrl = imageTypeUrlInput ? imageTypeUrlInput.value.trim() : '';
+
+                if (!imageUrl) {
+                    isValid = false;
+                    const imageUploadArea = question.querySelector('.image-upload-required');
+                    if (imageUploadArea) {
+                        imageUploadArea.classList.add('ring-2', 'ring-red-400');
+                        if (!firstInvalidElement) firstInvalidElement = imageUploadArea;
+
+                        setTimeout(() => {
+                            imageUploadArea.classList.remove('ring-2', 'ring-red-400');
+                        }, 3000);
+                    }
+                    showToast('이미지 문항에는 반드시 이미지를 업로드해야 합니다.', 'error');
                 }
             }
         }
@@ -1233,8 +1317,8 @@
                 // options는 Set이므로 Array로 변환
                 const optionsArray = Array.isArray(choiceProp.options) ? choiceProp.options : Array.from(choiceProp.options || []);
                 optionsArray.forEach(opt => {
-                    // 옵션 추가 (optionId가 없으므로 null 전달)
-                    addOptionWithData(newQuestionEl, opt.content, null, opt.nextSection, isSectionDecidable, opt.imageUrl || null);
+                    // 옵션 추가 (optionId 포함)
+                    addOptionWithData(newQuestionEl, opt.content, opt.optionId || null, opt.nextSection, isSectionDecidable, opt.imageUrl || null);
                 });
 
                 if (hasCustomInput) {
@@ -1316,7 +1400,7 @@
             </div>
             <div class="option-image-preview ${imageUrl ? '' : 'hidden'} ml-6">
                 <div class="relative inline-block">
-                    <img class="option-image-tag max-h-16 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="보기 이미지">
+                    <img class="option-image-tag max-h-16 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="보기 이미지" referrerpolicy="no-referrer">
                     <button type="button" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeOptionImage(this)">
                         <i class="fas fa-times text-[7px]"></i>
                     </button>
@@ -1373,29 +1457,6 @@
         }
     }
 
-    async function handleSectionImageUpload(input) {
-        const file = input.files[0];
-        if (!file) return;
-        showToast('이미지 업로드 중...', 'info');
-        const url = await uploadImageFile(file);
-        if (!url) return;
-        const sectionItem = input.closest('.section-item');
-        sectionItem.querySelector('.section-image-url-input').value = url;
-        const preview = sectionItem.querySelector('.section-image-preview');
-        preview.querySelector('.section-image-tag').src = url;
-        preview.classList.remove('hidden');
-        input.value = '';
-        await saveSectionsToServer();
-        showToast('이미지가 업로드되었습니다.', 'success');
-    }
-
-    async function removeSectionImage(btn) {
-        const sectionItem = btn.closest('.section-item');
-        sectionItem.querySelector('.section-image-url-input').value = '';
-        btn.closest('.section-image-preview').classList.add('hidden');
-        await saveSectionsToServer();
-    }
-
     async function handleQuestionImageUpload(input) {
         const file = input.files[0];
         if (!file) return;
@@ -1415,6 +1476,86 @@
         const questionItem = btn.closest('.question-item');
         questionItem.querySelector('.question-image-url-input').value = '';
         btn.closest('.question-image-preview').classList.add('hidden');
+    }
+
+    // 이미지 문항 전용 이미지 업로드
+    async function handleImageTypeUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showToast('이미지 업로드 중...', 'info');
+        const url = await uploadImageFile(file);
+        if (!url) return;
+        const questionItem = input.closest('.question-item');
+
+        // 이미지 문항 전용 hidden input에 URL 저장
+        questionItem.querySelector('.question-image-url-input-for-image-type').value = url;
+        // 일반 이미지 input에도 동기화 (데이터 수집 시 사용)
+        const generalImageInput = questionItem.querySelector('.question-image-url-input');
+        if (generalImageInput) generalImageInput.value = url;
+
+        const uploadArea = questionItem.querySelector('.image-upload-required');
+        const emptyArea = uploadArea.querySelector('.image-type-empty');
+        const preview = uploadArea.querySelector('.image-type-preview');
+        const container = preview.querySelector('.image-type-container');
+        const fallback = preview.querySelector('.image-type-fallback');
+
+        // 이미지 컨테이너 표시, fallback 숨김
+        if (container) container.classList.remove('hidden');
+        if (fallback) fallback.classList.add('hidden');
+
+        preview.querySelector('.image-type-tag').src = url;
+        preview.querySelector('.image-type-url-display').textContent = url;
+
+        // 빈 영역 숨기고 미리보기 표시
+        if (emptyArea) emptyArea.classList.add('hidden');
+        preview.classList.remove('hidden');
+
+        input.value = '';
+        showToast('이미지가 업로드되었습니다. 문항을 저장해주세요.', 'success');
+    }
+
+    // 이미지 문항 전용 이미지 삭제
+    function removeImageTypeImage(btn) {
+        const questionItem = btn.closest('.question-item');
+        questionItem.querySelector('.question-image-url-input-for-image-type').value = '';
+        // 일반 이미지 input에도 동기화
+        const generalImageInput = questionItem.querySelector('.question-image-url-input');
+        if (generalImageInput) generalImageInput.value = '';
+
+        const uploadArea = questionItem.querySelector('.image-upload-required');
+        const emptyArea = uploadArea.querySelector('.image-type-empty');
+        const preview = uploadArea.querySelector('.image-type-preview');
+
+        preview.querySelector('.image-type-tag').src = '';
+        preview.querySelector('.image-type-url-display').textContent = '';
+        preview.classList.add('hidden');
+
+        // fallback UI도 숨김
+        const fallback = preview.querySelector('.image-type-fallback');
+        if (fallback) fallback.classList.add('hidden');
+        const container = preview.querySelector('.image-type-container');
+        if (container) container.classList.remove('hidden');
+
+        // 빈 영역 다시 표시
+        if (emptyArea) emptyArea.classList.remove('hidden');
+    }
+
+    // 이미지 문항 전용 이미지 로드 실패 처리
+    function handleImageTypeLoadError(img) {
+        const questionItem = img.closest('.question-item');
+        const preview = questionItem.querySelector('.image-type-preview');
+        const container = preview.querySelector('.image-type-container');
+        const fallback = preview.querySelector('.image-type-fallback');
+        const urlInput = questionItem.querySelector('.question-image-url-input-for-image-type');
+        const url = urlInput ? urlInput.value : '';
+
+        // 이미지 컨테이너 숨기고 fallback 표시
+        if (container) container.classList.add('hidden');
+        if (fallback) {
+            fallback.classList.remove('hidden');
+            const fallbackUrl = fallback.querySelector('.image-type-fallback-url');
+            if (fallbackUrl) fallbackUrl.textContent = url;
+        }
     }
 
     async function handleOptionImageUpload(input) {
@@ -1438,23 +1579,52 @@
         btn.closest('.option-image-preview').classList.add('hidden');
     }
 
-    async function handleSurveyImageUpload(input) {
+    // 이미지 문항 선택 시 사전 업로드 영역 토글
+    function toggleImageUploadArea(selectElement) {
+        const form = selectElement.closest('.add-question-form');
+        const uploadArea = form.querySelector('.image-pre-upload-area');
+        const descTextarea = form.querySelector('.new-question-desc');
+
+        if (selectElement.value === 'image') {
+            uploadArea.classList.remove('hidden');
+            descTextarea.classList.add('hidden');
+        } else {
+            uploadArea.classList.add('hidden');
+            descTextarea.classList.remove('hidden');
+            // 다른 타입 선택 시 이미지 URL 초기화
+            form.querySelector('.new-question-image-url').value = '';
+            const preview = form.querySelector('.new-question-image-preview');
+            preview.classList.add('hidden');
+            form.querySelector('.new-question-image-status').textContent = '이미지를 먼저 업로드하세요';
+        }
+    }
+
+    // 이미지 문항용 사전 이미지 업로드
+    async function handlePreUploadImage(input) {
         const file = input.files[0];
         if (!file) return;
         showToast('이미지 업로드 중...', 'info');
         const url = await uploadImageFile(file);
         if (!url) return;
-        document.getElementById('survey-image-url-input').value = url;
-        const preview = document.getElementById('survey-image-preview');
-        preview.querySelector('img').src = url;
+
+        const form = input.closest('.add-question-form');
+        form.querySelector('.new-question-image-url').value = url;
+
+        const preview = form.querySelector('.new-question-image-preview');
+        preview.querySelector('.new-question-image-tag').src = url;
         preview.classList.remove('hidden');
+
+        form.querySelector('.new-question-image-status').textContent = '업로드 완료!';
         input.value = '';
-        showToast('이미지가 업로드되었습니다.', 'success');
+        showToast('이미지가 업로드되었습니다. 이제 문항을 추가하세요.', 'success');
     }
 
-    function removeSurveyImage() {
-        document.getElementById('survey-image-url-input').value = '';
-        document.getElementById('survey-image-preview').classList.add('hidden');
+    // 사전 업로드된 이미지 삭제
+    function removePreUploadImage(btn) {
+        const form = btn.closest('.add-question-form');
+        form.querySelector('.new-question-image-url').value = '';
+        form.querySelector('.new-question-image-preview').classList.add('hidden');
+        form.querySelector('.new-question-image-status').textContent = '이미지를 먼저 업로드하세요';
     }
 
     async function handlePublishImageUpload(input) {
@@ -1480,7 +1650,48 @@
 
     // ==================== 하이퍼링크 삽입 ====================
 
-    // <a> 태그만 허용하는 HTML 새니타이저 (XSS 방지)
+    // 저장용 HTML sanitizer: <a> 태그와 href 속성만 허용 (DB 저장 전 사용)
+    function sanitizeHtmlForSave(html) {
+        if (!html || typeof html !== 'string') return html || '';
+
+        // &nbsp;를 줄바꿈(\n)으로 변환
+        html = html.replace(/&nbsp;/g, '\n').replace(/\u00A0/g, '\n');
+
+        const allowedSchemes = ['http:', 'https:', 'mailto:'];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const wrapper = document.createElement('span');
+
+        function processNode(src, dest) {
+            for (const child of src.childNodes) {
+                if (child.nodeType === Node.TEXT_NODE) {
+                    dest.appendChild(document.createTextNode(child.textContent));
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    if (child.tagName.toLowerCase() === 'a') {
+                        const a = document.createElement('a');
+                        const href = child.getAttribute('href') || '';
+                        try {
+                            const parsed = new URL(href);
+                            if (allowedSchemes.includes(parsed.protocol)) {
+                                a.href = parsed.href;  // href 속성만 설정
+                            }
+                        } catch (e) { /* 잘못된 URL — href 미설정 */ }
+                        // 텍스트 내용만 유지 (자식 태그 제거)
+                        a.textContent = child.textContent;
+                        dest.appendChild(a);
+                    } else {
+                        // 허용되지 않는 태그: 자식 노드 재귀 처리
+                        processNode(child, dest);
+                    }
+                }
+            }
+        }
+
+        processNode(doc.body, wrapper);
+        return wrapper.innerHTML;
+    }
+
+    // <a> 태그만 허용하는 HTML 새니타이저 (렌더링/미리보기용 - XSS 방지)
     function sanitizeDescHtml(html) {
         const allowedSchemes = ['http:', 'https:', 'mailto:'];
         const parser = new DOMParser();
@@ -1517,9 +1728,143 @@
         return wrapper.innerHTML;
     }
 
-    // 섹션/문항 description textarea 아래에 HTML 렌더링 미리보기를 동기화
+    // contenteditable div에서 hidden input으로 값 동기화 (제목)
+    function syncTitleValue(editableDiv) {
+        if (!editableDiv) return;
+        const questionItem = editableDiv.closest('.question-item');
+        if (!questionItem) return;
+        const hiddenInput = questionItem.querySelector('.question-title-value');
+        if (hiddenInput) {
+            hiddenInput.value = editableDiv.innerHTML;
+        }
+        // 링크 클릭 핸들러 재설정
+        setupEditableLinkHandlers(editableDiv);
+    }
+
+    // contenteditable div에서 hidden input으로 값 동기화 (설명)
+    function syncDescValue(editableDiv) {
+        if (!editableDiv) return;
+        const questionItem = editableDiv.closest('.question-item');
+        if (!questionItem) return;
+        const hiddenInput = questionItem.querySelector('.question-desc-value');
+        if (hiddenInput) {
+            hiddenInput.value = editableDiv.innerHTML;
+        }
+        // 링크 클릭 핸들러 재설정
+        setupEditableLinkHandlers(editableDiv);
+    }
+
+    // 설문 제목 동기화
+    function syncSurveyTitleValue(editableDiv) {
+        if (!editableDiv) return;
+        const hiddenInput = document.getElementById('survey-title-value');
+        if (hiddenInput) {
+            hiddenInput.value = editableDiv.innerHTML;
+        }
+        setupEditableLinkHandlers(editableDiv);
+    }
+
+    // 설문 설명 동기화
+    function syncSurveyDescValue(editableDiv) {
+        if (!editableDiv) return;
+        const hiddenInput = document.getElementById('survey-description-value');
+        if (hiddenInput) {
+            hiddenInput.value = editableDiv.innerHTML;
+        }
+        setupEditableLinkHandlers(editableDiv);
+    }
+
+    // 섹션 제목 동기화
+    function syncSectionTitleValue(editableDiv) {
+        if (!editableDiv) return;
+        const sectionItem = editableDiv.closest('.section-item');
+        if (!sectionItem) return;
+        const hiddenInput = sectionItem.querySelector('.section-title-value');
+        if (hiddenInput) {
+            hiddenInput.value = editableDiv.innerHTML;
+        }
+        setupEditableLinkHandlers(editableDiv);
+    }
+
+    // 섹션 설명 동기화
+    function syncSectionDescValue(editableDiv) {
+        if (!editableDiv) return;
+        const sectionItem = editableDiv.closest('.section-item');
+        if (!sectionItem) return;
+        const hiddenInput = sectionItem.querySelector('.section-desc-value');
+        if (hiddenInput) {
+            hiddenInput.value = editableDiv.innerHTML;
+        }
+        setupEditableLinkHandlers(editableDiv);
+    }
+
+    // contenteditable div 내 링크에 클릭 핸들러 설정
+    function setupEditableLinkHandlers(editableDiv) {
+        if (!editableDiv) return;
+        editableDiv.querySelectorAll('a').forEach(link => {
+            // 이미 핸들러가 설정되어 있으면 스킵
+            if (link.dataset.handlerSet) return;
+            link.dataset.handlerSet = 'true';
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openHyperlinkEditPopover(this, editableDiv);
+            });
+        });
+    }
+
+    // contenteditable용 하이퍼링크 삽입 다이얼로그
+    let _hyperlinkTargetEditable = null;
+    let _savedSelectionRange = null;  // 다이얼로그 열기 전 선택 범위 저장
+
+    function openHyperlinkDialogForEditable(editableDiv) {
+        _hyperlinkTargetEditable = editableDiv;
+
+        // 현재 선택 범위 저장 (다이얼로그 열기 전에)
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            // 선택 범위가 해당 editable 내에 있는지 확인
+            if (editableDiv.contains(range.commonAncestorContainer) ||
+                editableDiv === range.commonAncestorContainer) {
+                _savedSelectionRange = range.cloneRange();
+            } else {
+                _savedSelectionRange = null;
+            }
+        } else {
+            _savedSelectionRange = null;
+        }
+
+        document.getElementById('hyperlinkText').value = '';
+        document.getElementById('hyperlinkUrl').value = '';
+        document.getElementById('hyperlinkDialog').classList.remove('hidden');
+        document.getElementById('hyperlinkText').focus();
+    }
+
+    // 기존 미리보기 함수들 (하위 호환성 유지)
+    function syncTitleHtmlPreview(input) {
+        // contenteditable로 변경됨 - 더 이상 사용되지 않음
+    }
+
+    function syncDescriptionHtmlPreview(textarea) {
+        // contenteditable로 변경됨 - 더 이상 사용되지 않음
+    }
+
+    // 섹션/문항 description textarea 아래에 HTML 렌더링 미리보기를 동기화 (기존 - 섹션용으로 유지)
     function syncDescHtmlPreview(textarea) {
         if (!textarea) return;
+
+        // contenteditable인 경우 처리
+        if (textarea.getAttribute('contenteditable') === 'true') {
+            if (textarea.classList.contains('question-title-input')) {
+                syncTitleValue(textarea);
+            } else if (textarea.classList.contains('question-desc-input')) {
+                syncDescValue(textarea);
+            }
+            return;
+        }
+
+        // 섹션용 기존 로직
         const parentNode = textarea.parentNode;
         let preview = parentNode.querySelector('.desc-html-preview');
         if (!preview) {
@@ -1574,7 +1919,146 @@
     function closeHyperlinkDialog() {
         document.getElementById('hyperlinkDialog').classList.add('hidden');
         _hyperlinkTargetTextarea = null;
+        _hyperlinkTargetEditable = null;
+        _savedSelectionRange = null;
     }
+
+    // ==================== 하이퍼링크 수정 팝오버 ====================
+    let _currentEditingLink = null;  // 현재 수정 중인 링크 요소
+    let _currentEditingInput = null; // 현재 수정 중인 input/textarea
+
+    function openHyperlinkEditPopover(linkElement, inputElement) {
+        _currentEditingLink = linkElement;
+        _currentEditingInput = inputElement;
+
+        const popover = document.getElementById('hyperlinkEditPopover');
+        document.getElementById('editLinkText').value = linkElement.textContent;
+        document.getElementById('editLinkUrl').value = linkElement.getAttribute('href') || '';
+
+        // 링크 요소 위치 계산
+        const rect = linkElement.getBoundingClientRect();
+        popover.style.top = (rect.top - popover.offsetHeight - 8 + window.scrollY) + 'px';
+        popover.style.left = rect.left + 'px';
+
+        // 화면 밖으로 나가면 조정
+        popover.classList.remove('hidden');
+        const popoverRect = popover.getBoundingClientRect();
+        if (popoverRect.top < 0) {
+            popover.style.top = (rect.bottom + 8 + window.scrollY) + 'px';
+        }
+        if (popoverRect.right > window.innerWidth) {
+            popover.style.left = (window.innerWidth - popoverRect.width - 16) + 'px';
+        }
+
+        document.getElementById('editLinkText').focus();
+    }
+
+    function closeHyperlinkEditPopover() {
+        document.getElementById('hyperlinkEditPopover').classList.add('hidden');
+        _currentEditingLink = null;
+        _currentEditingInput = null;
+    }
+
+    function confirmEditLink() {
+        if (!_currentEditingLink || !_currentEditingInput) return;
+
+        const newText = document.getElementById('editLinkText').value.trim();
+        const newUrl = document.getElementById('editLinkUrl').value.trim();
+
+        if (!newText || !newUrl) {
+            showToast('텍스트와 URL을 모두 입력해주세요.', 'error');
+            return;
+        }
+
+        const allowedSchemes = ['http:', 'https:', 'mailto:'];
+        function tryParseUrl(s) { try { return new URL(s); } catch (e) { return null; } }
+        let parsedUrl = tryParseUrl(newUrl);
+        if (!parsedUrl || !allowedSchemes.includes(parsedUrl.protocol)) {
+            parsedUrl = tryParseUrl('https://' + newUrl);
+        }
+        if (!parsedUrl || !allowedSchemes.includes(parsedUrl.protocol)) {
+            showToast('올바른 URL을 입력해주세요.', 'error');
+            return;
+        }
+
+        // 링크 텍스트와 URL 업데이트
+        _currentEditingLink.textContent = newText;
+        _currentEditingLink.setAttribute('href', parsedUrl.href);
+
+        // contenteditable인 경우 hidden input 동기화
+        syncEditableToHiddenInput(_currentEditingInput);
+
+        closeHyperlinkEditPopover();
+        showToast('링크가 수정되었습니다.', 'success');
+    }
+
+    function deleteLinkFromPopover() {
+        if (!_currentEditingLink || !_currentEditingInput) return;
+
+        // 링크를 텍스트로 변환
+        const textNode = document.createTextNode(_currentEditingLink.textContent);
+        _currentEditingLink.parentNode.replaceChild(textNode, _currentEditingLink);
+
+        // contenteditable인 경우 hidden input 동기화
+        syncEditableToHiddenInput(_currentEditingInput);
+
+        closeHyperlinkEditPopover();
+        showToast('링크가 삭제되었습니다.', 'success');
+    }
+
+    // contenteditable div에서 hidden input으로 동기화
+    function syncEditableToHiddenInput(editableDiv) {
+        if (!editableDiv) return;
+
+        // 설문 제목/설명인 경우
+        if (editableDiv.id === 'survey-title') {
+            const hiddenInput = document.getElementById('survey-title-value');
+            if (hiddenInput) hiddenInput.value = editableDiv.innerHTML;
+            return;
+        }
+        if (editableDiv.id === 'survey-description') {
+            const hiddenInput = document.getElementById('survey-description-value');
+            if (hiddenInput) hiddenInput.value = editableDiv.innerHTML;
+            return;
+        }
+
+        // 섹션 제목/설명인 경우
+        const sectionItem = editableDiv.closest('.section-item');
+        if (sectionItem) {
+            if (editableDiv.classList.contains('section-title-input')) {
+                const hiddenInput = sectionItem.querySelector('.section-title-value');
+                if (hiddenInput) hiddenInput.value = editableDiv.innerHTML;
+                return;
+            }
+            if (editableDiv.classList.contains('section-desc-input')) {
+                const hiddenInput = sectionItem.querySelector('.section-desc-value');
+                if (hiddenInput) hiddenInput.value = editableDiv.innerHTML;
+                return;
+            }
+        }
+
+        // 문항 제목/설명인 경우
+        const questionItem = editableDiv.closest('.question-item');
+        if (questionItem) {
+            if (editableDiv.classList.contains('question-title-input')) {
+                const hiddenInput = questionItem.querySelector('.question-title-value');
+                if (hiddenInput) hiddenInput.value = editableDiv.innerHTML;
+            } else if (editableDiv.classList.contains('question-desc-input')) {
+                const hiddenInput = questionItem.querySelector('.question-desc-value');
+                if (hiddenInput) hiddenInput.value = editableDiv.innerHTML;
+            }
+        }
+    }
+
+    // 팝오버 외부 클릭 시 닫기
+    document.addEventListener('click', function(e) {
+        const popover = document.getElementById('hyperlinkEditPopover');
+        if (!popover.classList.contains('hidden') &&
+            !popover.contains(e.target) &&
+            e.target !== _currentEditingLink) {
+            closeHyperlinkEditPopover();
+        }
+    });
 
     function confirmHyperlink() {
         const text = document.getElementById('hyperlinkText').value.trim();
@@ -1593,6 +2077,44 @@
             showToast('올바른 URL을 입력해주세요. (예: https://example.com)', 'error');
             return;
         }
+
+        // contenteditable div 처리
+        if (_hyperlinkTargetEditable) {
+            const a = document.createElement('a');
+            a.href = parsedUrl.href;
+            a.textContent = text;
+
+            // 저장된 선택 범위가 있으면 해당 위치에, 없으면 맨 뒤에 삽입
+            if (_savedSelectionRange) {
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(_savedSelectionRange);
+
+                _savedSelectionRange.deleteContents();
+                _savedSelectionRange.insertNode(a);
+
+                // 커서를 링크 뒤로 이동
+                const newRange = document.createRange();
+                newRange.setStartAfter(a);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            } else {
+                // 저장된 범위가 없으면 맨 뒤에 삽입
+                _hyperlinkTargetEditable.appendChild(a);
+            }
+
+            // hidden input 동기화 및 링크 핸들러 설정
+            syncEditableToHiddenInput(_hyperlinkTargetEditable);
+            setupEditableLinkHandlers(_hyperlinkTargetEditable);
+
+            _hyperlinkTargetEditable = null;
+            _savedSelectionRange = null;
+            closeHyperlinkDialog();
+            return;
+        }
+
+        // 기존 textarea/input 처리
         if (_hyperlinkTargetTextarea) {
             const a = document.createElement('a');
             a.href = parsedUrl.href;
@@ -1606,7 +2128,9 @@
             _hyperlinkTargetTextarea.focus();
 
             if (_hyperlinkTargetTextarea.classList.contains('section-desc-input') ||
-                _hyperlinkTargetTextarea.classList.contains('question-desc-input')) {
+                _hyperlinkTargetTextarea.classList.contains('question-desc-input') ||
+                _hyperlinkTargetTextarea.classList.contains('section-title-input') ||
+                _hyperlinkTargetTextarea.classList.contains('question-title-input')) {
                 syncDescHtmlPreview(_hyperlinkTargetTextarea);
             } else if (_hyperlinkTargetTextarea.classList.contains('option-text-input')) {
                 syncOptionHtmlPreview(_hyperlinkTargetTextarea);
@@ -1879,40 +2403,33 @@
             questionIdMap.clear();
             questionCounter = 0;
 
-            // 입력 필드 초기화
-            document.getElementById('survey-title').value = data.title;
-            document.getElementById('survey-description').value = data.description;
-            document.getElementById('desc-preview').innerHTML = data.description === null
-                ? '설문 설명을 입력하세요' : data.description;
+            // 입력 필드 초기화 (contenteditable)
+            const titleDiv = document.getElementById('survey-title');
+            const descDiv = document.getElementById('survey-description');
+            titleDiv.innerHTML = data.title || '';
+            descDiv.innerHTML = data.description || '';
+            document.getElementById('survey-title-value').value = data.title || '';
+            document.getElementById('survey-description-value').value = data.description || '';
+            setupEditableLinkHandlers(titleDiv);
+            setupEditableLinkHandlers(descDiv);
 
             document.getElementById('section-list').innerHTML = '';
             sectionCounter = 0;
             questionCounter = 0;
             questionIdMap.clear();
 
-            // 이미지 초기화
-            document.getElementById('survey-image-url-input').value = '';
-            document.getElementById('survey-image-preview').classList.add('hidden');
-
             // 기존 문항 제거
             const existingQuestions = document.querySelectorAll('.question-item');
             existingQuestions.forEach(q => q.remove());
         } else if (mode === 'edit') {
-            document.getElementById('survey-title').value = data.title;
-            document.getElementById('survey-description').value = data.description;
-            document.getElementById('desc-preview').innerHTML = data.description === null
-                ? '설문 설명을 입력하세요' : data.description;
-
-            // 설문 이미지 표시
-            const surveyImageUrl = data.imageUrl || null;
-            document.getElementById('survey-image-url-input').value = surveyImageUrl || '';
-            const surveyImagePreview = document.getElementById('survey-image-preview');
-            if (surveyImageUrl) {
-                surveyImagePreview.querySelector('img').src = surveyImageUrl;
-                surveyImagePreview.classList.remove('hidden');
-            } else {
-                surveyImagePreview.classList.add('hidden');
-            }
+            const titleDiv = document.getElementById('survey-title');
+            const descDiv = document.getElementById('survey-description');
+            titleDiv.innerHTML = data.title || '';
+            descDiv.innerHTML = data.description || '';
+            document.getElementById('survey-title-value').value = data.title || '';
+            document.getElementById('survey-description-value').value = data.description || '';
+            setupEditableLinkHandlers(titleDiv);
+            setupEditableLinkHandlers(descDiv);
         }
     }
 
@@ -1937,25 +2454,19 @@
             <div class="flex items-start gap-2 flex-1">
                 <span class="bg-slate-700 text-white text-xs px-2 py-1 rounded font-bold mt-1">SECTION <span class="section-display-num">${newSectionNumber}</span></span>
                 <div class="flex flex-col gap-2 flex-1">
-                    <textarea class="section-title-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 text-sm font-bold text-slate-700 placeholder-slate-400 w-full focus:outline-none focus:border-indigo-500 resize-none px-2 py-1" placeholder="섹션 제목 입력 (필수)" rows="1" oninput="onSectionInfoChange(this); autoResizeTextarea(this);" required>섹션 ${newSectionNumber}</textarea>
-                    <textarea class="section-desc-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-400 text-sm text-slate-500 placeholder-slate-400 w-full focus:outline-none focus:border-indigo-400 resize-none px-2 py-1" placeholder="섹션 설명 (선택사항)" rows="1" oninput="onSectionInfoChange(this); autoResizeTextarea(this);"></textarea>
+                    <input type="hidden" class="section-title-value" value="섹션 ${newSectionNumber}">
+                    <div class="section-title-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 text-sm font-bold text-slate-700 w-full focus:outline-none focus:border-indigo-500 px-2 py-1 min-h-[28px]" contenteditable="true" data-placeholder="섹션 제목 입력 (필수)" oninput="syncSectionTitleValue(this); onSectionInfoChange(this);">섹션 ${newSectionNumber}</div>
                     <div class="flex gap-2 mt-1">
-                        <input type="hidden" class="section-image-url-input" value="">
-                        <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
-                            <i class="fas fa-image text-xs"></i> 이미지
-                            <input type="file" class="hidden section-image-file-input" accept="image/*" onchange="handleSectionImageUpload(this)">
-                        </label>
-                        <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialog(this.closest('.section-item').querySelector('.section-desc-input'))">
-                            <i class="fas fa-link text-xs"></i> 하이퍼링크
+                        <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialogForEditable(this.closest('.section-item').querySelector('.section-title-input'))">
+                            <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
                         </button>
                     </div>
-                    <div class="section-image-preview hidden">
-                        <div class="relative inline-block">
-                            <img class="section-image-tag max-h-24 rounded border border-slate-200" src="" alt="섹션 이미지">
-                            <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeSectionImage(this)">
-                                <i class="fas fa-times text-[8px]"></i>
-                            </button>
-                        </div>
+                    <input type="hidden" class="section-desc-value" value="">
+                    <div class="section-desc-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-400 text-sm text-slate-500 w-full focus:outline-none focus:border-indigo-400 px-2 py-1 min-h-[28px]" contenteditable="true" data-placeholder="섹션 설명 (선택사항)" oninput="syncSectionDescValue(this); onSectionInfoChange(this);"></div>
+                    <div class="flex gap-2 mt-1">
+                        <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialogForEditable(this.closest('.section-item').querySelector('.section-desc-input'))">
+                            <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1983,7 +2494,7 @@
                         <i class="fas fa-plus text-slate-400 group-hover:text-indigo-600 mr-2"></i>
                         <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600">추가</span>
                     </button>
-                    <select class="new-question-type text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white">
+                    <select class="new-question-type text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white" onchange="toggleImageUploadArea(this)">
                         <option value="choice" selected>객관식</option>
                         <option value="text">단답형</option>
                         <option value="textarea">장문형</option>
@@ -1991,11 +2502,33 @@
                         <option value="nps">NPS</option>
                         <option value="number">숫자형</option>
                         <option value="date">날짜형</option>
+                        <option value="image">이미지</option>
                     </select>
                 </div>
                 <div class="flex-1 flex flex-col gap-2">
                     <input type="text" class="new-question-title w-full text-sm font-medium border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="이 섹션에 추가할 문항 제목">
                     <textarea class="new-question-desc w-full text-sm text-slate-600 border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none" rows="1" placeholder="설명 (선택사항)"></textarea>
+                    <!-- 이미지 문항용 사전 업로드 영역 -->
+                    <div class="image-pre-upload-area hidden mt-2">
+                        <input type="hidden" class="new-question-image-url" value="">
+                        <div class="bg-purple-50 border-2 border-dashed border-purple-300 rounded-lg p-3">
+                            <div class="flex items-center gap-3">
+                                <label class="cursor-pointer px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded hover:bg-purple-700 transition-colors inline-flex items-center gap-1">
+                                    <i class="fas fa-upload"></i> 이미지 업로드 <span class="text-red-300">*필수</span>
+                                    <input type="file" class="hidden new-question-image-file" accept="image/*" onchange="handlePreUploadImage(this)">
+                                </label>
+                                <span class="new-question-image-status text-xs text-purple-600">이미지를 먼저 업로드하세요</span>
+                            </div>
+                            <div class="new-question-image-preview hidden mt-2">
+                                <div class="relative inline-block">
+                                    <img class="new-question-image-tag max-h-24 rounded border border-purple-200" src="" alt="업로드된 이미지" referrerpolicy="no-referrer">
+                                    <button type="button" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removePreUploadImage(this)">
+                                        <i class="fas fa-times text-[7px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2022,7 +2555,6 @@
         const sectionId = sectionData.sectionId || '';
         const nextSection = (sectionData.nextSection !== undefined && sectionData.nextSection !== null)
             ? sectionData.nextSection : 0;
-        const imageUrl = sectionData.imageUrl || null;
 
         const sectionItem = document.createElement('div');
         sectionItem.className = 'section-item bg-slate-50 border border-slate-300 rounded-xl p-6 relative transition-all';
@@ -2035,25 +2567,19 @@
             <div class="flex items-start gap-2 flex-1">
                 <span class="bg-slate-700 text-white text-xs px-2 py-1 rounded font-bold mt-1">SECTION <span class="section-display-num">${newSectionNumber}</span></span>
                 <div class="flex flex-col gap-2 flex-1">
-                    <textarea class="section-title-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 text-sm font-bold text-slate-700 placeholder-slate-400 w-full focus:outline-none focus:border-indigo-500 resize-none px-2 py-1" placeholder="섹션 제목 입력 (필수)" rows="1" oninput="onSectionInfoChange(this); autoResizeTextarea(this);" required>${escapeHtml(title)}</textarea>
-                    <textarea class="section-desc-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-400 text-sm text-slate-500 placeholder-slate-400 w-full focus:outline-none focus:border-indigo-400 resize-none px-2 py-1" placeholder="섹션 설명 (선택사항)" rows="1" oninput="onSectionInfoChange(this); autoResizeTextarea(this);">${escapeHtml(description)}</textarea>
+                    <input type="hidden" class="section-title-value" value="${escapeHtml(title)}">
+                    <div class="section-title-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 text-sm font-bold text-slate-700 w-full focus:outline-none focus:border-indigo-500 px-2 py-1 min-h-[28px]" contenteditable="true" data-placeholder="섹션 제목 입력 (필수)" oninput="syncSectionTitleValue(this); onSectionInfoChange(this);">${title}</div>
                     <div class="flex gap-2 mt-1">
-                        <input type="hidden" class="section-image-url-input" value="${escapeHtml(imageUrl || '')}">
-                        <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
-                            <i class="fas fa-image text-xs"></i> 이미지
-                            <input type="file" class="hidden section-image-file-input" accept="image/*" onchange="handleSectionImageUpload(this)">
-                        </label>
-                        <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialog(this.closest('.section-item').querySelector('.section-desc-input'))">
-                            <i class="fas fa-link text-xs"></i> 하이퍼링크
+                        <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialogForEditable(this.closest('.section-item').querySelector('.section-title-input'))">
+                            <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
                         </button>
                     </div>
-                    <div class="section-image-preview ${imageUrl ? '' : 'hidden'}">
-                        <div class="relative inline-block">
-                            <img class="section-image-tag max-h-24 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="섹션 이미지">
-                            <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeSectionImage(this)">
-                                <i class="fas fa-times text-[8px]"></i>
-                            </button>
-                        </div>
+                    <input type="hidden" class="section-desc-value" value="${escapeHtml(description)}">
+                    <div class="section-desc-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-400 text-sm text-slate-500 w-full focus:outline-none focus:border-indigo-400 px-2 py-1 min-h-[28px]" contenteditable="true" data-placeholder="섹션 설명 (선택사항)" oninput="syncSectionDescValue(this); onSectionInfoChange(this);">${description}</div>
+                    <div class="flex gap-2 mt-1">
+                        <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialogForEditable(this.closest('.section-item').querySelector('.section-desc-input'))">
+                            <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2081,7 +2607,7 @@
                         <i class="fas fa-plus text-slate-400 group-hover:text-indigo-600 mr-2"></i>
                         <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600">추가</span>
                     </button>
-                    <select class="new-question-type text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white">
+                    <select class="new-question-type text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white" onchange="toggleImageUploadArea(this)">
                         <option value="choice" selected>객관식</option>
                         <option value="text">단답형</option>
                         <option value="textarea">장문형</option>
@@ -2089,11 +2615,33 @@
                         <option value="nps">NPS</option>
                         <option value="number">숫자형</option>
                         <option value="date">날짜형</option>
+                        <option value="image">이미지</option>
                     </select>
                 </div>
                 <div class="flex-1 flex flex-col gap-2">
                     <input type="text" class="new-question-title w-full text-sm font-medium border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="이 섹션에 추가할 문항 제목">
                     <textarea class="new-question-desc w-full text-sm text-slate-600 border border-slate-200 rounded px-3 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none resize-none" rows="1" placeholder="설명 (선택사항)"></textarea>
+                    <!-- 이미지 문항용 사전 업로드 영역 -->
+                    <div class="image-pre-upload-area hidden mt-2">
+                        <input type="hidden" class="new-question-image-url" value="">
+                        <div class="bg-purple-50 border-2 border-dashed border-purple-300 rounded-lg p-3">
+                            <div class="flex items-center gap-3">
+                                <label class="cursor-pointer px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded hover:bg-purple-700 transition-colors inline-flex items-center gap-1">
+                                    <i class="fas fa-upload"></i> 이미지 업로드 <span class="text-red-300">*필수</span>
+                                    <input type="file" class="hidden new-question-image-file" accept="image/*" onchange="handlePreUploadImage(this)">
+                                </label>
+                                <span class="new-question-image-status text-xs text-purple-600">이미지를 먼저 업로드하세요</span>
+                            </div>
+                            <div class="new-question-image-preview hidden mt-2">
+                                <div class="relative inline-block">
+                                    <img class="new-question-image-tag max-h-24 rounded border border-purple-200" src="" alt="업로드된 이미지" referrerpolicy="no-referrer">
+                                    <button type="button" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removePreUploadImage(this)">
+                                        <i class="fas fa-times text-[7px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2104,10 +2652,16 @@
         // refreshAllJumpSelects();
         // refreshAllJumpSelects()는 호출하지 않음 - 모든 섹션 추가 후 renderLoadedQuestions에서 한 번만 호출
 
-        // 기존 description에 HTML이 있으면 미리보기 동기화
+        // 기존 description에 HTML(링크)이 있으면 링크 핸들러 설정
         if (description) {
             const descInput = sectionItem.querySelector('.section-desc-input');
-            if (descInput) syncDescHtmlPreview(descInput);
+            if (descInput) setupEditableLinkHandlers(descInput);
+        }
+
+        // 기존 title에 HTML(링크)이 있으면 링크 핸들러 설정
+        if (title) {
+            const titleInput = sectionItem.querySelector('.section-title-input');
+            if (titleInput) setupEditableLinkHandlers(titleInput);
         }
     }
 
@@ -2221,19 +2775,37 @@
             const order = index + 1;
             const titleInput = section.querySelector('.section-title-input');
             const descInput = section.querySelector('.section-desc-input');
+            const titleValueInput = section.querySelector('.section-title-value');
+            const descValueInput = section.querySelector('.section-desc-value');
             const nextSectionSelect = section.querySelector('.section-next-select');
 
             // 드롭다운에서 선택된 다음 섹션 값 사용
             const nextSection = nextSectionSelect ? parseInt(nextSectionSelect.value) : 0;
 
-            const imageUrlInput = section.querySelector('.section-image-url-input');
+            // contenteditable인 경우 hidden input 또는 innerHTML 사용
+            let titleValue = '';
+            let descValue = '';
+            if (titleValueInput) {
+                titleValue = titleValueInput.value.trim();
+            } else if (titleInput) {
+                titleValue = (titleInput.innerHTML || titleInput.value || '').trim();
+            }
+            if (descValueInput) {
+                descValue = descValueInput.value.trim();
+            } else if (descInput) {
+                descValue = (descInput.innerHTML || descInput.value || '').trim();
+            }
+
+            // 저장 전 HTML sanitize (a 태그와 href 속성만 허용)
+            titleValue = sanitizeHtmlForSave(titleValue);
+            descValue = sanitizeHtmlForSave(descValue);
+
             sections.push({
                 sectionId: (sectionId !== null) ? Number(sectionId) : null,
-                title: titleInput ? titleInput.value.trim() : `섹션 ${order}`,
-                description: descInput ? descInput.value.trim() : '',
+                title: titleValue || `섹션 ${order}`,
+                description: descValue,
                 order: order,
-                nextSection: nextSection,
-                imageUrl: imageUrlInput ? (imageUrlInput.value.trim() || null) : null
+                nextSection: nextSection
             });
         });
 
@@ -2378,11 +2950,13 @@
         const titleInput = formContainer.querySelector('.new-question-title');
         const descInput = formContainer.querySelector('.new-question-desc');
         const typeInput = formContainer.querySelector('.new-question-type');
+        const imageUrlInput = formContainer.querySelector('.new-question-image-url');
 
         const title = titleInput.value.trim();
         const description = descInput.value.trim();
         const frontendType = typeInput.value;
         const section = parseInt(sectionItem.getAttribute('data-section-order'));
+        const preUploadedImageUrl = imageUrlInput ? imageUrlInput.value.trim() : '';
 
         if (!title) {
             titleInput.focus();
@@ -2393,36 +2967,57 @@
             return;
         }
 
+        // 이미지 문항인 경우 이미지 필수 체크
+        if (frontendType === 'image' && !preUploadedImageUrl) {
+            showToast('이미지 문항에는 이미지를 먼저 업로드해야 합니다.', 'error');
+            const uploadArea = formContainer.querySelector('.image-pre-upload-area');
+            if (uploadArea) {
+                uploadArea.classList.add('ring-2', 'ring-red-400');
+                setTimeout(() => {
+                    uploadArea.classList.remove('ring-2', 'ring-red-400');
+                }, 2000);
+            }
+            return;
+        }
+
         try {
             // 전체 문항 수 계산 (순서용)
             const totalQuestions = document.querySelectorAll('.question-item').length;
 
-            // 3. API 호출
+            // 3. API 호출 (이미지 문항인 경우 imageUrl 포함)
+            const questionData = {
+                title: title,
+                description: frontendType === 'image' ? '' : description, // 이미지 문항은 설명 없음
+                questionType: QUESTION_TYPE_MAP[frontendType],
+                questionOrder: totalQuestions + 1,
+                section: section
+            };
+
+            // 이미지 URL이 있으면 추가
+            if (preUploadedImageUrl) {
+                questionData.imageUrl = preUploadedImageUrl;
+            }
+
             const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/questions`, 'POST',
                 {
-                    questions: [
-                        {
-                            title: title,
-                            description: description,
-                            questionType: QUESTION_TYPE_MAP[frontendType],
-                            questionOrder: totalQuestions + 1,
-                            section: section
-                        }
-                    ]
+                    questions: [questionData]
                 }
             );
 
-            // 4. UI 생성 및 추가 (여기가 수정됨)
+            // 4. UI 생성 및 추가
             const questionsContainer = sectionItem.querySelector('.section-questions');
 
             // addNewQuestion은 이제 요소를 반환만 함. appendChild는 여기서 수행.
-            // description은 API 응답에 없을 수 있으므로 입력된 값 사용
             const newQuestionEl = addNewQuestion(
                 response.questionId,
                 response.title || title,
-                description,  // 입력된 description 값 사용
+                frontendType === 'image' ? '' : description,  // 이미지 문항은 설명 없음
                 totalQuestions + 1, // order (UI 표시용)
-                QUESTION_TYPE_REVERSE_MAP[response.type] || frontendType
+                QUESTION_TYPE_REVERSE_MAP[response.type] || frontendType,
+                false, // isSectionDecidable
+                false, // hasCustomInput
+                null,  // defaultDate
+                preUploadedImageUrl || null // imageUrl
             );
 
             // 비어있음 안내문구가 있다면 숨김 처리
@@ -2434,6 +3029,18 @@
             // 5. 입력란 초기화
             titleInput.value = '';
             descInput.value = '';
+            if (imageUrlInput) imageUrlInput.value = '';
+            // 이미지 업로드 영역 초기화
+            const uploadArea = formContainer.querySelector('.image-pre-upload-area');
+            if (uploadArea) {
+                uploadArea.classList.add('hidden');
+                const preview = uploadArea.querySelector('.new-question-image-preview');
+                if (preview) preview.classList.add('hidden');
+                const status = uploadArea.querySelector('.new-question-image-status');
+                if (status) status.textContent = '이미지를 먼저 업로드하세요';
+            }
+            // 타입 선택을 기본값으로
+            typeInput.value = 'choice';
 
             updateQuestionNumbers();
             // 새 문항에 대한 섹션 이동 옵션 초기화 (분기 설정이 꺼져있으므로 숨김 상태로 시작)
@@ -2469,6 +3076,7 @@
         const showNps = type === 'nps' ? '' : 'hidden';
         const showNumber = type === 'number' ? '' : 'hidden';
         const showDate = type === 'date' ? '' : 'hidden';
+        const showImage = type === 'image' ? '' : 'hidden';
 
         // [신규] 섹션 분기 설정 체크박스 표시 여부 (객관식일 때만)
         const showRouteConfig = type === 'choice' ? '' : 'hidden';
@@ -2478,6 +3086,9 @@
 
         // 분기 설정이 true이면 옵션의 select box를 보여줌
         const jumpSelectClass = isSectionDecidable ? '' : 'hidden';
+
+        // 이미지 타입은 설명 없이 제목만 표시
+        const showDescription = type === 'image' ? 'hidden' : '';
 
         newQuestion.innerHTML = `
             <div class="w-64 bg-slate-50 border-r border-slate-200 p-4 flex flex-col gap-4 shrink-0">
@@ -2521,24 +3132,77 @@
             </div>
 
             <div class="flex-1 p-6">
-                <input type="text" class="question-title-input w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 mb-2 transition-colors" placeholder="질문을 입력하세요" value="${escapeHtml(title)}">
-                <textarea class="question-desc-input w-full text-sm text-slate-500 border-b border-slate-100 focus:border-indigo-400 outline-none pb-2 transition-all resize-none overflow-hidden" placeholder="문항에 대한 설명을 입력하세요 (선택사항)" rows="1" onfocus="expandDescTextarea(this)" onblur="collapseDescTextarea(this)">${escapeHtml(description)}</textarea>
-                <div class="flex gap-2 mt-2 mb-3">
+                <input type="hidden" class="question-title-value" value="${escapeHtml(title)}">
+                <div class="question-title-input w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 mb-2 transition-colors" contenteditable="true" data-placeholder="질문을 입력하세요" oninput="syncTitleValue(this)">${title || ''}</div>
+                <div class="flex items-center gap-2 mt-1 mb-2">
+                    <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(this.closest('.question-item').querySelector('.question-title-input'))">
+                        <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
+                    </button>
+                </div>
+                <input type="hidden" class="question-desc-value" value="${escapeHtml(description)}">
+                <div class="question-desc-input ${showDescription} w-full text-sm text-slate-500 border-b border-slate-100 focus:border-indigo-400 outline-none pb-2 transition-all min-h-[28px]" contenteditable="true" data-placeholder="문항에 대한 설명을 입력하세요 (선택사항)" oninput="syncDescValue(this)">${description || ''}</div>
+                <div class="flex items-center gap-2 mt-2 mb-3 ${showDescription}">
+                    <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(this.closest('.question-item').querySelector('.question-desc-input'))">
+                        <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
+                    </button>
+                </div>
+                <div class="flex gap-2 mt-2 mb-3 ${type === 'image' ? 'hidden' : ''}">
                     <input type="hidden" class="question-image-url-input" value="${escapeHtml(imageUrl || '')}">
                     <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
                         <i class="fas fa-image text-xs"></i> 이미지
                         <input type="file" class="hidden question-image-file-input" accept="image/*" onchange="handleQuestionImageUpload(this)">
                     </label>
-                    <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialog(this.closest('.question-item').querySelector('.question-desc-input'))">
-                        <i class="fas fa-link text-xs"></i> 하이퍼링크
-                    </button>
                 </div>
-                <div class="question-image-preview ${imageUrl ? '' : 'hidden'} mb-3">
+                <div class="question-image-preview ${imageUrl ? '' : 'hidden'} mb-3 ${type === 'image' ? 'hidden' : ''}">
                     <div class="relative inline-block">
-                        <img class="question-image-tag max-h-32 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="문항 이미지">
+                        <img class="question-image-tag max-h-32 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="문항 이미지" referrerpolicy="no-referrer">
                         <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeQuestionImage(this)">
                             <i class="fas fa-times text-[8px]"></i>
                         </button>
+                    </div>
+                </div>
+
+                <!-- 이미지 문항 전용 이미지 업로드 영역 (단순화) -->
+                <div class="image-upload-required ${type === 'image' ? '' : 'hidden'} mb-3">
+                    <input type="hidden" class="question-image-url-input-for-image-type" value="${escapeHtml(imageUrl || '')}">
+
+                    <!-- 이미지가 없을 때: 업로드 버튼만 표시 -->
+                    <div class="image-type-empty ${imageUrl ? 'hidden' : ''} flex items-center gap-2">
+                        <label class="cursor-pointer px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded hover:bg-purple-700 transition-colors inline-flex items-center gap-1">
+                            <i class="fas fa-upload"></i> 이미지 업로드 <span class="text-purple-200">*필수</span>
+                            <input type="file" class="hidden image-type-file-input" accept="image/*" onchange="handleImageTypeUpload(this)">
+                        </label>
+                    </div>
+
+                    <!-- 이미지가 있을 때: 미리보기 + 변경/삭제 버튼 -->
+                    <div class="image-type-preview ${imageUrl ? '' : 'hidden'}">
+                        <div class="flex items-start gap-3">
+                            <div class="relative inline-block image-type-container">
+                                <img class="image-type-tag max-h-40 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="이미지 문항 이미지" referrerpolicy="no-referrer" onerror="handleImageTypeLoadError(this)">
+                            </div>
+                            <!-- 이미지 로드 실패 시 표시될 fallback -->
+                            <div class="image-type-fallback hidden flex-1">
+                                <div class="bg-amber-50 border border-amber-200 rounded p-2">
+                                    <div class="flex items-center gap-1 text-amber-600 text-xs mb-1">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <span>이미지 로드 실패</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 break-all image-type-fallback-url">${escapeHtml(imageUrl || '')}</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="cursor-pointer px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded hover:bg-slate-200 transition-colors inline-flex items-center gap-1">
+                                    <i class="fas fa-sync-alt"></i> 변경
+                                    <input type="file" class="hidden image-type-file-input" accept="image/*" onchange="handleImageTypeUpload(this)">
+                                </label>
+                                <button type="button" class="px-2 py-1 bg-red-50 text-red-600 text-xs rounded hover:bg-red-100 transition-colors inline-flex items-center gap-1" onclick="removeImageTypeImage(this)">
+                                    <i class="fas fa-trash-alt"></i> 삭제
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-1">
+                            <span class="image-type-url-display text-xs text-slate-400 break-all">${escapeHtml(imageUrl || '')}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -2624,16 +3288,28 @@
                         </div>
                     </div>
                 </div>
+                <div class="image-options ${showImage}">
+                </div>
             </div>
         `;
 
         // 주의: 이 함수는 appendChild를 하지 않고 요소를 반환만 합니다.
         // 호출자가 적절한 위치에 append 해야 합니다.
 
-        // 기존 description에 HTML이 있으면 미리보기 동기화
+        // 기존 title에 HTML(링크)이 있으면 링크 핸들러 설정
+        if (title) {
+            const titleInput = newQuestion.querySelector('.question-title-input');
+            if (titleInput) {
+                setupEditableLinkHandlers(titleInput);
+            }
+        }
+
+        // 기존 description에 HTML(링크)이 있으면 링크 핸들러 설정
         if (description) {
             const descInput = newQuestion.querySelector('.question-desc-input');
-            if (descInput) syncDescHtmlPreview(descInput);
+            if (descInput) {
+                setupEditableLinkHandlers(descInput);
+            }
         }
 
         return newQuestion;
@@ -3128,7 +3804,7 @@
             </div>
             <div class="option-image-preview hidden ml-6">
                 <div class="relative inline-block">
-                    <img class="option-image-tag max-h-16 rounded border border-slate-200" src="" alt="보기 이미지">
+                    <img class="option-image-tag max-h-16 rounded border border-slate-200" src="" alt="보기 이미지" referrerpolicy="no-referrer">
                     <button type="button" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeOptionImage(this)">
                         <i class="fas fa-times text-[7px]"></i>
                     </button>
@@ -3349,17 +4025,10 @@
         // 가격 초기 계산
         calculateTotalPrice();
 
-        // 설문 이미지 초기화 (builder에서 설정한 이미지 또는 기존 이미지)
-        const builderImageUrl = document.getElementById('survey-image-url-input')?.value?.trim() || '';
-        document.getElementById('publish-image-url-input').value = builderImageUrl;
-        if (builderImageUrl) {
-            document.getElementById('publish-image-tag').src = builderImageUrl;
-            document.getElementById('publish-image-preview').classList.remove('hidden');
-            document.getElementById('publish-image-remove-btn').classList.remove('hidden');
-        } else {
-            document.getElementById('publish-image-preview').classList.add('hidden');
-            document.getElementById('publish-image-remove-btn').classList.add('hidden');
-        }
+        // 설문 대표 이미지 초기화
+        document.getElementById('publish-image-url-input').value = '';
+        document.getElementById('publish-image-preview').classList.add('hidden');
+        document.getElementById('publish-image-remove-btn').classList.add('hidden');
 
         document.getElementById('publishModal').classList.remove('hidden');
     }
@@ -3668,22 +4337,14 @@
             viewButtons.classList.remove('hidden');
             addSectionBtn.classList.add('hidden');
 
-            surveyTitle.readOnly = true;
+            // contenteditable div 비활성화
+            surveyTitle.setAttribute('contenteditable', 'false');
             surveyTitle.classList.add('bg-slate-50', 'cursor-not-allowed');
-            surveyDescription.readOnly = true;
+            surveyDescription.setAttribute('contenteditable', 'false');
             surveyDescription.classList.add('bg-slate-50', 'cursor-not-allowed');
 
             // 모든 입력 필드 비활성화
             disableAllInputs();
-
-            // 섹션/문항 description textarea를 렌더링된 div로 교체
-            document.querySelectorAll('.section-desc-input, .question-desc-input').forEach(textarea => {
-                const rendered = document.createElement('div');
-                rendered.className = 'desc-rendered-preview text-sm text-slate-500 px-2 py-1 leading-relaxed';
-                rendered.innerHTML = textarea.value || '';
-                textarea.classList.add('hidden');
-                textarea.parentNode.insertBefore(rendered, textarea.nextSibling);
-            });
         } else {
             // 편집 모드
             modeBadge.textContent = 'EDIT MODE';
@@ -3693,16 +4354,11 @@
             viewButtons.classList.add('hidden');
             addSectionBtn.classList.remove('hidden');
 
-            surveyTitle.readOnly = false;
+            // contenteditable div 활성화
+            surveyTitle.setAttribute('contenteditable', 'true');
             surveyTitle.classList.remove('bg-slate-50', 'cursor-not-allowed');
-            surveyDescription.readOnly = false;
+            surveyDescription.setAttribute('contenteditable', 'true');
             surveyDescription.classList.remove('bg-slate-50', 'cursor-not-allowed');
-
-            // 렌더링 div 제거하고 textarea 복원
-            document.querySelectorAll('.desc-rendered-preview').forEach(div => div.remove());
-            document.querySelectorAll('.section-desc-input, .question-desc-input').forEach(textarea => {
-                textarea.classList.remove('hidden');
-            });
         }
     }
 
@@ -3710,10 +4366,16 @@
     function disableAllInputs() {
         const sectionList = document.getElementById('section-list');
 
-        // 섹션 내 모든 입력 필드 비활성화
+        // 섹션 내 모든 입력 필드 비활성화 (일반 input, textarea, select)
         sectionList.querySelectorAll('input, textarea, select').forEach(el => {
             el.readOnly = true;
             el.disabled = true;
+            el.classList.add('bg-slate-50', 'cursor-not-allowed');
+        });
+
+        // contenteditable div 비활성화
+        sectionList.querySelectorAll('[contenteditable="true"]').forEach(el => {
+            el.setAttribute('contenteditable', 'false');
             el.classList.add('bg-slate-50', 'cursor-not-allowed');
         });
 

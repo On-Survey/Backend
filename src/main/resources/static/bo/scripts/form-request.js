@@ -16,6 +16,62 @@ function resetFilters() {
     loadFormRequests();
 }
 
+// ========== 폼 변환 요청 제출 관련 함수 ==========
+async function submitFormRequest() {
+    const formLink = document.getElementById('newFormLink').value.trim();
+    const requesterEmail = document.getElementById('newRequesterEmail').value.trim();
+    const questionCount = document.getElementById('newQuestionCount').value;
+    const targetResponseCount = document.getElementById('newTargetResponseCount').value;
+    const deadline = document.getElementById('newDeadline').value;
+    const price = document.getElementById('newPrice').value;
+
+    // 필수 값 체크
+    if (!formLink) {
+        showToast('폼 링크를 입력해주세요.', 'error');
+        document.getElementById('newFormLink').focus();
+        return;
+    }
+
+    // URL 형식 검증
+    try {
+        new URL(formLink);
+    } catch (e) {
+        showToast('올바른 URL 형식을 입력해주세요.', 'error');
+        document.getElementById('newFormLink').focus();
+        return;
+    }
+
+    const requestData = {
+        formLink: formLink,
+        requesterEmail: requesterEmail || null,
+        questionCount: questionCount ? parseInt(questionCount) : null,
+        targetResponseCount: targetResponseCount ? parseInt(targetResponseCount) : null,
+        deadline: deadline || null,
+        price: price ? parseInt(price) : null
+    };
+
+    try {
+        const response = await apiCall('/form-requests', 'POST', requestData);
+        if (response !== undefined) {
+            showToast('폼 변환 요청이 등록되었습니다.', 'success');
+            clearFormRequestInputs();
+            loadFormRequests(); // 목록 새로고침
+        }
+    } catch (error) {
+        console.error('폼 변환 요청 실패:', error);
+    }
+}
+
+// 폼 변환 요청 입력 필드 초기화
+function clearFormRequestInputs() {
+    document.getElementById('newFormLink').value = '';
+    document.getElementById('newRequesterEmail').value = '';
+    document.getElementById('newQuestionCount').value = '';
+    document.getElementById('newTargetResponseCount').value = '';
+    document.getElementById('newDeadline').value = '';
+    document.getElementById('newPrice').value = '';
+}
+
 // ========== 설문 변환 요청 관련 함수 ==========
 async function loadFormRequests(page = 0) {
     try {

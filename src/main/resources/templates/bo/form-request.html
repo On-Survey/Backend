@@ -14,6 +14,58 @@
 <body class="bg-slate-100 h-screen overflow-y-auto p-6">
 
 <div class="space-y-6 pb-6">
+    <!-- 폼 변환 요청 입력 영역 -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div class="flex items-center gap-2 mb-4">
+            <i class="fas fa-file-import text-indigo-600"></i>
+            <h2 class="text-lg font-bold text-slate-700">폼 변환 요청</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- 폼 링크 (필수) -->
+            <div class="lg:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 mb-1">폼 링크 <span class="text-red-500">*</span></label>
+                <input type="url" id="newFormLink" placeholder="https://docs.google.com/forms/d/e/..."
+                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+            </div>
+            <!-- 신청자 이메일 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">신청자 이메일</label>
+                <input type="email" id="newRequesterEmail" placeholder="example@email.com"
+                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+            </div>
+            <!-- 질문 수 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">질문 수</label>
+                <input type="number" id="newQuestionCount" placeholder="예: 15" min="1"
+                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+            </div>
+            <!-- 목표 응답 수 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">목표 응답 수</label>
+                <input type="number" id="newTargetResponseCount" placeholder="예: 100" min="1"
+                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+            </div>
+            <!-- 마감일 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">마감일</label>
+                <input type="date" id="newDeadline"
+                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+            </div>
+            <!-- 가격 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">가격 (원)</label>
+                <input type="number" id="newPrice" placeholder="예: 9900" min="0"
+                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+            </div>
+            <!-- 버튼 영역 -->
+            <div class="flex items-end">
+                <button onclick="submitFormRequest()" class="w-full px-4 py-2 bg-green-600 text-white rounded text-sm font-bold hover:bg-green-700 transition">
+                    <i class="fas fa-paper-plane mr-1"></i>변환 요청
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 검색 및 필터 영역 -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div class="flex flex-wrap gap-4 items-end">
