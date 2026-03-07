@@ -35,9 +35,6 @@ public record SurveyFormRequest(
         Integer dueCountPrice,
 
         @Schema(description = "총 코인", example = "10000")
-        Integer totalCoin,
-
-        @Schema(description = "설문 이미지 URL")
-        String imageUrl
+        Integer totalCoin
 ) {
 }

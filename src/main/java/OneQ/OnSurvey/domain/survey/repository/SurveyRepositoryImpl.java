@@ -170,7 +170,6 @@ public class SurveyRepositoryImpl implements SurveyRepository {
                     survey.title,
                     survey.description,
                     survey.deadline,
-                    survey.imageUrl,
                     surveyInfo.dueCount,
                     set(ageAlias).as("ages"),
                     surveyInfo.gender,

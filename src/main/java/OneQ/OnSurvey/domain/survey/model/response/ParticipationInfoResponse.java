@@ -17,8 +17,7 @@ public record ParticipationInfoResponse(
     boolean isScreenRequired,
     boolean isScreened,
     boolean isSurveyResponded,
-    Boolean isFree,
-    String imageUrl
+    Boolean isFree
 ) {
     public static ParticipationInfoResponse from(
         Survey survey, int responseCount, ParticipationStatus participationStatus
@@ -33,8 +32,7 @@ public record ParticipationInfoResponse(
             participationStatus.isScreenRequired(),
             participationStatus.isScreened(),
             participationStatus.isSurveyResponded(),
-            survey.getIsFree(),
-            survey.getImageUrl()
+            survey.getIsFree()
         );
     }
 }
