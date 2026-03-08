@@ -52,11 +52,11 @@ jobs:
           docker push "$PRIMARY_TAG"
 
           # 추가 태그 ('develop-latest', 'latest')가 입력된 경우 태그 추가
-          if [ -n "${{ inputs.additional_tag }}" ]; then
-            ADDITIONAL_TAG="${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ inputs.additional_tag }}"
+          if [ -n "${{ inputs.additional-tag }}" ]; then
+            ADDITIONAL_TAG="${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ inputs.additional-tag }}"
             docker tag "$PRIMARY_TAG" "$ADDITIONAL_TAG"
             docker push "$ADDITIONAL_TAG"
-            echo "✅ Pushed additional tag: ${{ inputs.additional_tag }}"
+            echo "✅ Pushed additional tag: ${{ inputs.additional-tag }}"
           else
             echo "ℹ️ No additional tag provided. Skipping."
           fi
