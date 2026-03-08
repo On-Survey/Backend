@@ -1,6 +1,12 @@
-name: [SHARED] Build and Push
+name: (SHARED) Build and Push
 on:
   workflow_call:
+    inputs:
+      additional-tag:
+        type: string
+        description: "추가로 푸시할 태그 (예: develop-latest)"
+        required: false
+        default: ""
     outputs:
       image_tag:
         description: "도커 이미지 태그 생성"
@@ -39,14 +45,18 @@ jobs:
         id: vars
         run: echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Build Docker image
+      - name: Build and Push Docker image
         run: |
-          docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ steps.vars.outputs.tag }} \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:latest \
-            .
+          PRIMARY_TAG="${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ steps.vars.outputs.tag }}"
+          docker build -t "$PRIMARY_TAG" .
+          docker push "$PRIMARY_TAG"
 
-      - name: Push Docker images
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ steps.vars.outputs.tag }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:latest
+          # 추가 태그 ('develop-latest', 'latest')가 입력된 경우 태그 추가
+          if [ -n "${{ inputs.additional_tag }}" ]; then
+            ADDITIONAL_TAG="${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ inputs.additional_tag }}"
+            docker tag "$PRIMARY_TAG" "$ADDITIONAL_TAG"
+            docker push "$ADDITIONAL_TAG"
+            echo "✅ Pushed additional tag: ${{ inputs.additional_tag }}"
+          else
+            echo "ℹ️ No additional tag provided. Skipping."
+          fi
