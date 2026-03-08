@@ -42,4 +42,5 @@ public class DiscordAlarmAsyncFacade {
     @Async("discordAlarmExecutor")
     public void sendPushAlimAsync(PushAlimAlert alert) {
         service.sendPushAlimAsync(alert);
+    }
 }

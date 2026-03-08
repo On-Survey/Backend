@@ -45,4 +45,5 @@ public class DiscordAlertNotifier implements AlertNotifier {
     @Override
     public void sendPushAlimAsync(PushAlimAlert alert) {
         discord.sendPushAlimAsync(alert);
+    }
 }
