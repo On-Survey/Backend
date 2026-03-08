@@ -99,7 +99,6 @@ public class SurveyCommandService implements SurveyCommand {
             if (survey.getTitle().equals(request.title())
                 && survey.getDescription().equals(request.description())
             ) {
-                log.info("[SURVEY:COMMAND:upsertSurvey] 설문 수정 사항 없음 - surveyId={}", surveyId);
                 return SurveyFormResponse.fromEntity(survey);
             }
 

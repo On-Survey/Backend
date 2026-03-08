@@ -37,6 +37,10 @@ public class SurveyManagementDetailResponse {
         private final Integer section;
 
         @Setter
+        @Schema(description = "문항 응답자 수 (복수 응답 문항의 경우 선택 횟수가 아닌 실제 응답한 인원 수)")
+        private Long respondentCount;
+
+        @Setter
         @Schema(
             description = "(객관식, 평가형, NPS) 선택값 별 응답 집계",
             example = """ 

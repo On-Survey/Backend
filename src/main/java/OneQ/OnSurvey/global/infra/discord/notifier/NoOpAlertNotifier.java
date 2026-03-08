@@ -2,13 +2,14 @@ package OneQ.OnSurvey.global.infra.discord.notifier;
 
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("local")
+@Profile({"local", "dev"})
 public class NoOpAlertNotifier implements AlertNotifier {
 
     @Override
@@ -23,6 +24,9 @@ public class NoOpAlertNotifier implements AlertNotifier {
     @Override
     public void sendTossAccessTokenAsync(TossAccessTokenAlert alert) {}
 
+    @Override
+    public void sendSurveyConversionAsync(SurveyConversionAlert alert) {}  
+  
     @Override
     public void sendPushAlimAsync(PushAlimAlert alert) {}
 }

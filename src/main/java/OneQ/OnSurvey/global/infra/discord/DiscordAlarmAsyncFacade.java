@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.global.infra.discord;
 
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
@@ -32,9 +33,13 @@ public class DiscordAlarmAsyncFacade {
     public void sendTossAccessTokenAsync(TossAccessTokenAlert alert) {
         service.sendTossAccessTokenAlert(alert);
     }
+  
+    @Async("discordAlarmExecutor")
+    public void sendSurveyConversionAsync(SurveyConversionAlert alert) {
+        service.sendSurveyConversionAlert(alert);
+    }
 
     @Async("discordAlarmExecutor")
     public void sendPushAlimAsync(PushAlimAlert alert) {
         service.sendPushAlimAsync(alert);
-    }
 }

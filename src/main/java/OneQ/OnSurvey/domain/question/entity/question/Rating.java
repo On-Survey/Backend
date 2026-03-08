@@ -32,11 +32,11 @@ public class Rating extends Question {
         String description,
         Boolean isRequired,
         Integer section,
-        Integer nextSection,
         String maxValue,
         String minValue,
         Integer rate,
-        QuestionType type
+        QuestionType type,
+        String imageUrl
     ) {
         return Rating.builder()
             .surveyId(surveyId)
@@ -45,11 +45,11 @@ public class Rating extends Question {
             .description(description)
             .isRequired(isRequired)
             .section(section)
-            .nextSection(nextSection)
             .maxValue(maxValue)
             .minValue(minValue)
             .rate(rate)
             .type(type.name())
+            .imageUrl(imageUrl)
             .build();
     }
 
@@ -59,12 +59,12 @@ public class Rating extends Question {
         Boolean isRequired,
         Integer order,
         Integer section,
-        Integer nextSection,
         String maxValue,
         String minValue,
-        Integer rate
+        Integer rate,
+        String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, nextSection);
+        super.updateQuestion(title, description, isRequired, order, section, imageUrl);
         this.maxValue = maxValue;
         this.minValue = minValue;
         this.rate = rate;

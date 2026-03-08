@@ -44,10 +44,8 @@ public abstract class Question extends BaseEntity {
     @Builder.Default
     protected Integer section = 1;
 
-    /* 임시 필드 */
-    @Column(name = "NEXT_SECTION")
-    protected Integer nextSection;
-    /* 섹션 엔티티 분리 후 제거 예정 */
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    protected String imageUrl;
 
     public void updateQuestion(
         String title,
@@ -55,14 +53,14 @@ public abstract class Question extends BaseEntity {
         Boolean isRequired,
         Integer order,
         Integer section,
-        Integer nextSection
+        String imageUrl
     ) {
         this.title = title;
         this.description = description;
         this.isRequired = isRequired;
         this.order = order;
         this.section = (section != null) ? section : this.section;
-        this.nextSection = nextSection;
+        this.imageUrl = imageUrl;
     }
 
     public void updateOrder(Integer order) {

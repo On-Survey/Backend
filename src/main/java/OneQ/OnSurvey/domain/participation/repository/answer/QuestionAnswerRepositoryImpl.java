@@ -127,6 +127,37 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
     }
 
     @Override
+    public List<AnswerStats> getRespondentCountsByQuestionIds(
+            List<Long> questionIds,
+            SurveyResponseFilterCondition filter
+    ) {
+        if (questionIds == null || questionIds.isEmpty()) {
+            return List.of();
+        }
+
+        SurveyResponseFilterCondition effective =
+                (filter == null ? SurveyResponseFilterCondition.empty() : filter);
+
+        return jpaQueryFactory
+                .select(Projections.constructor(
+                        AnswerStats.class,
+                        questionAnswer.questionId,
+                        Expressions.nullExpression(String.class),
+                        questionAnswer.memberId.countDistinct()
+                ))
+                .from(questionAnswer)
+                .join(member).on(member.id.eq(questionAnswer.memberId))
+                .where(
+                        questionAnswer.questionId.in(questionIds),
+                        buildAgeCondition(member.birthDay, effective.ages()),
+                        buildGenderCondition(member.gender, effective.genders()),
+                        buildResidenceCondition(member.residence, effective.residences())
+                )
+                .groupBy(questionAnswer.questionId)
+                .fetch();
+    }
+
+    @Override
     public void deleteAllByIds(Collection<Long> answerIds) {
         jpaQueryFactory.delete(questionAnswer)
             .where(questionAnswer.answerId.in(answerIds))

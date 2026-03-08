@@ -73,6 +73,7 @@ public record AdminSurveyDetailResponse(
         Boolean isRequired,
         Integer questionOrder,
         Integer section,
+        String imageUrl,
         ChoicePropDto choiceProperty,
         RatingPropDto ratingProperty,
         DatePropDto dateProperty
@@ -87,6 +88,7 @@ public record AdminSurveyDetailResponse(
                 vo.isRequired(),
                 vo.questionOrder(),
                 vo.section(),
+                vo.imageUrl(),
                 ChoicePropDto.from(vo.choiceProperty()),
                 RatingPropDto.from(vo.ratingProperty()),
                 DatePropDto.from(vo.dateProperty())
@@ -108,10 +110,10 @@ public record AdminSurveyDetailResponse(
                 return new ChoicePropDto(vo.maxChoice(), vo.hasCustomInput(), vo.hasNoneOption(), vo.isSectionDecidable(), optionDtos);
             }
 
-            public record OptionDto(String content, Integer nextSection) {
+            public record OptionDto(String content, Integer nextSection, String imageUrl) {
                 public static OptionDto from(SurveyQuestion.ChoiceProp.Option vo) {
                     if (vo == null) return null;
-                    return new OptionDto(vo.content(), vo.nextSection());
+                    return new OptionDto(vo.content(), vo.nextSection(), vo.imageUrl());
                 }
             }
         }

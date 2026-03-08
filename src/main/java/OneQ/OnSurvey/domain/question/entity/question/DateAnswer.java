@@ -30,9 +30,9 @@ public class DateAnswer extends Question {
         String description,
         Boolean isRequired,
         Integer section,
-        Integer nextSection,
         LocalDateTime defaultDate,
-        QuestionType type
+        QuestionType type,
+        String imageUrl
     ) {
         return DateAnswer.builder()
             .surveyId(surveyId)
@@ -41,9 +41,9 @@ public class DateAnswer extends Question {
             .description(description)
             .isRequired(isRequired)
             .section(section)
-            .nextSection(nextSection)
             .defaultDate(defaultDate)
             .type(type.name())
+            .imageUrl(imageUrl)
             .build();
     }
 
@@ -53,10 +53,10 @@ public class DateAnswer extends Question {
         Boolean isRequired,
         Integer order,
         Integer section,
-        Integer nextSection,
-        LocalDateTime defaultDate
+        LocalDateTime defaultDate,
+        String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, nextSection);
+        super.updateQuestion(title, description, isRequired, order, section, imageUrl);
         this.defaultDate = defaultDate;
     }
 }

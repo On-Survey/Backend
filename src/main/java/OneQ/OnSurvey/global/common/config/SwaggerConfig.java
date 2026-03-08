@@ -18,6 +18,7 @@ public class SwaggerConfig {
         return new OpenAPI()
             .servers(List.of(
                 new Server().url("https://api.onsurvey.co.kr").description("Prod Server"),
+                new Server().url("https://dev-api.onsurvey.co.kr").description("Dev Server"),
                 new Server().url("http://localhost:8080").description("Local Server")
             ))
             .components(components())

@@ -72,7 +72,8 @@ public final class AdminSurveyMapper {
             .description(questionDto.getDescription())
             .isRequired(questionDto.getIsRequired())
             .questionOrder(questionDto.getQuestionOrder())
-            .section(questionDto.getSection());
+            .section(questionDto.getSection())
+            .imageUrl(questionDto.getImageUrl());
 
         return switch (questionDto.getQuestionType()) {
             case "CHOICE" -> {
@@ -86,7 +87,8 @@ public final class AdminSurveyMapper {
                         choice.getOptions().stream()
                             .map(optionDto -> new SurveyQuestion.ChoiceProp.Option(
                                 optionDto.getContent(),
-                                optionDto.getNextSection()
+                                optionDto.getNextSection(),
+                                optionDto.getImageUrl()
                             ))
                             .collect(Collectors.toSet()
                         )
