@@ -12,6 +12,7 @@ import java.util.List;
 
 import static OneQ.OnSurvey.domain.member.QMember.member;
 import static OneQ.OnSurvey.domain.participation.entity.QQuestionAnswer.questionAnswer;
+import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 import static OneQ.OnSurvey.domain.question.entity.QQuestion.question;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
@@ -49,7 +50,8 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                 .from(questionAnswer)
                 .join(question).on(question.questionId.eq(questionAnswer.questionId))
                 .join(member).on(member.id.eq(questionAnswer.memberId))
-                .where(question.surveyId.eq(surveyId))
+                .join(response).on(response.surveyId.eq(surveyId).and(response.memberId.eq(questionAnswer.memberId)))
+                .where(question.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
                 .distinct()
                 .orderBy(member.id.asc())
                 .fetch();
@@ -66,7 +68,8 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                 ))
                 .from(questionAnswer)
                 .join(question).on(question.questionId.eq(questionAnswer.questionId))
-                .where(question.surveyId.eq(surveyId))
+                .join(response).on(response.surveyId.eq(surveyId).and(response.memberId.eq(questionAnswer.memberId)))
+                .where(question.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
                 .fetch();
     }
 

@@ -102,12 +102,5 @@ public class SurveyInfo {
     public void markNonRefundable() {
         this.refundable = false;
     }
-
-    public void increaseCompletedCount() {
-        if (this.completedCount == null) {
-            this.completedCount = 0;
-        }
-        this.completedCount++;
-    }
 }
 
