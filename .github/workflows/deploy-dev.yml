@@ -1,0 +1,89 @@
+name: 개발서버 배포
+
+on:
+  push:
+    branches: [ "develop" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    uses: ./.github/workflows/build-and-push.yml
+    with:
+      additional-tag: develop-latest
+    secrets: inherit
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (for docker-compose.dev.yml)
+        uses: actions/checkout@v4
+
+      - name: Create dev config from secrets
+        run: |
+          mkdir -p config
+          printf "%s" "${{ secrets.ONSURVEY_APP_DEV_YML }}" > config/application-dev.yml
+          chmod 600 config/application-dev.yml
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.DEV_EC2_HOST }}
+          username: ${{ secrets.DEV_EC2_USER }}
+          key: ${{ secrets.DEV_EC2_SSH_KEY }}
+          source: "docker-compose.dev.yml,config/application-dev.yml,blue-green.sh"
+          target: "/deploy/"
+
+      - name: Deploy on EC2 (blue-green)
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.DEV_EC2_HOST }}
+          username: ${{ secrets.DEV_EC2_USER }}
+          key: ${{ secrets.DEV_EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            DEPLOY_DIR=/deploy
+            NEW_TAG="${{ needs.build-and-push.outputs.image_tag }}"
+            DOCKERHUB_USER="${{ secrets.DOCKERHUB_USERNAME }}"
+            cd "$DEPLOY_DIR"
+
+            cat > .env <<EOF
+            COMPOSE_PROJECT_NAME=deploy-dev
+            DOCKERHUB_USERNAME=${DOCKERHUB_USER}
+            SPRING_IMAGE_TAG=${NEW_TAG}
+            MYSQL_ROOT_PASSWORD=${{ secrets.DEV_MYSQL_ROOT_PASSWORD }}
+            MYSQL_DATABASE=onsurvey
+            MYSQL_USER=${{ secrets.DEV_MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.DEV_MYSQL_PASSWORD }}
+            REDIS_PASSWORD=${{ secrets.DEV_REDIS_PASSWORD }}
+            TZ=Asia/Seoul
+            EOF
+
+            chmod 600 config/application-dev.yml || true
+            chmod +x blue-green.sh || true
+
+            if [ ! -L nginx/upstreams/spring-upstream.conf ]; then
+              ( cd nginx/upstreams && ln -s spring-8080.conf spring-upstream.conf )
+            fi
+
+            docker compose -p deploy-dev -f docker-compose.dev.yml up -d nginx mysql redis
+
+            docker pull "${DOCKERHUB_USER}/onsurvey:${NEW_TAG}" || true
+            docker pull "${DOCKERHUB_USER}/onsurvey:develop-latest" || true
+
+            if bash ./blue-green.sh "${NEW_TAG}" deploy-dev docker-compose.dev.yml; then
+              echo "✅ DEV deploy done (tag=${NEW_TAG})"
+              # 오래된 이미지 정리: develop-latest + 현재 태그 + 이전 2개 SHA 태그 유지
+              docker images "${DOCKERHUB_USER}/onsurvey" --format "{{.Tag}}" \
+                | grep -v "^develop-latest$" \
+                | grep -v "^${NEW_TAG}$" \
+                | tail -n +3 \
+                | xargs -r -I{} docker rmi "${DOCKERHUB_USER}/onsurvey:{}" 2>/dev/null || true
+              docker image prune -f || true
+            else
+              echo "❌ DEV deploy FAILED — 기존 컨테이너 유지 중"
+              docker ps --format "  {{.Names}}: {{.Status}}" | grep onsurvey || true
+              docker rmi "${DOCKERHUB_USER}/onsurvey:${NEW_TAG}" 2>/dev/null || true
+              docker image prune -f || true
+              exit 1
+            fi

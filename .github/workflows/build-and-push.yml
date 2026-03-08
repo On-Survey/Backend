@@ -1,0 +1,62 @@
+name: (SHARED) Build and Push
+on:
+  workflow_call:
+    inputs:
+      additional-tag:
+        type: string
+        description: "추가로 푸시할 태그 (예: develop-latest)"
+        required: false
+        default: ""
+    outputs:
+      image_tag:
+        description: "도커 이미지 태그 생성"
+        value: ${{ jobs.build-and-push.outputs.tag }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle Wrapper
+        run: ./gradlew clean build
+
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Set image tag (commit SHA)
+        id: vars
+        run: echo "tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and Push Docker image
+        run: |
+          PRIMARY_TAG="${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ steps.vars.outputs.tag }}"
+          docker build -t "$PRIMARY_TAG" .
+          docker push "$PRIMARY_TAG"
+
+          # 추가 태그 ('develop-latest', 'latest')가 입력된 경우 태그 추가
+          if [ -n "${{ inputs.additional-tag }}" ]; then
+            ADDITIONAL_TAG="${{ secrets.DOCKERHUB_USERNAME }}/onsurvey:${{ inputs.additional-tag }}"
+            docker tag "$PRIMARY_TAG" "$ADDITIONAL_TAG"
+            docker push "$ADDITIONAL_TAG"
+            echo "✅ Pushed additional tag: ${{ inputs.additional-tag }}"
+          else
+            echo "ℹ️ No additional tag provided. Skipping."
+          fi

@@ -1,0 +1,10 @@
+name: PR Check (CI)
+
+on:
+  pull_request:
+    branches: [ "develop", "main" ]
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-and-push.yml
+    secrets: inherit
