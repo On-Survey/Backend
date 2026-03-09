@@ -86,7 +86,7 @@ public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPo
     @Value("${toss.api.iap.get-order-status}")
     private String getIapOrderStatusUrl;
 
-    @Value("${toss.api.send-message.url}")
+    @Value("${toss.api.send-message-url}")
     private String sendMessageUrl;
 
     private final ObjectMapper objectMapper;
