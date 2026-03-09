@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.global.infra.discord.notifier;
 
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
@@ -24,5 +25,8 @@ public class NoOpAlertNotifier implements AlertNotifier {
     public void sendTossAccessTokenAsync(TossAccessTokenAlert alert) {}
 
     @Override
-    public void sendSurveyConversionAsync(SurveyConversionAlert alert) {}
+    public void sendSurveyConversionAsync(SurveyConversionAlert alert) {}  
+  
+    @Override
+    public void sendPushAlimAsync(PushAlimAlert alert) {}
 }

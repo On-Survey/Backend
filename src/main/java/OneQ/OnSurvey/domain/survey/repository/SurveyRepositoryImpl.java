@@ -177,7 +177,6 @@ public class SurveyRepositoryImpl implements SurveyRepository {
                     set(interestAlias).as("interests")
                 ))
             );
-        System.out.println("result = " + result);
         return result.get(surveyId);
     }
 

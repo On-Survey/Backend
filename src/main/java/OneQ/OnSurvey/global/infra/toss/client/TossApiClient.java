@@ -3,6 +3,7 @@ package OneQ.OnSurvey.global.infra.toss.client;
 import OneQ.OnSurvey.global.auth.port.out.TossAuthPort;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.LoginMeResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.auth.TossLoginRequest;
@@ -12,10 +13,13 @@ import OneQ.OnSurvey.global.infra.toss.common.dto.iap.OrderStatusResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutePromotionResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.ExecutionResultResponse;
 import OneQ.OnSurvey.global.infra.toss.common.dto.promotion.PromotionKeyResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushResultResponse;
+import OneQ.OnSurvey.global.infra.toss.common.dto.push.PushTemplateSendRequest;
 import OneQ.OnSurvey.global.infra.toss.common.exception.TossApiException;
 import OneQ.OnSurvey.global.infra.toss.common.exception.TossErrorCode;
 import OneQ.OnSurvey.global.payment.port.out.TossIapPort;
 import OneQ.OnSurvey.global.promotion.port.out.TossPromotionPort;
+import OneQ.OnSurvey.global.push.application.port.out.TossPushPort;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -41,11 +45,12 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPort {
+public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPort, TossPushPort {
 
     private static final int CONNECT_TIMEOUT_MS = 5_000;
     private static final int READ_TIMEOUT_MS = 5_000;
@@ -80,6 +85,9 @@ public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPo
 
     @Value("${toss.api.iap.get-order-status}")
     private String getIapOrderStatusUrl;
+
+    @Value("${toss.api.send-message.url}")
+    private String sendMessageUrl;
 
     private final ObjectMapper objectMapper;
     private final AlertNotifier alertNotifier;
@@ -358,6 +366,58 @@ public class TossApiClient implements TossAuthPort, TossIapPort, TossPromotionPo
                     successRoot.path("status").asText(null),
                     successRoot.path("reason").asText(null),
                     successRoot.path("statusDeterminedAt").asText(null)
+            );
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    /* ===================== 푸시알림 ===================== */
+    @Override
+    public PushResultResponse sendPush(SSLContext ctx, PushTemplateSendRequest request) throws IOException {
+        long userKey = request.userKey();
+        String templateSetCode = request.templateSetCode();
+        Map<String, String> templateCtx = request.templateCtx();
+
+        HttpsURLConnection conn = open(sendMessageUrl, ctx, "POST", true);
+        conn.setRequestProperty("x-toss-user-key", String.valueOf(userKey));
+
+        try {
+             ObjectNode body = objectMapper.createObjectNode()
+                 .put("templateSetCode", templateSetCode)
+                 .set("context", objectMapper.valueToTree(templateCtx));
+             writeJson(conn, body);
+             JsonNode root = readJson(conn);
+
+            JsonNode successRoot = root.path("success");
+            if (!isSuccess(root)) {
+                int code = root.path("error").path("errorType").asInt(-1);
+                String msg = root.path("error").path("errorCode").asText("unknown");
+                log.error("[PushAPI:sendPush] code={}, message={}, raw={}", code, msg, root);
+                alertNotifier.sendPushAlimAsync(
+                    new PushAlimAlert(
+                        userKey,
+                        templateSetCode,
+                        successRoot.path("sentPushCount").asLong(0),
+                        successRoot.path("fail").path("sentPush").size(),
+                        root.path("error").path("reason").asText("unknown")
+                    )
+                );
+                throw new CustomException(TossErrorCode.TOSS_PUSH_SEND_ERROR);
+            }
+            alertNotifier.sendPushAlimAsync(
+                new PushAlimAlert(
+                    userKey,
+                    templateSetCode,
+                    successRoot.path("sentPushCount").asLong(0),
+                    successRoot.path("fail").path("sentPush").size(),
+                    "none"
+                )
+            );
+
+            return PushResultResponse.of(
+                successRoot.path("sentPushCount").asLong(),
+                successRoot.path("detail").path("sentPush").toPrettyString()
             );
         } finally {
             conn.disconnect();

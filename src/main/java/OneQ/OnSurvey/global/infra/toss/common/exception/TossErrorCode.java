@@ -26,6 +26,9 @@ public enum TossErrorCode implements ApiErrorCode {
     TOSS_IAP_STATUS_NOT_GRANTED("TOSS_IAP_003", "지급 가능한 주문 상태가 아닙니다.", HttpStatus.PRECONDITION_FAILED),
     TOSS_PARTNER_PRODUCT_GRANT_FAILED("TOSS_IAP_004", "상품 지급 처리에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
+    TOSS_PUSH_SEND_ERROR("TOSS_PUSH_001", "토스 푸시 발송 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    TOSS_PUSH_NOT_FOUND("TOSS_PUSH_404", "토스 푸시 코드를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
     TOSS_API_CONNECTION_ERROR("TOSS_500", "그 밖에 토스 api를 연동하는 과정에서 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String errorCode;

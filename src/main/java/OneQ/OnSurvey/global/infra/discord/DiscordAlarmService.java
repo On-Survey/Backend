@@ -6,6 +6,7 @@ import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -43,6 +44,9 @@ public class DiscordAlarmService {
 
     @Value("${discord.survey-conversion-alert-url:}")
     private String surveyConversionWebhookUrl;
+  
+    @Value("${discord.push-alim-alert-url:}")
+    private String pushAlimWebhookUrl;
 
     public void sendErrorAlert(Throwable e, String method, String path, String query) {
         if (!enabled || errorWebhookUrl == null || errorWebhookUrl.isBlank()) return;
@@ -117,7 +121,7 @@ public class DiscordAlarmService {
 
         post(url, title, desc);
     }
-
+  
     public void sendSurveyConversionAlert(SurveyConversionAlert alert) {
         if (!enabled) return;
 
@@ -165,6 +169,30 @@ public class DiscordAlarmService {
         post(url, title, descStr);
     }
 
+    public void sendPushAlimAsync(PushAlimAlert alert) {
+        if (!enabled) return;
+
+        String url = (pushAlimWebhookUrl != null && !pushAlimWebhookUrl.isBlank())
+            ? pushAlimWebhookUrl
+            : errorWebhookUrl;
+        if (url == null || url.isBlank()) return;
+
+        String title, description;
+        if (alert.failedCount() <= 0) {
+            title = "🔔 푸시 알림 발생";
+            description = "• userKey: `" + alert.userKey() + "`\n" +
+                "• 템플릿: `" + safe(alert.templateSetCode()) + "`\n" +
+                "• 성공: `" + alert.completedCount() + "`\n";
+        } else {
+            title = "🔔 푸시 알림 실패건 발생";
+            description = "• userKey: `" + alert.userKey() + "`\n" +
+                "• 템플릿: `" + safe(alert.templateSetCode()) + "`\n" +
+                "• 성공: `" + alert.completedCount() + "`\n" +
+                "• 실패: `" + alert.failedCount() + "`\n" +
+                "• 실패 상세: `" + safe(alert.errorReason()) + "`\n";
+        }
+        post(url, title, description);
+    }
 
     private String maskKey(String key) {
         return JwtDecodeUtils.maskToken(key);

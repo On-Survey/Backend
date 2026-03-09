@@ -5,6 +5,7 @@ import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -39,5 +40,10 @@ public class DiscordAlertNotifier implements AlertNotifier {
     @Override
     public void sendSurveyConversionAsync(SurveyConversionAlert alert) {
         discord.sendSurveyConversionAsync(alert);
+    }
+  
+    @Override
+    public void sendPushAlimAsync(PushAlimAlert alert) {
+        discord.sendPushAlimAsync(alert);
     }
 }

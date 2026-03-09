@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.participation.service.response;
 
 import OneQ.OnSurvey.domain.participation.entity.Response;
+import OneQ.OnSurvey.domain.participation.model.event.SurveyCompletedEvent;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
@@ -17,9 +18,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.client.RedisException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -33,6 +36,7 @@ public class ResponseCommandService implements ResponseCommand {
 
     private final AfterCommitExecutor afterCommitExecutor;
     private final AfterRollbackExecutor afterRollbackExecutor;
+    private final ApplicationEventPublisher eventPublisher;
     private final RedisAgent redisAgent;
 
     @Value("${redis.survey-key-prefix.lock}")
@@ -87,6 +91,9 @@ public class ResponseCommandService implements ResponseCommand {
                         redisAgent.decrementValue(this.completedKey + surveyId);
                         redisAgent.addToZSet(this.potentialKey + surveyId, String.valueOf(userKey), System.currentTimeMillis());
                     });
+
+                    long creator = redisAgent.getLongValue(this.creatorKey + surveyId);
+                    eventPublisher.publishEvent(new SurveyCompletedEvent(creator, Map.of()));
                 }
 
                 return true;
