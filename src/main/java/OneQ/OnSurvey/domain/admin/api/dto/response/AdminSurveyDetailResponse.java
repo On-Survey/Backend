@@ -43,6 +43,7 @@ public record AdminSurveyDetailResponse(
         String title,
         String description,
         String deadline,
+        String imageUrl,
         Set<String> ages,
         String gender,
         String residence,
@@ -56,6 +57,7 @@ public record AdminSurveyDetailResponse(
                 vo.title(),
                 vo.description(),
                 vo.deadline() != null ? vo.deadline().toString() : null,
+                vo.imageUrl(),
                 vo.ages(),
                 vo.gender(),
                 vo.residence(),
@@ -153,7 +155,8 @@ public record AdminSurveyDetailResponse(
         String title,
         String description,
         Integer order,
-        Integer nextSection
+        Integer nextSection,
+        String imageUrl
     ) {
         public static SectionDto from(SurveySection vo) {
             if (vo == null) return null;
@@ -162,7 +165,8 @@ public record AdminSurveyDetailResponse(
                 vo.title(),
                 vo.description(),
                 vo.order(),
-                vo.nextSection()
+                vo.nextSection(),
+                vo.imageUrl()
             );
         }
     }

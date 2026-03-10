@@ -29,7 +29,6 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -170,6 +169,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
                     survey.title,
                     survey.description,
                     survey.deadline,
+                    survey.imageUrl,
                     surveyInfo.dueCount,
                     set(ageAlias).as("ages"),
                     surveyInfo.gender,
@@ -177,6 +177,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
                     set(interestAlias).as("interests")
                 ))
             );
+        System.out.println("result = " + result);
         return result.get(surveyId);
     }
 
@@ -277,27 +278,5 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .orderBy(QuerydslUtils.getSortPaidFirst(pageable, survey, survey.isFree))
             .limit(pageable.getPageSize() + 1)
             .fetch();
-    }
-
-    @Override
-    public List<Long> closeDueSurveys() {
-
-        List<Long> dueSurveyIdList = jpaQueryFactory
-            .select(survey.id)
-            .from(survey)
-            .where(
-                survey.status.eq(SurveyStatus.ONGOING),
-                survey.deadline.before(LocalDate.now().atStartOfDay())
-            )
-            .fetch();
-
-        jpaQueryFactory.update(survey)
-            .set(survey.status, SurveyStatus.CLOSED)
-            .where(
-                survey.status.eq(SurveyStatus.ONGOING),
-                survey.deadline.before(LocalDate.now().atStartOfDay()))
-            .execute();
-
-        return dueSurveyIdList;
     }
 }

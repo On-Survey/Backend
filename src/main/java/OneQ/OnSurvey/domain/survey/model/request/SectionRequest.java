@@ -12,7 +12,8 @@ public record SectionRequest (
         String title,
         String description,
         Integer order,
-        Integer nextSection
+        Integer nextSection,
+        String imageUrl
     ) { }
 
     public List<SectionDto> toDto() {
@@ -21,7 +22,8 @@ public record SectionRequest (
             sectionInfo.title(),
             sectionInfo.description(),
             sectionInfo.order(),
-            sectionInfo.nextSection()
+            sectionInfo.nextSection(),
+            sectionInfo.imageUrl()
         )).toList();
     }
 }

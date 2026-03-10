@@ -30,19 +30,4 @@ public class WebClientConfig {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
-
-    @Bean
-    WebClient lambdaWebClient(@Value("${lambda.timeout-ms:10000}") int timeoutMs) {
-        HttpClient httpClient = HttpClient.create()
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMs)
-            .responseTimeout(Duration.ofMillis(timeoutMs))
-            .doOnConnected(conn ->
-                    conn.addHandlerLast(new ReadTimeoutHandler(timeoutMs, TimeUnit.MILLISECONDS))
-                            .addHandlerLast(new WriteTimeoutHandler(timeoutMs, TimeUnit.MILLISECONDS))
-            );
-
-        return WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(httpClient))
-            .build();
-    }
 }

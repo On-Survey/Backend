@@ -22,6 +22,7 @@ public class LongAnswer extends Question {
         String description,
         Boolean isRequired,
         Integer section,
+        Integer nextSection,
         QuestionType type,
         String imageUrl
     ) {
@@ -33,6 +34,7 @@ public class LongAnswer extends Question {
             .isRequired(isRequired)
             .type(type.name())
             .section(section)
+            .nextSection(nextSection)
             .imageUrl(imageUrl)
             .build();
     }
@@ -43,8 +45,9 @@ public class LongAnswer extends Question {
         Boolean isRequired,
         Integer order,
         Integer section,
+        Integer nextSection,
         String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, imageUrl);
+        super.updateQuestion(title, description, isRequired, order, section, nextSection, imageUrl);
     }
 }

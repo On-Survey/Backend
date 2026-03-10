@@ -33,5 +33,4 @@ public interface SurveyRepository {
 
     SurveyStatus getSurveyStatusById(Long surveyId);
     ParticipationStatus getParticipationStatus(Long surveyId, Long memberId);
-    List<Long> closeDueSurveys();
 }

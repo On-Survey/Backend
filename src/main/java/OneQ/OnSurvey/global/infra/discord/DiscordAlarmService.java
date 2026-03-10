@@ -3,10 +3,8 @@ package OneQ.OnSurvey.global.infra.discord;
 import OneQ.OnSurvey.global.common.util.JwtDecodeUtils;
 import OneQ.OnSurvey.global.infra.discord.client.DiscordWebhookClient;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -41,12 +39,6 @@ public class DiscordAlarmService {
 
     @Value("${discord.test-toss-auth-url:}")
     private String tossAuthTestWebhookUrl;
-
-    @Value("${discord.survey-conversion-alert-url:}")
-    private String surveyConversionWebhookUrl;
-  
-    @Value("${discord.push-alim-alert-url:}")
-    private String pushAlimWebhookUrl;
 
     public void sendErrorAlert(Throwable e, String method, String path, String query) {
         if (!enabled || errorWebhookUrl == null || errorWebhookUrl.isBlank()) return;
@@ -120,78 +112,6 @@ public class DiscordAlarmService {
             "  • String scope: `" + value.get("scope") + "`\n";
 
         post(url, title, desc);
-    }
-  
-    public void sendSurveyConversionAlert(SurveyConversionAlert alert) {
-        if (!enabled) return;
-
-        String url = (surveyConversionWebhookUrl != null && !surveyConversionWebhookUrl.isBlank())
-                ? surveyConversionWebhookUrl
-                : errorWebhookUrl;
-        if (url == null || url.isBlank()) return;
-
-        String title;
-        StringBuilder desc = new StringBuilder();
-        if (alert.isSuccess()) {
-            title = "📊 설문 변환 성공";
-            desc.append("* 설문 변환 시도: ").append(alert.totalCount()).append('\n')
-                .append("* 설문 변환 성공: ").append(alert.successCount()).append('\n')
-                .append("* 설문 변환 상세 :\n");
-            for (SurveyConversionAlert.SurveyDetails d : alert.details()) {
-
-                desc.append("\u3000[\n")
-                    .append("\u3000 URL: ").append(safe(d.url())).append('\n')
-                    .append("\u3000 title: ").append(safe(d.title())).append('\n')
-                    .append("\u3000 surveyId: ").append(d.surveyId()).append('\n')
-                    .append("\u3000 memberId: ").append(d.memberId()).append('\n')
-                    .append("\u3000 questionCount: ").append(d.questionCount()).append('\n');
-                if (!d.unsupportedList().isEmpty()) {
-                    desc.append("  * 변환 실패 질문:\n");
-                    for (SurveyConversionAlert.SurveyDetails.UnsupportedQuestion q : d.unsupportedList()) {
-                        desc.append("    * order: ").append(q.order())
-                            .append(", type: ").append(safe(q.type()))
-                            .append(", reason: ").append(safe(q.reason())).append('\n');
-                    }
-                }
-                desc.append("\u3000 ],\n");
-            }
-        } else {
-            title = "⚠️ 설문 전환 실패";
-            desc.append("* 설문 변환 시도: ").append(alert.totalCount()).append('\n')
-                .append("* 설문 변환 성공: ").append(alert.successCount()).append('\n')
-                .append("* error: ").append(safe(alert.error())).append("\n");
-        }
-
-        String descStr = desc.toString();
-        if (descStr.length() > MAX_EMBED_DESC) {
-            descStr = descStr.substring(0, MAX_EMBED_DESC - TRUNC_SUFFIX.length()) + TRUNC_SUFFIX;
-        }
-        post(url, title, descStr);
-    }
-
-    public void sendPushAlimAsync(PushAlimAlert alert) {
-        if (!enabled) return;
-
-        String url = (pushAlimWebhookUrl != null && !pushAlimWebhookUrl.isBlank())
-            ? pushAlimWebhookUrl
-            : errorWebhookUrl;
-        if (url == null || url.isBlank()) return;
-
-        String title, description;
-        if (alert.failedCount() <= 0) {
-            title = "🔔 푸시 알림 발생";
-            description = "• userKey: `" + alert.userKey() + "`\n" +
-                "• 템플릿: `" + safe(alert.templateSetCode()) + "`\n" +
-                "• 성공: `" + alert.completedCount() + "`\n";
-        } else {
-            title = "🔔 푸시 알림 실패건 발생";
-            description = "• userKey: `" + alert.userKey() + "`\n" +
-                "• 템플릿: `" + safe(alert.templateSetCode()) + "`\n" +
-                "• 성공: `" + alert.completedCount() + "`\n" +
-                "• 실패: `" + alert.failedCount() + "`\n" +
-                "• 실패 상세: `" + safe(alert.errorReason()) + "`\n";
-        }
-        post(url, title, description);
     }
 
     private String maskKey(String key) {

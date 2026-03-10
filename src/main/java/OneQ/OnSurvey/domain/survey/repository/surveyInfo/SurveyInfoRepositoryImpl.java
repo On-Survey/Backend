@@ -45,15 +45,6 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
     }
 
     @Override
-    public void increaseCompletedCount(Long surveyId) {
-        queryFactory
-            .update(surveyInfo)
-            .set(surveyInfo.completedCount, surveyInfo.completedCount.add(1))
-            .where(surveyInfo.surveyId.eq(surveyId))
-            .execute();
-    }
-
-    @Override
     public SurveySegmentation findSegmentationBySurveyId(Long surveyId) {
         return queryFactory
             .from(surveyInfo)
