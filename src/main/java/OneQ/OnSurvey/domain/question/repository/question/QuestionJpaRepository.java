@@ -12,4 +12,6 @@ public interface QuestionJpaRepository extends JpaRepository<Question, Long> {
     List<Question> getQuestionsBySurveyIdAndSectionOrderByOrder(Long surveyId, Integer section);
 
     void deleteAllBySurveyIdEqualsAndSectionNotIn(Long surveyId, Collection<Integer> sections);
+
+    int countBySurveyId(Long surveyId);
 }

@@ -41,6 +41,7 @@ public interface SurveyQuery {
     boolean checkValidSegmentation(Long surveyId, Long userKey);
 
     Survey getSurveyById(Long surveyId);
+    Integer getPromotionAmountBySurveyId(Long surveyId);
 
     // 외부 PORT
     Page<SurveyListView> getPagedSurveyListViewByQuery(Pageable pageable, SurveySearchQuery query);

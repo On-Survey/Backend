@@ -35,6 +35,7 @@ public class SurveyParticipationResponse {
         private String title;
         private String description;
         private Boolean isFree;
+        private Integer price;
         private Set<Interest> interests;
         private LocalDateTime deadline;
 
@@ -43,12 +44,15 @@ public class SurveyParticipationResponse {
     }
 
     public static SurveyData from(SurveyWithEligibility surveyWithEligibility) {
+        Integer promotionAmount = surveyWithEligibility.getPromotionAmount();
+        int price = Boolean.TRUE.equals(surveyWithEligibility.getIsFree()) ? 0 : promotionAmount;
         return SurveyData.builder()
             .surveyId(surveyWithEligibility.getSurveyId())
             .memberId(surveyWithEligibility.getMemberId())
             .title(surveyWithEligibility.getTitle())
             .description(surveyWithEligibility.getDescription())
             .isFree(surveyWithEligibility.getIsFree())
+            .price(price)
             .interests(surveyWithEligibility.getInterests())
             .deadline(surveyWithEligibility.getDeadline())
             .isEligible(surveyWithEligibility.getIsEligible())

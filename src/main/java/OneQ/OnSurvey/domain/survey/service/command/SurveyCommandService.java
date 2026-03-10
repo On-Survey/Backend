@@ -4,6 +4,7 @@ import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
@@ -41,7 +42,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -60,9 +60,19 @@ public class SurveyCommandService implements SurveyCommand {
     private final SurveyRefundPolicy surveyRefundPolicy;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
     private final RedisAgent redisAgent;
+    private final QuestionQueryService questionQueryService;
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
+
+    @Value("${toss.api.promotion.amount}")
+    private int promotionAmount;
+
+    @Value("${toss.api.promotion.amount500}")
+    private int promotionAmount500;
+
+    private static final int TIER2_MIN_QUESTIONS = 30;
+    private static final int TIER2_MAX_QUESTIONS = 49;
 
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
@@ -124,6 +134,10 @@ public class SurveyCommandService implements SurveyCommand {
 
         survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
 
+        int questionCount = questionQueryService.countQuestionsBySurveyId(surveyId);
+        int resolvedPromotionAmount = (questionCount >= TIER2_MIN_QUESTIONS && questionCount <= TIER2_MAX_QUESTIONS)
+                ? promotionAmount500 : promotionAmount;
+
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,
                 request.dueCount(),
@@ -134,6 +148,7 @@ public class SurveyCommandService implements SurveyCommand {
                 request.agePrice(),
                 request.residencePrice(),
                 request.dueCountPrice(),
+                resolvedPromotionAmount,
                 true
         );
 
@@ -158,6 +173,7 @@ public class SurveyCommandService implements SurveyCommand {
                 Set.of(AgeRange.ALL),
                 Residence.ALL,
                 0, 0, 0, 0,
+                0,
                 false
         );
 
@@ -291,15 +307,16 @@ public class SurveyCommandService implements SurveyCommand {
             Integer agePrice,
             Integer residencePrice,
             Integer dueCountPrice,
+            Integer promotionAmount,
             boolean refundable
     ) {
         SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
                 .orElseGet(() -> SurveyInfo.createSurveyInfo(
                         surveyId, dueCount, gender, ages, residence,
-                        genderPrice, agePrice, residencePrice, dueCountPrice
+                        genderPrice, agePrice, residencePrice, dueCountPrice, promotionAmount
                 ));
 
-        info.updateSurveyInfo(dueCount, gender, ages, residence, genderPrice, agePrice, residencePrice, dueCountPrice);
+        info.updateSurveyInfo(dueCount, gender, ages, residence, genderPrice, agePrice, residencePrice, dueCountPrice, promotionAmount);
 
         if (!refundable) info.markNonRefundable();
 

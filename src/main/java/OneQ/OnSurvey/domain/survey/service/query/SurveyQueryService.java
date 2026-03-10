@@ -498,6 +498,13 @@ public class SurveyQueryService implements SurveyQuery {
             .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
     }
 
+    @Override
+    public Integer getPromotionAmountBySurveyId(Long surveyId) {
+        return surveyInfoRepository.findBySurveyId(surveyId)
+                .map(info -> info.getPromotionAmount())
+                .orElse(null);
+    }
+
     // 외부 PORT
     @Override
     public Page<SurveyListView> getPagedSurveyListViewByQuery(Pageable pageable, SurveySearchQuery query) {

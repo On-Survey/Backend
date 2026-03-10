@@ -103,6 +103,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
                 survey.title,
                 survey.description,
                 survey.isFree,
+                surveyInfo.promotionAmount,
                 set(interestAlias).as("interests"),
                 survey.deadline,
                 isEligible
