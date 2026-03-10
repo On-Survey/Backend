@@ -96,6 +96,7 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     }
 
     @Override
+    @Transactional
     public void changeSurveyOwner(Long surveyId, Long memberId) {
         surveyPort.updateSurveyOwner(surveyId, memberId);
     }

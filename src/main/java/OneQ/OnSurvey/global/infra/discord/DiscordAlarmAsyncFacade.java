@@ -1,8 +1,10 @@
 package OneQ.OnSurvey.global.infra.discord;
 
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -30,5 +32,15 @@ public class DiscordAlarmAsyncFacade {
     @Async("discordAlarmExecutor")
     public void sendTossAccessTokenAsync(TossAccessTokenAlert alert) {
         service.sendTossAccessTokenAlert(alert);
+    }
+  
+    @Async("discordAlarmExecutor")
+    public void sendSurveyConversionAsync(SurveyConversionAlert alert) {
+        service.sendSurveyConversionAlert(alert);
+    }
+
+    @Async("discordAlarmExecutor")
+    public void sendPushAlimAsync(PushAlimAlert alert) {
+        service.sendPushAlimAsync(alert);
     }
 }

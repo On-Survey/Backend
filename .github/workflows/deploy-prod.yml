@@ -1,0 +1,87 @@
+name: 실서버 배포
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    uses: ./.github/workflows/build-and-push.yml
+    with:
+      additional-tag: "latest"
+    secrets: inherit
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (for docker-compose.yml)
+        uses: actions/checkout@v4
+
+      - name: Create prod config from secrets
+        run: |
+          mkdir -p config
+          printf "%s" "${{ secrets.ONSURVEY_APP_PROD_YML }}" > config/application-prod.yml
+          chmod 600 config/application-prod.yml
+
+      - name: Copy files to NCP server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.NCP_HOST }}
+          username: ${{ secrets.NCP_USER }}
+          key: ${{ secrets.NCP_SSH_KEY }}
+          source: "docker-compose.yml,config/application-prod.yml,blue-green.sh"
+          target: "/deploy/"
+
+      - name: Deploy on NCP (blue-green)
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.NCP_HOST }}
+          username: ${{ secrets.NCP_USER }}
+          key: ${{ secrets.NCP_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            DEPLOY_DIR=/deploy
+            NEW_TAG="${{ needs.build-and-push.outputs.image_tag }}"
+            DOCKERHUB_USER="${{ secrets.DOCKERHUB_USERNAME }}"
+            cd "$DEPLOY_DIR"
+
+            cat > .env <<EOF
+            COMPOSE_PROJECT_NAME=deploy
+            DOCKERHUB_USERNAME=${DOCKERHUB_USER}
+            SPRING_IMAGE_TAG=${NEW_TAG}
+            REDIS_PASSWORD=${{ secrets.PROD_REDIS_PASSWORD }}
+            TZ=Asia/Seoul
+            EOF
+
+            chmod 600 config/application-prod.yml || true
+            chmod +x blue-green.sh || true
+
+            if [ ! -L nginx/upstreams/spring-upstream.conf ]; then
+              ( cd nginx/upstreams && ln -s spring-blue.conf spring-upstream.conf )
+            fi
+
+            docker compose -p deploy -f docker-compose.yml up -d nginx redis
+
+            docker pull "${DOCKERHUB_USER}/onsurvey:${NEW_TAG}" || true
+            docker pull "${DOCKERHUB_USER}/onsurvey:latest" || true
+
+            if bash ./blue-green.sh "${NEW_TAG}" deploy docker-compose.yml; then
+              docker network inspect deploy_web | grep -q '"Name": "onsurvey-redis"' \
+                || { echo "ERROR: redis not on deploy_web"; exit 1; }
+              echo "✅ PROD deploy done (tag=${NEW_TAG})"
+              # 오래된 이미지 정리: latest + 현재 태그 + 이전 2개 SHA 태그 유지
+              docker images "${DOCKERHUB_USER}/onsurvey" --format "{{.Tag}}" \
+                | grep -v "^latest$" \
+                | grep -v "^${NEW_TAG}$" \
+                | tail -n +3 \
+                | xargs -r -I{} docker rmi "${DOCKERHUB_USER}/onsurvey:{}" 2>/dev/null || true
+              docker image prune -f || true
+            else
+              echo "❌ PROD deploy FAILED — 기존 컨테이너 유지 중"
+              docker ps --format "  {{.Names}}: {{.Status}}" | grep onsurvey || true
+              docker rmi "${DOCKERHUB_USER}/onsurvey:${NEW_TAG}" 2>/dev/null || true
+              docker image prune -f || true
+              exit 1
+            fi
