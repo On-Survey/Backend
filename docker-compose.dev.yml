@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
 
   onsurvey-blue:
-    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-latest}
+    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-develop-latest}
     container_name: onsurvey-blue
     environment:
       TZ: Asia/Seoul
@@ -33,7 +33,7 @@ services:
       retries: 12
 
   onsurvey-green:
-    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-latest}
+    image: ${DOCKERHUB_USERNAME}/onsurvey:${SPRING_IMAGE_TAG:-develop-latest}
     container_name: onsurvey-green
     environment:
       TZ: Asia/Seoul
@@ -77,8 +77,8 @@ services:
     image: redis:7-alpine
     container_name: onsurvey-redis
     environment:
-      - DEV_REDIS_PASSWORD=${DEV_REDIS_PASSWORD}
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${DEV_REDIS_PASSWORD}"]
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
     ports:
       - "6379:6379"
     volumes:

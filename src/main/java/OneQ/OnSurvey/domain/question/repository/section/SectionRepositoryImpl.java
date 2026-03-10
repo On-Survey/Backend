@@ -36,8 +36,7 @@ public class SectionRepositoryImpl implements SectionRepository{
             section.title,
             section.description,
             section.sectionOrder,
-            section.nextSection,
-            section.imageUrl
+            section.nextSection
         ))
             .from(section)
             .where(
@@ -54,8 +53,7 @@ public class SectionRepositoryImpl implements SectionRepository{
             section.title,
             section.description,
             section.sectionOrder,
-            section.nextSection,
-            section.imageUrl
+            section.nextSection
         ))
             .from(section)
             .where(

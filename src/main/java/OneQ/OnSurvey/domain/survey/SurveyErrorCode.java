@@ -17,6 +17,7 @@ public enum SurveyErrorCode implements ApiErrorCode {
 
     SURVEY_PARTICIPATION_TEMP_EXCEEDED("SURVEY_PARTICIPATION_TEMP_EXCEEDED_409", "설문 참여 가능 인원이 일시적으로 초과되었습니다.", HttpStatus.CONFLICT),
     SURVEY_PARTICIPATION_OWN_SURVEY("SURVEY_PARTICIPATION_OWN_403", "본인이 생성한 설문에는 참여할 수 없습니다.", HttpStatus.FORBIDDEN),
+    SURVEY_PARTICIPATION_IN_PROCESS("SURVEY_PARTICIPATION_IN_409", "제출한 설문 응답이 처리 중입니다.", HttpStatus.CONFLICT),
 
     SURVEY_INCORRECT_STATUS("SURVEY_STATUS_400", "요청과 설문 상태가 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
     SURVEY_FORM_INVALID_QUESTION_TYPE("SURVEY_FORM_QUESTION_TYPE_400", "문항 타입이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
@@ -29,7 +30,8 @@ public enum SurveyErrorCode implements ApiErrorCode {
     SURVEY_ANSWER_INVALID("SURVEY_ANSWER_400", "설문 답변이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
     SURVEY_FREE_PROMOTION_NOT_ALLOWED("SURVEY_PROMOTION_400", "무료 설문은 프로모션 지급 대상이 아닙니다.", HttpStatus.BAD_REQUEST),
 
-    FORM_REQUEST_NOT_FOUND("FORM_REQUEST_404", "구글 폼 신청을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+    FORM_REQUEST_NOT_FOUND("FORM_REQUEST_404", "구글 폼 신청을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    FORM_CONVERSION_FAILED("FORM_REQUEST_001", "구글 폼 변환에 실패했습니다.", HttpStatus.BAD_REQUEST);
 
     private final String errorCode;
     private final String message;

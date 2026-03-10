@@ -54,7 +54,6 @@ public final class AdminSurveyMapper {
             surveyDetailData.getTitle(),
             surveyDetailData.getDescription(),
             surveyDetailData.getDeadline() != null ? surveyDetailData.getDeadline().toLocalDate() : null,
-            surveyDetailData.getImageUrl(),
             surveyDetailData.getAges().stream().map(Enum::name).collect(Collectors.toSet()),
             surveyDetailData.getGender() != null ? surveyDetailData.getGender().name() : null,
             surveyDetailData.getResidence() != null ? surveyDetailData.getResidence().name() : null,
@@ -136,8 +135,7 @@ public final class AdminSurveyMapper {
             sectionDto.title(),
             sectionDto.description(),
             sectionDto.order(),
-            sectionDto.nextSection(),
-            sectionDto.imageUrl()
+            sectionDto.nextSection()
         );
     }
 }

@@ -8,7 +8,6 @@ public record SurveySingleViewInfo(
     String title,
     String description,
     LocalDate deadline,
-    String imageUrl,
 
     Set<String> ages,
     String gender,

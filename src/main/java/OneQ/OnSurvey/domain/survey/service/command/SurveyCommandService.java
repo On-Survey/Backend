@@ -28,19 +28,22 @@ import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import OneQ.OnSurvey.global.common.util.AuthorizationUtils;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
+import OneQ.OnSurvey.global.infra.redis.RedisAgent;
 import OneQ.OnSurvey.global.infra.transaction.AfterCommitExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 
@@ -50,27 +53,23 @@ import static OneQ.OnSurvey.domain.survey.model.SurveyStatus.REFUNDED;
 @Transactional
 public class SurveyCommandService implements SurveyCommand {
 
-    private final StringRedisTemplate redisTemplate;
-
     private final SurveyRepository surveyRepository;
     private final ScreeningRepository screeningRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final MemberRepository memberRepository;
     private final SurveyRefundPolicy surveyRefundPolicy;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
+    private final RedisAgent redisAgent;
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
 
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
-
     @Value("${redis.survey-key-prefix.completed-count}")
     private String completedKey;
-
     @Value("${redis.survey-key-prefix.due-count}")
     private String dueCountKey;
-
     @Value("${redis.survey-key-prefix.creator-userkey}")
     private String creatorKey;
 
@@ -99,7 +98,6 @@ public class SurveyCommandService implements SurveyCommand {
             }
             if (survey.getTitle().equals(request.title())
                 && survey.getDescription().equals(request.description())
-                && Objects.equals(survey.getImageUrl(), request.imageUrl())
             ) {
                 return SurveyFormResponse.fromEntity(survey);
             }
@@ -108,8 +106,7 @@ public class SurveyCommandService implements SurveyCommand {
                     request.title(),
                     request.description(),
                     survey.getDeadline(),
-                    survey.getTotalCoin(),
-                    request.imageUrl()
+                    survey.getTotalCoin()
             );
             survey = surveyRepository.save(survey);
             log.info("[SURVEY:COMMAND:upsertSurvey] 설문 수정 완료 - surveyId={}", surveyId);
@@ -125,7 +122,7 @@ public class SurveyCommandService implements SurveyCommand {
 
         Set<AgeRange> ages = (request.ages() == null) ? Set.of() : new HashSet<>(request.ages());
 
-        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin(), request.imageUrl());
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
 
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,
@@ -152,7 +149,7 @@ public class SurveyCommandService implements SurveyCommand {
         validateMember(userKey);
 
         survey.markFree();
-        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), 0, request.imageUrl());
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), 0);
 
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,
@@ -246,11 +243,11 @@ public class SurveyCommandService implements SurveyCommand {
         String potentialKey = this.potentialKey + surveyId;
         String memberValue = String.valueOf(userKey);
 
-        if (redisTemplate.opsForZSet().score(potentialKey, memberValue) == null) {
+        if (redisAgent.getZSetScore(potentialKey, memberValue) == null) {
             return false;
         }
         // 잠재 응답자 목록에 현재 시간을 score로 사용자 갱신
-        redisTemplate.opsForZSet().add(potentialKey, memberValue, System.currentTimeMillis());
+        redisAgent.addToZSet(potentialKey, memberValue, System.currentTimeMillis());
         return true;
     }
 
@@ -266,16 +263,12 @@ public class SurveyCommandService implements SurveyCommand {
             changeDto.surveyId(), changeDto.newMemberId());
     }
 
-    private void setValue(String keyPrefix, Long surveyId, String value, Duration duration) {
-        redisTemplate.opsForValue().set(
-            keyPrefix + surveyId, value, duration
-        );
-    }
-
-    private void addZSetValue(String keyPrefix, Long surveyId, String value) {
-        redisTemplate.opsForZSet().add(
-            keyPrefix + surveyId, value, System.currentTimeMillis()
-        );
+    @Override
+    @Transactional
+    @Scheduled(cron = "0 0 0 * * *") // 매 자정마다 실행
+    public void closeDueSurveys() {
+        List<Long> dueSurveyIdList = surveyRepository.closeDueSurveys();
+        deleteSurveyRuntimeCache(dueSurveyIdList);
     }
 
     private Survey getSurvey(Long surveyId) {
@@ -343,10 +336,28 @@ public class SurveyCommandService implements SurveyCommand {
     }
 
     private void applySurveyRuntimeCache(Long surveyId, Long userKey, Integer dueCount, LocalDateTime deadline) {
-        Duration duration = Duration.between(LocalDateTime.now(), deadline);
-        setValue(this.dueCountKey, surveyId, String.valueOf(dueCount), duration);
-        setValue(this.completedKey, surveyId, "0", duration);
-        addZSetValue(this.potentialKey, surveyId, String.valueOf(userKey));
-        setValue(this.creatorKey, surveyId, String.valueOf(userKey), duration);
+        Duration ttl = Duration.between(LocalDateTime.now(), deadline);
+        if (ttl.isNegative() || ttl.isZero()) {
+            log.warn("[SURVEY:COMMAND] 이미 지난 날짜가 마감기한으로 설정  - surveyId: {}, deadline: {}", surveyId, deadline);
+            throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
+        }
+
+        redisAgent.setValue(this.dueCountKey + surveyId, String.valueOf(dueCount), ttl);
+        redisAgent.setValue(this.completedKey + surveyId, "0", ttl);
+        redisAgent.addToZSet(this.potentialKey + surveyId, String.valueOf(userKey), System.currentTimeMillis());
+        redisAgent.setValue(this.creatorKey + surveyId, String.valueOf(userKey), ttl);
+    }
+
+    private void deleteSurveyRuntimeCache(List<Long> surveyIdList) {
+        List<String> keysToDelete = surveyIdList.stream()
+            .flatMap(id -> Stream.of(
+                this.dueCountKey + id,
+                this.completedKey + id,
+                this.potentialKey + id,
+                this.creatorKey + id
+            ))
+            .toList();
+
+        redisAgent.deleteKeys(keysToDelete);
     }
 }
