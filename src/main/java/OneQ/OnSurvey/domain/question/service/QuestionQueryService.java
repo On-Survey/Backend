@@ -49,6 +49,11 @@ public class QuestionQueryService implements QuestionQuery {
         return fillChoiceOptions(questionList);
     }
 
+    @Override
+    public int countQuestionsBySurveyId(Long surveyId) {
+        return questionRepository.countBySurveyId(surveyId);
+    }
+
     private List<DefaultQuestionDto> fillChoiceOptions(List<Question> questionList) {
 
         Set<Long> choiceIdSet = questionList.stream()

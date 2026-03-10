@@ -16,6 +16,7 @@ public class SurveyWithEligibility {
     private String title;
     private String description;
     private Boolean isFree;
+    private Integer promotionAmount;
     private Set<Interest> interests;
     private LocalDateTime deadline;
     private Boolean isEligible;

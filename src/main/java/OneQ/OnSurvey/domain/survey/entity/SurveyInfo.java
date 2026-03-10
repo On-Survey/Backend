@@ -49,6 +49,8 @@ public class SurveyInfo {
     private Integer residencePrice;
     private Integer dueCountPrice;
 
+    private Integer promotionAmount;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean refundable = true;
@@ -62,7 +64,8 @@ public class SurveyInfo {
             Integer genderPrice,
             Integer agePrice,
             Integer residencePrice,
-            Integer dueCountPrice
+            Integer dueCountPrice,
+            Integer promotionAmount
     ) {
         return SurveyInfo.builder()
                 .surveyId(surveyId)
@@ -75,6 +78,7 @@ public class SurveyInfo {
                 .agePrice(agePrice)
                 .residencePrice(residencePrice)
                 .dueCountPrice(dueCountPrice)
+                .promotionAmount(promotionAmount)
                 .refundable(true)
                 .build();
     }
@@ -87,7 +91,8 @@ public class SurveyInfo {
             Integer genderPrice,
             Integer agePrice,
             Integer residencePrice,
-            Integer dueCountPrice
+            Integer dueCountPrice,
+            Integer promotionAmount
     ) {
         this.dueCount = dueCount;
         this.gender = gender;
@@ -97,6 +102,7 @@ public class SurveyInfo {
         this.agePrice = agePrice;
         this.residencePrice = residencePrice;
         this.dueCountPrice = dueCountPrice;
+        this.promotionAmount = promotionAmount;
     }
 
     public void markNonRefundable() {
