@@ -43,18 +43,6 @@ public class PromotionFacade implements PromotionUseCase {
     @Value("${toss.secret.public-crt}")
     private String publicCrt;
 
-    @Value("${toss.api.promotion.amount}")
-    private int promotionAmount;
-
-    @Value("${toss.api.promotion.code}")
-    private String promotionCode;
-
-    @Value("${toss.api.promotion.amount500}")
-    private int promotionAmount500;
-
-    @Value("${toss.api.promotion.code500}")
-    private String promotionCode500;
-
     @Value("${toss.api.promotion.confirm-wait-ms}")
     private long confirmWaitMs;
 
@@ -65,28 +53,13 @@ public class PromotionFacade implements PromotionUseCase {
     private final MemberRepository memberRepository;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
     private final SurveyQueryService surveyQueryService;
+    private final PromotionTierResolver promotionTierResolver;
 
     private SSLContext tossSslContext;
 
     @PostConstruct
     void initSsl() throws Exception {
         this.tossSslContext = tossPromotionPort.createSSLContext(publicCrt, privateKey);
-    }
-
-    private record PromoTier(String code, int amount) {}
-
-    private PromoTier resolvePromoTier(long surveyId) {
-        Integer storedAmount = surveyQueryService.getPromotionAmountBySurveyId(surveyId);
-        int amount = (storedAmount != null) ? storedAmount : promotionAmount;
-        String code = (amount == promotionAmount500) ? promotionCode500 : promotionCode;
-        return new PromoTier(code, amount);
-    }
-
-    private PromoTier derivePromoTierFromCode(String code) {
-        if (promotionCode500.equals(code)) {
-            return new PromoTier(promotionCode500, promotionAmount500);
-        }
-        return new PromoTier(promotionCode, promotionAmount);
     }
 
     @Override
@@ -101,7 +74,7 @@ public class PromotionFacade implements PromotionUseCase {
             throw new CustomException(SurveyErrorCode.SURVEY_FREE_PROMOTION_NOT_ALLOWED);
         }
 
-        PromoTier tier = resolvePromoTier(surveyId);
+        PromoTier tier = promotionTierResolver.resolveBysurveyId(surveyId);
 
         // 최초 실행 / 재시도 실행 경로
         Long grantId = upsertGrantId(userKey, surveyId, tier.code());
@@ -302,7 +275,7 @@ public class PromotionFacade implements PromotionUseCase {
 
         // 이미 성공이면 포인트만 보정하고 종료
         if (grant.isSuccess()) {
-            PromoTier tier = derivePromoTierFromCode(grant.getPromotionCode());
+            PromoTier tier = promotionTierResolver.resolveByCode(grant.getPromotionCode());
             grantPromotionPointIfNeeded(grantId, grant.getUserKey(), tier.amount());
             return;
         }
@@ -311,7 +284,7 @@ public class PromotionFacade implements PromotionUseCase {
             return;
         }
 
-        PromoTier tier = derivePromoTierFromCode(grant.getPromotionCode());
+        PromoTier tier = promotionTierResolver.resolveByCode(grant.getPromotionCode());
         ExecutionResultResponse res =
                 pollWithRecoveryAndPersist(grant, grant.getUserKey(), grant.getExecKey(), tier.code(), tier.amount());
 
