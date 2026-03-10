@@ -74,7 +74,7 @@ public class PromotionFacade implements PromotionUseCase {
             throw new CustomException(SurveyErrorCode.SURVEY_FREE_PROMOTION_NOT_ALLOWED);
         }
 
-        PromoTier tier = promotionTierResolver.resolveBysurveyId(surveyId);
+        PromoTier tier = promotionTierResolver.resolveBySurveyId(surveyId);
 
         // 최초 실행 / 재시도 실행 경로
         Long grantId = upsertGrantId(userKey, surveyId, tier.code());

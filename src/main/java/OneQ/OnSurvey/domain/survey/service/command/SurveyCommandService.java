@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
+import OneQ.OnSurvey.global.promotion.application.PromotionTierResolver;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
@@ -61,18 +62,10 @@ public class SurveyCommandService implements SurveyCommand {
     private final SurveyGlobalStatsService surveyGlobalStatsService;
     private final RedisAgent redisAgent;
     private final QuestionQueryService questionQueryService;
+    private final PromotionTierResolver promotionTierResolver;
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
-
-    @Value("${toss.api.promotion.amount}")
-    private int promotionAmount;
-
-    @Value("${toss.api.promotion.amount500}")
-    private int promotionAmount500;
-
-    private static final int TIER2_MIN_QUESTIONS = 30;
-    private static final int TIER2_MAX_QUESTIONS = 49;
 
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
@@ -135,8 +128,7 @@ public class SurveyCommandService implements SurveyCommand {
         survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
 
         int questionCount = questionQueryService.countQuestionsBySurveyId(surveyId);
-        int resolvedPromotionAmount = (questionCount >= TIER2_MIN_QUESTIONS && questionCount <= TIER2_MAX_QUESTIONS)
-                ? promotionAmount500 : promotionAmount;
+        int resolvedPromotionAmount = promotionTierResolver.resolveAmountByQuestionCount(questionCount);
 
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,
