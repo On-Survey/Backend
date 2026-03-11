@@ -34,39 +34,37 @@ reviews:
       "Docs",
       "Documentation",
       "Style",
-      "Refactor",
       "Test",
       "Tests",
       "Typo",
       "Merge branch",
       "Revert",
       "의존성",
-      "D2R",
-      "R2D",
-      "R2M",
-      "M2R"
+      "D2R", "D2M",
+      "R2D", "R2M",
+      "M2D", "M2R"
     ]
 
-tools:
-  # Backend
-  pmd: # Java
-    enabled: true
-  sqlfluff: # SQL
-    enabled: true
+  tools:
+    # Backend
+    pmd: # Java
+      enabled: true
+    sqlfluff: # SQL
+      enabled: true
 
-  # Security
-  gitleaks:
-    enabled: true
-  semgrep:
-    enabled: true
+    # Security
+    gitleaks:
+      enabled: true
+    semgrep:
+      enabled: true
 
-  # Infrastructure
-  actionlint: # GitHub Actions
-    enabled: true
-  hadolint: # Dockerfile
-    enabled: true
-  yamllint: # YAML
-    enabled: true
+    # Infrastructure
+    actionlint: # GitHub Actions
+      enabled: true
+    hadolint: # Dockerfile
+      enabled: true
+    yamllint: # YAML
+      enabled: true
 
 chat:
   auto_reply: true
