@@ -47,26 +47,26 @@ reviews:
       "M2R"
     ]
 
-tools:
-  # Backend
-  pmd: # Java
-    enabled: true
-  sqlfluff: # SQL
-    enabled: true
+  tools:
+    # Backend
+    pmd: # Java
+      enabled: true
+    sqlfluff: # SQL
+      enabled: true
 
-  # Security
-  gitleaks:
-    enabled: true
-  semgrep:
-    enabled: true
+    # Security
+    gitleaks:
+      enabled: true
+    semgrep:
+      enabled: true
 
-  # Infrastructure
-  actionlint: # GitHub Actions
-    enabled: true
-  hadolint: # Dockerfile
-    enabled: true
-  yamllint: # YAML
-    enabled: true
+    # Infrastructure
+    actionlint: # GitHub Actions
+      enabled: true
+    hadolint: # Dockerfile
+      enabled: true
+    yamllint: # YAML
+      enabled: true
 
 chat:
   auto_reply: true
