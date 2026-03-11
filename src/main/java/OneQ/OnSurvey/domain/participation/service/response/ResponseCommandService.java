@@ -76,6 +76,9 @@ public class ResponseCommandService implements ResponseCommand {
                     if (currCompleted >= dueCount) {
                         survey.updateSurveyStatus(SurveyStatus.CLOSED);
 
+                        long creator = redisAgent.getLongValue(this.creatorKey + surveyId);
+                        eventPublisher.publishEvent(new SurveyCompletedEvent(creator, Map.of()));
+
                         afterCommitExecutor.run(() -> {
                             redisAgent.deleteKeys(List.of(
                                 this.dueCountKey + surveyId,
@@ -91,9 +94,6 @@ public class ResponseCommandService implements ResponseCommand {
                         redisAgent.decrementValue(this.completedKey + surveyId);
                         redisAgent.addToZSet(this.potentialKey + surveyId, String.valueOf(userKey), System.currentTimeMillis());
                     });
-
-                    long creator = redisAgent.getLongValue(this.creatorKey + surveyId);
-                    eventPublisher.publishEvent(new SurveyCompletedEvent(creator, Map.of()));
                 }
 
                 return true;
