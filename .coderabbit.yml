@@ -34,17 +34,15 @@ reviews:
       "Docs",
       "Documentation",
       "Style",
-      "Refactor",
       "Test",
       "Tests",
       "Typo",
       "Merge branch",
       "Revert",
       "의존성",
-      "D2R",
-      "R2D",
-      "R2M",
-      "M2R"
+      "D2R", "D2M",
+      "R2D", "R2M",
+      "M2D", "M2R"
     ]
 
   tools:
