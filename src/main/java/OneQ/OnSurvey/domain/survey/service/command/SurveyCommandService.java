@@ -5,6 +5,8 @@ import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
+import OneQ.OnSurvey.domain.discount.entity.DiscountCode;
+import OneQ.OnSurvey.domain.discount.service.DiscountCodeQueryService;
 import OneQ.OnSurvey.global.promotion.application.PromotionTierResolver;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
@@ -63,6 +65,7 @@ public class SurveyCommandService implements SurveyCommand {
     private final RedisAgent redisAgent;
     private final QuestionQueryService questionQueryService;
     private final PromotionTierResolver promotionTierResolver;
+    private final DiscountCodeQueryService discountCodeQueryService;
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
@@ -125,6 +128,14 @@ public class SurveyCommandService implements SurveyCommand {
 
         Set<AgeRange> ages = (request.ages() == null) ? Set.of() : new HashSet<>(request.ages());
 
+        // 할인 코드 저장 (존재 여부만 확인 후 ID 기록)
+        Long discountCodeId = null;
+        if (request.discountCode() != null && !request.discountCode().isBlank()) {
+            DiscountCode discountCode = discountCodeQueryService.getByCode(request.discountCode());
+            discountCodeId = discountCode.getId();
+            log.info("[SurveySubmit] 할인 코드 저장 - surveyId={}, org={}", surveyId, discountCode.getOrganizationName());
+        }
+
         survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
 
         int questionCount = questionQueryService.countQuestionsBySurveyId(surveyId);
@@ -141,6 +152,7 @@ public class SurveyCommandService implements SurveyCommand {
                 request.residencePrice(),
                 request.dueCountPrice(),
                 resolvedPromotionAmount,
+                discountCodeId,
                 true
         );
 
@@ -166,6 +178,7 @@ public class SurveyCommandService implements SurveyCommand {
                 Residence.ALL,
                 0, 0, 0, 0,
                 0,
+                null,
                 false
         );
 
@@ -300,15 +313,16 @@ public class SurveyCommandService implements SurveyCommand {
             Integer residencePrice,
             Integer dueCountPrice,
             Integer promotionAmount,
+            Long discountCodeId,
             boolean refundable
     ) {
         SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
                 .orElseGet(() -> SurveyInfo.createSurveyInfo(
                         surveyId, dueCount, gender, ages, residence,
-                        genderPrice, agePrice, residencePrice, dueCountPrice, promotionAmount
+                        genderPrice, agePrice, residencePrice, dueCountPrice, promotionAmount, discountCodeId
                 ));
 
-        info.updateSurveyInfo(dueCount, gender, ages, residence, genderPrice, agePrice, residencePrice, dueCountPrice, promotionAmount);
+        info.updateSurveyInfo(dueCount, gender, ages, residence, genderPrice, agePrice, residencePrice, dueCountPrice, promotionAmount, discountCodeId);
 
         if (!refundable) info.markNonRefundable();
 
