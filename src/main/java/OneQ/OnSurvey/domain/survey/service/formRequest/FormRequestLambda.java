@@ -109,7 +109,6 @@ public class FormRequestLambda {
                             formUpdater.markAsRegistered(event.requestId(), surveyId);
 
                             log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}", event.requestId(), surveyId);
-
                             if (result.unsupportedQuestions() != null && !result.unsupportedQuestions().isEmpty()) {
                                 log.warn("[FormRequestLambda] 지원하지 않는 문항 존재 - requestId: {}, count: {}",
                                     event.requestId(), result.unsupportedQuestions().size());
@@ -158,8 +157,6 @@ public class FormRequestLambda {
         SurveyFormResponse surveyResponse = surveyCommand.upsertSurvey(memberId, null, surveyRequest);
         Long surveyId = surveyResponse.surveyId();
 
-        log.info("[FormRequestLambda] 설문 생성 완료 - surveyId: {}, title: {}", surveyId, survey.title());
-
         // 2. 섹션 생성
         if (survey.sections() != null && !survey.sections().isEmpty()) {
             List<SectionDto> sectionDtoList = survey.sections().stream()
@@ -173,7 +170,6 @@ public class FormRequestLambda {
                 .toList();
 
             questionCommand.upsertSections(surveyId, sectionDtoList);
-            log.info("[FormRequestLambda] 섹션 생성 완료 - surveyId: {}, sectionCount: {}", surveyId, sectionDtoList.size());
         }
 
         // 3. 문항 생성
@@ -186,8 +182,6 @@ public class FormRequestLambda {
                     for (FormConversionResponse.Question question : section.questions()) {
                         QuestionType questionType = mapQuestionType(question.type());
                         if (questionType == null) {
-                            log.warn("[FormRequestLambda] 지원하지 않는 문항 타입 - type: {}, title: {}",
-                                question.type(), question.title());
                             continue;
                         }
 
@@ -240,8 +234,6 @@ public class FormRequestLambda {
                 .build();
 
             QuestionUpsertDto savedQuestions = questionCommand.upsertQuestionList(questionUpsertDto);
-            log.info("[FormRequestLambda] 문항 생성 완료 - surveyId: {}, questionCount: {}",
-                surveyId, savedQuestions.getUpsertInfoList().size());
 
             // 4. Choice 문항의 옵션 저장
             List<OptionUpsertDto> optionUpsertDtoList = new ArrayList<>();
@@ -271,8 +263,6 @@ public class FormRequestLambda {
 
             if (!optionUpsertDtoList.isEmpty()) {
                 questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
-                log.info("[FormRequestLambda] 옵션 생성 완료 - surveyId: {}, choiceQuestionCount: {}",
-                    surveyId, optionUpsertDtoList.size());
             }
         }
 

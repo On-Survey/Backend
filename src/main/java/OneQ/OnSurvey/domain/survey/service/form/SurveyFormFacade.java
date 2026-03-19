@@ -79,7 +79,6 @@ public class SurveyFormFacade implements SurveyFormUseCase {
 
         List<OptionUpsertDto> optionUpsertDtoList =
                 buildOptionUpsertDtosFromSavedQuestions(savedQuestionUpsertDto, requestQuestionUpsertDto);
-        log.info("[FORM:updateSurvey] 문항 별 보기 리스트: {}", optionUpsertDtoList);
 
         optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
         Map<Long, OptionUpsertDto> optionDtoMap = mapOptionsByQuestionId(optionUpsertDtoList);
