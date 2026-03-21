@@ -35,6 +35,9 @@ public record SurveyFormRequest(
         Integer dueCountPrice,
 
         @Schema(description = "총 코인", example = "10000")
-        Integer totalCoin
+        Integer totalCoin,
+
+        @Schema(description = "할인 코드 (선택)", example = "A1B2C3D4E5F6G7H8")
+        String discountCode
 ) {
 }

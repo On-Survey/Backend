@@ -42,8 +42,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.FORM_REQUEST_NOT_FOUND;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -115,11 +113,16 @@ public class FormRequestLambda {
                     detailList.add(
                         transactionHandler.runInTransaction(() -> {
                             Long surveyId = createSurveyFromConversionResult(result, memberId);
+                            int questionCount = result.survey().sections() != null
+                                ? result.survey().sections().stream()
+                                .mapToInt(s -> s.questions() != null ? s.questions().size() : 0)
+                                .sum()
+                                : 0;
                             FormRequest request = formRequestRepository.findById(event.requestId())
-                                .orElseThrow(() -> new CustomException(FORM_REQUEST_NOT_FOUND));
-                            request.markAsRegistered(surveyId);
+                                .orElseThrow(() -> new CustomException(SurveyErrorCode.FORM_REQUEST_NOT_FOUND));
+                            request.markAsRegistered(surveyId, questionCount);
 
-                            log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}", event.requestId(), surveyId);
+                            log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}, questionCount: {}", event.requestId(), surveyId, questionCount);
                             if (result.unsupportedQuestions() != null && !result.unsupportedQuestions().isEmpty()) {
                                 log.warn("[FormRequestLambda] 지원하지 않는 문항 존재 - requestId: {}, count: {}",
                                     event.requestId(), result.unsupportedQuestions().size());
@@ -130,11 +133,7 @@ public class FormRequestLambda {
                                 result.survey().title(),
                                 surveyId,
                                 memberId,
-                                result.survey().sections() != null
-                                    ? result.survey().sections().stream().mapToInt(s -> s.questions() != null
-                                        ? s.questions().size()
-                                        : 0).sum()
-                                    : 0,
+                                questionCount,
                                 result.unsupportedQuestions() != null ? result.unsupportedQuestions().stream()
                                     .map(q -> new SurveyConversionAlert.SurveyDetails.UnsupportedQuestion(q.order(), q.type(), q.reason()))
                                     .toList() : List.of()

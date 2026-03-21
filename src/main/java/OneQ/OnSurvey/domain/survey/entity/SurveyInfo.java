@@ -51,6 +51,9 @@ public class SurveyInfo {
 
     private Integer promotionAmount;
 
+    @Column(name = "discount_code_id")
+    private Long discountCodeId;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean refundable = true;
@@ -65,7 +68,8 @@ public class SurveyInfo {
             Integer agePrice,
             Integer residencePrice,
             Integer dueCountPrice,
-            Integer promotionAmount
+            Integer promotionAmount,
+            Long discountCodeId
     ) {
         return SurveyInfo.builder()
                 .surveyId(surveyId)
@@ -79,6 +83,7 @@ public class SurveyInfo {
                 .residencePrice(residencePrice)
                 .dueCountPrice(dueCountPrice)
                 .promotionAmount(promotionAmount)
+                .discountCodeId(discountCodeId)
                 .refundable(true)
                 .build();
     }
@@ -92,7 +97,8 @@ public class SurveyInfo {
             Integer agePrice,
             Integer residencePrice,
             Integer dueCountPrice,
-            Integer promotionAmount
+            Integer promotionAmount,
+            Long discountCodeId
     ) {
         this.dueCount = dueCount;
         this.gender = gender;
@@ -103,6 +109,7 @@ public class SurveyInfo {
         this.residencePrice = residencePrice;
         this.dueCountPrice = dueCountPrice;
         this.promotionAmount = promotionAmount;
+        this.discountCodeId = discountCodeId;
     }
 
     public void markNonRefundable() {
