@@ -9,11 +9,15 @@ import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionCommand;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
+import OneQ.OnSurvey.domain.survey.entity.FormRequest;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormConversionPayload;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormConversionResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationAndStashResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPayload;
 import OneQ.OnSurvey.domain.survey.model.formRequest.event.FormRequestConversionEvent;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
+import OneQ.OnSurvey.domain.survey.repository.formRequest.FormRequestRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
@@ -38,6 +42,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.FORM_REQUEST_NOT_FOUND;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -46,7 +52,9 @@ public class FormRequestLambda {
     private static final long FORM_CONVERSION_REQUEST_TIMEOUT = 20L;
 
     @Value("${external.lambda.survey-conversion.url:}")
-    private String lambdaUrl;
+    private String conversionUrl;
+    @Value("${external.lambda.google-form-validation.url:}")
+    private String validationUrl;
 
     private final AlertNotifier alertNotifier;
     private final TransactionHandler transactionHandler;
@@ -54,9 +62,10 @@ public class FormRequestLambda {
     private final WebClient webClient;
 
     private final MemberFinder memberFinder;
-    private final FormUpdater formUpdater;
     private final SurveyCommand surveyCommand;
     private final QuestionCommand questionCommand;
+
+    private final FormRequestRepository formRequestRepository;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -66,7 +75,7 @@ public class FormRequestLambda {
         FormConversionPayload payload = new FormConversionPayload(event.formUrls());
 
         FormConversionResponse response = webClient.post()
-            .uri(lambdaUrl)
+            .uri(conversionUrl)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
@@ -106,7 +115,9 @@ public class FormRequestLambda {
                     detailList.add(
                         transactionHandler.runInTransaction(() -> {
                             Long surveyId = createSurveyFromConversionResult(result, memberId);
-                            formUpdater.markAsRegistered(event.requestId(), surveyId);
+                            FormRequest request = formRequestRepository.findById(event.requestId())
+                                .orElseThrow(() -> new CustomException(FORM_REQUEST_NOT_FOUND));
+                            request.markAsRegistered(surveyId);
 
                             log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}", event.requestId(), surveyId);
                             if (result.unsupportedQuestions() != null && !result.unsupportedQuestions().isEmpty()) {
@@ -144,6 +155,30 @@ public class FormRequestLambda {
         alertNotifier.sendSurveyConversionAsync(
             SurveyConversionAlert.success(response.totalCount(), response.successCount(), detailList)
         );
+    }
+
+    public FormValidationAndStashResponse validateAndStashFormRequest(String formLink, String requesterEmail) {
+        FormValidationPayload payload = new FormValidationPayload(List.of(formLink), requesterEmail);
+
+        FormValidationAndStashResponse response = webClient.post()
+            .uri(validationUrl)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(payload)
+            .retrieve()
+            .bodyToMono(FormValidationAndStashResponse.class)
+            .timeout(Duration.ofSeconds(FORM_CONVERSION_REQUEST_TIMEOUT))
+            .retryWhen(Retry.backoff(3, Duration.ofSeconds(3)))
+            .onErrorMap(e -> {
+                log.error("[FormRequestLambda:validateAndStashFormRequest] 구글폼 링크 유효성 검사 실패 - URLs: {}, error: {}", payload.urls(), e.getMessage(), e);
+                throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);
+            })
+            .block();
+
+        if (response == null || response.successCount() == 0) {
+            log.warn("[FormRequestLambda:validateAndStashFormRequest] 구글폼 링크가 유효하지 않음 - URLs: {}", payload.urls());
+            throw new CustomException(SurveyErrorCode.FORM_INVALID);
+        }
+        return response;
     }
 
     private Long createSurveyFromConversionResult(FormConversionResponse.Result result, Long memberId) {

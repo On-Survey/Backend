@@ -1,6 +1,9 @@
 package OneQ.OnSurvey.domain.survey.service.formRequest;
 
 import OneQ.OnSurvey.domain.survey.entity.FormRequest;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationAndStashResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationRequestDto;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.event.FormRequestConversionEvent;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
 import OneQ.OnSurvey.domain.survey.repository.formRequest.FormRequestRepository;
@@ -21,6 +24,7 @@ import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.FORM_REQUEST_NOT_FOUND
 public class FormCommandService implements FormCreator, FormUpdater {
 
     private final ApplicationEventPublisher eventPublisher;
+    private final FormRequestLambda formRequestLambda;
     private final FormRequestRepository formRequestRepository;
     private final SurveyQueryService surveyQueryService;
 
@@ -45,5 +49,19 @@ public class FormCommandService implements FormCreator, FormUpdater {
                 .orElseThrow(() -> new CustomException(FORM_REQUEST_NOT_FOUND));
 
         request.markAsRegistered(surveyId);
+    }
+
+    /**
+     * 구글폼 링크 유효성을 검사한 뒤, 변환 가능/불가능한 문항 수를 각각 반환하고 반환 불가능한 문항에 대해서는 그 사유를 반환
+     * 유효성 검사가 이루어진 데이터를 s3에 stash한다.
+     *
+     * @param dto 구글폼 링크 유효성 검사를 진행할 formLink는 필수로 가지고 있는 DTO
+     * @return 변환된 문항 수 / 변환되지 않은 문항 및 사유
+     */
+    @Override
+    public FormValidationResponse validationFormRequestLink(FormValidationRequestDto dto) {
+        FormValidationAndStashResponse formCount = formRequestLambda.validateAndStashFormRequest(dto.formLink(), dto.requesterEmail());
+
+        return FormValidationResponse.from(formCount);
     }
 }

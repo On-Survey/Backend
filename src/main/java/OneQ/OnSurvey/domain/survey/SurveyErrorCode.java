@@ -31,7 +31,9 @@ public enum SurveyErrorCode implements ApiErrorCode {
     SURVEY_FREE_PROMOTION_NOT_ALLOWED("SURVEY_PROMOTION_400", "무료 설문은 프로모션 지급 대상이 아닙니다.", HttpStatus.BAD_REQUEST),
 
     FORM_REQUEST_NOT_FOUND("FORM_REQUEST_404", "구글 폼 신청을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-    FORM_CONVERSION_FAILED("FORM_REQUEST_001", "구글 폼 변환에 실패했습니다.", HttpStatus.BAD_REQUEST);
+    FORM_CONVERSION_FAILED("FORM_REQUEST_001", "구글 폼 변환에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    FORM_VALIDATION_FAILED("FORM_REQUEST_002", "구글 폼 링크 유효성 검사에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    FORM_INVALID("FORM_REQUEST_003", "구글 폼 링크가 유효하지 않습니다.", HttpStatus.BAD_REQUEST);
 
     private final String errorCode;
     private final String message;

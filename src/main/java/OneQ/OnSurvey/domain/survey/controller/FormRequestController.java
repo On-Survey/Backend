@@ -1,6 +1,8 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormListResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationRequestDto;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestResponse;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormCreator;
@@ -66,5 +68,16 @@ public class FormRequestController {
     ) {
         formUpdater.markAsRegistered(requestId, surveyId);
         return SuccessResponse.ok("폼이 온서베이에 등록되었습니다.");
+    }
+
+    @PostMapping("/validation")
+    @Operation(summary = "폼 링크 유효성 검사", description = "구글 폼 편집 URL로부터 전체 문항 수 중 변환 가능한 문항 수를 리턴합니다. 변환 불가능한 문항 존재 시 관련 정보를 추가로 반환합니다.")
+    public SuccessResponse<FormValidationResponse> getConvertableCounts(
+        @RequestBody FormValidationRequestDto request
+    ) {
+        log.info("[FormRequest] 폼 링크 유효성 검사 - URL: {}, requester: {}", request.formLink(), request.requesterEmail());
+
+        FormValidationResponse response = formCreator.validationFormRequestLink(request);
+        return SuccessResponse.ok(response);
     }
 }
