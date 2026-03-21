@@ -1,15 +1,19 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormListResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormPublishRequest;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestResponse;
+import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormCreator;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormFinder;
+import OneQ.OnSurvey.domain.survey.service.formRequest.FormPublisher;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormUpdater;
 import OneQ.OnSurvey.global.common.response.PageResponse;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +29,7 @@ public class FormRequestController {
     private final FormCreator formCreator;
     private final FormFinder formFinder;
     private final FormUpdater formUpdater;
+    private final FormPublisher formPublisher;
 
     @PostMapping
     @Operation(summary = "폼 등록 신청", description = "폼을 등록하기 위한 신청을 생성합니다.")
@@ -64,7 +69,16 @@ public class FormRequestController {
             @PathVariable Long requestId,
             @RequestParam Long surveyId
     ) {
-        formUpdater.markAsRegistered(requestId, surveyId);
+        formUpdater.markAsRegistered(requestId, surveyId, null);
         return SuccessResponse.ok("폼이 온서베이에 등록되었습니다.");
+    }
+
+    @PatchMapping("/{requestId}/publish")
+    @Operation(summary = "폼 설문 발행", description = "변환 완료된 설문에 스크리닝 및 세그먼트 정보를 적용하고 발행합니다.")
+    public SuccessResponse<SurveyFormResponse> publishFormRequest(
+            @PathVariable Long requestId,
+            @RequestBody @Valid FormPublishRequest request
+    ) {
+        return SuccessResponse.ok(formPublisher.publishFormRequest(requestId, request));
     }
 }
