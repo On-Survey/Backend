@@ -19,6 +19,8 @@ import java.util.List;
 
 import static OneQ.OnSurvey.domain.member.QMember.member;
 import static OneQ.OnSurvey.domain.participation.entity.QQuestionAnswer.questionAnswer;
+import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
+import static OneQ.OnSurvey.domain.question.entity.QQuestion.question;
 
 @Repository
 public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<QuestionAnswer> {
@@ -50,7 +52,13 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                 questionAnswer.answerId.count()
             ))
             .from(questionAnswer)
-            .where(questionAnswer.questionId.in(questionIdList))
+            .join(question).on(question.questionId.eq(questionAnswer.questionId))
+            .join(response).on(response.surveyId.eq(question.surveyId)
+                .and(response.memberId.eq(questionAnswer.memberId)))
+            .where(
+                questionAnswer.questionId.in(questionIdList),
+                response.isResponded.isTrue()
+            )
             .groupBy(questionAnswer.questionId, questionAnswer.content)
             .orderBy(questionAnswer.questionId.asc())
             .fetch();
@@ -63,7 +71,13 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                 questionAnswer.content
             ))
             .from(questionAnswer)
-            .where(questionAnswer.questionId.in(questionIdList))
+            .join(question).on(question.questionId.eq(questionAnswer.questionId))
+            .join(response).on(response.surveyId.eq(question.surveyId)
+                .and(response.memberId.eq(questionAnswer.memberId)))
+            .where(
+                questionAnswer.questionId.in(questionIdList),
+                response.isResponded.isTrue()
+            )
             .orderBy(questionAnswer.questionId.asc())
             .fetch();
     }
@@ -84,9 +98,13 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                         questionAnswer.answerId.count()
                 ))
                 .from(questionAnswer)
+                .join(question).on(question.questionId.eq(questionAnswer.questionId))
+                .join(response).on(response.surveyId.eq(question.surveyId)
+                        .and(response.memberId.eq(questionAnswer.memberId)))
                 .join(member).on(member.id.eq(questionAnswer.memberId))
                 .where(
                         questionAnswer.questionId.in(questionIds),
+                        response.isResponded.isTrue(),
                         buildAgeCondition(member.birthDay, effective.ages()),
                         buildGenderCondition(member.gender, effective.genders()),
                         buildResidenceCondition(member.residence, effective.residences())
@@ -116,9 +134,13 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                         questionAnswer.content
                 ))
                 .from(questionAnswer)
+                .join(question).on(question.questionId.eq(questionAnswer.questionId))
+                .join(response).on(response.surveyId.eq(question.surveyId)
+                        .and(response.memberId.eq(questionAnswer.memberId)))
                 .join(member).on(questionAnswer.memberId.eq(member.id))
                 .where(
                         questionAnswer.questionId.in(questionIds),
+                        response.isResponded.isTrue(),
                         buildAgeCondition(member.birthDay, effective.ages()),
                         buildGenderCondition(member.gender, effective.genders()),
                         buildResidenceCondition(member.residence, effective.residences())
@@ -146,9 +168,13 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                         questionAnswer.memberId.countDistinct()
                 ))
                 .from(questionAnswer)
+                .join(question).on(question.questionId.eq(questionAnswer.questionId))
+                .join(response).on(response.surveyId.eq(question.surveyId)
+                        .and(response.memberId.eq(questionAnswer.memberId)))
                 .join(member).on(member.id.eq(questionAnswer.memberId))
                 .where(
                         questionAnswer.questionId.in(questionIds),
+                        response.isResponded.isTrue(),
                         buildAgeCondition(member.birthDay, effective.ages()),
                         buildGenderCondition(member.gender, effective.genders()),
                         buildResidenceCondition(member.residence, effective.residences())
