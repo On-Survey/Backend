@@ -83,7 +83,7 @@ public class FormRequestController {
     public SuccessResponse<FormValidationResponse> getConvertableCounts(
         @RequestBody @Valid FormValidationRequestDto request
     ) {
-        log.info("[FormRequest] 폼 링크 유효성 검사 - URL: {}, requester: {}", request.formLink(), request.requesterEmail());
+        log.info("[FormRequest] 폼 링크 유효성 검사 - URL: {}", request.formLink());
 
         FormValidationResponse response = formCreator.validationFormRequestLink(request);
         return SuccessResponse.ok(response);

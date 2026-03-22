@@ -312,7 +312,7 @@ public class QuestionCommandService implements QuestionCommand {
                 type,
                 upsertInfo.getImageUrl()
             );
-        }  else if (QuestionType.TITLE.equals(type)) {
+        } else if (QuestionType.TITLE.equals(type)) {
             return Title.of(
                 surveyId,
                 upsertInfo.getQuestionOrder(),

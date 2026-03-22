@@ -65,7 +65,7 @@ public class FormRequestLambda {
             .retrieve()
             .bodyToMono(FormValidationAndStashResponse.class)
             .timeout(Duration.ofSeconds(FORM_CONVERSION_REQUEST_TIMEOUT))
-            .retryWhen(Retry.backoff(3, Duration.ofSeconds(3)))
+            .retryWhen(Retry.backoff(2, Duration.ofSeconds(3)))
             .onErrorMap(e -> {
                 log.error("[FormRequestLambda:validateAndStashFormRequest] 구글폼 링크 유효성 검사 실패 - URLs: {}, error: {}", payload.urls(), e.getMessage(), e);
                 throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);

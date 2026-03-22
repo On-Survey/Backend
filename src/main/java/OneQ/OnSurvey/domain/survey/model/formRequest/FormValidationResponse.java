@@ -20,19 +20,23 @@ public record FormValidationResponse(
     ) { }
 
     public static FormValidationResponse from(FormValidationAndStashResponse dto) {
-        List<Result> results = dto.results().stream()
+        List<FormValidationAndStashResponse.Result> sourceResults = dto.results() == null ? List.of() : dto.results();
+
+        List<Result> results = sourceResults.stream()
             .map(r -> r.isSuccess()
                 ? new Result(
                     r.counts().total(),
                     r.counts().convertible(),
                     r.counts().unconvertible(),
-                    r.unconvertibleDetails().stream()
-                        .map(u -> new Unconvertible(
-                            u.title(),
-                            u.type(),
-                            u.reason()
-                        ))
-                    .toList()
+                    r.unconvertibleDetails() != null
+                        ? r.unconvertibleDetails().stream()
+                            .map(u -> new Unconvertible(
+                                u.title(),
+                                u.type(),
+                                u.reason()
+                            ))
+                        .toList()
+                        : List.of()
                 )
                 : null
             ).toList();
