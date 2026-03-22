@@ -9,7 +9,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum DiscountCodeErrorCode implements ApiErrorCode {
 
-    DISCOUNT_CODE_NOT_FOUND("DISCOUNT_404", "유효하지 않은 할인 코드입니다.", HttpStatus.NOT_FOUND);
+    DISCOUNT_CODE_NOT_FOUND("DISCOUNT_404", "유효하지 않은 할인 코드입니다.", HttpStatus.NOT_FOUND),
+    DISCOUNT_CODE_EXPIRED("DISCOUNT_410", "만료된 할인 코드입니다.", HttpStatus.GONE);
 
     private final String errorCode;
     private final String message;
