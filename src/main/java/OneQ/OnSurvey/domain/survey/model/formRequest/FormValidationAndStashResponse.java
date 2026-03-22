@@ -33,7 +33,6 @@ public record FormValidationAndStashResponse(
     public record Unconvertible(
         String title,
         String type,
-        int order,
         String reason
     ) { }
 }

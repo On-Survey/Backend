@@ -20,6 +20,9 @@ public class FormRequest extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String formLink;
 
+    @Column(name = "user_key", nullable = false)
+    private Long userKey;
+
     @Column(nullable = false, length = 100)
     private String requesterEmail;
 
@@ -40,12 +43,13 @@ public class FormRequest extends BaseEntity {
     @Column(name = "registered_survey_id")
     private Long registeredSurveyId;
 
-    public static FormRequest createRequest(String formLink, String requesterEmail) {
+    public static FormRequest createRequest(String formLink, String requesterEmail, Long userKey) {
         return FormRequest.builder()
-                .formLink(formLink)
-                .requesterEmail(requesterEmail)
-                .isRegistered(false)
-                .build();
+            .formLink(formLink)
+            .userKey(userKey)
+            .requesterEmail(requesterEmail)
+            .isRegistered(false)
+            .build();
     }
 
     public void markAsRegistered(Long surveyId, Integer questionCount) {

@@ -11,6 +11,7 @@ import OneQ.OnSurvey.domain.survey.service.formRequest.FormCreator;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormFinder;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormPublisher;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormUpdater;
+import OneQ.OnSurvey.global.auth.custom.Authenticatable;
 import OneQ.OnSurvey.global.common.response.PageResponse;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -34,11 +36,12 @@ public class FormRequestController {
     private final FormPublisher formPublisher;
 
     @PostMapping
-    @Operation(summary = "폼 등록 신청", description = "폼을 등록하기 위한 신청을 생성합니다.")
+    @Operation(summary = "폼 등록 신청 및 설문 발행", description = "폼을 등록하기 위한 신청을 생성한 뒤 설문변환 및 발행을 진행합니다.")
     public SuccessResponse<Long> createGoogleFormRequest(
-            @RequestBody FormRequestDto request
+        @AuthenticationPrincipal Authenticatable principal,
+        @RequestBody @Valid FormRequestDto request
     ) {
-        return SuccessResponse.ok(formCreator.createFormRequest(request));
+        return SuccessResponse.ok(formCreator.createFormRequest(principal.getUserKey(), principal.getMemberId(), request));
     }
 
     @GetMapping
@@ -78,7 +81,7 @@ public class FormRequestController {
     @PostMapping("/validation")
     @Operation(summary = "폼 링크 유효성 검사", description = "구글 폼 편집 URL로부터 전체 문항 수 중 변환 가능한 문항 수를 리턴합니다. 변환 불가능한 문항 존재 시 관련 정보를 추가로 반환합니다.")
     public SuccessResponse<FormValidationResponse> getConvertableCounts(
-        @RequestBody FormValidationRequestDto request
+        @RequestBody @Valid FormValidationRequestDto request
     ) {
         log.info("[FormRequest] 폼 링크 유효성 검사 - URL: {}, requester: {}", request.formLink(), request.requesterEmail());
 

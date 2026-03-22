@@ -16,7 +16,6 @@ public record FormValidationResponse(
     public record Unconvertible(
         String title,
         String type,
-        int order,
         String reason
     ) { }
 
@@ -31,7 +30,6 @@ public record FormValidationResponse(
                         .map(u -> new Unconvertible(
                             u.title(),
                             u.type(),
-                            u.order(),
                             u.reason()
                         ))
                     .toList()
