@@ -147,10 +147,6 @@ public class SurveyCommandService implements SurveyCommand {
                 request.gender(),
                 ages,
                 request.residence(),
-                request.genderPrice(),
-                request.agePrice(),
-                request.residencePrice(),
-                request.dueCountPrice(),
                 resolvedPromotionAmount,
                 discountCodeId,
                 true
@@ -176,7 +172,6 @@ public class SurveyCommandService implements SurveyCommand {
                 Gender.ALL,
                 Set.of(AgeRange.ALL),
                 Residence.ALL,
-                0, 0, 0, 0,
                 0,
                 null,
                 false
@@ -308,10 +303,6 @@ public class SurveyCommandService implements SurveyCommand {
             Gender gender,
             Set<AgeRange> ages,
             Residence residence,
-            Integer genderPrice,
-            Integer agePrice,
-            Integer residencePrice,
-            Integer dueCountPrice,
             Integer promotionAmount,
             Long discountCodeId,
             boolean refundable
@@ -319,10 +310,10 @@ public class SurveyCommandService implements SurveyCommand {
         SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
                 .orElseGet(() -> SurveyInfo.createSurveyInfo(
                         surveyId, dueCount, gender, ages, residence,
-                        genderPrice, agePrice, residencePrice, dueCountPrice, promotionAmount, discountCodeId
+                        0, 0, 0, 0, promotionAmount, discountCodeId
                 ));
 
-        info.updateSurveyInfo(dueCount, gender, ages, residence, genderPrice, agePrice, residencePrice, dueCountPrice, promotionAmount, discountCodeId);
+        info.updateSurveyInfo(dueCount, gender, ages, residence, 0, 0, 0, 0, promotionAmount, discountCodeId);
 
         if (!refundable) info.markNonRefundable();
 

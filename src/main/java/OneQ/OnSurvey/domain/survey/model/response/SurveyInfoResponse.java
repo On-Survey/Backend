@@ -25,13 +25,13 @@ public record SurveyInfoResponse(
 
         return new SurveyInfoResponse(
                 info.getDueCount(),
-                info.getDueCountPrice(),
+                info.getDueCountPrice() != null ? info.getDueCountPrice() : 0,
                 info.getGender(),
-                info.getGenderPrice(),
+                info.getGenderPrice() != null ? info.getGenderPrice() : 0,
                 ages,
-                info.getAgePrice(),
+                info.getAgePrice() != null ? info.getAgePrice() : 0,
                 info.getResidence(),
-                info.getResidencePrice()
+                info.getResidencePrice() != null ? info.getResidencePrice() : 0
         );
     }
 }
