@@ -14,7 +14,7 @@ import org.hibernate.validator.constraints.URL;
 import java.util.Set;
 
 public record FormRequestDto(
-    @Schema(description = "폼 링크", example = "https://docs.google.com/forms/d/e/1FAIpQLSfD.../viewform")
+    @Schema(description = "폼 링크", example = "https://docs.google.com/forms/d/1FAIpQLSfD.../edit")
     @URL @NotBlank
     String formLink,
 
