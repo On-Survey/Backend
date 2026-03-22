@@ -50,7 +50,8 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
             memberId,
             List.of(savedRequest.getFormLink()),
             dto.screening(),
-            dto.surveyForm()
+            dto.surveyForm(),
+            dto.interests()
         ));
         return savedRequest.getId();
     }

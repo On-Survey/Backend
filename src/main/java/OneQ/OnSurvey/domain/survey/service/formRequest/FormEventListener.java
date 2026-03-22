@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.domain.survey.service.formRequest;
 
+import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
@@ -29,6 +30,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -92,6 +94,11 @@ public class FormEventListener {
                                     event.screening().content(),
                                     event.screening().answer()
                                 );
+                            }
+                            if (event.interests() != null && !event.interests().isEmpty()) {
+                                surveyCommand.upsertInterest(surveyId, event.interests());
+                            } else {
+                                surveyCommand.upsertInterest(surveyId, Set.of(Interest.BUSINESS));
                             }
                             surveyCommand.submitSurvey(event.userKey(), surveyId, event.surveyForm());
 
