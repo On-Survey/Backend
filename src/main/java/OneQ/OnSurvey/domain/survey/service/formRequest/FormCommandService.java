@@ -2,16 +2,22 @@ package OneQ.OnSurvey.domain.survey.service.formRequest;
 
 import OneQ.OnSurvey.domain.member.dto.MemberSearchResult;
 import OneQ.OnSurvey.domain.member.service.MemberFinder;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.FormRequest;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormPublishRequest;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationAndStashResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPayload;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationRequestDto;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.event.FormRequestConversionEvent;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.repository.formRequest.FormRequestRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQueryService;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,27 +26,33 @@ import java.util.List;
 
 import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.*;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class FormCommandService implements FormCreator, FormUpdater, FormPublisher {
 
     private final ApplicationEventPublisher eventPublisher;
+    private final FormRequestLambda formRequestLambda;
     private final FormRequestRepository formRequestRepository;
     private final SurveyQueryService surveyQueryService;
     private final MemberFinder memberFinder;
     private final SurveyCommand surveyCommand;
 
     @Override
-    public Long createFormRequest(FormRequestDto dto) {
-        FormRequest request = dto.toEntity();
+    public Long createFormRequest(Long userKey, Long memberId, FormRequestDto dto) {
+        FormRequest request = dto.toEntity(userKey);
         FormRequest savedRequest = formRequestRepository.save(request);
 
         eventPublisher.publishEvent(new FormRequestConversionEvent(
             savedRequest.getId(),
-            savedRequest.getRequesterEmail(),
-            List.of(savedRequest.getFormLink()))
-        );
+            userKey,
+            memberId,
+            List.of(savedRequest.getFormLink()),
+            dto.screening(),
+            dto.surveyForm(),
+            dto.interests()
+        ));
         return savedRequest.getId();
     }
 
@@ -80,5 +92,24 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
         }
 
         return surveyCommand.submitSurvey(userKey, surveyId, publishRequest.surveyForm());
+    }
+
+    /**
+     * 구글폼 링크 유효성을 검사한 뒤, 변환 가능/불가능한 문항 수를 각각 반환하고 반환 불가능한 문항에 대해서는 그 사유를 반환
+     * 유효성 검사가 이루어진 데이터를 s3에 stash한다.
+     *
+     * @param dto 구글폼 링크 유효성 검사를 진행할 formLink는 필수로 가지고 있는 DTO
+     * @return 변환된 문항 수 / 변환되지 않은 문항 및 사유
+     */
+    @Override
+    public FormValidationResponse validationFormRequestLink(FormValidationRequestDto dto) {
+        FormValidationPayload payload = new FormValidationPayload(List.of(dto.formLink()), dto.requesterEmail());
+        FormValidationAndStashResponse validationResult = formRequestLambda.validateAndStashFormRequest(payload);
+
+        if (validationResult == null || validationResult.successCount() == 0) {
+            log.warn("[FormCommandService:validationFormRequestLink] 구글폼 링크가 유효하지 않음 - URL: {}", dto.formLink());
+            throw new CustomException(SurveyErrorCode.FORM_INVALID);
+        }
+        return FormValidationResponse.from(validationResult);
     }
 }

@@ -36,7 +36,7 @@ public class QuestionCommandService implements QuestionCommand {
 
     @Override
     public QuestionUpsertDto upsertQuestionList(QuestionUpsertDto upsertDto) {
-        log.info("[QUESTION:COMMAND:upsertQuestionList] 문항 UPSERT - surveyId: {}, upsertInfoList: {}", upsertDto.getSurveyId(), upsertDto.getUpsertInfoList().toString());
+        log.info("[QUESTION:COMMAND:upsertQuestionList] 문항 UPSERT - surveyId: {}", upsertDto.getSurveyId());
 
         Long surveyId = upsertDto.getSurveyId();
         List<QuestionUpsertDto.UpsertInfo> upsertInfoList = upsertDto.getUpsertInfoList();
@@ -200,10 +200,16 @@ public class QuestionCommandService implements QuestionCommand {
             image.updateQuestion(
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
-                upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
                 upsertInfo.getImageUrl()
+            );
+        } else if (question instanceof Title title) {
+            title.updateQuestion(
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection()
             );
         }
     }
@@ -302,10 +308,18 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
-                upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
                 type,
                 upsertInfo.getImageUrl()
+            );
+        } else if (QuestionType.TITLE.equals(type)) {
+            return Title.of(
+                surveyId,
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getSection(),
+                type
             );
         } else {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
@@ -314,7 +328,7 @@ public class QuestionCommandService implements QuestionCommand {
 
     @Override
     public List<OptionUpsertDto> upsertChoiceOptionList(List<OptionUpsertDto> upsertDtoList) {
-        log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 보기 UPSERT - upsertDtoList : {}", upsertDtoList.toString());
+        log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 보기 UPSERT");
 
         List<ChoiceOption> finalList = new ArrayList<>();
 
@@ -345,11 +359,10 @@ public class QuestionCommandService implements QuestionCommand {
                 .map(ChoiceOption::getChoiceOptionId)
                 .filter(optionId -> !updateIdSet.contains(optionId))
                 .collect(Collectors.toSet());
-            log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 삭제되는 문항: {}, 보기 IDs: {}", questionId, deleteIdSet);
-
-            choiceOptionRepository.deleteAll(deleteIdSet);
-
-            log.info("[QUESTION:COMMAND:upsertChoiceOptionList] DELETE 진행");
+            if (!deleteIdSet.isEmpty()) {
+                log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 삭제되는 문항: {}, 보기 IDs: {}", questionId, deleteIdSet);
+                choiceOptionRepository.deleteAll(deleteIdSet);
+            }
 
             // 5. Update 대상 수정
             Map<Long, OptionDto> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
