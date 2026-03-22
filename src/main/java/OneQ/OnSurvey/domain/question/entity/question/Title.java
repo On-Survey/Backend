@@ -9,22 +9,22 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@Getter @SuperBuilder
+@Getter
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@DiscriminatorValue(value = QuestionType.Values.IMAGE)
-public class Image extends Question {
+@DiscriminatorValue(value = QuestionType.Values.TITLE)
+public class Title extends Question {
 
-    public static Image of(
+    public static Title of(
         Long surveyId,
         Integer order,
         String title,
         String description,
         Integer section,
-        QuestionType type,
-        String imageUrl
+        QuestionType type
     ) {
-        return Image.builder()
+        return Title.builder()
             .surveyId(surveyId)
             .order(order)
             .title(title)
@@ -32,7 +32,7 @@ public class Image extends Question {
             .isRequired(false)
             .type(type.name())
             .section(section)
-            .imageUrl(imageUrl)
+            .imageUrl(null)
             .build();
     }
 
@@ -40,9 +40,8 @@ public class Image extends Question {
         String title,
         String description,
         Integer order,
-        Integer section,
-        String imageUrl
+        Integer section
     ) {
-        super.updateQuestion(title, description, false, order, section, imageUrl);
+        super.updateQuestion(title, description, false, order, section, null);
     }
 }

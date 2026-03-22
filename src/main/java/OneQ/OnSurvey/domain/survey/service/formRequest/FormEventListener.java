@@ -259,6 +259,7 @@ public class FormEventListener {
             case "DATE" -> QuestionType.DATE;
             case "NUMBER" -> QuestionType.NUMBER;
             case "IMAGE" -> QuestionType.IMAGE;
+            case "TITLE_DESCRIPTION" -> QuestionType.TITLE;
             default -> null;
         };
     }

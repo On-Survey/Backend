@@ -200,10 +200,16 @@ public class QuestionCommandService implements QuestionCommand {
             image.updateQuestion(
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
-                upsertInfo.getIsRequired(),
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection(),
                 upsertInfo.getImageUrl()
+            );
+        } else if (question instanceof Title title) {
+            title.updateQuestion(
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection()
             );
         }
     }
@@ -302,10 +308,18 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getTitle(),
                 upsertInfo.getDescription(),
-                upsertInfo.getIsRequired(),
                 upsertInfo.getSection(),
                 type,
                 upsertInfo.getImageUrl()
+            );
+        }  else if (QuestionType.TITLE.equals(type)) {
+            return Title.of(
+                surveyId,
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getSection(),
+                type
             );
         } else {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
