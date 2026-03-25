@@ -39,6 +39,17 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     }
 
     @Override
+    public List<Long> getRequiredQuestionIdsBySurveyId(Long surveyId) {
+        return jpaQueryFactory.select(question.questionId)
+            .from(question)
+            .where(
+                question.surveyId.eq(surveyId),
+                question.isRequired.isTrue()
+            )
+            .fetch();
+    }
+
+    @Override
     public Long getSurveyId(Long questionId) {
         return jpaQueryFactory.select(question.surveyId)
             .from(question)
