@@ -1,8 +1,11 @@
 package OneQ.OnSurvey.domain.participation.service.response;
 
+import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.entity.Response;
 import OneQ.OnSurvey.domain.participation.model.event.SurveyCompletedEvent;
+import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
+import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -33,6 +37,8 @@ public class ResponseCommandService implements ResponseCommand {
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
+    private final QuestionRepository questionRepository;
+    private final AnswerRepository<QuestionAnswer> questionAnswerRepository;
 
     private final AfterCommitExecutor afterCommitExecutor;
     private final AfterRollbackExecutor afterRollbackExecutor;
@@ -60,6 +66,19 @@ public class ResponseCommandService implements ResponseCommand {
 
                 if (Boolean.TRUE.equals(response.getIsResponded())) {
                     throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
+                }
+
+                List<Long> requiredIds = questionRepository.getRequiredQuestionIdsBySurveyId(surveyId);
+                if (!requiredIds.isEmpty()) {
+                    Set<Long> answeredIds = questionAnswerRepository
+                        .getAnswerListByQuestionIdsAndMemberId(requiredIds, memberId)
+                        .stream()
+                        .map(QuestionAnswer::getQuestionId)
+                        .collect(java.util.stream.Collectors.toSet());
+                    boolean allAnswered = answeredIds.containsAll(requiredIds);
+                    if (!allAnswered) {
+                        throw new CustomException(SurveyErrorCode.SURVEY_ANSWER_INCOMPLETE);
+                    }
                 }
 
                 response.markResponded();

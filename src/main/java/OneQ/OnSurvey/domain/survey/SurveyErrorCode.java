@@ -28,6 +28,7 @@ public enum SurveyErrorCode implements ApiErrorCode {
     SURVEY_FORBIDDEN("SURVEY_403", "설문에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
 
     SURVEY_ANSWER_INVALID("SURVEY_ANSWER_400", "설문 답변이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
+    SURVEY_ANSWER_INCOMPLETE("SURVEY_ANSWER_INCOMPLETE_400", "모든 필수 문항에 응답하지 않았습니다.", HttpStatus.BAD_REQUEST),
     SURVEY_FREE_PROMOTION_NOT_ALLOWED("SURVEY_PROMOTION_400", "무료 설문은 프로모션 지급 대상이 아닙니다.", HttpStatus.BAD_REQUEST),
 
     FORM_REQUEST_NOT_FOUND("FORM_REQUEST_404", "구글 폼 신청을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
