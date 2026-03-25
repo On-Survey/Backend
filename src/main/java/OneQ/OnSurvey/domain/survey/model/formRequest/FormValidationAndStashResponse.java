@@ -15,6 +15,7 @@ public record FormValidationAndStashResponse(
         // SUCCESS
         Count counts,
         List<Unconvertible> unconvertibleDetails,
+        ConversionResultDto convertibleDetails,
 
         // FAIL
         String message
