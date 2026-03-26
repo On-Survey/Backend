@@ -3,7 +3,7 @@ package OneQ.OnSurvey.domain.survey.service.formRequest;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormConversionPayload;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormConversionResponse;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationAndStashResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPostResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPayload;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
@@ -56,14 +56,14 @@ public class FormRequestLambda {
         return response;
     }
 
-    public FormValidationAndStashResponse validateAndStashFormRequest(FormValidationPayload payload) {
+    public FormValidationPostResponse validateAndStashFormRequest(FormValidationPayload payload) {
 
-        FormValidationAndStashResponse response = webClient.post()
+        FormValidationPostResponse response = webClient.post()
             .uri(validationUrl)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(payload)
             .retrieve()
-            .bodyToMono(FormValidationAndStashResponse.class)
+            .bodyToMono(FormValidationPostResponse.class)
             .timeout(Duration.ofSeconds(FORM_CONVERSION_REQUEST_TIMEOUT))
             .retryWhen(Retry.backoff(2, Duration.ofSeconds(3)))
             .onErrorMap(e -> {

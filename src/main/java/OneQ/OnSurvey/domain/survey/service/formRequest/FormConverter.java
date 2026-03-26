@@ -1,137 +1,36 @@
 package OneQ.OnSurvey.domain.survey.service.formRequest;
 
-import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionCommand;
-import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
-import OneQ.OnSurvey.domain.survey.entity.FormRequest;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormConversionPayload;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormConversionResponse;
-import OneQ.OnSurvey.domain.survey.model.formRequest.event.FormRequestConversionEvent;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPostResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
-import OneQ.OnSurvey.domain.survey.repository.formRequest.FormRequestRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
-import OneQ.OnSurvey.global.common.exception.CustomException;
-import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
-import OneQ.OnSurvey.global.infra.transaction.TransactionHandler;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
-public class FormEventListener {
+public class FormConverter {
 
-    private final AlertNotifier alertNotifier;
-    private final TransactionHandler transactionHandler;
-
-    private final FormConverter formConverter;
-    private final FormRequestLambda formRequestLambda;
     private final SurveyCommand surveyCommand;
     private final QuestionCommand questionCommand;
 
-    private final FormRequestRepository formRequestRepository;
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void convertGoogleFormIntoSurvey(FormRequestConversionEvent event) {
-        log.info("[FormEventListener] 구글폼 변환 시작 - requestId: {}, formUrl: {}", event.requestId(), event.formUrls());
-
-        FormConversionPayload payload = new FormConversionPayload(event.requestId(), event.formUrls());
-        FormConversionResponse response = formRequestLambda.convertGoogleFormIntoSurvey(payload);
-
-        if (response == null || response.results() == null) {
-            log.error("[FormRequestLambda] 구글폼 변환 실패 - 응답이 null입니다. requestId: {}", event.requestId());
-            alertNotifier.sendSurveyConversionAsync(
-                response == null
-                    ? SurveyConversionAlert.error(1, 0, "변환 요청에 대한 응답이 null입니다.")
-                    : SurveyConversionAlert.error(response.totalCount(), response.successCount(), response.error())
-            );
-            throw new CustomException(SurveyErrorCode.FORM_CONVERSION_FAILED);
-        }
-
-        List<SurveyConversionAlert.SurveyDetails> detailList = new ArrayList<>();
-        response.results().forEach(result -> {
-            if (result.isSuccess()) {
-                try {
-                    detailList.add(
-                        transactionHandler.runInTransaction(() -> {
-                            Long surveyId = createSurveyFromConversionResult(result, event.memberId());
-                            int questionCount = result.survey().sections() != null
-                                ? result.survey().sections().stream()
-                                .mapToInt(s -> s.questions() != null ? s.questions().size() : 0)
-                                .sum()
-                                : 0;
-                            FormRequest request = formRequestRepository.findById(event.requestId())
-                                .orElseThrow(() -> new CustomException(SurveyErrorCode.FORM_REQUEST_NOT_FOUND));
-                            request.markAsRegistered(surveyId, questionCount);
-
-                            log.info("[FormRequestLambda] 구글폼 변환 성공 - requestId: {}, surveyId: {}, questionCount: {}", event.requestId(), surveyId, questionCount);
-                            if (result.unsupportedQuestions() != null && !result.unsupportedQuestions().isEmpty()) {
-                                log.warn("[FormRequestLambda] 지원하지 않는 문항 존재 - requestId: {}, count: {}",
-                                    event.requestId(), result.unsupportedQuestions().size());
-                            }
-
-                            if (event.screening() != null) {
-                                surveyCommand.upsertScreening(
-                                    surveyId,
-                                    event.screening().content(),
-                                    event.screening().answer()
-                                );
-                            }
-                            if (event.interests() != null && !event.interests().isEmpty()) {
-                                surveyCommand.upsertInterest(surveyId, event.interests());
-                            } else {
-                                surveyCommand.upsertInterest(surveyId, Set.of(Interest.BUSINESS));
-                            }
-                            surveyCommand.submitSurvey(event.userKey(), surveyId, event.surveyForm());
-
-                            return SurveyConversionAlert.SurveyDetails.success(
-                                result.url(),
-                                result.survey().title(),
-                                surveyId,
-                                event.memberId(),
-                                questionCount,
-                                result.unsupportedQuestions() != null ? result.unsupportedQuestions().stream()
-                                    .map(q -> new SurveyConversionAlert.SurveyDetails.UnsupportedQuestion(q.order(), q.type(), q.reason()))
-                                    .toList() : List.of()
-                            );
-                        })
-                    );
-                } catch (Exception e) {
-                    log.error("[FormRequestLambda] 설문 생성 중 오류 발생 - requestId: {}, error: {}",
-                        event.requestId(), e.getMessage(), e);
-                    detailList.add(SurveyConversionAlert.SurveyDetails.failure(result.url(), "설문 생성 중 오류가 발생했습니다."));
-                }
-            } else {
-                log.error("[FormRequestLambda] 구글폼 변환 실패 - requestId: {}, url: {}, message: {}",
-                    event.requestId(), result.url(), result.message());
-                detailList.add(SurveyConversionAlert.SurveyDetails.failure(result.url(), result.message()));
-            }
-        });
-        alertNotifier.sendSurveyConversionAsync(
-            SurveyConversionAlert.success(response.totalCount(), response.successCount(), detailList)
-        );
-    }
-
-    private Long createSurveyFromConversionResult(FormConversionResponse.Result result, Long memberId) {
+    public Long createSurveyFromConversionResult(FormConversionResponse.Result result, Long memberId) {
         FormConversionResponse.Survey survey = result.survey();
 
         // 1. 설문 생성
@@ -187,7 +86,7 @@ public class FormEventListener {
                             boolean isSectionDecidable = question.options().stream()
                                 .anyMatch(opt -> opt.goToSectionOrder() != null);
                             int maxChoice = switch (question.type().toUpperCase()) {
-                                case "CHECKBOX" -> question.options().size(); // 체크박스는 여러 개 선택 가능
+                                case "CHECKBOX" -> question.maxChoice() != null ? question.maxChoice() : question.options().size(); // 체크박스는 여러 개 선택 가능
                                 case "DROPDOWN", "MULTIPLE_CHOICE" -> 1; // 드롭다운, 객관식은 하나만 선택 가능
                                 default -> 1; // 기본적으로 하나만 선택 가능하도록 설정
                             };
@@ -252,6 +151,67 @@ public class FormEventListener {
         }
 
         return surveyId;
+    }
+
+    public FormValidationResponse toResponse(FormValidationPostResponse dto) {
+        if (dto == null || dto.results() == null) {
+            return null;
+        }
+
+        List<FormValidationResponse.Result> results = dto.results().stream()
+            .map(this::mapToResult)
+            .toList();
+
+        return new FormValidationResponse(results);
+    }
+
+    private FormValidationResponse.Result mapToResult(FormValidationPostResponse.Result r) {
+        List<FormValidationResponse.Inconvertible> inconvertibles = mapInconvertible(r.inconvertibleDetails());
+
+        if (r.isSuccess()) {
+            return FormValidationResponse.success(
+                r.url(),
+                r.counts().total(),
+                r.counts().convertible(),
+                r.counts().unconvertible(),
+                inconvertibles,
+                mapConvertible(r.convertibleDetails())
+            );
+        }
+
+        // 실패하거나 convertibleDetails가 없는 경우
+        return FormValidationResponse.fail(
+            r.url(),
+            r.message()
+        );
+    }
+
+    private List<FormValidationResponse.Inconvertible> mapInconvertible(
+        List<FormValidationPostResponse.Inconvertible> details
+    ) {
+        if (details == null || details.isEmpty()) return List.of();
+
+        return details.stream()
+            .map(u -> new FormValidationResponse.Inconvertible(u.title(), u.type(), u.reason()))
+            .toList();
+    }
+
+    private List<FormValidationResponse.Convertible> mapConvertible(
+        FormValidationPostResponse.Convertible details
+    ) {
+        if (details == null || details.sections().isEmpty()) return List.of();
+
+        // 문항들을 섹션별로 그룹화
+        Map<Integer, List<DefaultQuestionDto>> sectionOrderQuestionMap = details.questions().stream()
+            .collect(Collectors.groupingBy(DefaultQuestionDto::getSection, Collectors.toList()));
+
+        // 섹션 순회하며 변환
+        return details.sections().stream()
+            .map(c -> new FormValidationResponse.Convertible(
+                c.title(), c.description(), c.order(), c.nextSection(),
+                sectionOrderQuestionMap.getOrDefault(c.order(), List.of())
+            ))
+            .toList();
     }
 
     private QuestionType mapQuestionType(String googleFormType) {

@@ -1,8 +1,11 @@
 package OneQ.OnSurvey.domain.survey.model.formRequest;
 
+import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+
 import java.util.List;
 
-public record FormValidationAndStashResponse(
+public record FormValidationPostResponse(
     int totalUrls,
     int successCount,
     List<Result> results
@@ -14,8 +17,8 @@ public record FormValidationAndStashResponse(
 
         // SUCCESS
         Count counts,
-        List<Unconvertible> unconvertibleDetails,
-        ConversionResultDto convertibleDetails,
+        List<Inconvertible> inconvertibleDetails,
+        Convertible convertibleDetails,
 
         // FAIL
         String message
@@ -31,9 +34,16 @@ public record FormValidationAndStashResponse(
         int unconvertible
     ) { }
 
-    public record Unconvertible(
+    public record Inconvertible(
         String title,
         String type,
         String reason
+    ) { }
+
+    public record Convertible(
+        String title,
+        String description,
+        List<SectionDto> sections,
+        List<DefaultQuestionDto> questions
     ) { }
 }
