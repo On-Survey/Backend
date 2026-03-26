@@ -4,14 +4,14 @@ import OneQ.OnSurvey.domain.question.model.QuestionType;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
-import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.RatingDto;
 import OneQ.OnSurvey.domain.question.service.QuestionCommand;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormConversionResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.ConversionDto;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPostResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
 import OneQ.OnSurvey.domain.survey.model.request.SurveyFormCreateRequest;
-import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,105 +29,74 @@ public class FormConverter {
     private final SurveyCommand surveyCommand;
     private final QuestionCommand questionCommand;
 
-    public Long createSurveyFromConversionResult(FormConversionResponse.Result result, Long memberId) {
-        FormConversionResponse.Survey survey = result.survey();
-
-        // 1. 설문 생성
+    public Long createSurveyFromConversionResult(ConversionDto dto, Long memberId) {
+        // 1. 최초 설문 제목, 설명 생성
         SurveyFormCreateRequest surveyRequest = new SurveyFormCreateRequest(
-            survey.title(),
-            survey.description()
+            dto.title(), dto.description()
         );
-        SurveyFormResponse surveyResponse = surveyCommand.upsertSurvey(memberId, null, surveyRequest);
-        Long surveyId = surveyResponse.surveyId();
+        Long surveyId = surveyCommand.upsertSurvey(memberId, null, surveyRequest).surveyId();
 
-        // 2. 섹션 생성
-        if (survey.sections() != null && !survey.sections().isEmpty()) {
-            List<SectionDto> sectionDtoList = survey.sections().stream()
-                .map(section -> new SectionDto(
-                    null,
-                    section.title(),
-                    section.description(),
-                    section.order(),
-                    section.nextSectionOrder() != null ? section.nextSectionOrder() : 0
-                ))
-                .toList();
-
-            questionCommand.upsertSections(surveyId, sectionDtoList);
+        // 2. 설문 섹션 생성
+        if (dto.sections() != null && !dto.sections().isEmpty()) {
+            questionCommand.upsertSections(surveyId, dto.sections());
         }
 
         // 3. 문항 생성
-        List<QuestionUpsertDto.UpsertInfo> questionUpsertInfoList = new ArrayList<>();
-        AtomicInteger questionOrder = new AtomicInteger(0);
+        List<QuestionUpsertDto.UpsertInfo> upsertInfoList = dto.questions().stream()
+            .map(q -> {
+                QuestionType type = QuestionType.valueOf(q.getQuestionType());
+                QuestionUpsertDto.UpsertInfo.UpsertInfoBuilder builder = QuestionUpsertDto.UpsertInfo.builder()
+                    .questionId(null)
+                    .title(q.getTitle())
+                    .description(q.getDescription())
+                    .questionOrder(q.getQuestionOrder())
+                    .section(q.getSection())
+                    .isRequired(q.getIsRequired())
+                    .questionType(type)
+                    .imageUrl(q.getImageUrl());
 
-        if (survey.sections() != null) {
-            for (FormConversionResponse.Section section : survey.sections()) {
-                if (section.questions() != null) {
-                    for (FormConversionResponse.Question question : section.questions()) {
-                        QuestionType questionType = mapQuestionType(question.type());
-                        if (questionType == null) {
-                            continue;
-                        }
-
-                        QuestionUpsertDto.UpsertInfo.UpsertInfoBuilder builder = QuestionUpsertDto.UpsertInfo.builder()
-                            .questionId(null)
-                            .title(question.title())
-                            .description(question.description())
-                            .isRequired(question.required())
-                            .questionType(questionType)
-                            .questionOrder(questionOrder.getAndIncrement())
-                            .imageUrl(question.imageUrl())
-                            .section(section.order());
-
-                        // Choice 타입인 경우 옵션 설정
-                        if (questionType == QuestionType.CHOICE && question.options() != null) {
-                            boolean hasOtherOption = question.options().stream()
-                                .anyMatch(FormConversionResponse.Option::isOther);
-                            boolean isSectionDecidable = question.options().stream()
-                                .anyMatch(opt -> opt.goToSectionOrder() != null);
-                            int maxChoice = switch (question.type().toUpperCase()) {
-                                case "CHECKBOX" -> question.maxChoice() != null ? question.maxChoice() : question.options().size(); // 체크박스는 여러 개 선택 가능
-                                case "DROPDOWN", "MULTIPLE_CHOICE" -> 1; // 드롭다운, 객관식은 하나만 선택 가능
-                                default -> 1; // 기본적으로 하나만 선택 가능하도록 설정
-                            };
-
-                            builder.maxChoice(maxChoice)
-                                .hasNoneOption(false)
-                                .hasCustomInput(hasOtherOption)
-                                .isSectionDecidable(isSectionDecidable)
-                                .options(question.options().stream()
-                                    .filter(opt -> !opt.isOther())
-                                    .map(opt -> OptionDto.builder()
-                                        .content(opt.text())
-                                        .nextSection(opt.goToSectionOrder())
-                                        .imageUrl(opt.imageUrl())
-                                        .build())
-                                    .toList());
-                        }
-
-                        questionUpsertInfoList.add(builder.build());
+                return switch(type) {
+                    case CHOICE -> {
+                        ChoiceDto choiceDto = (ChoiceDto) q;
+                        yield builder
+                            .maxChoice(choiceDto.getMaxChoice())
+                            .hasNoneOption(choiceDto.getHasNoneOption())
+                            .hasCustomInput(choiceDto.getHasCustomInput())
+                            .isSectionDecidable(choiceDto.getIsSectionDecidable())
+                            .options(choiceDto.getOptions())
+                            .build();
                     }
-                }
-            }
-        }
+                    case RATING -> {
+                        RatingDto ratingDto = (RatingDto) q;
+                        yield builder
+                            .minValue(ratingDto.getMinValue())
+                            .maxValue(ratingDto.getMaxValue())
+                            .rate(ratingDto.getRate())
+                            .build();
+                    }
+                    default -> builder.build();
+                };
+            })
+            .toList();
 
-        if (!questionUpsertInfoList.isEmpty()) {
-            QuestionUpsertDto questionUpsertDto = QuestionUpsertDto.builder()
+        if (!upsertInfoList.isEmpty()) {
+            QuestionUpsertDto upsertDto = QuestionUpsertDto.builder()
                 .surveyId(surveyId)
-                .upsertInfoList(questionUpsertInfoList)
+                .upsertInfoList(upsertInfoList)
                 .build();
+            // 4. 전체 문항 저장
+            QuestionUpsertDto savedQuestions = questionCommand.upsertQuestionList(upsertDto);
 
-            QuestionUpsertDto savedQuestions = questionCommand.upsertQuestionList(questionUpsertDto);
-
-            // 4. Choice 문항의 옵션 저장
+            // 5. CHOICE 문항 옵션 저장
             List<OptionUpsertDto> optionUpsertDtoList = new ArrayList<>();
             List<QuestionUpsertDto.UpsertInfo> savedInfoList = savedQuestions.getUpsertInfoList();
-            Map<Integer, QuestionUpsertDto.UpsertInfo> originalInfoMap = questionUpsertInfoList.stream()
+            Map<Integer, QuestionUpsertDto.UpsertInfo> originalInfoMap = upsertInfoList.stream()
                 .collect(java.util.stream.Collectors.toMap(QuestionUpsertDto.UpsertInfo::getQuestionOrder, Function.identity()));
 
             for (QuestionUpsertDto.UpsertInfo savedInfo : savedInfoList) {
                 QuestionUpsertDto.UpsertInfo originalInfo = originalInfoMap.get(savedInfo.getQuestionOrder());
 
-                if (savedInfo.getQuestionType() == QuestionType.CHOICE && originalInfo.getOptions() != null) {
+                if (savedInfo.getQuestionType().isChoice() && originalInfo.getOptions() != null) {
                     List<OptionDto> options = originalInfo.getOptions().stream()
                         .map(opt -> OptionDto.builder()
                             .questionId(savedInfo.getQuestionId())
@@ -149,7 +117,6 @@ public class FormConverter {
                 questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
             }
         }
-
         return surveyId;
     }
 
@@ -166,20 +133,18 @@ public class FormConverter {
     }
 
     private FormValidationResponse.Result mapToResult(FormValidationPostResponse.Result r) {
-        List<FormValidationResponse.Inconvertible> inconvertibles = mapInconvertible(r.inconvertibleDetails());
-
         if (r.isSuccess()) {
             return FormValidationResponse.success(
                 r.url(),
                 r.counts().total(),
                 r.counts().convertible(),
                 r.counts().unconvertible(),
-                inconvertibles,
+                mapInconvertible(r.inconvertibleDetails()),
                 mapConvertible(r.convertibleDetails())
             );
         }
 
-        // 실패하거나 convertibleDetails가 없는 경우
+        // 설문 변환에 실패한 경우 (status == "FAIL")
         return FormValidationResponse.fail(
             r.url(),
             r.message()
@@ -199,7 +164,14 @@ public class FormConverter {
     private List<FormValidationResponse.Convertible> mapConvertible(
         FormValidationPostResponse.Convertible details
     ) {
-        if (details == null || details.sections().isEmpty()) return List.of();
+        if (details == null) return List.of();
+
+        // 섹션이 없는 경우 (섹션 구분이 없는 설문)
+        if (details.sections().isEmpty()) {
+            return List.of(new FormValidationResponse.Convertible(
+                details.title(), details.description(), 1, 0, details.questions()
+            ));
+        }
 
         // 문항들을 섹션별로 그룹화
         Map<Integer, List<DefaultQuestionDto>> sectionOrderQuestionMap = details.questions().stream()
@@ -212,23 +184,5 @@ public class FormConverter {
                 sectionOrderQuestionMap.getOrDefault(c.order(), List.of())
             ))
             .toList();
-    }
-
-    private QuestionType mapQuestionType(String googleFormType) {
-        if (googleFormType == null) {
-            return null;
-        }
-
-        return switch (googleFormType.toUpperCase()) {
-            case "MULTIPLE_CHOICE", "CHECKBOX" -> QuestionType.CHOICE;
-            case "SHORT_ANSWER", "SHORT" -> QuestionType.SHORT;
-            case "PARAGRAPH", "LONG" -> QuestionType.LONG;
-            case "LINEAR_SCALE", "SCALE" -> QuestionType.RATING;
-            case "DATE" -> QuestionType.DATE;
-            case "NUMBER" -> QuestionType.NUMBER;
-            case "IMAGE" -> QuestionType.IMAGE;
-            case "TITLE_DESCRIPTION" -> QuestionType.TITLE;
-            default -> null;
-        };
     }
 }

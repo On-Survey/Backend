@@ -5,7 +5,7 @@ import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 
 import java.util.List;
 
-public record ConversionResultDto (
+public record ConversionDto(
     String title,
     String description,
     List<SectionDto> sections,
