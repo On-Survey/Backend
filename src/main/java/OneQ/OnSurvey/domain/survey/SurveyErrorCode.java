@@ -34,7 +34,6 @@ public enum SurveyErrorCode implements ApiErrorCode {
     FORM_REQUEST_NOT_FOUND("FORM_REQUEST_404", "구글 폼 신청을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     FORM_CONVERSION_FAILED("FORM_REQUEST_001", "구글 폼 변환에 실패했습니다.", HttpStatus.BAD_REQUEST),
     FORM_VALIDATION_FAILED("FORM_REQUEST_002", "구글 폼 링크 유효성 검사에 실패했습니다.", HttpStatus.BAD_REQUEST),
-    FORM_INVALID("FORM_REQUEST_003", "구글 폼 링크가 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
     FORM_REQUEST_NOT_YET_REGISTERED("FORM_REQUEST_409", "아직 설문 변환이 완료되지 않았습니다.", HttpStatus.CONFLICT),
     FORM_REQUEST_MEMBER_NOT_FOUND("FORM_REQUEST_MEMBER_404", "폼 신청자에 해당하는 회원을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 

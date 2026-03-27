@@ -5,7 +5,7 @@ import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.FormRequest;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormPublishRequest;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationAndStashResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPostResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPayload;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationRequestDto;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
@@ -33,6 +33,7 @@ import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.*;
 public class FormCommandService implements FormCreator, FormUpdater, FormPublisher {
 
     private final ApplicationEventPublisher eventPublisher;
+    private final FormConverter formConverter;
     private final FormRequestLambda formRequestLambda;
     private final FormRequestRepository formRequestRepository;
     private final SurveyQueryService surveyQueryService;
@@ -104,12 +105,12 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
     @Override
     public FormValidationResponse validationFormRequestLink(FormValidationRequestDto dto) {
         FormValidationPayload payload = new FormValidationPayload(List.of(dto.formLink()), dto.requesterEmail());
-        FormValidationAndStashResponse validationResult = formRequestLambda.validateAndStashFormRequest(payload);
+        FormValidationPostResponse validationResult = formRequestLambda.validateAndStashFormRequest(payload);
 
-        if (validationResult == null || validationResult.successCount() == 0) {
-            log.warn("[FormCommandService:validationFormRequestLink] 구글폼 링크가 유효하지 않음 - URL: {}", dto.formLink());
-            throw new CustomException(SurveyErrorCode.FORM_INVALID);
+        if (validationResult == null) {
+            log.warn("[FormCommandService:validationFormRequestLink] 구글폼 링크 유효성 검사 실패 - URL: {}", dto.formLink());
+            throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);
         }
-        return FormValidationResponse.from(validationResult);
+        return formConverter.toResponse(validationResult);
     }
 }

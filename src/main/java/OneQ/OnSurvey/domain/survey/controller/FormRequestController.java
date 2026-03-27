@@ -79,7 +79,7 @@ public class FormRequestController {
     }
 
     @PostMapping("/validation")
-    @Operation(summary = "폼 링크 유효성 검사", description = "구글 폼 편집 URL로부터 전체 문항 수 중 변환 가능한 문항 수를 리턴합니다. 변환 불가능한 문항 존재 시 관련 정보를 추가로 반환합니다.")
+    @Operation(summary = "폼 링크 유효성 검사 및 미리보기 반환", description = "구글 폼 편집 URL 유효성 검사를 진행하여 변환 가능한 문항 수, 변환 불가능 사유, 미리보기 데이터 등을 반환합니다.")
     public SuccessResponse<FormValidationResponse> getConvertableCounts(
         @RequestBody @Valid FormValidationRequestDto request
     ) {
