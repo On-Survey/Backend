@@ -2,11 +2,7 @@ package OneQ.OnSurvey.global.infra.discord;
 
 import OneQ.OnSurvey.global.common.util.JwtDecodeUtils;
 import OneQ.OnSurvey.global.infra.discord.client.DiscordWebhookClient;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -47,6 +43,9 @@ public class DiscordAlarmService {
   
     @Value("${discord.push-alim-alert-url:}")
     private String pushAlimWebhookUrl;
+
+    @Value("${discord.survey-help-request-url:}")
+    private String surveyHelpRequestWebhookUrl;
 
     public void sendErrorAlert(Throwable e, String method, String path, String query) {
         if (!enabled || errorWebhookUrl == null || errorWebhookUrl.isBlank()) return;
@@ -194,6 +193,30 @@ public class DiscordAlarmService {
         post(url, title, description);
     }
 
+    public void sendSurveyHelpRequestAlert(SurveyHelpRequestAlert alert) {
+        if (!enabled) return;
+
+        String url = (surveyHelpRequestWebhookUrl != null && !surveyHelpRequestWebhookUrl.isBlank())
+                ? surveyHelpRequestWebhookUrl
+                : errorWebhookUrl;
+        if (url == null || url.isBlank()) return;
+
+        StringBuilder desc = new StringBuilder();
+        desc.append("• 이름: `").append(sanitizeForDiscord(alert.name())).append("`\n")
+            .append("• 이메일: `").append(sanitizeForDiscord(alert.email())).append("`\n")
+            .append("• 반려 사유:\n");
+        for (String reason : alert.rejectionReasons()) {
+            desc.append("- ").append(sanitizeForDiscord(reason)).append("\n");
+        }
+        desc.append("• 문의 내용:\n```\n").append(sanitizeForDiscord(alert.content())).append("\n```");
+
+        String descStr = desc.toString();
+        if (descStr.length() > MAX_EMBED_DESC) {
+            descStr = descStr.substring(0, MAX_EMBED_DESC - TRUNC_SUFFIX.length()) + TRUNC_SUFFIX;
+        }
+        post(url, "🆘 설문 변환 실패. 도움 요청", descStr);
+    }
+
     private String maskKey(String key) {
         return JwtDecodeUtils.maskToken(key);
     }
@@ -271,5 +294,14 @@ public class DiscordAlarmService {
     }
 
     private String safe(String s) { return s == null ? "" : s; }
+
+    private String sanitizeForDiscord(String s) {
+        if (s == null) return "";
+        return s
+                .replace("\\", "\\\\")
+                .replace("@", "@\u200B")
+                .replace("`", "`\u200B")
+                .replaceAll("<(@[!&]?|#)\\d+>", "[mention]");
+    }
     private String nullToEmpty(String s) { return s == null ? "" : s; }
 }
