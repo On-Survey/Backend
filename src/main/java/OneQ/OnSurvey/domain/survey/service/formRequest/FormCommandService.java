@@ -107,9 +107,9 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
         FormValidationPayload payload = new FormValidationPayload(List.of(dto.formLink()), dto.requesterEmail());
         FormValidationPostResponse validationResult = formRequestLambda.validateAndStashFormRequest(payload);
 
-        if (validationResult == null || validationResult.successCount() == 0) {
-            log.warn("[FormCommandService:validationFormRequestLink] 구글폼 링크가 유효하지 않음 - URL: {}", dto.formLink());
-            throw new CustomException(SurveyErrorCode.FORM_INVALID);
+        if (validationResult == null) {
+            log.warn("[FormCommandService:validationFormRequestLink] 구글폼 링크 유효성 검사 실패 - URL: {}", dto.formLink());
+            throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);
         }
         return formConverter.toResponse(validationResult);
     }

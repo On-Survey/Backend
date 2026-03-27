@@ -130,36 +130,24 @@ public class DiscordAlarmService {
                 : errorWebhookUrl;
         if (url == null || url.isBlank()) return;
 
-        String title;
+        String title = "📊 설문 변환";
         StringBuilder desc = new StringBuilder();
-        if (alert.isSuccess()) {
-            title = "📊 설문 변환 성공";
-            desc.append("* 설문 변환 시도: ").append(alert.totalCount()).append('\n')
-                .append("* 설문 변환 성공: ").append(alert.successCount()).append('\n')
-                .append("* 설문 변환 상세 :\n");
-            for (SurveyConversionAlert.SurveyDetails d : alert.details()) {
-
-                desc.append("\u3000[\n")
-                    .append("\u3000 URL: ").append(safe(d.url())).append('\n')
-                    .append("\u3000 title: ").append(safe(d.title())).append('\n')
-                    .append("\u3000 surveyId: ").append(d.surveyId()).append('\n')
-                    .append("\u3000 memberId: ").append(d.memberId()).append('\n')
-                    .append("\u3000 questionCount: ").append(d.questionCount()).append('\n');
-                if (!d.unsupportedList().isEmpty()) {
-                    desc.append("  * 변환 실패 질문:\n");
-                    for (SurveyConversionAlert.SurveyDetails.UnsupportedQuestion q : d.unsupportedList()) {
-                        desc.append("    * order: ").append(q.order())
-                            .append(", type: ").append(safe(q.type()))
-                            .append(", reason: ").append(safe(q.reason())).append('\n');
-                    }
-                }
-                desc.append("\u3000 ],\n");
+        desc.append("* 변환 요청 ID: ").append(alert.requestId()).append('\n')
+            .append("* 설문 변환 시도: ").append(alert.totalCount()).append('\n')
+            .append("* 설문 변환 성공: ").append(alert.successCount()).append('\n')
+            .append("* 설문 변환 상세: \n");
+        for (SurveyConversionAlert.ConversionDetails d : alert.details()) {
+            if (d.isSuccess()) {
+                desc.append("> ✅ 변환 성공 \n")
+                    .append("> URL: ").append(safe(d.url())).append('\n')
+                    .append("> 제목: ").append(safe(d.title())).append('\n')
+                    .append("> 설문 ID: ").append(d.surveyId()).append('\n')
+                    .append("> 문항 수: ").append(d.questionCount()).append("\n\n");
+            } else {
+                desc.append("> ⚠️ 변환 실패 ")
+                    .append("> URL: ").append(safe(d.url())).append('\n')
+                    .append("> 실패 사유: ").append(safe(d.message())).append("\n\n");
             }
-        } else {
-            title = "⚠️ 설문 전환 실패";
-            desc.append("* 설문 변환 시도: ").append(alert.totalCount()).append('\n')
-                .append("* 설문 변환 성공: ").append(alert.successCount()).append('\n')
-                .append("* error: ").append(safe(alert.error())).append("\n");
         }
 
         String descStr = desc.toString();

@@ -121,7 +121,7 @@ public class FormConverter {
     }
 
     public FormValidationResponse toResponse(FormValidationPostResponse dto) {
-        if (dto == null || dto.results() == null) {
+        if (dto == null || dto.results() == null || dto.results().isEmpty()) {
             return null;
         }
 
@@ -166,15 +166,17 @@ public class FormConverter {
     ) {
         if (details == null) return List.of();
 
+        List<DefaultQuestionDto> questionDtoList = details.questions() != null ? details.questions() : List.of();
+
         // 섹션이 없는 경우 (섹션 구분이 없는 설문)
-        if (details.sections().isEmpty()) {
+        if (details.sections() == null || details.sections().isEmpty()) {
             return List.of(new FormValidationResponse.Convertible(
-                details.title(), details.description(), 1, 0, details.questions()
+                details.title(), details.description(), 1, 0, questionDtoList
             ));
         }
 
         // 문항들을 섹션별로 그룹화
-        Map<Integer, List<DefaultQuestionDto>> sectionOrderQuestionMap = details.questions().stream()
+        Map<Integer, List<DefaultQuestionDto>> sectionOrderQuestionMap = questionDtoList.stream()
             .collect(Collectors.groupingBy(DefaultQuestionDto::getSection, Collectors.toList()));
 
         // 섹션 순회하며 변환

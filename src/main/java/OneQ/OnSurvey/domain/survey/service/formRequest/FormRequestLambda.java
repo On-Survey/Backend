@@ -4,7 +4,6 @@ import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPostResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPayload;
 import OneQ.OnSurvey.global.common.exception.CustomException;
-import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,12 +20,11 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class FormRequestLambda {
 
-    private static final long FORM_CONVERSION_REQUEST_TIMEOUT = 20L;
-
+    @Value("${external.lambda.google-form-validation.timeout-ms:20L}")
+    private Long timeout;
     @Value("${external.lambda.google-form-validation.url:}")
     private String validationUrl;
 
-    private final AlertNotifier alertNotifier;
     @Qualifier("lambdaWebClient")
     private final WebClient webClient;
 
@@ -38,7 +36,7 @@ public class FormRequestLambda {
             .bodyValue(payload)
             .retrieve()
             .bodyToMono(FormValidationPostResponse.class)
-            .timeout(Duration.ofSeconds(FORM_CONVERSION_REQUEST_TIMEOUT))
+            .timeout(Duration.ofSeconds(timeout))
             .retryWhen(Retry.backoff(2, Duration.ofSeconds(3)))
             .onErrorMap(e -> {
                 log.error("[FormRequestLambda:validateAndStashFormRequest] 구글폼 링크 유효성 검사 실패 - URLs: {}, error: {}", payload.urls(), e.getMessage(), e);

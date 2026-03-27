@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.survey.model.formRequest.ConversionDto;
 import OneQ.OnSurvey.domain.survey.model.formRequest.event.FormRequestConversionEvent;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
 import OneQ.OnSurvey.global.infra.discord.notifier.AlertNotifier;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
 import OneQ.OnSurvey.global.infra.ncp.objectStorage.NcpS3Props;
 import OneQ.OnSurvey.global.infra.transaction.TransactionHandler;
 import com.amazonaws.services.s3.AmazonS3;
@@ -22,7 +23,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -47,8 +50,13 @@ public class FormEventListener {
         log.info("[FormEventListener] 구글폼 변환 시작 - requestId: {}, formUrl: {}", event.requestId(), event.formUrls());
         String bucket = ncpS3Props.getBucket();
 
-        event.formUrls()
-            .forEach(formUrl -> {
+        SurveyConversionAlert.SurveyConversionAlertBuilder alert = SurveyConversionAlert.builder()
+            .requestId(event.requestId())
+            .totalCount(event.formUrls().size());
+
+        AtomicInteger successCount = new AtomicInteger(0);
+        List<SurveyConversionAlert.ConversionDetails> detailList = event.formUrls().stream()
+            .map(formUrl -> {
                 String formId = formUrl.split("/")[5];
                 String jsonContent;
                 try {
@@ -59,47 +67,58 @@ public class FormEventListener {
                     }
                 } catch (AmazonS3Exception e) {
                     log.error("NCP Object Storage에서 파일을 찾을 수 없거나 접근할 수 없습니다. formId: {}", formId, e);
-                    // 디스코드 알림
-                    return;
+                    return SurveyConversionAlert.ConversionDetails.fail(formUrl, "스토리지에서 파일을 찾을 수 없거나 접근할 수 없습니다.");
                 } catch (IOException e) {
                     log.error("NCP Object Storage 파일 스트림 읽기 실패. formId: {}", formId, e);
-                    // 디스코드 알림
-                    return;
+                    return SurveyConversionAlert.ConversionDetails.fail(formUrl, "스토리지에서 파일을 읽지 못했습니다.");
                 }
 
                 ConversionDto dto;
                 int convertibleCount;
                 try {
                     JsonNode rootNode = objectMapper.readTree(jsonContent);
-                    convertibleCount = rootNode.path("convertibleCounts").asInt();
+                    convertibleCount = rootNode.path("convertibleCounts").asInt(0);
                     dto = objectMapper.treeToValue(rootNode.path("convertibleDetails"), ConversionDto.class);
                 } catch (Exception e) {
-                    log.error("저장된 설문폼을 변환하지 못했습니다.", e);
-                    // 디스코드 알림
-                    return;
+                    log.error("저장된 설문폼을 변환하지 못했습니다. formId: {}", formId, e);
+                    return SurveyConversionAlert.ConversionDetails.fail(formUrl, "JSON에서 DTO로 변환을 실패했습니다.");
                 }
 
-                transactionHandler.runInTransaction(() -> {
-                    Long conversionSurveyId = formConverter.createSurveyFromConversionResult(dto, event.memberId());
+                try {
+                    return transactionHandler.runInTransaction(() -> {
+                        Long conversionSurveyId = formConverter.createSurveyFromConversionResult(dto, event.memberId());
 
-                    formUpdater.markAsRegistered(event.requestId(), conversionSurveyId, convertibleCount);
+                        formUpdater.markAsRegistered(event.requestId(), conversionSurveyId, convertibleCount);
 
-                    if (event.screening() != null) {
-                        surveyCommand.upsertScreening(
-                            conversionSurveyId,
-                            event.screening().content(),
-                            event.screening().answer()
+                        if (event.screening() != null) {
+                            surveyCommand.upsertScreening(
+                                conversionSurveyId,
+                                event.screening().content(),
+                                event.screening().answer()
+                            );
+                        }
+                        if (event.interests() != null && !event.interests().isEmpty()) {
+                            surveyCommand.upsertInterest(conversionSurveyId, event.interests());
+                        } else {
+                            surveyCommand.upsertInterest(conversionSurveyId, Set.of(Interest.BUSINESS));
+                        }
+                        surveyCommand.submitSurvey(event.userKey(), conversionSurveyId, event.surveyForm());
+
+                        successCount.incrementAndGet();
+                        return SurveyConversionAlert.ConversionDetails.success(
+                            formUrl, dto.title(), conversionSurveyId, convertibleCount
                         );
-                    }
-                    if (event.interests() != null && !event.interests().isEmpty()) {
-                        surveyCommand.upsertInterest(conversionSurveyId, event.interests());
-                    } else {
-                        surveyCommand.upsertInterest(conversionSurveyId, Set.of(Interest.BUSINESS));
-                    }
-                    surveyCommand.submitSurvey(event.userKey(), conversionSurveyId, event.surveyForm());
+                    });
+                } catch (Exception e) {
+                    log.error("[FormEventListener] 구글폼 변환 및 게시 트랜잭션 커밋 실패 - requestId: {}, formUrl: {}", event.requestId(), formUrl, e);
+                    return SurveyConversionAlert.ConversionDetails.fail(formUrl, "변환된 설문 저장 및 게시 트랜잭션 수행 중 문제가 발생했습니다.");
+                }
+            })
+            .toList();
 
-                    return conversionSurveyId;
-                });
-            });
+        alertNotifier.sendSurveyConversionAsync(
+            alert.successCount(successCount.get())
+                .details(detailList).build()
+        );
     }
 }
