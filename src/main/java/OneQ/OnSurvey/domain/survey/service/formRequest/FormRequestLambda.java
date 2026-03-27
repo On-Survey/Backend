@@ -20,7 +20,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class FormRequestLambda {
 
-    @Value("${external.lambda.google-form-validation.timeout-ms:20L}")
+    @Value("${external.lambda.google-form-validation.timeout-ms:20}")
     private Long timeout;
     @Value("${external.lambda.google-form-validation.url:}")
     private String validationUrl;
