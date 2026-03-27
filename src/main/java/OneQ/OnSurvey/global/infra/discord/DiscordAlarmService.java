@@ -2,12 +2,7 @@ package OneQ.OnSurvey.global.infra.discord;
 
 import OneQ.OnSurvey.global.common.util.JwtDecodeUtils;
 import OneQ.OnSurvey.global.infra.discord.client.DiscordWebhookClient;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.PaymentCompletedAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyConversionAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveyHelpRequestAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.SurveySubmittedAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.TossAccessTokenAlert;
-import OneQ.OnSurvey.global.infra.discord.notifier.dto.PushAlimAlert;
+import OneQ.OnSurvey.global.infra.discord.notifier.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -207,13 +202,13 @@ public class DiscordAlarmService {
         if (url == null || url.isBlank()) return;
 
         StringBuilder desc = new StringBuilder();
-        desc.append("• 이름: `").append(safe(alert.name())).append("`\n")
-            .append("• 이메일: `").append(safe(alert.email())).append("`\n")
+        desc.append("• 이름: `").append(sanitizeForDiscord(alert.name())).append("`\n")
+            .append("• 이메일: `").append(sanitizeForDiscord(alert.email())).append("`\n")
             .append("• 반려 사유:\n");
         for (String reason : alert.rejectionReasons()) {
-            desc.append("- ").append(safe(reason)).append("\n");
+            desc.append("- ").append(sanitizeForDiscord(reason)).append("\n");
         }
-        desc.append("• 문의 내용:\n```\n").append(safe(alert.content())).append("\n```");
+        desc.append("• 문의 내용:\n```\n").append(sanitizeForDiscord(alert.content())).append("\n```");
 
         String descStr = desc.toString();
         if (descStr.length() > MAX_EMBED_DESC) {
@@ -299,5 +294,14 @@ public class DiscordAlarmService {
     }
 
     private String safe(String s) { return s == null ? "" : s; }
+
+    private String sanitizeForDiscord(String s) {
+        if (s == null) return "";
+        return s
+                .replace("\\", "\\\\")
+                .replace("@", "@\u200B")
+                .replace("`", "`\u200B")
+                .replaceAll("<(@[!&]?|#)\\d+>", "[mention]");
+    }
     private String nullToEmpty(String s) { return s == null ? "" : s; }
 }
