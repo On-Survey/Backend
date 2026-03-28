@@ -16,6 +16,7 @@ import OneQ.OnSurvey.domain.survey.repository.formRequest.FormRequestRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
 import OneQ.OnSurvey.domain.survey.service.query.SurveyQueryService;
 import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.ErrorCode;
 import OneQ.OnSurvey.global.infra.redis.RedisCacheAction;
 import OneQ.OnSurvey.global.infra.redis.RedisLockAction;
 import lombok.RequiredArgsConstructor;
@@ -136,7 +137,7 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
 
                     if (response == null) {
                         log.warn("[FORM:COMMAND:validationFormRequestLink] 구글폼 링크 유효성 검사 실패 - URL: {}", dto.formLink());
-                        throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);
+                        throw new CustomException(SurveyErrorCode.FORM_VALIDATION_BAD_GATEWAY);
                     }
 
                     if (response.isEmailSent()) {
@@ -161,7 +162,7 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("[FORM:COMMAND] 구글폼 링크 유효성 검사 락 획득 중 에러 발생 - userKey: {}", userKey);
-            throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);
+            throw new CustomException(ErrorCode.SERVER_UNTRACKED_ERROR);
         }
     }
 }

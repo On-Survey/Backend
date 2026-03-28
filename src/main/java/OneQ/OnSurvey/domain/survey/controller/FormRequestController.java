@@ -1,5 +1,6 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
+import OneQ.OnSurvey.domain.survey.controller.swagger.FormRequestControllerDoc;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationEmailQuotaResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormListResponse;
@@ -29,7 +30,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/form-requests")
-public class FormRequestController {
+public class FormRequestController implements FormRequestControllerDoc {
 
     private final FormCreator formCreator;
     private final FormFinder formFinder;
