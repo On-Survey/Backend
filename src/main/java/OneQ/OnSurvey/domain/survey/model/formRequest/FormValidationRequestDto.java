@@ -12,6 +12,9 @@ public record FormValidationRequestDto(
 
     @Schema(description = "신청자 이메일", example = "test@gmail.com")
     @Email @NotBlank
-    String requesterEmail
+    String requesterEmail,
+
+    @Schema(description = "유효성 검사 결과 이메일 수신 요청 여부")
+    Boolean isEmailRequired
 ) {
 }

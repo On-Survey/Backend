@@ -8,6 +8,7 @@ import java.util.List;
 public record FormValidationPostResponse(
     int totalUrls,
     int successCount,
+    boolean isEmailSent,
     List<Result> results
 ) {
 

@@ -4,5 +4,6 @@ import java.util.List;
 
 public record FormValidationPayload(
     List<String> urls,
-    String requesterEmail
+    String requesterEmail,
+    Boolean isEmailRequired
 ) { }
