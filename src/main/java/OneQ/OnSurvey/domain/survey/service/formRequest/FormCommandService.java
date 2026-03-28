@@ -147,7 +147,7 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
                         if (!isFirstRequest) {
                             redisCacheAction.incrementValue(quotaKey);
                         }
-                    } else {
+                    } else if (isEmailRequired) {
                         log.warn("[FORM:COMMAND:validationFormRequestLink] 링크 유효성 검사 후 이메일 발송 실패 - userKey: {}", userKey);
                     }
 
@@ -159,6 +159,7 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
             log.warn("[FORM:COMMAND] 구글폼 링크 유효성 검사 락 획득 실패 - userKey: {}", userKey);
             throw new CustomException(SurveyErrorCode.FORM_VALIDATION_PROCEED);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.warn("[FORM:COMMAND] 구글폼 링크 유효성 검사 락 획득 중 에러 발생 - userKey: {}", userKey);
             throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);
         }
