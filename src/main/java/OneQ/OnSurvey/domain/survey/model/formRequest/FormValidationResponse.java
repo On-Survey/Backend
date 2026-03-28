@@ -94,7 +94,8 @@ public record FormValidationResponse(
             ]
             """
     )
-    List<Result> results
+    List<Result> results,
+    boolean isEmailSent
 ) {
 
     public record Result(

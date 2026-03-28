@@ -124,10 +124,10 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
                 0,
                 () -> {
                     String quotaKey = "ses:daily_usage:" + LocalDate.now() + ":" + userKey;
-                    boolean isEmailRequired = dto.isEmailRequired() && EMAIL_QUOTA > redisCacheAction.getIntValue(quotaKey);
+                    boolean isEmailRequired = Boolean.TRUE.equals(dto.isEmailRequired()) && EMAIL_QUOTA > redisCacheAction.getIntValue(quotaKey);
 
                     // 이메일을 요청했으나, 일일 한도를 초과한 경우
-                    if (dto.isEmailRequired() && !isEmailRequired) {
+                    if (Boolean.TRUE.equals(dto.isEmailRequired()) && !isEmailRequired) {
                         throw new CustomException(SurveyErrorCode.FORM_VALIDATION_EMAIL_TOO_MANY_REQUEST);
                     }
 
