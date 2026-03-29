@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.survey.service.query;
 import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
@@ -45,6 +46,7 @@ public interface SurveyQuery {
 
     // 외부 PORT
     Page<SurveyListView> getPagedSurveyListViewByQuery(Pageable pageable, SurveySearchQuery query);
+    List<OngoingSurveyStats> getOngoingSurveyStats();
     SurveyDetailData getSurveyDetailById(Long surveyId);
     ScreeningViewData getScreeningIntroBySurveyId(Long surveyId);
     List<SectionDto> getSectionDtoListBySurveyId(Long surveyId);

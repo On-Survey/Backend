@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -37,7 +38,11 @@ public class DiscountCodeQueryService {
     }
 
     public List<DiscountCodeResponse> findAll() {
+        LocalDate today = LocalDate.now();
         return discountCodeRepository.findAll().stream()
+                .sorted(Comparator
+                        .comparing((DiscountCode c) -> c.getExpiredAt().isBefore(today)) // 활성(false) 먼저
+                        .thenComparing(DiscountCode::getExpiredAt))                       // 만료일 오름차순
                 .map(DiscountCodeResponse::from)
                 .toList();
     }

@@ -7,6 +7,7 @@ import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
@@ -300,5 +301,21 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .execute();
 
         return dueSurveyIdList;
+    }
+
+    @Override
+    public List<OngoingSurveyStats> findOngoingSurveys() {
+        return jpaQueryFactory
+            .select(Projections.fields(OngoingSurveyStats.class,
+                survey.id.as("surveyId"),
+                survey.title,
+                surveyInfo.completedCount,
+                surveyInfo.dueCount
+            ))
+            .from(survey)
+            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId))
+            .where(survey.status.eq(SurveyStatus.ONGOING))
+            .orderBy(survey.id.desc())
+            .fetch();
     }
 }
