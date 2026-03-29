@@ -16,6 +16,7 @@ import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
@@ -524,5 +525,10 @@ public class SurveyQueryService implements SurveyQuery {
     @Override
     public List<SectionDto> getSectionDtoListBySurveyId(Long surveyId) {
         return sectionRepository.findAllSectionDtoBySurveyId(surveyId);
+    }
+
+    @Override
+    public List<OngoingSurveyStats> getOngoingSurveyStats() {
+        return surveyRepository.findOngoingSurveys();
     }
 }

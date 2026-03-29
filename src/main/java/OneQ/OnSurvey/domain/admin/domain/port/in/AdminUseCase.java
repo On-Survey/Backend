@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyDetailResponse;
 import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyIntroItem;
 import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
 import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
+import OneQ.OnSurvey.domain.admin.domain.model.survey.OngoingSurveyView;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -21,4 +22,6 @@ public interface AdminUseCase {
     void changeSurveyOwner(Long surveyId, Long newMemberId);
 
     List<SurveyGrantStatsResponse> getSurveyGrantStats();
+
+    List<OngoingSurveyView> getOngoingSurveys();
 }

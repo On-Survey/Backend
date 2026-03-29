@@ -8,6 +8,7 @@ import OneQ.OnSurvey.domain.admin.domain.model.Admin;
 import OneQ.OnSurvey.domain.admin.domain.model.AdminRole;
 import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.AdminSurveyListView;
+import OneQ.OnSurvey.domain.admin.domain.model.survey.OngoingSurveyView;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySingleViewInfo;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyQuestion;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyScreening;
@@ -107,5 +108,10 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     @Override
     public List<SurveyGrantStatsResponse> getSurveyGrantStats() {
         return promotionGrantRepository.findSurveyGrantStats();
+    }
+
+    @Override
+    public List<OngoingSurveyView> getOngoingSurveys() {
+        return surveyPort.findOngoingSurveys();
     }
 }

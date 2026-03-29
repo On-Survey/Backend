@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.admin.infra.adapter;
 
 import OneQ.OnSurvey.domain.admin.api.dto.request.AdminSurveySearchQuery;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.AdminSurveyListView;
+import OneQ.OnSurvey.domain.admin.domain.model.survey.OngoingSurveyView;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySingleViewInfo;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyQuestion;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyScreening;
@@ -12,6 +13,7 @@ import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
 import OneQ.OnSurvey.domain.question.service.QuestionQuery;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
+import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyOwnerChangeDto;
@@ -78,6 +80,19 @@ public class SurveyAdapter implements SurveyPort {
 
         return sectionDtoList.stream()
             .map(AdminSurveyMapper::toSurveySection)
+            .toList();
+    }
+
+    @Override
+    public List<OngoingSurveyView> findOngoingSurveys() {
+        List<OngoingSurveyStats> statsList = surveyQueryService.getOngoingSurveyStats();
+        return statsList.stream()
+            .map(s -> new OngoingSurveyView(
+                s.getSurveyId(),
+                s.getTitle(),
+                s.getCompletedCount() != null ? s.getCompletedCount() : 0,
+                s.getDueCount() != null ? s.getDueCount() : 0
+            ))
             .toList();
     }
 
