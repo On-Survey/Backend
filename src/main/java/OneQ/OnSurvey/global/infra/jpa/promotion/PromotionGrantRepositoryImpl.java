@@ -1,8 +1,11 @@
 package OneQ.OnSurvey.global.infra.jpa.promotion;
 
+import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
 import OneQ.OnSurvey.global.promotion.entity.GrantStatus;
 import OneQ.OnSurvey.global.promotion.entity.PromotionGrant;
 import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
+import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -72,6 +75,29 @@ public class PromotionGrantRepositoryImpl implements PromotionGrantRepository {
                 )
                 .orderBy(promotionGrant.updatedAt.asc(), promotionGrant.id.asc())
                 .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public List<SurveyGrantStatsResponse> findSurveyGrantStats() {
+        return queryFactory
+                .select(Projections.constructor(SurveyGrantStatsResponse.class,
+                        promotionGrant.surveyId,
+                        promotionGrant.count(),
+                        Expressions.numberTemplate(Long.class,
+                                "sum(case when {0} = {1} then 1 else 0 end)",
+                                promotionGrant.status, Expressions.constant(GrantStatus.SUCCESS)),
+                        Expressions.numberTemplate(Long.class,
+                                "sum(case when {0} = {1} then 1 else 0 end)",
+                                promotionGrant.status, Expressions.constant(GrantStatus.FAILED)),
+                        Expressions.numberTemplate(Long.class,
+                                "sum(case when {0} = {1} then 1 else 0 end)",
+                                promotionGrant.status, Expressions.constant(GrantStatus.PENDING)),
+                        promotionGrant.updatedAt.max()
+                ))
+                .from(promotionGrant)
+                .groupBy(promotionGrant.surveyId)
+                .orderBy(promotionGrant.updatedAt.max().desc())
                 .fetch();
     }
 }

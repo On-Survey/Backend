@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.admin.api.dto.request.ChangeSurveyOwnerRequest;
 import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyDetailResponse;
 import OneQ.OnSurvey.domain.admin.api.dto.response.MemberSearchResponse;
 import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyIntroItem;
+import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
 import OneQ.OnSurvey.domain.admin.application.AdminFacade;
 import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
 import OneQ.OnSurvey.global.common.response.PageResponse;
@@ -57,6 +58,12 @@ public class AdminController {
         log.info("[ADMIN] 특정 설문 조회 - surveyId: {}", surveyId);
 
         return SuccessResponse.ok(adminFacade.getSurveyDetail(surveyId));
+    }
+
+    @GetMapping("/promotion-grants/survey-stats")
+    @Operation(summary = "설문별 리워드 지급 현황 조회", description = "설문 단위로 성공/실패/대기 건수를 집계하여 최신순으로 반환합니다.")
+    public SuccessResponse<List<SurveyGrantStatsResponse>> getSurveyGrantStats() {
+        return SuccessResponse.ok(adminFacade.getSurveyGrantStats());
     }
 
     @PatchMapping("/surveys/{surveyId}/owner")

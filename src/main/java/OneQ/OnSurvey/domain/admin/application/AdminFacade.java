@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.admin.application;
 import OneQ.OnSurvey.domain.admin.api.dto.request.AdminSurveySearchQuery;
 import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyDetailResponse;
 import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyIntroItem;
+import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
 import OneQ.OnSurvey.domain.admin.domain.model.Admin;
 import OneQ.OnSurvey.domain.admin.domain.model.AdminRole;
 import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
@@ -16,6 +17,7 @@ import OneQ.OnSurvey.domain.admin.domain.port.in.AuthUseCase;
 import OneQ.OnSurvey.domain.admin.domain.port.out.MemberPort;
 import OneQ.OnSurvey.domain.admin.domain.port.out.SurveyPort;
 import OneQ.OnSurvey.domain.admin.domain.repository.AdminRepository;
+import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +36,7 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     private final MemberPort memberPort;
     private final SurveyPort surveyPort;
     private final PasswordEncoder passwordEncoder;
+    private final PromotionGrantRepository promotionGrantRepository;
 
     @Override
     public String authenticate(String username, String rawPassword) {
@@ -99,5 +102,10 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     @Transactional
     public void changeSurveyOwner(Long surveyId, Long memberId) {
         surveyPort.updateSurveyOwner(surveyId, memberId);
+    }
+
+    @Override
+    public List<SurveyGrantStatsResponse> getSurveyGrantStats() {
+        return promotionGrantRepository.findSurveyGrantStats();
     }
 }
