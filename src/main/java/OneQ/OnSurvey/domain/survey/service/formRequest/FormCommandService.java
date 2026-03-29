@@ -2,7 +2,6 @@ package OneQ.OnSurvey.domain.survey.service.formRequest;
 
 import OneQ.OnSurvey.domain.member.dto.MemberSearchResult;
 import OneQ.OnSurvey.domain.member.service.MemberFinder;
-import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.FormRequest;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormPublishRequest;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPostResponse;
@@ -127,17 +126,22 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
                     String quotaKey = "ses:daily_usage:" + LocalDate.now() + ":" + userKey;
                     boolean isEmailRequired = Boolean.TRUE.equals(dto.isEmailRequired()) && EMAIL_QUOTA > redisCacheAction.getIntValue(quotaKey);
 
+                    String username = "";
                     // 이메일을 요청했으나, 일일 한도를 초과한 경우
                     if (Boolean.TRUE.equals(dto.isEmailRequired()) && !isEmailRequired) {
-                        throw new CustomException(SurveyErrorCode.FORM_VALIDATION_EMAIL_TOO_MANY_REQUEST);
+                        throw new CustomException(FORM_VALIDATION_EMAIL_TOO_MANY_REQUEST);
+                    }
+                    // 이메일을 요청하고, 한도 이내인 경우
+                    else if (isEmailRequired) {
+                        username = memberFinder.getUsernameByUserKey(userKey);
                     }
 
-                    FormValidationPayload payload = new FormValidationPayload(List.of(dto.formLink()), dto.requesterEmail(), isEmailRequired);
+                    FormValidationPayload payload = new FormValidationPayload(List.of(dto.formLink()), dto.requesterEmail(), isEmailRequired, username);
                     FormValidationPostResponse response = formRequestLambda.validateAndStashFormRequest(payload);
 
                     if (response == null) {
                         log.warn("[FORM:COMMAND:validationFormRequestLink] 구글폼 링크 유효성 검사 실패 - URL: {}", dto.formLink());
-                        throw new CustomException(SurveyErrorCode.FORM_VALIDATION_BAD_GATEWAY);
+                        throw new CustomException(FORM_VALIDATION_BAD_GATEWAY);
                     }
 
                     if (response.isEmailSent()) {
@@ -158,7 +162,7 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
             return formConverter.toResponse(validationResult);
         } catch (RedisException e) {
             log.warn("[FORM:COMMAND] 구글폼 링크 유효성 검사 락 획득 실패 - userKey: {}", userKey);
-            throw new CustomException(SurveyErrorCode.FORM_VALIDATION_PROCEED);
+            throw new CustomException(FORM_VALIDATION_PROCEED);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("[FORM:COMMAND] 구글폼 링크 유효성 검사 락 획득 중 에러 발생 - userKey: {}", userKey);

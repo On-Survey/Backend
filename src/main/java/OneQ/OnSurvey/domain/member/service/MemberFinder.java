@@ -12,4 +12,5 @@ public interface MemberFinder {
 
     Long validateAdminRoleAndGetMemberIdByUserKey(Long userKey);
     List<MemberSearchResult> searchMembers(String email, String phoneNumber, Long memberId, String name);
+    String getUsernameByUserKey(Long userKey);
 }
