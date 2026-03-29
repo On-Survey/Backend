@@ -31,12 +31,12 @@ public interface FormRequestControllerDoc {
                 }
             )
         ),
-        @ApiResponse(responseCode = "429", description = "이메일 일일 한도 초과",
+        @ApiResponse(responseCode = "429", description = "이메일 시간 당 한도 초과",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples = {
-                    @ExampleObject(name = "폼 변환 이메일 일일 한도 초과", value = "{ \"code\": \"FORM_REQUEST_004\", \"message\": \"구글 폼 링크 유효성 검사 일일 이메일 한도를 초과했습니다.\" }")
+                    @ExampleObject(name = "폼 변환 이메일 시간 당 한도 초과", value = "{ \"code\": \"FORM_REQUEST_004\", \"message\": \"구글 폼 링크 유효성 검사 이메일 시간 당 한도를 초과했습니다. 잠시 후 시도해주세요.\" }")
                 }
             )
         ),

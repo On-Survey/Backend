@@ -129,7 +129,7 @@ public class FormConverter {
             .map(this::mapToResult)
             .toList();
 
-        return new FormValidationResponse(results, dto.isEmailSent());
+        return new FormValidationResponse(results, dto.emailSent());
     }
 
     private FormValidationResponse.Result mapToResult(FormValidationPostResponse.Result r) {

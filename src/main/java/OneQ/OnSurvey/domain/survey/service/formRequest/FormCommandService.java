@@ -147,14 +147,14 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
                         throw new CustomException(FORM_VALIDATION_BAD_GATEWAY);
                     }
 
-                    if (response.isEmailSent()) {
+                    if (response.emailSent() > 0) {
                         LocalDateTime now = LocalDateTime.now();
                         boolean isFirstRequest = redisCacheAction.setValueIfAbsent(
-                            quotaKey, "1",
+                            quotaKey,  String.valueOf(response.emailSent()),
                             Duration.between(now, now.plusHours(1))
                         );
                         if (!isFirstRequest) {
-                            redisCacheAction.incrementValue(quotaKey);
+                            redisCacheAction.incrementValue(quotaKey, response.emailSent());
                         }
                     } else {
                         log.warn("[FORM:COMMAND:validationFormRequestLink] 링크 유효성 검사 후 이메일 발송 실패 - userKey: {}", userKey);
