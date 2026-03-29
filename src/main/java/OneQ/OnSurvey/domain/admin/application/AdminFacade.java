@@ -107,7 +107,9 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
 
     @Override
     public List<SurveyGrantStatsResponse> getSurveyGrantStats() {
-        return promotionGrantRepository.findSurveyGrantStats();
+        return promotionGrantRepository.findSurveyGrantStats().stream()
+                .map(SurveyGrantStatsResponse::from)
+                .toList();
     }
 
     @Override

@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.promotion.port.out;
 
-import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
+import OneQ.OnSurvey.global.promotion.PromotionGrantStatsProjection;
 import OneQ.OnSurvey.global.promotion.entity.PromotionGrant;
 
 import java.util.List;
@@ -15,5 +15,5 @@ public interface PromotionGrantRepository {
 
     List<PromotionGrant> findPendingWithExecKey(int limit);
 
-    List<SurveyGrantStatsResponse> findSurveyGrantStats();
+    List<PromotionGrantStatsProjection> findSurveyGrantStats();
 }

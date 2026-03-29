@@ -1,6 +1,6 @@
 package OneQ.OnSurvey.global.infra.jpa.promotion;
 
-import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
+import OneQ.OnSurvey.global.promotion.PromotionGrantStatsProjection;
 import OneQ.OnSurvey.global.promotion.entity.GrantStatus;
 import OneQ.OnSurvey.global.promotion.entity.PromotionGrant;
 import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
@@ -79,9 +79,9 @@ public class PromotionGrantRepositoryImpl implements PromotionGrantRepository {
     }
 
     @Override
-    public List<SurveyGrantStatsResponse> findSurveyGrantStats() {
+    public List<PromotionGrantStatsProjection> findSurveyGrantStats() {
         return queryFactory
-                .select(Projections.constructor(SurveyGrantStatsResponse.class,
+                .select(Projections.constructor(PromotionGrantStatsProjection.class,
                         promotionGrant.surveyId,
                         promotionGrant.count(),
                         Expressions.numberTemplate(Long.class,

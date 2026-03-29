@@ -27,12 +27,12 @@
             <h3 class="font-bold text-slate-700 mb-4">할인 코드 생성</h3>
             <div class="flex flex-wrap gap-4 items-end">
                 <div class="flex flex-col gap-1">
-                    <label class="text-xs font-medium text-slate-500">학회/기관명 <span class="text-red-500">*</span></label>
+                    <label for="discount-org-name" class="text-xs font-medium text-slate-500">학회/기관명 <span class="text-red-500">*</span></label>
                     <input type="text" id="discount-org-name" placeholder="예: 한국컴퓨터학회"
                            class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
                 </div>
                 <div class="flex flex-col gap-1">
-                    <label class="text-xs font-medium text-slate-500">만료일 <span class="text-red-500">*</span></label>
+                    <label for="discount-expired-at" class="text-xs font-medium text-slate-500">만료일 <span class="text-red-500">*</span></label>
                     <input type="date" id="discount-expired-at"
                            class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-44 focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
                 </div>
@@ -144,6 +144,21 @@
                     <tbody id="grant-table-body" class="divide-y divide-slate-100">
                     </tbody>
                 </table>
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+                    <span id="grant-page-info" class="text-xs text-slate-500"></span>
+                    <div class="flex items-center gap-1">
+                        <button id="grant-prev-btn" onclick="grantGoPage(grantCurrentPage - 1)"
+                                class="px-3 py-1.5 text-xs rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div id="grant-page-btns" class="flex items-center gap-1"></div>
+                        <button id="grant-next-btn" onclick="grantGoPage(grantCurrentPage + 1)"
+                                class="px-3 py-1.5 text-xs rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -153,6 +168,9 @@
     let discountAllData = [];
     let discountFilter = 'all';
     const grantStatsLoaded = { loaded: false };
+    let grantAllData = [];
+    let grantCurrentPage = 1;
+    const GRANT_PAGE_SIZE = 10;
 
     // ── Promotion Tab 전환 ──────────────────────────────────────────────
     function switchPromotionTab(tab) {
@@ -204,11 +222,11 @@
     }
 
     function renderDiscountTable() {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // 'sv' locale는 yyyy-MM-dd 형식으로 반환 → ISO 문자열 비교로 UTC 파싱 이슈 제거
+        const todaySeoul = new Date().toLocaleDateString('sv', { timeZone: 'Asia/Seoul' });
 
         const filtered = discountAllData.filter(item => {
-            const expired = new Date(item.expiredAt) < today;
+            const expired = item.expiredAt < todaySeoul;
             if (discountFilter === 'active') return !expired;
             if (discountFilter === 'expired') return expired;
             return true;
@@ -224,7 +242,7 @@
 
         const tbody = document.getElementById('discount-table-body');
         tbody.innerHTML = filtered.map(item => {
-            const expired = new Date(item.expiredAt) < today;
+            const expired = item.expiredAt < todaySeoul;
             const statusBadge = expired
                 ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">만료됨</span>'
                 : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">활성</span>';
@@ -301,49 +319,83 @@
         document.getElementById('grant-table-wrapper').classList.add('hidden');
 
         try {
-            const list = await apiCall('/admin/promotion-grants/survey-stats') || [];
+            grantAllData = await apiCall('/admin/promotion-grants/survey-stats') || [];
             document.getElementById('grant-loading').classList.add('hidden');
 
-            if (list.length === 0) {
+            if (grantAllData.length === 0) {
                 document.getElementById('grant-empty').classList.remove('hidden');
                 return;
             }
 
-            const tbody = document.getElementById('grant-table-body');
-            tbody.innerHTML = list.map(item => {
-                const successRate = item.totalCount > 0
-                    ? Math.round((item.successCount / item.totalCount) * 100)
-                    : 0;
-                const barColor = successRate >= 80 ? 'bg-green-500' : successRate >= 50 ? 'bg-yellow-400' : 'bg-red-400';
-
-                const latestAt = item.latestAt
-                    ? new Date(item.latestAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-                    : '-';
-
-                return `<tr class="hover:bg-slate-50 transition-colors">
-                    <td class="px-4 py-3 font-mono text-slate-600">#${item.surveyId}</td>
-                    <td class="px-4 py-3">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-800">${item.successCount}</span>
-                            <span class="text-slate-400">/</span>
-                            <span class="text-slate-500">${item.totalCount}</span>
-                            <div class="w-16 bg-slate-100 rounded-full h-1.5 ml-1">
-                                <div class="${barColor} h-1.5 rounded-full" style="width:${successRate}%"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3"><span class="text-green-600 font-medium">${item.successCount}</span></td>
-                    <td class="px-4 py-3"><span class="${item.failedCount > 0 ? 'text-red-500 font-medium' : 'text-slate-400'}">${item.failedCount}</span></td>
-                    <td class="px-4 py-3"><span class="${item.pendingCount > 0 ? 'text-amber-500 font-medium' : 'text-slate-400'}">${item.pendingCount}</span></td>
-                    <td class="px-4 py-3 text-slate-500 text-xs">${latestAt}</td>
-                </tr>`;
-            }).join('');
-
+            grantCurrentPage = 1;
             document.getElementById('grant-table-wrapper').classList.remove('hidden');
+            renderGrantTable();
         } catch (e) {
             document.getElementById('grant-loading').classList.add('hidden');
             document.getElementById('grant-empty').classList.remove('hidden');
         }
+    }
+
+    function renderGrantTable() {
+        const totalPages = Math.ceil(grantAllData.length / GRANT_PAGE_SIZE);
+        const start = (grantCurrentPage - 1) * GRANT_PAGE_SIZE;
+        const pageData = grantAllData.slice(start, start + GRANT_PAGE_SIZE);
+
+        const tbody = document.getElementById('grant-table-body');
+        tbody.innerHTML = pageData.map(item => {
+            const successRate = item.totalCount > 0
+                ? Math.round((item.successCount / item.totalCount) * 100)
+                : 0;
+            const barColor = successRate >= 80 ? 'bg-green-500' : successRate >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+
+            const latestAt = item.latestAt
+                ? new Date(item.latestAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                : '-';
+
+            return `<tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 font-mono text-slate-600">#${item.surveyId}</td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800">${item.successCount}</span>
+                        <span class="text-slate-400">/</span>
+                        <span class="text-slate-500">${item.totalCount}</span>
+                        <div class="w-16 bg-slate-100 rounded-full h-1.5 ml-1">
+                            <div class="${barColor} h-1.5 rounded-full" style="width:${successRate}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3"><span class="text-green-600 font-medium">${item.successCount}</span></td>
+                <td class="px-4 py-3"><span class="${item.failedCount > 0 ? 'text-red-500 font-medium' : 'text-slate-400'}">${item.failedCount}</span></td>
+                <td class="px-4 py-3"><span class="${item.pendingCount > 0 ? 'text-amber-500 font-medium' : 'text-slate-400'}">${item.pendingCount}</span></td>
+                <td class="px-4 py-3 text-slate-500 text-xs">${latestAt}</td>
+            </tr>`;
+        }).join('');
+
+        // 페이지 정보
+        const endItem = Math.min(start + GRANT_PAGE_SIZE, grantAllData.length);
+        document.getElementById('grant-page-info').textContent =
+            `${start + 1}–${endItem} / 총 ${grantAllData.length}건`;
+
+        // 페이지 버튼
+        const btnContainer = document.getElementById('grant-page-btns');
+        btnContainer.innerHTML = Array.from({ length: totalPages }, (_, i) => i + 1).map(p => `
+            <button onclick="grantGoPage(${p})"
+                    class="px-2.5 py-1.5 text-xs rounded border transition-colors ${p === grantCurrentPage
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">
+                ${p}
+            </button>
+        `).join('');
+
+        document.getElementById('grant-prev-btn').disabled = grantCurrentPage <= 1;
+        document.getElementById('grant-next-btn').disabled = grantCurrentPage >= totalPages;
+    }
+
+    function grantGoPage(page) {
+        const totalPages = Math.ceil(grantAllData.length / GRANT_PAGE_SIZE);
+        if (page < 1 || page > totalPages) return;
+        grantCurrentPage = page;
+        renderGrantTable();
     }
 
     // ── 코드 클립보드 복사 ──────────────────────────────────────────────
