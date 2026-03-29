@@ -38,7 +38,6 @@ import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.*;
 @Transactional
 @RequiredArgsConstructor
 public class FormCommandService implements FormCreator, FormUpdater, FormPublisher {
-    private static final int EMAIL_QUOTA = 5;
 
     private final ApplicationEventPublisher eventPublisher;
     private final RedisCacheAction redisCacheAction;
@@ -51,8 +50,13 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
     private final MemberFinder memberFinder;
     private final SurveyCommand surveyCommand;
 
+    @Value("${external.ses.quota.hour: 20}")
+    int emailQuota;
+
     @Value("${redis.validation-key-prefix.lock:}")
     String validationLockPrefix;
+    @Value("${redis.validation-key-prefix.email-hour-usage:}")
+    String emailHourUsageKey;
 
     @Override
     public Long createFormRequest(Long userKey, Long memberId, FormRequestDto dto) {
@@ -123,20 +127,19 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
                 validationLockPrefix + userKey,
                 0,
                 () -> {
-                    String quotaKey = "ses:daily_usage:" + LocalDate.now() + ":" + userKey;
-                    boolean isEmailRequired = Boolean.TRUE.equals(dto.isEmailRequired()) && EMAIL_QUOTA > redisCacheAction.getIntValue(quotaKey);
+                    String quotaKey = emailHourUsageKey + LocalDate.now() + ":" + userKey;
 
-                    String username = "";
-                    // 이메일을 요청했으나, 일일 한도를 초과한 경우
-                    if (Boolean.TRUE.equals(dto.isEmailRequired()) && !isEmailRequired) {
+                    String username;
+                    // 일일 한도를 초과한 경우
+                    if (emailQuota <= redisCacheAction.getIntValue(quotaKey)) {
                         throw new CustomException(FORM_VALIDATION_EMAIL_TOO_MANY_REQUEST);
                     }
-                    // 이메일을 요청하고, 한도 이내인 경우
-                    else if (isEmailRequired) {
+                    // 일일 한도 이내인 경우
+                    else {
                         username = memberFinder.getUsernameByUserKey(userKey);
                     }
 
-                    FormValidationPayload payload = new FormValidationPayload(List.of(dto.formLink()), dto.requesterEmail(), isEmailRequired, username);
+                    FormValidationPayload payload = new FormValidationPayload(List.of(dto.formLink()), dto.requesterEmail(), username);
                     FormValidationPostResponse response = formRequestLambda.validateAndStashFormRequest(payload);
 
                     if (response == null) {
@@ -145,14 +148,15 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
                     }
 
                     if (response.isEmailSent()) {
+                        LocalDateTime now = LocalDateTime.now();
                         boolean isFirstRequest = redisCacheAction.setValueIfAbsent(
                             quotaKey, "1",
-                            Duration.between(LocalDateTime.now(), LocalDate.now().atStartOfDay().plusDays(1))
+                            Duration.between(now, now.plusHours(1))
                         );
                         if (!isFirstRequest) {
                             redisCacheAction.incrementValue(quotaKey);
                         }
-                    } else if (isEmailRequired) {
+                    } else {
                         log.warn("[FORM:COMMAND:validationFormRequestLink] 링크 유효성 검사 후 이메일 발송 실패 - userKey: {}", userKey);
                     }
 

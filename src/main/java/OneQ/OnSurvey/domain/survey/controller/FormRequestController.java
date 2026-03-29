@@ -86,7 +86,7 @@ public class FormRequestController implements FormRequestControllerDoc {
         @RequestBody @Valid FormValidationRequestDto request,
         @AuthenticationPrincipal Authenticatable principal
     ) {
-        log.info("[FormRequest] 폼 링크 유효성 검사 - URL: {}, 이메일수신: {}", request.formLink(), request.isEmailRequired());
+        log.info("[FormRequest] 폼 링크 유효성 검사 - URL: {}", request.formLink());
 
         FormValidationResponse response = formCreator.validationFormRequestLink(principal.getUserKey(), request);
         return SuccessResponse.ok(response);

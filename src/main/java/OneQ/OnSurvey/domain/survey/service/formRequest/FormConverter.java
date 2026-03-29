@@ -138,7 +138,7 @@ public class FormConverter {
                 r.url(),
                 r.counts().total(),
                 r.counts().convertible(),
-                r.counts().unconvertible(),
+                r.counts().inconvertible(),
                 mapInconvertible(r.inconvertibleDetails()),
                 mapConvertible(r.convertibleDetails())
             );

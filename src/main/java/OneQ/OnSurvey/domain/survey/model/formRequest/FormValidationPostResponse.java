@@ -32,7 +32,7 @@ public record FormValidationPostResponse(
     public record Count(
         int total,
         int convertible,
-        int unconvertible
+        int inconvertible
     ) { }
 
     public record Inconvertible(

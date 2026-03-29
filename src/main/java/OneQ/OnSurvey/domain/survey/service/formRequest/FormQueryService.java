@@ -8,6 +8,7 @@ import OneQ.OnSurvey.domain.survey.repository.formRequest.FormRequestRepository;
 import OneQ.OnSurvey.global.infra.redis.RedisCacheAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,11 +22,15 @@ import java.util.List;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class FormQueryService implements FormFinder {
-    private static final int EMAIL_QUOTA = 5;
-
     private final RedisCacheAction redisCacheAction;
 
     private final FormRequestRepository formRequestRepository;
+
+    @Value("${external.ses.quota.hour:20}")
+    int emailQuota;
+
+    @Value("${redis.validation-key-prefix.email-hour-usage:}")
+    String emailHourUsageKey;
 
     @Override
     public FormListResponse getAllUnregisteredRequests() {
@@ -42,10 +47,10 @@ public class FormQueryService implements FormFinder {
 
     @Override
     public FormValidationEmailQuotaResponse getEmailQuota(Long userKey) {
-        String quotaKey = "ses:daily_usage:" + LocalDate.now() + ":" + userKey;
+        String quotaKey = emailHourUsageKey + LocalDate.now() + ":" + userKey;
         int usedCount = redisCacheAction.getIntValue(quotaKey);
-        log.info("[FORM:FINDER] 이메일 수신 한도 잔량 userKey - {}, {}", userKey, EMAIL_QUOTA - usedCount);
+        log.info("[FORM:FINDER] 이메일 수신 한도 잔량 userKey - {}, {}", userKey, emailQuota - usedCount);
 
-        return new FormValidationEmailQuotaResponse(EMAIL_QUOTA - usedCount);
+        return new FormValidationEmailQuotaResponse(emailQuota - usedCount);
     }
 }
