@@ -83,7 +83,7 @@ public record FormValidationResponse(
                     ]
                 }, {
                     "url": "https://docs.google.com/forms/d/e/1Eq41ykgka_.../viewform",
-                    "message": "유효하지 않은 구글폼 Edit 링크입니다."
+                    "message": "설문 편집 권한이 부여되지 않았습니다."
                 }, {
                     "url": "https://docs.google.com/forms/d/1Eq4gka_.../edit",
                     "message": "설문이 게시되지 않았습니다."
@@ -94,7 +94,8 @@ public record FormValidationResponse(
             ]
             """
     )
-    List<Result> results
+    List<Result> results,
+    int emailSent
 ) {
 
     public record Result(

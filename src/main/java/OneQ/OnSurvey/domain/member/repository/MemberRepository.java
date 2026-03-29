@@ -16,4 +16,5 @@ public interface MemberRepository {
 
     Long validateAdminRoleAndGetMemberIdByUserKey(Long userKey);
     List<Member> searchMembers(String email, String phoneNumber, Long memberId, String name);
+    String getUsernameByUserKey(Long userKey);
 }

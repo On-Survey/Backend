@@ -39,8 +39,8 @@ public class FormRequestLambda {
             .timeout(Duration.ofSeconds(timeout))
             .retryWhen(Retry.backoff(2, Duration.ofSeconds(3)))
             .onErrorMap(e -> {
-                log.error("[FormRequestLambda:validateAndStashFormRequest] 구글폼 링크 유효성 검사 실패 - URLs: {}, error: {}", payload.urls(), e.getMessage(), e);
-                throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);
+                log.error("[FORM:LAMBDA:validateAndStashFormRequest] 구글폼 링크 유효성 검사 실패 - URLs: {}, error: {}", payload.urls(), e.getMessage(), e);
+                throw new CustomException(SurveyErrorCode.FORM_VALIDATION_BAD_GATEWAY);
             })
             .block();
 

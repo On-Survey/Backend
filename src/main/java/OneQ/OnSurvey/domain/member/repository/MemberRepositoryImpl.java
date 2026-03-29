@@ -116,4 +116,12 @@ public class MemberRepositoryImpl implements MemberRepository {
             .limit(100)
             .fetch();
     }
+
+    @Override
+    public String getUsernameByUserKey(Long userKey) {
+        return jpaQueryFactory.select(member.name)
+            .from(member)
+            .where(member.userKey.eq(userKey))
+            .fetchOne();
+    }
 }
