@@ -20,11 +20,13 @@ public record FormValidationResponse(
                         {
                             "title": "비디오 문항 제목",
                             "type": "VIDEO",
-                            "reason": "비디오 문항 미지원"
+                            "reason": "비디오 문항 미지원",
+                            "order": 6
                         }, {
                             "title": "시간 문항 제목",
                             "type": "TIME",
-                            "reason": "시간 문항 미지원"
+                            "reason": "시간 문항 미지원",
+                            "order": 9
                         }
                     ],
                     "convertibleDetails": [
@@ -112,7 +114,8 @@ public record FormValidationResponse(
     public record Inconvertible(
         String title,
         String type,
-        String reason
+        String reason,
+        int order
     ) { }
 
     public record Convertible(

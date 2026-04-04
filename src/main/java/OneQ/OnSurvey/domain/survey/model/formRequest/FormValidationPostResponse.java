@@ -38,7 +38,8 @@ public record FormValidationPostResponse(
     public record Inconvertible(
         String title,
         String type,
-        String reason
+        String reason,
+        int order
     ) { }
 
     public record Convertible(
