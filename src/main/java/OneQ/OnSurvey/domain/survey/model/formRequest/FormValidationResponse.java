@@ -18,14 +18,16 @@ public record FormValidationResponse(
                     "inconvertible": 8,
                     "inconvertibleDetails": [
                         {
-                            "title": "비디오 문항 제목",
+                            "title": "스킵된 1번 섹션의 비디오 문항 제목",
                             "type": "VIDEO",
                             "reason": "비디오 문항 미지원",
-                            "order": 6
+                            "section": 0,
+                            "order": 1
                         }, {
                             "title": "시간 문항 제목",
                             "type": "TIME",
                             "reason": "시간 문항 미지원",
+                            "section": 3,
                             "order": 9
                         }
                     ],
@@ -115,6 +117,7 @@ public record FormValidationResponse(
         String title,
         String type,
         String reason,
+        int section,
         int order
     ) { }
 
