@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
+import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
@@ -77,10 +78,13 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         List<Long> targetIdList = getSurveyIdListByFilters(lastSurveyId, lastDeadline, pageable, status, memberId, excludedIds);
 
         AgeRange memberAgeRange = memberSegmentation.convertBirthDayIntoAgeRange();
+        Residence memberResidence = memberSegmentation.getResidence();
         BooleanExpression condition = (
                 surveyInfo.ages.contains(AgeRange.ALL).or(surveyInfo.ages.contains(memberAgeRange))
             ).and(
                 surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
+            ).and(
+                surveyInfo.residences.contains(Residence.ALL).or(surveyInfo.residences.contains(memberResidence))
             );
         Expression<Boolean> isEligible = new CaseBuilder()
             .when(condition).then(true)
@@ -158,12 +162,14 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     public SurveyDetailData getSurveyDetailDataById(Long surveyId) {
         EnumPath<Interest> interestAlias = Expressions.enumPath(Interest.class, "interestAlias");
         EnumPath<AgeRange> ageAlias = Expressions.enumPath(AgeRange.class, "ageAlias");
+        EnumPath<Residence> residenceAlias = Expressions.enumPath(Residence.class, "residenceAlias");
 
         Map<Long, SurveyDetailData> result = jpaQueryFactory
             .from(survey)
             .leftJoin(survey.interests, interestAlias)
             .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId))
             .leftJoin(surveyInfo.ages, ageAlias)
+            .leftJoin(surveyInfo.residences, residenceAlias)
             .where(survey.id.eq(surveyId))
             .transform(
                 groupBy(survey.id).as(Projections.fields(SurveyDetailData.class,
@@ -174,7 +180,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
                     surveyInfo.dueCount,
                     set(ageAlias).as("ages"),
                     surveyInfo.gender,
-                    surveyInfo.residence,
+                    set(residenceAlias).as("residences"),
                     set(interestAlias).as("interests")
                 ))
             );

@@ -141,12 +141,14 @@ public class SurveyCommandService implements SurveyCommand {
         int questionCount = questionQueryService.countQuestionsBySurveyId(surveyId);
         int resolvedPromotionAmount = promotionTierResolver.resolveAmountByQuestionCount(questionCount);
 
+        Set<Residence> residences = (request.residences() == null) ? Set.of() : new HashSet<>(request.residences());
+
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,
                 request.dueCount(),
                 request.gender(),
                 ages,
-                request.residence(),
+                residences,
                 resolvedPromotionAmount,
                 discountCodeId,
                 true
@@ -171,7 +173,7 @@ public class SurveyCommandService implements SurveyCommand {
                 100,
                 Gender.ALL,
                 Set.of(AgeRange.ALL),
-                Residence.ALL,
+                Set.of(Residence.ALL),
                 0,
                 null,
                 false
@@ -302,18 +304,18 @@ public class SurveyCommandService implements SurveyCommand {
             Integer dueCount,
             Gender gender,
             Set<AgeRange> ages,
-            Residence residence,
+            Set<Residence> residences,
             Integer promotionAmount,
             Long discountCodeId,
             boolean refundable
     ) {
         SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
                 .orElseGet(() -> SurveyInfo.createSurveyInfo(
-                        surveyId, dueCount, gender, ages, residence,
+                        surveyId, dueCount, gender, ages, residences,
                         0, 0, 0, 0, promotionAmount, discountCodeId
                 ));
 
-        info.updateSurveyInfo(dueCount, gender, ages, residence, 0, 0, 0, 0, promotionAmount, discountCodeId);
+        info.updateSurveyInfo(dueCount, gender, ages, residences, 0, 0, 0, 0, promotionAmount, discountCodeId);
 
         if (!refundable) info.markNonRefundable();
 
