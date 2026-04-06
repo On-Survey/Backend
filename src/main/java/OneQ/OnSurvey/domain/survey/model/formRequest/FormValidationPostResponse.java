@@ -39,6 +39,7 @@ public record FormValidationPostResponse(
         String title,
         String type,
         String reason,
+        int section,
         int order
     ) { }
 

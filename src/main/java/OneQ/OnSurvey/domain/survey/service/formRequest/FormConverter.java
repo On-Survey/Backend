@@ -157,7 +157,7 @@ public class FormConverter {
         if (details == null || details.isEmpty()) return List.of();
 
         return details.stream()
-            .map(i -> new FormValidationResponse.Inconvertible(i.title(), i.type(), i.reason(), i.order()))
+            .map(i -> new FormValidationResponse.Inconvertible(i.title(), i.type(), i.reason(), i.section(), i.order()))
             .toList();
     }
 
