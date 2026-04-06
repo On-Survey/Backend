@@ -36,6 +36,7 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
         SurveyInfo result = queryFactory
                 .selectFrom(surveyInfo)
                 .leftJoin(surveyInfo.ages).fetchJoin()
+                .leftJoin(surveyInfo.residences).fetchJoin()
                 .where(surveyInfo.surveyId.eq(surveyId))
                 .fetchOne();
 

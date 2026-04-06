@@ -325,28 +325,82 @@
                     </div>
 
                     <!-- 거주지 -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">타겟 거주지</label>
-                        <select id="targetResidence" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
-                            <option value="ALL">전체</option>
-                            <option value="SEOUL">서울</option>
-                            <option value="GYEONGGI">경기</option>
-                            <option value="INCHEON">인천</option>
-                            <option value="BUSAN">부산</option>
-                            <option value="DAEGU">대구</option>
-                            <option value="DAEJEON">대전</option>
-                            <option value="GWANGJU">광주</option>
-                            <option value="ULSAN">울산</option>
-                            <option value="SEJONG">세종</option>
-                            <option value="GANGWON">강원</option>
-                            <option value="CHUNGNAM">충남</option>
-                            <option value="CHUNGBUK">충북</option>
-                            <option value="JEONNAM">전남</option>
-                            <option value="JEONBUK">전북</option>
-                            <option value="GYEONGNAM">경남</option>
-                            <option value="GYEONGBUK">경북</option>
-                            <option value="JEJU">제주</option>
-                        </select>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-slate-600 mb-2">타겟 거주지 (복수 선택 가능)</label>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="ALL" class="residence-checkbox text-indigo-600 rounded" onchange="handleResidenceAllSelect(this)">
+                                <span>전체</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="SEOUL" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>서울</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="GYEONGGI" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>경기</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="INCHEON" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>인천</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="BUSAN" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>부산</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="DAEGU" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>대구</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="DAEJEON" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>대전</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="GWANGJU" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>광주</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="ULSAN" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>울산</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="SEJONG" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>세종</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="GANGWON" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>강원</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="CHUNGNAM" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>충남</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="CHUNGBUK" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>충북</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="JEONNAM" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>전남</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="JEONBUK" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>전북</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="GYEONGNAM" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>경남</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="GYEONGBUK" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>경북</span>
+                            </label>
+                            <label class="residence-item flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-full cursor-pointer hover:bg-slate-50 transition-colors text-sm">
+                                <input type="checkbox" value="JEJU" class="residence-checkbox residence-specific text-indigo-600 rounded">
+                                <span>제주</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -4175,11 +4229,30 @@
         calculateTotalPrice();
     }
 
+    function handleResidenceAllSelect(checkbox) {
+        const specificCheckboxes = document.querySelectorAll('.residence-specific');
+        if (checkbox.checked) {
+            specificCheckboxes.forEach(cb => {
+                cb.checked = false;
+                cb.disabled = true;
+            });
+        } else {
+            specificCheckboxes.forEach(cb => {
+                cb.disabled = false;
+            });
+        }
+        calculateTotalPrice();
+    }
+
     // 가격 계산 이벤트 리스너 설정
     function setupPriceCalculation() {
-        // 성별, 거주지 변경
+        // 성별 변경
         document.getElementById('targetGender').addEventListener('change', calculateTotalPrice);
-        document.getElementById('targetResidence').addEventListener('change', calculateTotalPrice);
+
+        // 거주지 체크박스 변경
+        document.querySelectorAll('.residence-checkbox').forEach(cb => {
+            cb.addEventListener('change', calculateTotalPrice);
+        });
 
         // 연령대 체크박스 변경
         document.querySelectorAll('.age-checkbox').forEach(cb => {
@@ -4193,7 +4266,6 @@
     // 총 가격 계산
     function calculateTotalPrice() {
         const gender = document.getElementById('targetGender').value;
-        const residence = document.getElementById('targetResidence').value;
         const dueCount = parseInt(document.getElementById('targetDueCount').value) || 0;
 
         // 선택된 연령대
@@ -4201,6 +4273,12 @@
         const selectedAges = ageAllChecked
             ? ['ALL']
             : Array.from(document.querySelectorAll('.age-specific:checked')).map(cb => cb.value);
+
+        // 선택된 거주지
+        const residenceAllChecked = document.querySelector('.residence-checkbox[value="ALL"]').checked;
+        const selectedResidences = residenceAllChecked
+            ? ['ALL']
+            : Array.from(document.querySelectorAll('.residence-specific:checked')).map(cb => cb.value);
 
         // 가격 계산
         const genderPrice = PRICE_MAP.gender[gender] || 0;
@@ -4212,7 +4290,13 @@
             agePrice = selectedAges.reduce((sum, age) => sum + (PRICE_MAP.age[age] || 0), 0);
         }
 
-        const residencePrice = PRICE_MAP.residence[residence] || PRICE_MAP.residence.DEFAULT || 0;
+        let residencePrice;
+        if (residenceAllChecked || selectedResidences.length === 0) {
+            residencePrice = PRICE_MAP.residence.ALL || 0;
+        } else {
+            residencePrice = selectedResidences.reduce((sum, r) => sum + (PRICE_MAP.residence[r] || PRICE_MAP.residence.DEFAULT || 0), 0);
+        }
+
         const dueCountPrice = dueCount * PRICE_MAP.dueCountPerPerson;
 
         const total = genderPrice + agePrice + residencePrice + dueCountPrice;
@@ -4271,7 +4355,16 @@
         }
 
         const gender = document.getElementById('targetGender').value;
-        const residence = document.getElementById('targetResidence').value;
+        const residenceAllChecked = document.querySelector('.residence-checkbox[value="ALL"]').checked;
+        const selectedResidences = residenceAllChecked
+            ? ['ALL']
+            : Array.from(document.querySelectorAll('.residence-specific:checked')).map(cb => cb.value);
+
+        if (!residenceAllChecked && selectedResidences.length === 0) {
+            showToast('타겟 거주지를 선택해주세요.', 'error');
+            return;
+        }
+
         const dueCount = parseInt(document.getElementById('targetDueCount').value) || 50;
 
         // 가격 계산
@@ -4287,7 +4380,7 @@
             genderPrice: prices.genderPrice,
             ages: selectedAges,
             agePrice: prices.agePrice,
-            residence: residence,
+            residences: selectedResidences,
             residencePrice: prices.residencePrice,
             dueCount: dueCount,
             dueCountPrice: prices.dueCountPrice,
@@ -4467,7 +4560,12 @@
         };
 
         document.getElementById('infoGender').textContent = genderLabels[info.gender] || info.gender || '-';
-        document.getElementById('infoResidence').textContent = residenceLabels[info.residence] || info.residence || '-';
+        if (info.residences && info.residences.length > 0) {
+            const residencesArray = Array.isArray(info.residences) ? info.residences : Array.from(info.residences);
+            document.getElementById('infoResidence').textContent = residencesArray.map(r => residenceLabels[r] || r).join(', ');
+        } else {
+            document.getElementById('infoResidence').textContent = '-';
+        }
 
         if (info.ages && (info.ages.length > 0 || info.ages.size > 0)) {
             const agesArray = Array.isArray(info.ages) ? info.ages : Array.from(info.ages);

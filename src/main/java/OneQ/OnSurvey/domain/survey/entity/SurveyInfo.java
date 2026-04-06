@@ -110,8 +110,7 @@ public class SurveyInfo {
         this.dueCount = dueCount;
         this.gender = gender;
         this.ages = ages;
-        this.residences.clear();
-        this.residences.addAll(residences);
+        this.residences = new HashSet<>(residences);
         this.genderPrice = genderPrice;
         this.agePrice = agePrice;
         this.residencePrice = residencePrice;
