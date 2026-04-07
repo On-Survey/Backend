@@ -16,38 +16,78 @@ function resetFilters() {
     loadFormRequests();
 }
 
+// 연령대 전체 토글
+function handleAgeAllToggle(checkbox) {
+    const specifics = document.querySelectorAll('.new-age-specific');
+    specifics.forEach(cb => { cb.checked = false; cb.disabled = checkbox.checked; });
+}
+
+// 거주지 전체 토글
+function handleResidenceAllToggle(checkbox) {
+    const specifics = document.querySelectorAll('.new-residence-specific');
+    specifics.forEach(cb => { cb.checked = false; cb.disabled = checkbox.checked; });
+}
+
 // ========== 폼 변환 요청 제출 관련 함수 ==========
 async function submitFormRequest() {
     const formLink = document.getElementById('newFormLink').value.trim();
     const requesterEmail = document.getElementById('newRequesterEmail').value.trim();
-    const questionCount = document.getElementById('newQuestionCount').value;
-    const targetResponseCount = document.getElementById('newTargetResponseCount').value;
-    const deadline = document.getElementById('newDeadline').value;
-    const price = document.getElementById('newPrice').value;
 
-    // 필수 값 체크
     if (!formLink) {
         showToast('폼 링크를 입력해주세요.', 'error');
         document.getElementById('newFormLink').focus();
         return;
     }
-
-    // URL 형식 검증
-    try {
-        new URL(formLink);
-    } catch (e) {
+    try { new URL(formLink); } catch (e) {
         showToast('올바른 URL 형식을 입력해주세요.', 'error');
         document.getElementById('newFormLink').focus();
         return;
     }
+    if (!requesterEmail) {
+        showToast('신청자 이메일을 입력해주세요.', 'error');
+        document.getElementById('newRequesterEmail').focus();
+        return;
+    }
+
+    // surveyForm
+    const deadline = document.getElementById('newDeadline').value;
+    const gender = document.getElementById('newGender').value;
+    const dueCount = document.getElementById('newDueCount').value;
+    const totalCoin = document.getElementById('newTotalCoin').value;
+
+    const ageAllChecked = document.querySelector('.new-age-checkbox[value="ALL"]').checked;
+    const ages = ageAllChecked
+        ? ['ALL']
+        : Array.from(document.querySelectorAll('.new-age-specific:checked')).map(cb => cb.value);
+
+    const residenceAllChecked = document.querySelector('.new-residence-checkbox[value="ALL"]').checked;
+    const residences = residenceAllChecked
+        ? ['ALL']
+        : Array.from(document.querySelectorAll('.new-residence-specific:checked')).map(cb => cb.value);
+
+    // screening
+    const screeningContent = document.getElementById('newScreeningContent').value.trim();
+    const screeningAnswer = document.getElementById('newScreeningAnswer').value;
+    const screening = screeningContent
+        ? { content: screeningContent, answer: screeningAnswer === '' ? null : screeningAnswer === 'true' }
+        : null;
+
+    // interests
+    const interests = Array.from(document.querySelectorAll('.new-interest-checkbox:checked')).map(cb => cb.value);
 
     const requestData = {
-        formLink: formLink,
-        requesterEmail: requesterEmail || null,
-        questionCount: questionCount ? parseInt(questionCount) : null,
-        targetResponseCount: targetResponseCount ? parseInt(targetResponseCount) : null,
-        deadline: deadline || null,
-        price: price ? parseInt(price) : null
+        formLink,
+        requesterEmail,
+        surveyForm: {
+            deadline: deadline ? deadline + 'T23:59:59' : null,
+            gender,
+            ages: ages.length > 0 ? ages : null,
+            residences: residences.length > 0 ? residences : null,
+            dueCount: dueCount ? parseInt(dueCount) : null,
+            totalCoin: totalCoin ? parseInt(totalCoin) : null
+        },
+        screening,
+        interests: interests.length > 0 ? interests : null
     };
 
     try {
@@ -55,7 +95,7 @@ async function submitFormRequest() {
         if (response !== undefined) {
             showToast('폼 변환 요청이 등록되었습니다.', 'success');
             clearFormRequestInputs();
-            loadFormRequests(); // 목록 새로고침
+            loadFormRequests();
         }
     } catch (error) {
         console.error('폼 변환 요청 실패:', error);
@@ -66,10 +106,14 @@ async function submitFormRequest() {
 function clearFormRequestInputs() {
     document.getElementById('newFormLink').value = '';
     document.getElementById('newRequesterEmail').value = '';
-    document.getElementById('newQuestionCount').value = '';
-    document.getElementById('newTargetResponseCount').value = '';
     document.getElementById('newDeadline').value = '';
-    document.getElementById('newPrice').value = '';
+    document.getElementById('newGender').value = 'ALL';
+    document.getElementById('newDueCount').value = '';
+    document.getElementById('newTotalCoin').value = '';
+    document.getElementById('newScreeningContent').value = '';
+    document.getElementById('newScreeningAnswer').value = '';
+    document.querySelectorAll('.new-age-checkbox, .new-residence-checkbox, .new-interest-checkbox')
+        .forEach(cb => { cb.checked = false; cb.disabled = false; });
 }
 
 // ========== 설문 변환 요청 관련 함수 ==========
