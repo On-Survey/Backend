@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.admin.domain.port.out;
 
 import OneQ.OnSurvey.domain.admin.api.dto.request.AdminSurveySearchQuery;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.AdminSurveyListView;
+import OneQ.OnSurvey.domain.admin.domain.model.survey.OngoingSurveyView;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySingleViewInfo;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyQuestion;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyScreening;
@@ -24,4 +25,6 @@ public interface SurveyPort {
     List<SurveySection> findSurveySectionsById(Long surveyId);
 
     void updateSurveyOwner(Long surveyId, Long newMemberId);
+
+    List<OngoingSurveyView> findOngoingSurveys();
 }
