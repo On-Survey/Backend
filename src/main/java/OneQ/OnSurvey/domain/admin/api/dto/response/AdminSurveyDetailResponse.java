@@ -45,7 +45,7 @@ public record AdminSurveyDetailResponse(
         String deadline,
         Set<String> ages,
         String gender,
-        String residence,
+        Set<String> residences,
         Set<String> interests,
         Integer dueCount
     ) {
@@ -58,7 +58,7 @@ public record AdminSurveyDetailResponse(
                 vo.deadline() != null ? vo.deadline().toString() : null,
                 vo.ages(),
                 vo.gender(),
-                vo.residence(),
+                vo.residences(),
                 vo.interests(),
                 vo.dueCount()
             );

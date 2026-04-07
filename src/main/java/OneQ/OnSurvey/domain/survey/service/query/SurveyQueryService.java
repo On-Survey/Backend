@@ -471,9 +471,8 @@ public class SurveyQueryService implements SurveyQuery {
         }
 
         return !(checkAgeSegmentation(surveySegmentation.getAges(), memberSegmentation.convertBirthDayIntoAgeRange())
-            && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender()));
-            // || checkResidenceSegmentation(surveySegmentation.residence(), memberSegmentation.residence());
-            // || checkInterestSegmentation(surveySegmentation.interests, memberSegmentation.interests);
+            && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender())
+            && checkResidenceSegmentation(surveySegmentation.getResidences(), memberSegmentation.getResidence()));
     }
 
     private boolean checkAgeSegmentation(Set<AgeRange> surveyAges, AgeRange memberAge) {
@@ -484,8 +483,8 @@ public class SurveyQueryService implements SurveyQuery {
         return Gender.ALL.equals(surveyGender) || surveyGender.equals(memberGender);
     }
 
-    private boolean checkResidenceSegmentation(Residence surveyResidence, Residence memberResidence) {
-        return Residence.ALL.equals(surveyResidence) || surveyResidence.equals(memberResidence);
+    private boolean checkResidenceSegmentation(Set<Residence> surveyResidences, Residence memberResidence) {
+        return surveyResidences.contains(Residence.ALL) || surveyResidences.contains(memberResidence);
     }
 
     private boolean checkInterestSegmentation(Set<Interest> surveyInterests, Set<Interest> memberInterests) {

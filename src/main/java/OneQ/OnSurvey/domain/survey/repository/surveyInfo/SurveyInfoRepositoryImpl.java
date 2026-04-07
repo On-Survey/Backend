@@ -1,8 +1,11 @@
 package OneQ.OnSurvey.domain.survey.repository.surveyInfo;
 
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySegmentation;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.EnumPath;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -33,6 +36,7 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
         SurveyInfo result = queryFactory
                 .selectFrom(surveyInfo)
                 .leftJoin(surveyInfo.ages).fetchJoin()
+                .leftJoin(surveyInfo.residences).fetchJoin()
                 .where(surveyInfo.surveyId.eq(surveyId))
                 .fetchOne();
 
@@ -55,9 +59,12 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
 
     @Override
     public SurveySegmentation findSegmentationBySurveyId(Long surveyId) {
+        EnumPath<Residence> residenceAlias = Expressions.enumPath(Residence.class, "residenceAlias");
+
         return queryFactory
             .from(surveyInfo)
             .leftJoin(surveyInfo.ages)
+            .leftJoin(surveyInfo.residences, residenceAlias)
             .leftJoin(survey)
                 .on(surveyInfo.surveyId.eq(survey.id))
             .where(surveyInfo.surveyId.eq(surveyId))
@@ -67,7 +74,7 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
                     surveyInfo.surveyId,
                     surveyInfo.gender,
                     set(surveyInfo.ages).as("ages"),
-                    surveyInfo.residence,
+                    set(residenceAlias).as("residences"),
                     set(survey.interests).as("interests")
                 )
             ))

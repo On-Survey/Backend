@@ -11,7 +11,7 @@ public record SurveySingleViewInfo(
 
     Set<String> ages,
     String gender,
-    String residence,
+    Set<String> residences,
     Set<String> interests,
     Integer dueCount
 ) {
