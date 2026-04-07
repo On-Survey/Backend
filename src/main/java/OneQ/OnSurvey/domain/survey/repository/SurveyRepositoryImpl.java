@@ -32,19 +32,14 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static com.querydsl.core.group.GroupBy.groupBy;
-import static com.querydsl.core.group.GroupBy.set;
+import java.util.*;
 
 import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
+import static com.querydsl.core.group.GroupBy.groupBy;
+import static com.querydsl.core.group.GroupBy.set;
 
 @Repository
 @RequiredArgsConstructor
@@ -84,7 +79,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             ).and(
                 surveyInfo.gender.eq(Gender.ALL).or(surveyInfo.gender.eq(memberSegmentation.getGender()))
             ).and(
-                surveyInfo.residences.contains(Residence.ALL).or(surveyInfo.residences.contains(memberResidence))
+                surveyInfo.residences.isEmpty().or(surveyInfo.residences.contains(Residence.ALL).or(surveyInfo.residences.contains(memberResidence)))
             );
         Expression<Boolean> isEligible = new CaseBuilder()
             .when(condition).then(true)
