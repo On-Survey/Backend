@@ -20,49 +20,136 @@
             <i class="fas fa-file-import text-indigo-600"></i>
             <h2 class="text-lg font-bold text-slate-700">폼 변환 요청</h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- 폼 링크 (필수) -->
+
+        <!-- 기본 정보 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div class="lg:col-span-2">
                 <label class="block text-xs font-bold text-slate-500 mb-1">폼 링크 <span class="text-red-500">*</span></label>
                 <input type="url" id="newFormLink" placeholder="https://docs.google.com/forms/d/e/..."
                        class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
             </div>
-            <!-- 신청자 이메일 -->
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">신청자 이메일</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">신청자 이메일 <span class="text-red-500">*</span></label>
                 <input type="email" id="newRequesterEmail" placeholder="example@email.com"
                        class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
             </div>
-            <!-- 질문 수 -->
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">질문 수</label>
-                <input type="number" id="newQuestionCount" placeholder="예: 15" min="1"
-                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+        </div>
+
+        <!-- 세그먼트 및 가격 (surveyForm) -->
+        <div class="border border-slate-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-bold text-slate-400 mb-3">세그먼트 및 가격</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">마감일</label>
+                    <input type="date" id="newDeadline"
+                           class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">성별</label>
+                    <select id="newGender" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                        <option value="ALL">전체</option>
+                        <option value="MALE">남성</option>
+                        <option value="FEMALE">여성</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">목표 응답 수</label>
+                    <input type="number" id="newDueCount" placeholder="예: 100" min="1"
+                           class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">총 코인</label>
+                    <input type="number" id="newTotalCoin" placeholder="예: 10000" min="0"
+                           class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                </div>
             </div>
-            <!-- 목표 응답 수 -->
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">목표 응답 수</label>
-                <input type="number" id="newTargetResponseCount" placeholder="예: 100" min="1"
-                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- 연령대 -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2">연령대</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="flex items-center gap-1 text-xs cursor-pointer">
+                            <input type="checkbox" value="ALL" class="new-age-checkbox" onchange="handleAgeAllToggle(this)"> 전체
+                        </label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="TEN" class="new-age-checkbox new-age-specific"> 10대</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="TWENTY" class="new-age-checkbox new-age-specific"> 20대</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="THIRTY" class="new-age-checkbox new-age-specific"> 30대</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="FOURTY" class="new-age-checkbox new-age-specific"> 40대</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="FIFTY" class="new-age-checkbox new-age-specific"> 50대</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="SIXTY" class="new-age-checkbox new-age-specific"> 60대</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="OVER" class="new-age-checkbox new-age-specific"> 70세+</label>
+                    </div>
+                </div>
+                <!-- 거주지 -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2">거주지</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="flex items-center gap-1 text-xs cursor-pointer">
+                            <input type="checkbox" value="ALL" class="new-residence-checkbox" onchange="handleResidenceAllToggle(this)"> 전체
+                        </label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="SEOUL" class="new-residence-checkbox new-residence-specific"> 서울</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="GYEONGGI" class="new-residence-checkbox new-residence-specific"> 경기</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="INCHEON" class="new-residence-checkbox new-residence-specific"> 인천</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="BUSAN" class="new-residence-checkbox new-residence-specific"> 부산</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="DAEGU" class="new-residence-checkbox new-residence-specific"> 대구</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="DAEJEON" class="new-residence-checkbox new-residence-specific"> 대전</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="GWANGJU" class="new-residence-checkbox new-residence-specific"> 광주</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="ULSAN" class="new-residence-checkbox new-residence-specific"> 울산</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="SEJONG" class="new-residence-checkbox new-residence-specific"> 세종</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="GANGWON" class="new-residence-checkbox new-residence-specific"> 강원</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="CHUNGBUK" class="new-residence-checkbox new-residence-specific"> 충북</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="CHUNGNAM" class="new-residence-checkbox new-residence-specific"> 충남</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="JEONBUK" class="new-residence-checkbox new-residence-specific"> 전북</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="JEONNAM" class="new-residence-checkbox new-residence-specific"> 전남</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="GYEONGBUK" class="new-residence-checkbox new-residence-specific"> 경북</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="GYEONGNAM" class="new-residence-checkbox new-residence-specific"> 경남</label>
+                        <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="JEJU" class="new-residence-checkbox new-residence-specific"> 제주</label>
+                    </div>
+                </div>
             </div>
-            <!-- 마감일 -->
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">마감일</label>
-                <input type="date" id="newDeadline"
-                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+        </div>
+
+        <!-- 스크리닝 -->
+        <div class="border border-slate-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-bold text-slate-400 mb-3">스크리닝 (선택)</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">스크리닝 문항 내용</label>
+                    <input type="text" id="newScreeningContent" placeholder="예: 최근 6개월 내 온라인 쇼핑 경험이 있으신가요?"
+                           class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">정답</label>
+                    <select id="newScreeningAnswer" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+                        <option value="">없음</option>
+                        <option value="true">예 (true)</option>
+                        <option value="false">아니오 (false)</option>
+                    </select>
+                </div>
             </div>
-            <!-- 가격 -->
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">가격 (원)</label>
-                <input type="number" id="newPrice" placeholder="예: 9900" min="0"
-                       class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
+        </div>
+
+        <!-- 관심사 -->
+        <div class="border border-slate-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-bold text-slate-400 mb-3">관심사 (선택)</p>
+            <div class="flex flex-wrap gap-2">
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="CAREER" class="new-interest-checkbox"> 직장/커리어</label>
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="BUSINESS" class="new-interest-checkbox"> 창업/사업</label>
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="FINANCE" class="new-interest-checkbox"> 재테크/금융</label>
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="HEALTH" class="new-interest-checkbox"> 건강/운동</label>
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="CULTURE" class="new-interest-checkbox"> 문화/여가</label>
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="FASHION" class="new-interest-checkbox"> 패션/뷰티</label>
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="SOCIETY" class="new-interest-checkbox"> 사회/정치</label>
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="SELF_IMPROVEMENT" class="new-interest-checkbox"> 자기계발</label>
+                <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="DAILY_LIFE" class="new-interest-checkbox"> 일상생활</label>
             </div>
-            <!-- 버튼 영역 -->
-            <div class="flex items-end">
-                <button onclick="submitFormRequest()" class="w-full px-4 py-2 bg-green-600 text-white rounded text-sm font-bold hover:bg-green-700 transition">
-                    <i class="fas fa-paper-plane mr-1"></i>변환 요청
-                </button>
-            </div>
+        </div>
+
+        <!-- 버튼 -->
+        <div class="flex justify-end">
+            <button onclick="submitFormRequest()" class="px-6 py-2 bg-green-600 text-white rounded text-sm font-bold hover:bg-green-700 transition">
+                <i class="fas fa-paper-plane mr-1"></i>변환 요청
+            </button>
         </div>
     </div>
 

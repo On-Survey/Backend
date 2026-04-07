@@ -3,13 +3,8 @@ package OneQ.OnSurvey.domain.survey.service.formRequest;
 import OneQ.OnSurvey.domain.member.dto.MemberSearchResult;
 import OneQ.OnSurvey.domain.member.service.MemberFinder;
 import OneQ.OnSurvey.domain.survey.entity.FormRequest;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormPublishRequest;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPostResponse;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPayload;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationRequestDto;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.*;
 import OneQ.OnSurvey.domain.survey.model.formRequest.event.FormRequestConversionEvent;
-import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
 import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.repository.formRequest.FormRequestRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommand;
@@ -108,6 +103,10 @@ public class FormCommandService implements FormCreator, FormUpdater, FormPublish
                 publishRequest.screening().content(),
                 publishRequest.screening().answer()
             );
+        }
+
+        if (publishRequest.interests() != null && !publishRequest.interests().isEmpty()) {
+            surveyCommand.upsertInterest(surveyId, publishRequest.interests());
         }
 
         return surveyCommand.submitSurvey(userKey, surveyId, publishRequest.surveyForm());
