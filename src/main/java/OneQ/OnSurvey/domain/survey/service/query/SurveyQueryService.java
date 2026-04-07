@@ -16,13 +16,7 @@ import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
-import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
-import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
-import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
-import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
-import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
-import OneQ.OnSurvey.domain.survey.model.dto.SurveySegmentation;
-import OneQ.OnSurvey.domain.survey.model.dto.SurveyWithEligibility;
+import OneQ.OnSurvey.domain.survey.model.dto.*;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
@@ -484,7 +478,7 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     private boolean checkResidenceSegmentation(Set<Residence> surveyResidences, Residence memberResidence) {
-        return surveyResidences.contains(Residence.ALL) || surveyResidences.contains(memberResidence);
+        return surveyResidences.isEmpty() || surveyResidences.contains(Residence.ALL) || surveyResidences.contains(memberResidence);
     }
 
     private boolean checkInterestSegmentation(Set<Interest> surveyInterests, Set<Interest> memberInterests) {

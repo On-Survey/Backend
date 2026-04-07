@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.repository.surveyInfo;
 
 import OneQ.OnSurvey.domain.survey.entity.SurveyInfo;
+import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySegmentation;
 import com.querydsl.core.types.Projections;
@@ -13,10 +14,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
+import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
-import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
-import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
 @Repository
 @RequiredArgsConstructor
@@ -59,11 +60,12 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
 
     @Override
     public SurveySegmentation findSegmentationBySurveyId(Long surveyId) {
+        EnumPath<AgeRange> ageAlias = Expressions.enumPath(AgeRange.class, "ageAlias");
         EnumPath<Residence> residenceAlias = Expressions.enumPath(Residence.class, "residenceAlias");
 
         return queryFactory
             .from(surveyInfo)
-            .leftJoin(surveyInfo.ages)
+            .leftJoin(surveyInfo.ages, ageAlias)
             .leftJoin(surveyInfo.residences, residenceAlias)
             .leftJoin(survey)
                 .on(surveyInfo.surveyId.eq(survey.id))
@@ -73,7 +75,7 @@ public class SurveyInfoRepositoryImpl implements SurveyInfoRepository {
                     SurveySegmentation.class,
                     surveyInfo.surveyId,
                     surveyInfo.gender,
-                    set(surveyInfo.ages).as("ages"),
+                    set(ageAlias).as("ages"),
                     set(residenceAlias).as("residences"),
                     set(survey.interests).as("interests")
                 )
