@@ -47,4 +47,9 @@ public class MemberQueryService implements MemberFinder {
         List<Member> members = memberRepository.searchMembers(email, phoneNumber, memberId, name);
         return MemberSearchResult.from(members);
     }
+
+    @Override
+    public String getUsernameByUserKey(Long userKey) {
+        return memberRepository.getUsernameByUserKey(userKey);
+    }
 }

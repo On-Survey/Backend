@@ -17,7 +17,7 @@ public class SurveySegmentation {
 
     private Gender gender;
     private Set<AgeRange> ages;
-    private Residence residence;
+    private Set<Residence> residences;
 
     private Set<Interest> interests;
 }

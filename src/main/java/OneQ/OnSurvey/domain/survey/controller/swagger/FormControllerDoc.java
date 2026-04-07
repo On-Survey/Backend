@@ -53,7 +53,7 @@ public interface FormControllerDoc {
                                    "questionType": "LONG",
                                    "title": "string",
                                    "questionOrder": 2,
-                                   "section": 1,
+                                   "section": 1
                                 }
                             ]
                         }

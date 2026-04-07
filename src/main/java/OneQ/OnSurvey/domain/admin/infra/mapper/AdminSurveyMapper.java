@@ -17,6 +17,7 @@ import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class AdminSurveyMapper {
@@ -56,7 +57,9 @@ public final class AdminSurveyMapper {
             surveyDetailData.getDeadline() != null ? surveyDetailData.getDeadline().toLocalDate() : null,
             surveyDetailData.getAges().stream().map(Enum::name).collect(Collectors.toSet()),
             surveyDetailData.getGender() != null ? surveyDetailData.getGender().name() : null,
-            surveyDetailData.getResidence() != null ? surveyDetailData.getResidence().name() : null,
+            surveyDetailData.getResidences() != null
+                ? surveyDetailData.getResidences().stream().map(Enum::name).collect(Collectors.toSet())
+                : Set.of(),
             surveyDetailData.getInterests().stream().map(Enum::name).collect(Collectors.toSet()),
             surveyDetailData.getDueCount()
         );

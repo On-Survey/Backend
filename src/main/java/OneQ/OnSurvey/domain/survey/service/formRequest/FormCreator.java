@@ -6,5 +6,5 @@ import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
 
 public interface FormCreator {
     Long createFormRequest(Long userKey, Long memberId, FormRequestDto dto);
-    FormValidationResponse validationFormRequestLink(FormValidationRequestDto dto);
+    FormValidationResponse validationFormRequestLink(Long userKey, FormValidationRequestDto dto);
 }

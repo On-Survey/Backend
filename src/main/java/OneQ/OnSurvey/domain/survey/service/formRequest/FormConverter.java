@@ -129,7 +129,7 @@ public class FormConverter {
             .map(this::mapToResult)
             .toList();
 
-        return new FormValidationResponse(results);
+        return new FormValidationResponse(results, dto.emailSent());
     }
 
     private FormValidationResponse.Result mapToResult(FormValidationPostResponse.Result r) {
@@ -157,7 +157,7 @@ public class FormConverter {
         if (details == null || details.isEmpty()) return List.of();
 
         return details.stream()
-            .map(u -> new FormValidationResponse.Inconvertible(u.title(), u.type(), u.reason()))
+            .map(i -> new FormValidationResponse.Inconvertible(i.title(), i.type(), i.reason(), i.section(), i.order()))
             .toList();
     }
 

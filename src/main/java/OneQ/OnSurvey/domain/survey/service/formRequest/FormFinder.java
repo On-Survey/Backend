@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.survey.service.formRequest;
 
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormListResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationEmailQuotaResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,4 +17,5 @@ public interface FormFinder {
      * @return 페이지네이션된 폼 요청 목록
      */
     Page<FormRequestResponse> getFormRequests(String email, Boolean isRegistered, Pageable pageable);
+    FormValidationEmailQuotaResponse getEmailQuota(Long userKey);
 }

@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.util.retry.Retry;
 
 import java.time.Duration;
 
@@ -20,7 +19,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class FormRequestLambda {
 
-    @Value("${external.lambda.google-form-validation.timeout-ms:20}")
+    @Value("${external.lambda.google-form-validation.timeout-ms:30000}")
     private Long timeout;
     @Value("${external.lambda.google-form-validation.url:}")
     private String validationUrl;
@@ -36,11 +35,10 @@ public class FormRequestLambda {
             .bodyValue(payload)
             .retrieve()
             .bodyToMono(FormValidationPostResponse.class)
-            .timeout(Duration.ofSeconds(timeout))
-            .retryWhen(Retry.backoff(2, Duration.ofSeconds(3)))
+            .timeout(Duration.ofMillis(timeout))
             .onErrorMap(e -> {
-                log.error("[FormRequestLambda:validateAndStashFormRequest] 구글폼 링크 유효성 검사 실패 - URLs: {}, error: {}", payload.urls(), e.getMessage(), e);
-                throw new CustomException(SurveyErrorCode.FORM_VALIDATION_FAILED);
+                log.error("[FORM:LAMBDA:validateAndStashFormRequest] 구글폼 링크 유효성 검사 실패 - URLs: {}, error: {}", payload.urls(), e.getMessage(), e);
+                throw new CustomException(SurveyErrorCode.FORM_VALIDATION_BAD_GATEWAY);
             })
             .block();
 

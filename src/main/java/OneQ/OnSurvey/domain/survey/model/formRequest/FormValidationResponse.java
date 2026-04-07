@@ -18,13 +18,17 @@ public record FormValidationResponse(
                     "inconvertible": 8,
                     "inconvertibleDetails": [
                         {
-                            "title": "비디오 문항 제목",
+                            "title": "스킵된 1번 섹션의 비디오 문항 제목",
                             "type": "VIDEO",
-                            "reason": "비디오 문항 미지원"
+                            "reason": "비디오 문항 미지원",
+                            "section": 0,
+                            "order": 1
                         }, {
                             "title": "시간 문항 제목",
                             "type": "TIME",
-                            "reason": "시간 문항 미지원"
+                            "reason": "시간 문항 미지원",
+                            "section": 3,
+                            "order": 9
                         }
                     ],
                     "convertibleDetails": [
@@ -83,7 +87,7 @@ public record FormValidationResponse(
                     ]
                 }, {
                     "url": "https://docs.google.com/forms/d/e/1Eq41ykgka_.../viewform",
-                    "message": "유효하지 않은 구글폼 Edit 링크입니다."
+                    "message": "설문 편집 권한이 부여되지 않았습니다."
                 }, {
                     "url": "https://docs.google.com/forms/d/1Eq4gka_.../edit",
                     "message": "설문이 게시되지 않았습니다."
@@ -94,7 +98,8 @@ public record FormValidationResponse(
             ]
             """
     )
-    List<Result> results
+    List<Result> results,
+    int emailSent
 ) {
 
     public record Result(
@@ -111,7 +116,9 @@ public record FormValidationResponse(
     public record Inconvertible(
         String title,
         String type,
-        String reason
+        String reason,
+        int section,
+        int order
     ) { }
 
     public record Convertible(

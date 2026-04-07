@@ -14,7 +14,7 @@ public record SurveyInfoResponse(
         Integer genderPrice,
         Set<AgeRange> ages,
         Integer agePrice,
-        Residence residence,
+        Set<Residence> residences,
         Integer residencePrice
 ) {
     public static SurveyInfoResponse from(SurveyInfo info) {
@@ -22,6 +22,9 @@ public record SurveyInfoResponse(
         Set<AgeRange> ages = info.getAges() == null
                 ? Set.of()
                 : Set.copyOf(info.getAges());
+        Set<Residence> residences = info.getResidences() == null
+                ? Set.of()
+                : Set.copyOf(info.getResidences());
 
         return new SurveyInfoResponse(
                 info.getDueCount(),
@@ -30,7 +33,7 @@ public record SurveyInfoResponse(
                 info.getGenderPrice() != null ? info.getGenderPrice() : 0,
                 ages,
                 info.getAgePrice() != null ? info.getAgePrice() : 0,
-                info.getResidence(),
+                residences,
                 info.getResidencePrice() != null ? info.getResidencePrice() : 0
         );
     }

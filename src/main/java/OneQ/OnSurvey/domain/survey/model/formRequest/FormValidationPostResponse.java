@@ -8,6 +8,7 @@ import java.util.List;
 public record FormValidationPostResponse(
     int totalUrls,
     int successCount,
+    int emailSent,
     List<Result> results
 ) {
 
@@ -37,7 +38,9 @@ public record FormValidationPostResponse(
     public record Inconvertible(
         String title,
         String type,
-        String reason
+        String reason,
+        int section,
+        int order
     ) { }
 
     public record Convertible(

@@ -1,5 +1,7 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
+import OneQ.OnSurvey.domain.survey.controller.swagger.FormRequestControllerDoc;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationEmailQuotaResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormListResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationRequestDto;
@@ -28,7 +30,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/form-requests")
-public class FormRequestController {
+public class FormRequestController implements FormRequestControllerDoc {
 
     private final FormCreator formCreator;
     private final FormFinder formFinder;
@@ -81,12 +83,21 @@ public class FormRequestController {
     @PostMapping("/validation")
     @Operation(summary = "폼 링크 유효성 검사 및 미리보기 반환", description = "구글 폼 편집 URL 유효성 검사를 진행하여 변환 가능한 문항 수, 변환 불가능 사유, 미리보기 데이터 등을 반환합니다.")
     public SuccessResponse<FormValidationResponse> getConvertableCounts(
-        @RequestBody @Valid FormValidationRequestDto request
+        @RequestBody @Valid FormValidationRequestDto request,
+        @AuthenticationPrincipal Authenticatable principal
     ) {
         log.info("[FormRequest] 폼 링크 유효성 검사 - URL: {}", request.formLink());
 
-        FormValidationResponse response = formCreator.validationFormRequestLink(request);
+        FormValidationResponse response = formCreator.validationFormRequestLink(principal.getUserKey(), request);
         return SuccessResponse.ok(response);
+    }
+
+    @GetMapping("/email-quota")
+    @Operation(summary = "폼 링크 유효성 검사 결과 이메일 수신 일일 한도 조회", description = "사용자 별 링크 유효성 검사 결과에 대한 이메일 수신 일일 한도 잔량 조회을 조회합니다.")
+    public SuccessResponse<FormValidationEmailQuotaResponse> getEmailQuota(
+        @AuthenticationPrincipal Authenticatable principal
+    ) {
+        return SuccessResponse.ok(formFinder.getEmailQuota(principal.getUserKey()));
     }
 
     @PatchMapping("/{requestId}/publish")

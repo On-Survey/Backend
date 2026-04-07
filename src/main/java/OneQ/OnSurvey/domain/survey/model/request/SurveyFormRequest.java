@@ -20,8 +20,8 @@ public record SurveyFormRequest(
         @Schema(description = "연령대 목록", example = "[\"TEN\",\"TWENTY\",\"THIRTY\"]")
         List<AgeRange> ages,
 
-        @Schema(description = "거주지", example = "SEOUL")
-        Residence residence,
+        @Schema(description = "거주지 목록", example = "[\"SEOUL\",\"GYEONGGI\"]")
+        List<Residence> residences,
 
         @Schema(description = "응답자 수", example = "50")
         Integer dueCount,
