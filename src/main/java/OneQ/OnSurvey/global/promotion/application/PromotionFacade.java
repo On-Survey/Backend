@@ -43,12 +43,6 @@ public class PromotionFacade implements PromotionUseCase {
     @Value("${toss.secret.public-crt}")
     private String publicCrt;
 
-    @Value("${toss.api.promotion.amount}")
-    private int promotionAmount;
-
-    @Value("${toss.api.promotion.code}")
-    private String promotionCode;
-
     @Value("${toss.api.promotion.confirm-wait-ms}")
     private long confirmWaitMs;
 
@@ -59,6 +53,7 @@ public class PromotionFacade implements PromotionUseCase {
     private final MemberRepository memberRepository;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
     private final SurveyQueryService surveyQueryService;
+    private final PromotionTierResolver promotionTierResolver;
 
     private SSLContext tossSslContext;
 
@@ -79,10 +74,12 @@ public class PromotionFacade implements PromotionUseCase {
             throw new CustomException(SurveyErrorCode.SURVEY_FREE_PROMOTION_NOT_ALLOWED);
         }
 
-        // 최초 실행 / 재시도 실행 경로
-        Long grantId = upsertGrantId(userKey, surveyId, promotionCode);
+        PromoTier tier = promotionTierResolver.resolveBySurveyId(surveyId);
 
-        String lockKey = buildLockKey(userKey, surveyId);
+        // 최초 실행 / 재시도 실행 경로
+        Long grantId = upsertGrantId(userKey, surveyId, tier.code());
+
+        String lockKey = buildLockKey(userKey, surveyId, tier.code());
         if (!tokenStore.acquireLock(lockKey, LOCK_TTL)) {
             return ExecutionResultResponse.pending();
         }
@@ -92,12 +89,12 @@ public class PromotionFacade implements PromotionUseCase {
                     .orElseThrow(() -> new CustomException(TossErrorCode.TOSS_PROMOTION_NOT_FOUND));
 
             if (grant.isSuccess()) {
-                grantPromotionPointIfNeeded(grantId, userKey);
+                grantPromotionPointIfNeeded(grantId, userKey, tier.amount());
                 return ExecutionResultResponse.success();
             }
 
             if (grant.isPending() && grant.getExecKey() != null) {
-                return pollWithRecoveryAndPersist(grant, userKey, grant.getExecKey());
+                return pollWithRecoveryAndPersist(grant, userKey, grant.getExecKey(), tier.code(), tier.amount());
             }
 
             try {
@@ -109,23 +106,23 @@ public class PromotionFacade implements PromotionUseCase {
                 }
 
                 ExecutePromotionResponse execResp = tossPromotionPort.executePromotionWithRetry(
-                        userKey, promotionCode, execKey, promotionAmount, 2, tossSslContext);
+                        userKey, tier.code(), execKey, tier.amount(), 2, tossSslContext);
                 grantTx.saveExecKey(grant.getId(), execResp.key());
 
                 ExecutionResultResponse finalRes = waitResultUntilFinalWithRecovery(
-                        grant, userKey, promotionCode, execResp.key(), confirmWaitMs);
+                        grant, userKey, tier.code(), execResp.key(), tier.amount(), confirmWaitMs);
 
                 switch (finalRes.status()) {
                     case "SUCCESS" -> {
                         grantTx.markSuccess(grant.getId());
-                        grantPromotionPointIfNeeded(grantId, userKey);
+                        grantPromotionPointIfNeeded(grantId, userKey, tier.amount());
                     }
                     case "PENDING" -> grantTx.markPending(grant.getId(), execResp.key());
                     default        -> grantTx.markFail(grant.getId());
                 }
 
                 log.info("[PROMO] userKey={} surveyId={} code={} amount={} execKey={} status={}",
-                        userKey, surveyId, maskKey(promotionCode), promotionAmount, maskKey(execResp.key()), finalRes.status());
+                        userKey, surveyId, maskKey(tier.code()), tier.amount(), maskKey(execResp.key()), finalRes.status());
 
                 if ("FAILED".equals(finalRes.status())) {
                     throw new CustomException(TossErrorCode.TOSS_PROMOTION_API_ERROR);
@@ -159,25 +156,26 @@ public class PromotionFacade implements PromotionUseCase {
         }
     }
 
-    protected void grantPromotionPointIfNeeded(Long grantId, long userKey) {
+    protected void grantPromotionPointIfNeeded(Long grantId, long userKey, int amount) {
         int updated = promotionGrantRepository.markPointGrantedIfFalse(grantId);
         if (updated == 0) return;
 
         Member member = memberRepository.findMemberByUserKey(userKey)
                 .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        member.increasePromotionPoint(promotionAmount);
+        member.increasePromotionPoint(amount);
         surveyGlobalStatsService.addPromotionCount(1);
     }
 
-    private ExecutionResultResponse pollWithRecoveryAndPersist(PromotionGrant grant, long userKey, String execKey) {
+    private ExecutionResultResponse pollWithRecoveryAndPersist(
+            PromotionGrant grant, long userKey, String execKey, String promoCode, int amount) {
         try {
             ExecutionResultResponse res = waitResultUntilFinalWithRecovery(
-                    grant, userKey, promotionCode, execKey, confirmWaitMs);
+                    grant, userKey, promoCode, execKey, amount, confirmWaitMs);
             switch (res.status()) {
                 case "SUCCESS" -> {
                     grantTx.markSuccess(grant.getId());
-                    grantPromotionPointIfNeeded(grant.getId(), userKey);
+                    grantPromotionPointIfNeeded(grant.getId(), userKey, amount);
                 }
                 case "PENDING" -> grantTx.markPending(grant.getId(), execKey);
                 default        -> grantTx.markFail(grant.getId());
@@ -196,10 +194,10 @@ public class PromotionFacade implements PromotionUseCase {
 
     /** execution-result를 성공/실패가 나오거나 타임아웃될 때까지 백오프 폴링 */
     private ExecutionResultResponse waitResultUntilFinalWithRecovery(
-            PromotionGrant grant, long userKey, String promoCode, String execKey, long waitMs) throws Exception {
+            PromotionGrant grant, long userKey, String promoCode, String execKey, int amount, long waitMs) throws Exception {
 
         if (waitMs <= 0) {
-            return getResultOrRecoverOnce(grant, userKey, promoCode, execKey);
+            return getResultOrRecoverOnce(grant, userKey, promoCode, execKey, amount);
         }
 
         long deadline = System.currentTimeMillis() + waitMs;
@@ -214,7 +212,7 @@ public class PromotionFacade implements PromotionUseCase {
                 if (te.getCode() == 4111) {
                     // 아직 execute가 반영 안 됐다고 판단 → 1회 보강
                     ExecutePromotionResponse execResp =
-                            tossPromotionPort.executePromotionWithRetry(userKey, promoCode, execKey, promotionAmount, 1, tossSslContext);
+                            tossPromotionPort.executePromotionWithRetry(userKey, promoCode, execKey, amount, 1, tossSslContext);
                     execKey = execResp.key();
                     grantTx.saveExecKey(grant.getId(), execKey);
                     // 다음 루프에서 다시 조회
@@ -231,13 +229,13 @@ public class PromotionFacade implements PromotionUseCase {
     }
 
     private ExecutionResultResponse getResultOrRecoverOnce(
-            PromotionGrant grant, long userKey, String promoCode, String execKey) throws Exception {
+            PromotionGrant grant, long userKey, String promoCode, String execKey, int amount) throws Exception {
         try {
             return tossPromotionPort.getPromotionResult(userKey, promoCode, execKey, tossSslContext);
         } catch (TossApiException te) {
             if (te.getCode() == 4111) {
                 ExecutePromotionResponse execResp =
-                        tossPromotionPort.executePromotionWithRetry(userKey, promoCode, execKey, promotionAmount, 1, tossSslContext);
+                        tossPromotionPort.executePromotionWithRetry(userKey, promoCode, execKey, amount, 1, tossSslContext);
                 grantTx.saveExecKey(grant.getId(), execResp.key());
                 return tossPromotionPort.getPromotionResult(userKey, promoCode, execResp.key(), tossSslContext);
             }
@@ -250,8 +248,8 @@ public class PromotionFacade implements PromotionUseCase {
                 Duration.between(g.getExecKeyIssuedAt(), Instant.now()).compareTo(KEY_TTL) > 0;
     }
 
-    private String buildLockKey(long userKey, long surveyId) {
-        return "promo:lock:" + promotionCode + ":user:" + userKey + ":survey:" + surveyId;
+    private String buildLockKey(long userKey, long surveyId, String promoCode) {
+        return "promo:lock:" + promoCode + ":user:" + userKey + ":survey:" + surveyId;
     }
 
     /** 민감 정보 마스킹 */
@@ -277,7 +275,8 @@ public class PromotionFacade implements PromotionUseCase {
 
         // 이미 성공이면 포인트만 보정하고 종료
         if (grant.isSuccess()) {
-            grantPromotionPointIfNeeded(grantId, grant.getUserKey());
+            PromoTier tier = promotionTierResolver.resolveByCode(grant.getPromotionCode());
+            grantPromotionPointIfNeeded(grantId, grant.getUserKey(), tier.amount());
             return;
         }
 
@@ -285,17 +284,17 @@ public class PromotionFacade implements PromotionUseCase {
             return;
         }
 
+        PromoTier tier = promotionTierResolver.resolveByCode(grant.getPromotionCode());
         ExecutionResultResponse res =
-                pollWithRecoveryAndPersist(grant, grant.getUserKey(), grant.getExecKey());
+                pollWithRecoveryAndPersist(grant, grant.getUserKey(), grant.getExecKey(), tier.code(), tier.amount());
 
         switch (res.status()) {
             case "SUCCESS" -> {
                 grantTx.markSuccess(grantId);
-                grantPromotionPointIfNeeded(grantId, grant.getUserKey());
+                grantPromotionPointIfNeeded(grantId, grant.getUserKey(), tier.amount());
             }
             case "PENDING" -> grantTx.markPending(grantId, grant.getExecKey());
             default        -> grantTx.markFail(grantId);
         }
-
     }
 }

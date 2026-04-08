@@ -20,7 +20,6 @@ public class Image extends Question {
         Integer order,
         String title,
         String description,
-        Boolean isRequired,
         Integer section,
         QuestionType type,
         String imageUrl
@@ -30,7 +29,7 @@ public class Image extends Question {
             .order(order)
             .title(title)
             .description(description)
-            .isRequired(isRequired)
+            .isRequired(false)
             .type(type.name())
             .section(section)
             .imageUrl(imageUrl)
@@ -40,11 +39,10 @@ public class Image extends Question {
     public void updateQuestion(
         String title,
         String description,
-        Boolean isRequired,
         Integer order,
         Integer section,
         String imageUrl
     ) {
-        super.updateQuestion(title, description, isRequired, order, section, imageUrl);
+        super.updateQuestion(title, description, false, order, section, imageUrl);
     }
 }

@@ -93,7 +93,8 @@ public class Survey extends BaseEntity {
     }
 
     public void updateInterests(Set<Interest> interests) {
-        this.interests = interests;
+        this.interests.clear();
+        this.interests.addAll(interests);
     }
 
     public void markFree() {

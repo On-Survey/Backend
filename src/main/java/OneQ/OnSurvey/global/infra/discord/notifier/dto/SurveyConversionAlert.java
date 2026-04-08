@@ -1,51 +1,38 @@
 package OneQ.OnSurvey.global.infra.discord.notifier.dto;
 
+import lombok.Builder;
+
 import java.util.List;
 
+@Builder
 public record SurveyConversionAlert(
+    long requestId,
     int totalCount,
     int successCount,
-    List<SurveyDetails> details,
-    String error
+    List<ConversionDetails> details
 ) {
-    public boolean isSuccess() {
-        return error == null || error.isBlank();
-    }
-
-    public static SurveyConversionAlert success(int totalCount, int successCount, List<SurveyDetails> details) {
-        return new SurveyConversionAlert(totalCount, successCount, details, null);
-    }
-
-    public static SurveyConversionAlert error(int totalCount, int successCount, String error) {
-        return new SurveyConversionAlert(totalCount, successCount, List.of(), error);
-    }
-
-    public record SurveyDetails(
+    public record ConversionDetails(
         String url,
+        String status, // "SUCCESS", "FAIL"
 
         // SUCCESS
         String title,
         Long surveyId,
-        Long memberId,
         int questionCount,
-        List<UnsupportedQuestion> unsupportedList,
-
         // FAIL
         String message
     ) {
 
-        public static SurveyDetails success(String url, String title, Long surveyId, Long memberId, int questionCount, List<UnsupportedQuestion> unsupportedList) {
-            return new SurveyDetails(url, title, surveyId, memberId, questionCount, unsupportedList, null);
+        public static ConversionDetails success(String url, String title, Long surveyId, int questionCount) {
+            return new ConversionDetails(url, "SUCCESS", title, surveyId, questionCount, null);
         }
 
-        public static SurveyDetails failure(String url, String message) {
-            return new SurveyDetails(url, null, null, null, 0, List.of(), message);
+        public static ConversionDetails fail(String url, String message) {
+            return new ConversionDetails(url, "FAIL", null, null, 0, message);
         }
 
-        public record UnsupportedQuestion(
-            int order,
-            String type,
-            String reason
-        ) { }
+        public boolean isSuccess() {
+            return "SUCCESS".equals(status);
+        }
     }
 }

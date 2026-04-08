@@ -35,35 +35,19 @@
 
     <div class="grid grid-cols-3 gap-6">
         <div class="col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 class="font-bold text-slate-700 mb-4">최근 등록된 설문</h3>
+            <h3 class="font-bold text-slate-700 mb-4">수집중인 설문 현황</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
                     <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b">
                     <tr>
+                        <th class="px-4 py-3">ID</th>
                         <th class="px-4 py-3">설문 제목</th>
-                        <th class="px-4 py-3">작성자</th>
-                        <th class="px-4 py-3">상태</th>
-                        <th class="px-4 py-3">목표/현재</th>
+                        <th class="px-4 py-3">현재응답 / 목표</th>
                     </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody id="ongoing-surveys-tbody" class="divide-y divide-slate-100">
                     <tr>
-                        <td class="px-4 py-3 font-medium">20대 여성 화장품 선호도 조사</td>
-                        <td class="px-4 py-3">박마케터</td>
-                        <td class="px-4 py-3"><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">진행중</span></td>
-                        <td class="px-4 py-3">100 / 45</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-medium">신규 서비스 UX 사용성 테스트</td>
-                        <td class="px-4 py-3">최기획</td>
-                        <td class="px-4 py-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">작성중</span></td>
-                        <td class="px-4 py-3">50 / 0</td>
-                    </tr>
-                    <tr>
-                        <td class="px-4 py-3 font-medium">반려동물 간식 구매 패턴</td>
-                        <td class="px-4 py-3">이창업</td>
-                        <td class="px-4 py-3"><span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-bold">검수대기</span></td>
-                        <td class="px-4 py-3">200 / 0</td>
+                        <td class="px-4 py-4 text-slate-400 text-center" colspan="3">불러오는 중...</td>
                     </tr>
                     </tbody>
                 </table>
@@ -90,5 +74,24 @@
             </ul>
         </div>
     </div>
+
+<script>
+async function loadOngoingSurveys() {
+    const tbody = document.getElementById('ongoing-surveys-tbody');
+    const list = await apiCall('/admin/dashboard/ongoing-surveys') || [];
+    if (list.length === 0) {
+        tbody.innerHTML = '<tr><td class="px-4 py-4 text-slate-400 text-center" colspan="3">수집중인 설문이 없습니다.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = list.map(s => `
+        <tr>
+            <td class="px-4 py-3 text-slate-500">${s.surveyId}</td>
+            <td class="px-4 py-3 font-medium">${s.title}</td>
+            <td class="px-4 py-3">${s.completedCount} / ${s.dueCount}</td>
+        </tr>
+    `).join('');
+}
+document.addEventListener('DOMContentLoaded', loadOngoingSurveys);
+</script>
 </div>
 </html>

@@ -2,46 +2,435 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <!-- Promotion Page Content Fragment -->
 <div th:fragment="content" id="page-promotion" class="page-section hidden flex-1 overflow-y-auto p-8 space-y-6">
-    <div class="grid grid-cols-3 gap-6">
-        <div class="bg-indigo-900 text-white p-6 rounded-xl shadow-md">
-            <div class="text-indigo-200 text-xs font-bold uppercase mb-1">지급 대기 포인트</div>
-            <div class="text-3xl font-bold">125,000 P</div>
-            <div class="mt-4 text-sm text-indigo-200">자동 지급 실패: <span class="text-white font-bold">2건</span></div>
+
+    <!-- Sub-tab Navigation -->
+    <div class="border-b border-slate-200">
+        <nav class="flex gap-1" id="promotion-tabs">
+            <button onclick="switchPromotionTab('discount')"
+                    id="tab-discount"
+                    class="promotion-tab px-5 py-2.5 text-sm font-medium border-b-2 border-indigo-600 text-indigo-600 -mb-px transition-colors">
+                할인 코드 관리
+            </button>
+            <button onclick="switchPromotionTab('reward')"
+                    id="tab-reward"
+                    class="promotion-tab px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 -mb-px transition-colors">
+                리워드 지급 내역
+            </button>
+        </nav>
+    </div>
+
+    <!-- ===== Discount Code Tab ===== -->
+    <div id="promo-section-discount" class="space-y-6">
+
+        <!-- Create Form -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 class="font-bold text-slate-700 mb-4">할인 코드 생성</h3>
+            <div class="flex flex-wrap gap-4 items-end">
+                <div class="flex flex-col gap-1">
+                    <label for="discount-org-name" class="text-xs font-medium text-slate-500">학회/기관명 <span class="text-red-500">*</span></label>
+                    <input type="text" id="discount-org-name" placeholder="예: 한국컴퓨터학회"
+                           class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label for="discount-expired-at" class="text-xs font-medium text-slate-500">만료일 <span class="text-red-500">*</span></label>
+                    <input type="date" id="discount-expired-at"
+                           class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-44 focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
+                </div>
+                <button onclick="createDiscountCode()"
+                        id="discount-create-btn"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fas fa-plus text-xs"></i>
+                    코드 생성
+                </button>
+            </div>
+            <div id="discount-create-error" class="hidden mt-3 text-xs text-red-500"></div>
         </div>
 
-        <div class="col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <!-- Code List -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-slate-700">실시간 지급 내역</h3>
-                <button class="text-xs text-indigo-600 hover:underline">전체보기</button>
+                <div class="flex items-center gap-3">
+                    <h3 class="font-bold text-slate-700">할인 코드 목록</h3>
+                    <!-- 상태 필터 -->
+                    <div class="flex gap-1" id="discount-filter-btns">
+                        <button onclick="setDiscountFilter('all')" id="filter-all"
+                                class="discount-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-indigo-600 text-white transition-colors">
+                            전체
+                        </button>
+                        <button onclick="setDiscountFilter('active')" id="filter-active"
+                                class="discount-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">
+                            활성
+                        </button>
+                        <button onclick="setDiscountFilter('expired')" id="filter-expired"
+                                class="discount-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors">
+                            만료됨
+                        </button>
+                    </div>
+                </div>
+                <button onclick="loadDiscountCodes()"
+                        class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors">
+                    <i class="fas fa-rotate-right text-xs"></i>
+                    새로고침
+                </button>
             </div>
-            <table class="w-full text-sm text-left">
-                <thead class="text-xs text-slate-500 bg-slate-50 border-b">
-                <tr>
-                    <th class="px-3 py-2">시간</th>
-                    <th class="px-3 py-2">사용자</th>
-                    <th class="px-3 py-2">설문 ID</th>
-                    <th class="px-3 py-2">금액</th>
-                    <th class="px-3 py-2">상태</th>
-                </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                <tr>
-                    <td class="px-3 py-2 text-slate-500">14:22</td>
-                    <td class="px-3 py-2">user_882</td>
-                    <td class="px-3 py-2">#SV-01</td>
-                    <td class="px-3 py-2 font-bold text-indigo-600">+500P</td>
-                    <td class="px-3 py-2"><span class="text-green-600 text-xs font-bold">성공</span></td>
-                </tr>
-                <tr>
-                    <td class="px-3 py-2 text-slate-500">14:20</td>
-                    <td class="px-3 py-2">user_102</td>
-                    <td class="px-3 py-2">#SV-01</td>
-                    <td class="px-3 py-2 font-bold text-indigo-600">+500P</td>
-                    <td class="px-3 py-2"><span class="text-red-500 text-xs font-bold">실패</span></td>
-                </tr>
-                </tbody>
-            </table>
+
+            <!-- Loading -->
+            <div id="discount-loading" class="py-10 flex justify-center text-slate-400 text-sm">
+                <i class="fas fa-spinner fa-spin mr-2"></i> 불러오는 중...
+            </div>
+
+            <!-- Empty -->
+            <div id="discount-empty" class="hidden py-10 text-center text-slate-400 text-sm">
+                <i class="fas fa-ticket-slash text-2xl mb-2 block"></i>
+                등록된 할인 코드가 없습니다.
+            </div>
+
+            <!-- Table -->
+            <div id="discount-table-wrapper" class="hidden overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">ID</th>
+                        <th class="px-4 py-3 font-medium">학회/기관명</th>
+                        <th class="px-4 py-3 font-medium">할인 코드</th>
+                        <th class="px-4 py-3 font-medium">만료일</th>
+                        <th class="px-4 py-3 font-medium">생성일</th>
+                        <th class="px-4 py-3 font-medium">상태</th>
+                    </tr>
+                    </thead>
+                    <tbody id="discount-table-body" class="divide-y divide-slate-100">
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <!-- ===== Reward Tab ===== -->
+    <div id="promo-section-reward" class="hidden space-y-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-700">설문별 리워드 지급 현황</h3>
+                <button onclick="loadGrantStats()"
+                        class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors">
+                    <i class="fas fa-rotate-right text-xs"></i>
+                    새로고침
+                </button>
+            </div>
+
+            <!-- Loading -->
+            <div id="grant-loading" class="py-10 flex justify-center text-slate-400 text-sm">
+                <i class="fas fa-spinner fa-spin mr-2"></i> 불러오는 중...
+            </div>
+
+            <!-- Empty -->
+            <div id="grant-empty" class="hidden py-10 text-center text-slate-400 text-sm">
+                <i class="fas fa-circle-xmark text-2xl mb-2 block"></i>
+                지급 내역이 없습니다.
+            </div>
+
+            <!-- Table -->
+            <div id="grant-table-wrapper" class="hidden overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">설문 ID</th>
+                        <th class="px-4 py-3 font-medium">지급 / 총</th>
+                        <th class="px-4 py-3 font-medium">성공</th>
+                        <th class="px-4 py-3 font-medium">실패</th>
+                        <th class="px-4 py-3 font-medium">대기</th>
+                        <th class="px-4 py-3 font-medium">최근 지급일시</th>
+                    </tr>
+                    </thead>
+                    <tbody id="grant-table-body" class="divide-y divide-slate-100">
+                    </tbody>
+                </table>
+                <!-- Pagination -->
+                <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+                    <span id="grant-page-info" class="text-xs text-slate-500"></span>
+                    <div class="flex items-center gap-1">
+                        <button id="grant-prev-btn" onclick="grantGoPage(grantCurrentPage - 1)"
+                                class="px-3 py-1.5 text-xs rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div id="grant-page-btns" class="flex items-center gap-1"></div>
+                        <button id="grant-next-btn" onclick="grantGoPage(grantCurrentPage + 1)"
+                                class="px-3 py-1.5 text-xs rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // ── 전역 상태 ────────────────────────────────────────────────────────
+    let discountAllData = [];
+    let discountFilter = 'all';
+    const grantStatsLoaded = { loaded: false };
+    let grantAllData = [];
+    let grantCurrentPage = 1;
+    const GRANT_PAGE_SIZE = 10;
+
+    // ── Promotion Tab 전환 ──────────────────────────────────────────────
+    function switchPromotionTab(tab) {
+        document.querySelectorAll('.promotion-tab').forEach(btn => {
+            btn.classList.remove('border-indigo-600', 'text-indigo-600');
+            btn.classList.add('border-transparent', 'text-slate-500');
+        });
+        document.getElementById('tab-' + tab).classList.remove('border-transparent', 'text-slate-500');
+        document.getElementById('tab-' + tab).classList.add('border-indigo-600', 'text-indigo-600');
+
+        document.querySelectorAll('[id^="promo-section-"]').forEach(el => el.classList.add('hidden'));
+        document.getElementById('promo-section-' + tab).classList.remove('hidden');
+
+        if (tab === 'reward' && !grantStatsLoaded.loaded) {
+            grantStatsLoaded.loaded = true;
+            loadGrantStats();
+        }
+    }
+
+    // ── 할인 코드 상태 필터 ─────────────────────────────────────────────
+    function setDiscountFilter(filter) {
+        discountFilter = filter;
+        document.querySelectorAll('.discount-filter-btn').forEach(btn => {
+            btn.classList.remove('bg-indigo-600', 'text-white');
+            btn.classList.add('bg-slate-100', 'text-slate-500');
+        });
+        const active = document.getElementById('filter-' + filter);
+        active.classList.remove('bg-slate-100', 'text-slate-500');
+        active.classList.add('bg-indigo-600', 'text-white');
+
+        renderDiscountTable();
+    }
+
+    // ── 할인 코드 목록 조회 ─────────────────────────────────────────────
+    async function loadDiscountCodes() {
+        document.getElementById('discount-loading').classList.remove('hidden');
+        document.getElementById('discount-empty').classList.add('hidden');
+        document.getElementById('discount-table-wrapper').classList.add('hidden');
+
+        try {
+            discountAllData = await apiCall('/discount-codes') || [];
+            document.getElementById('discount-loading').classList.add('hidden');
+            renderDiscountTable();
+        } catch (e) {
+            document.getElementById('discount-loading').classList.add('hidden');
+            document.getElementById('discount-empty').classList.remove('hidden');
+            showToast('할인 코드 목록을 불러오지 못했습니다.', 'error');
+        }
+    }
+
+    function renderDiscountTable() {
+        // 'sv' locale는 yyyy-MM-dd 형식으로 반환 → ISO 문자열 비교로 UTC 파싱 이슈 제거
+        const todaySeoul = new Date().toLocaleDateString('sv', { timeZone: 'Asia/Seoul' });
+
+        const filtered = discountAllData.filter(item => {
+            const expired = item.expiredAt < todaySeoul;
+            if (discountFilter === 'active') return !expired;
+            if (discountFilter === 'expired') return expired;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            document.getElementById('discount-empty').classList.remove('hidden');
+            document.getElementById('discount-table-wrapper').classList.add('hidden');
+            return;
+        }
+
+        document.getElementById('discount-empty').classList.add('hidden');
+
+        const tbody = document.getElementById('discount-table-body');
+        tbody.innerHTML = filtered.map(item => {
+            const expired = item.expiredAt < todaySeoul;
+            const statusBadge = expired
+                ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">만료됨</span>'
+                : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">활성</span>';
+
+            const createdDate = new Date(item.createdAt).toLocaleDateString('ko-KR', {
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            });
+
+            return `<tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 text-slate-400 text-xs">${item.id}</td>
+                <td class="px-4 py-3 font-medium text-slate-700">${escapeHtml(item.organizationName)}</td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono font-bold text-indigo-600 tracking-widest text-base">${escapeHtml(item.code)}</span>
+                        <button onclick="copyCode('${escapeHtml(item.code)}')"
+                                title="복사"
+                                class="text-slate-400 hover:text-indigo-600 transition-colors text-xs">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-slate-600">${item.expiredAt}</td>
+                <td class="px-4 py-3 text-slate-400 text-xs">${createdDate}</td>
+                <td class="px-4 py-3">${statusBadge}</td>
+            </tr>`;
+        }).join('');
+
+        document.getElementById('discount-table-wrapper').classList.remove('hidden');
+    }
+
+    // ── 할인 코드 생성 ──────────────────────────────────────────────────
+    async function createDiscountCode() {
+        const orgName = document.getElementById('discount-org-name').value.trim();
+        const expiredAt = document.getElementById('discount-expired-at').value;
+        const errEl = document.getElementById('discount-create-error');
+        const btn = document.getElementById('discount-create-btn');
+
+        errEl.classList.add('hidden');
+
+        if (!orgName) {
+            errEl.textContent = '학회/기관명을 입력해 주세요.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (!expiredAt) {
+            errEl.textContent = '만료일을 선택해 주세요.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> 생성 중...';
+
+        try {
+            await apiCall('/discount-codes', 'POST', { organizationName: orgName, expiredAt: expiredAt });
+            document.getElementById('discount-org-name').value = '';
+            document.getElementById('discount-expired-at').value = '';
+            showToast('할인 코드가 생성되었습니다.', 'success');
+            await loadDiscountCodes();
+        } catch (e) {
+            const msg = e?.message || '할인 코드 생성에 실패했습니다.';
+            errEl.textContent = msg;
+            errEl.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus text-xs"></i> 코드 생성';
+        }
+    }
+
+    // ── 리워드 지급 현황 조회 ───────────────────────────────────────────
+    async function loadGrantStats() {
+        document.getElementById('grant-loading').classList.remove('hidden');
+        document.getElementById('grant-empty').classList.add('hidden');
+        document.getElementById('grant-table-wrapper').classList.add('hidden');
+
+        try {
+            grantAllData = await apiCall('/admin/promotion-grants/survey-stats') || [];
+            document.getElementById('grant-loading').classList.add('hidden');
+
+            if (grantAllData.length === 0) {
+                document.getElementById('grant-empty').classList.remove('hidden');
+                return;
+            }
+
+            grantCurrentPage = 1;
+            document.getElementById('grant-table-wrapper').classList.remove('hidden');
+            renderGrantTable();
+        } catch (e) {
+            document.getElementById('grant-loading').classList.add('hidden');
+            document.getElementById('grant-empty').classList.remove('hidden');
+        }
+    }
+
+    function renderGrantTable() {
+        const totalPages = Math.ceil(grantAllData.length / GRANT_PAGE_SIZE);
+        const start = (grantCurrentPage - 1) * GRANT_PAGE_SIZE;
+        const pageData = grantAllData.slice(start, start + GRANT_PAGE_SIZE);
+
+        const tbody = document.getElementById('grant-table-body');
+        tbody.innerHTML = pageData.map(item => {
+            const successRate = item.totalCount > 0
+                ? Math.round((item.successCount / item.totalCount) * 100)
+                : 0;
+            const barColor = successRate >= 80 ? 'bg-green-500' : successRate >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+
+            const latestAt = item.latestAt
+                ? new Date(item.latestAt).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                : '-';
+
+            return `<tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 font-mono text-slate-600">#${item.surveyId}</td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800">${item.successCount}</span>
+                        <span class="text-slate-400">/</span>
+                        <span class="text-slate-500">${item.totalCount}</span>
+                        <div class="w-16 bg-slate-100 rounded-full h-1.5 ml-1">
+                            <div class="${barColor} h-1.5 rounded-full" style="width:${successRate}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3"><span class="text-green-600 font-medium">${item.successCount}</span></td>
+                <td class="px-4 py-3"><span class="${item.failedCount > 0 ? 'text-red-500 font-medium' : 'text-slate-400'}">${item.failedCount}</span></td>
+                <td class="px-4 py-3"><span class="${item.pendingCount > 0 ? 'text-amber-500 font-medium' : 'text-slate-400'}">${item.pendingCount}</span></td>
+                <td class="px-4 py-3 text-slate-500 text-xs">${latestAt}</td>
+            </tr>`;
+        }).join('');
+
+        // 페이지 정보
+        const endItem = Math.min(start + GRANT_PAGE_SIZE, grantAllData.length);
+        document.getElementById('grant-page-info').textContent =
+            `${start + 1}–${endItem} / 총 ${grantAllData.length}건`;
+
+        // 페이지 버튼
+        const btnContainer = document.getElementById('grant-page-btns');
+        btnContainer.innerHTML = Array.from({ length: totalPages }, (_, i) => i + 1).map(p => `
+            <button onclick="grantGoPage(${p})"
+                    class="px-2.5 py-1.5 text-xs rounded border transition-colors ${p === grantCurrentPage
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'}">
+                ${p}
+            </button>
+        `).join('');
+
+        document.getElementById('grant-prev-btn').disabled = grantCurrentPage <= 1;
+        document.getElementById('grant-next-btn').disabled = grantCurrentPage >= totalPages;
+    }
+
+    function grantGoPage(page) {
+        const totalPages = Math.ceil(grantAllData.length / GRANT_PAGE_SIZE);
+        if (page < 1 || page > totalPages) return;
+        grantCurrentPage = page;
+        renderGrantTable();
+    }
+
+    // ── 코드 클립보드 복사 ──────────────────────────────────────────────
+    function copyCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            showToast(`코드 "${code}" 복사됨`, 'success');
+        });
+    }
+
+    // ── XSS 방지 ────────────────────────────────────────────────────────
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // ── 프로모션 페이지 진입 시 자동 로드 ──────────────────────────────
+    (function() {
+        const promoPage = document.getElementById('page-promotion');
+        if (!promoPage) return;
+        let loaded = false;
+        const observer = new MutationObserver(() => {
+            if (!promoPage.classList.contains('hidden') && !loaded) {
+                loaded = true;
+                loadDiscountCodes();
+            }
+            if (promoPage.classList.contains('hidden')) {
+                loaded = false;
+                grantStatsLoaded.loaded = false;
+            }
+        });
+        observer.observe(promoPage, { attributes: true, attributeFilter: ['class'] });
+    })();
+</script>
 </div>
 </html>

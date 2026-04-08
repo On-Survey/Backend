@@ -66,4 +66,9 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     public void deleteBySurveyIdAndNotInOrder(Long surveyId, Collection<Integer> orders) {
         questionJpaRepository.deleteAllBySurveyIdEqualsAndSectionNotIn(surveyId, orders);
     }
+
+    @Override
+    public int countBySurveyId(Long surveyId) {
+        return questionJpaRepository.countBySurveyId(surveyId);
+    }
 }

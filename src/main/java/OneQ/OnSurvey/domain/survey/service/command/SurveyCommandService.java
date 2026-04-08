@@ -4,6 +4,10 @@ import OneQ.OnSurvey.domain.member.Member;
 import OneQ.OnSurvey.domain.member.MemberErrorCode;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
+import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
+import OneQ.OnSurvey.domain.discount.entity.DiscountCode;
+import OneQ.OnSurvey.domain.discount.service.DiscountCodeQueryService;
+import OneQ.OnSurvey.global.promotion.application.PromotionTierResolver;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
@@ -41,7 +45,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -60,6 +63,9 @@ public class SurveyCommandService implements SurveyCommand {
     private final SurveyRefundPolicy surveyRefundPolicy;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
     private final RedisAgent redisAgent;
+    private final QuestionQueryService questionQueryService;
+    private final PromotionTierResolver promotionTierResolver;
+    private final DiscountCodeQueryService discountCodeQueryService;
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
@@ -122,18 +128,29 @@ public class SurveyCommandService implements SurveyCommand {
 
         Set<AgeRange> ages = (request.ages() == null) ? Set.of() : new HashSet<>(request.ages());
 
+        // 할인 코드 저장 (존재 여부만 확인 후 ID 기록)
+        Long discountCodeId = null;
+        if (request.discountCode() != null && !request.discountCode().isBlank()) {
+            DiscountCode discountCode = discountCodeQueryService.getByCode(request.discountCode());
+            discountCodeId = discountCode.getId();
+            log.info("[SurveySubmit] 할인 코드 저장 - surveyId={}, org={}", surveyId, discountCode.getOrganizationName());
+        }
+
         survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
+
+        int questionCount = questionQueryService.countQuestionsBySurveyId(surveyId);
+        int resolvedPromotionAmount = promotionTierResolver.resolveAmountByQuestionCount(questionCount);
+
+        Set<Residence> residences = (request.residences() == null) ? Set.of() : new HashSet<>(request.residences());
 
         SurveyInfo info = upsertSurveyInfo(
                 surveyId,
                 request.dueCount(),
                 request.gender(),
                 ages,
-                request.residence(),
-                request.genderPrice(),
-                request.agePrice(),
-                request.residencePrice(),
-                request.dueCountPrice(),
+                residences,
+                resolvedPromotionAmount,
+                discountCodeId,
                 true
         );
 
@@ -156,8 +173,9 @@ public class SurveyCommandService implements SurveyCommand {
                 100,
                 Gender.ALL,
                 Set.of(AgeRange.ALL),
-                Residence.ALL,
-                0, 0, 0, 0,
+                Set.of(Residence.ALL),
+                0,
+                null,
                 false
         );
 
@@ -286,20 +304,18 @@ public class SurveyCommandService implements SurveyCommand {
             Integer dueCount,
             Gender gender,
             Set<AgeRange> ages,
-            Residence residence,
-            Integer genderPrice,
-            Integer agePrice,
-            Integer residencePrice,
-            Integer dueCountPrice,
+            Set<Residence> residences,
+            Integer promotionAmount,
+            Long discountCodeId,
             boolean refundable
     ) {
         SurveyInfo info = surveyInfoRepository.findBySurveyId(surveyId)
                 .orElseGet(() -> SurveyInfo.createSurveyInfo(
-                        surveyId, dueCount, gender, ages, residence,
-                        genderPrice, agePrice, residencePrice, dueCountPrice
+                        surveyId, dueCount, gender, ages, residences,
+                        0, 0, 0, 0, promotionAmount, discountCodeId
                 ));
 
-        info.updateSurveyInfo(dueCount, gender, ages, residence, genderPrice, agePrice, residencePrice, dueCountPrice);
+        info.updateSurveyInfo(dueCount, gender, ages, residences, 0, 0, 0, 0, promotionAmount, discountCodeId);
 
         if (!refundable) info.markNonRefundable();
 

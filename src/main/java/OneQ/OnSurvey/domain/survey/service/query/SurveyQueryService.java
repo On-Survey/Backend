@@ -16,6 +16,7 @@ import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
+import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
@@ -23,6 +24,7 @@ import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySegmentation;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyWithEligibility;
+import OneQ.OnSurvey.domain.survey.model.dto.*;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.repository.screening.ScreeningRepository;
@@ -471,9 +473,8 @@ public class SurveyQueryService implements SurveyQuery {
         }
 
         return !(checkAgeSegmentation(surveySegmentation.getAges(), memberSegmentation.convertBirthDayIntoAgeRange())
-            && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender()));
-            // || checkResidenceSegmentation(surveySegmentation.residence(), memberSegmentation.residence());
-            // || checkInterestSegmentation(surveySegmentation.interests, memberSegmentation.interests);
+            && checkGenderSegmentation(surveySegmentation.getGender(), memberSegmentation.getGender())
+            && checkResidenceSegmentation(surveySegmentation.getResidences(), memberSegmentation.getResidence()));
     }
 
     private boolean checkAgeSegmentation(Set<AgeRange> surveyAges, AgeRange memberAge) {
@@ -484,8 +485,8 @@ public class SurveyQueryService implements SurveyQuery {
         return Gender.ALL.equals(surveyGender) || surveyGender.equals(memberGender);
     }
 
-    private boolean checkResidenceSegmentation(Residence surveyResidence, Residence memberResidence) {
-        return Residence.ALL.equals(surveyResidence) || surveyResidence.equals(memberResidence);
+    private boolean checkResidenceSegmentation(Set<Residence> surveyResidences, Residence memberResidence) {
+        return surveyResidences.isEmpty() || surveyResidences.contains(Residence.ALL) || surveyResidences.contains(memberResidence);
     }
 
     private boolean checkInterestSegmentation(Set<Interest> surveyInterests, Set<Interest> memberInterests) {
@@ -496,6 +497,13 @@ public class SurveyQueryService implements SurveyQuery {
     public Survey getSurveyById(Long surveyId) {
         return surveyRepository.getSurveyById(surveyId)
             .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+    }
+
+    @Override
+    public Integer getPromotionAmountBySurveyId(Long surveyId) {
+        return surveyInfoRepository.findBySurveyId(surveyId)
+                .map(info -> info.getPromotionAmount())
+                .orElse(null);
     }
 
     // 외부 PORT
@@ -517,5 +525,10 @@ public class SurveyQueryService implements SurveyQuery {
     @Override
     public List<SectionDto> getSectionDtoListBySurveyId(Long surveyId) {
         return sectionRepository.findAllSectionDtoBySurveyId(surveyId);
+    }
+
+    @Override
+    public List<OngoingSurveyStats> getOngoingSurveyStats() {
+        return surveyRepository.findOngoingSurveys();
     }
 }

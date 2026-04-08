@@ -41,13 +41,25 @@ public class SurveyInfo {
     @Builder.Default
     private Set<AgeRange> ages = new HashSet<>();
 
+    @ElementCollection(targetClass = Residence.class)
+    @CollectionTable(
+            name = "survey_residence",
+            joinColumns = @JoinColumn(name = "info_id")
+    )
     @Enumerated(EnumType.STRING)
-    private Residence residence;
+    @Column(name = "residence", length = 30, nullable = false)
+    @Builder.Default
+    private Set<Residence> residences = new HashSet<>();
 
     private Integer genderPrice;
     private Integer agePrice;
     private Integer residencePrice;
     private Integer dueCountPrice;
+
+    private Integer promotionAmount;
+
+    @Column(name = "discount_code_id")
+    private Long discountCodeId;
 
     @Builder.Default
     @Column(nullable = false)
@@ -58,11 +70,13 @@ public class SurveyInfo {
             Integer dueCount,
             Gender gender,
             Set<AgeRange> ages,
-            Residence residence,
+            Set<Residence> residences,
             Integer genderPrice,
             Integer agePrice,
             Integer residencePrice,
-            Integer dueCountPrice
+            Integer dueCountPrice,
+            Integer promotionAmount,
+            Long discountCodeId
     ) {
         return SurveyInfo.builder()
                 .surveyId(surveyId)
@@ -70,11 +84,13 @@ public class SurveyInfo {
                 .completedCount(0)
                 .gender(gender)
                 .ages(ages)
-                .residence(residence)
+                .residences(residences)
                 .genderPrice(genderPrice)
                 .agePrice(agePrice)
                 .residencePrice(residencePrice)
                 .dueCountPrice(dueCountPrice)
+                .promotionAmount(promotionAmount)
+                .discountCodeId(discountCodeId)
                 .refundable(true)
                 .build();
     }
@@ -83,20 +99,24 @@ public class SurveyInfo {
             Integer dueCount,
             Gender gender,
             Set<AgeRange> ages,
-            Residence residence,
+            Set<Residence> residences,
             Integer genderPrice,
             Integer agePrice,
             Integer residencePrice,
-            Integer dueCountPrice
+            Integer dueCountPrice,
+            Integer promotionAmount,
+            Long discountCodeId
     ) {
         this.dueCount = dueCount;
         this.gender = gender;
         this.ages = ages;
-        this.residence = residence;
+        this.residences = new HashSet<>(residences);
         this.genderPrice = genderPrice;
         this.agePrice = agePrice;
         this.residencePrice = residencePrice;
         this.dueCountPrice = dueCountPrice;
+        this.promotionAmount = promotionAmount;
+        this.discountCodeId = discountCodeId;
     }
 
     public void markNonRefundable() {

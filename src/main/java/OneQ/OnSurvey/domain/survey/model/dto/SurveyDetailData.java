@@ -25,6 +25,6 @@ public class SurveyDetailData {
     private Integer dueCount;
     private Set<AgeRange> ages;
     private Gender gender;
-    private Residence residence;
+    private Set<Residence> residences;
     private Set<Interest> interests;
 }

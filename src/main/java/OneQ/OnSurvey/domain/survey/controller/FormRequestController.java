@@ -1,37 +1,49 @@
 package OneQ.OnSurvey.domain.survey.controller;
 
+import OneQ.OnSurvey.domain.survey.controller.swagger.FormRequestControllerDoc;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationEmailQuotaResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationResponse;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormListResponse;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationRequestDto;
+import OneQ.OnSurvey.domain.survey.model.formRequest.FormPublishRequest;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestDto;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormRequestResponse;
+import OneQ.OnSurvey.domain.survey.model.response.SurveyFormResponse;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormCreator;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormFinder;
+import OneQ.OnSurvey.domain.survey.service.formRequest.FormPublisher;
 import OneQ.OnSurvey.domain.survey.service.formRequest.FormUpdater;
+import OneQ.OnSurvey.global.auth.custom.Authenticatable;
 import OneQ.OnSurvey.global.common.response.PageResponse;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/form-requests")
-public class FormRequestController {
+public class FormRequestController implements FormRequestControllerDoc {
 
     private final FormCreator formCreator;
     private final FormFinder formFinder;
     private final FormUpdater formUpdater;
+    private final FormPublisher formPublisher;
 
     @PostMapping
-    @Operation(summary = "폼 등록 신청", description = "폼을 등록하기 위한 신청을 생성합니다.")
+    @Operation(summary = "폼 등록 신청 및 설문 발행", description = "폼을 등록하기 위한 신청을 생성한 뒤 설문변환 및 발행을 진행합니다.")
     public SuccessResponse<Long> createGoogleFormRequest(
-            @RequestBody FormRequestDto request
+        @AuthenticationPrincipal Authenticatable principal,
+        @RequestBody @Valid FormRequestDto request
     ) {
-        return SuccessResponse.ok(formCreator.createFormRequest(request));
+        return SuccessResponse.ok(formCreator.createFormRequest(principal.getUserKey(), principal.getMemberId(), request));
     }
 
     @GetMapping
@@ -64,7 +76,36 @@ public class FormRequestController {
             @PathVariable Long requestId,
             @RequestParam Long surveyId
     ) {
-        formUpdater.markAsRegistered(requestId, surveyId);
+        formUpdater.markAsRegistered(requestId, surveyId, null);
         return SuccessResponse.ok("폼이 온서베이에 등록되었습니다.");
+    }
+
+    @PostMapping("/validation")
+    @Operation(summary = "폼 링크 유효성 검사 및 미리보기 반환", description = "구글 폼 편집 URL 유효성 검사를 진행하여 변환 가능한 문항 수, 변환 불가능 사유, 미리보기 데이터 등을 반환합니다.")
+    public SuccessResponse<FormValidationResponse> getConvertableCounts(
+        @RequestBody @Valid FormValidationRequestDto request,
+        @AuthenticationPrincipal Authenticatable principal
+    ) {
+        log.info("[FormRequest] 폼 링크 유효성 검사 - URL: {}", request.formLink());
+
+        FormValidationResponse response = formCreator.validationFormRequestLink(principal.getUserKey(), request);
+        return SuccessResponse.ok(response);
+    }
+
+    @GetMapping("/email-quota")
+    @Operation(summary = "폼 링크 유효성 검사 결과 이메일 수신 일일 한도 조회", description = "사용자 별 링크 유효성 검사 결과에 대한 이메일 수신 일일 한도 잔량 조회을 조회합니다.")
+    public SuccessResponse<FormValidationEmailQuotaResponse> getEmailQuota(
+        @AuthenticationPrincipal Authenticatable principal
+    ) {
+        return SuccessResponse.ok(formFinder.getEmailQuota(principal.getUserKey()));
+    }
+
+    @PatchMapping("/{requestId}/publish")
+    @Operation(summary = "폼 설문 발행", description = "변환 완료된 설문에 스크리닝 및 세그먼트 정보를 적용하고 발행합니다.")
+    public SuccessResponse<SurveyFormResponse> publishFormRequest(
+            @PathVariable Long requestId,
+            @RequestBody @Valid FormPublishRequest request
+    ) {
+        return SuccessResponse.ok(formPublisher.publishFormRequest(requestId, request));
     }
 }
