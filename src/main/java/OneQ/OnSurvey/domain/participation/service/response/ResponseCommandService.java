@@ -62,6 +62,7 @@ public class ResponseCommandService implements ResponseCommand {
                     throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
                 }
 
+
                 response.markResponded();
                 responseRepository.save(response);
                 surveyGlobalStatsService.addCompletedCount(1);
