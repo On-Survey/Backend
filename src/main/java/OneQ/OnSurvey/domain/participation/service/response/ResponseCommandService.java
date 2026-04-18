@@ -69,7 +69,7 @@ public class ResponseCommandService implements ResponseCommand {
 
                 response.markResponded();
                 responseRepository.save(response);
-                answerRepository.deleteInvalidSectionQuestionAnswer(surveyId, memberId, dto.sectionList());
+                answerRepository.deleteInvalidSectionQuestionAnswer(surveyId, memberId, dto.visitedSectionList());
                 surveyGlobalStatsService.addCompletedCount(1);
                 surveyInfoRepository.increaseCompletedCount(surveyId);
 

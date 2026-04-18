@@ -278,7 +278,7 @@ public class ParticipationController {
             .surveyId(surveyId)
             .memberId(principal.getMemberId())
             .userKey(principal.getUserKey())
-            .sectionList(request.sectionOrders())
+            .visitedSectionList(request.visitedSections())
             .build();
 
         Boolean result = responseCommand.createResponse(dto);

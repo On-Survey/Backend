@@ -42,7 +42,7 @@ public interface AnswerRepository<E> {
     ) {
         return List.of();
     }
-    default void deleteInvalidSectionQuestionAnswer(long surveyId, long memberId, Collection<Integer> validSectionList) {
+    default void deleteInvalidSectionQuestionAnswer(long surveyId, long memberId, Collection<Integer> visitedSectionList) {
         throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_INVALID_SECTION_REMAIN);
     }
 }

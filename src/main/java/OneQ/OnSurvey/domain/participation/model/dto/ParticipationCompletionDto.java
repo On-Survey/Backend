@@ -9,6 +9,6 @@ public record ParticipationCompletionDto(
     long surveyId,
     long memberId,
     long userKey,
-    List<Integer> sectionList
+    List<Integer> visitedSectionList
 ) {
 }

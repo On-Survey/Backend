@@ -192,9 +192,9 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
     }
 
     @Override
-    public void deleteInvalidSectionQuestionAnswer(long surveyId, long memberId, Collection<Integer> validSectionList) {
-        if (validSectionList == null) {
-            validSectionList = List.of();
+    public void deleteInvalidSectionQuestionAnswer(long surveyId, long memberId, Collection<Integer> visitedSectionList) {
+        if (visitedSectionList == null) {
+            visitedSectionList = List.of();
         }
 
         jpaQueryFactory.delete(questionAnswer)
@@ -206,7 +206,7 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                     .from(question)
                     .where(
                         question.surveyId.eq(surveyId),
-                        question.section.notIn(validSectionList)
+                        question.section.notIn(visitedSectionList)
                     )
                 ),
                 questionAnswer.memberId.eq(memberId)
