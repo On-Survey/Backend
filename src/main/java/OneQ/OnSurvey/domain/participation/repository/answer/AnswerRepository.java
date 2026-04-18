@@ -40,4 +40,5 @@ public interface AnswerRepository<E> {
     ) {
         return List.of();
     }
+    default void deleteInvalidSectionQuestionAnswer(long surveyId, long memberId, List<Integer> validSectionList) { }
 }
