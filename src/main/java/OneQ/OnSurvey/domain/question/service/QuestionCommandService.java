@@ -211,6 +211,28 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getQuestionOrder(),
                 upsertInfo.getSection()
             );
+        } else if (question instanceof Grid grid) {
+            grid.updateQuestion(
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired(),
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection(),
+                upsertInfo.getImageUrl(),
+                upsertInfo.getIsCheckbox(),
+                upsertInfo.getIsChoiceMixed(),
+                upsertInfo.getIsChoiceDistinct()
+            );
+        } else if (question instanceof Time time) {
+            time.updateQuestion(
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired(),
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getSection(),
+                upsertInfo.getImageUrl(),
+                upsertInfo.getIsInterval()
+            );
         }
     }
 
@@ -320,6 +342,32 @@ public class QuestionCommandService implements QuestionCommand {
                 upsertInfo.getDescription(),
                 upsertInfo.getSection(),
                 type
+            );
+        } else if (QuestionType.GRID.equals(type)) {
+            return Grid.of(
+                surveyId,
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
+                type,
+                upsertInfo.getImageUrl(),
+                upsertInfo.getIsCheckbox(),
+                upsertInfo.getIsChoiceMixed(),
+                upsertInfo.getIsChoiceDistinct()
+            );
+        } else if (QuestionType.TIME.equals(type)) {
+            return Time.of(
+                surveyId,
+                upsertInfo.getQuestionOrder(),
+                upsertInfo.getTitle(),
+                upsertInfo.getDescription(),
+                upsertInfo.getIsRequired(),
+                upsertInfo.getSection(),
+                type,
+                upsertInfo.getImageUrl(),
+                upsertInfo.getIsInterval()
             );
         } else {
             throw new CustomException(ErrorCode.INVALID_REQUEST);

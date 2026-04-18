@@ -44,6 +44,15 @@ public class QuestionUpsertDto {
 
         // Date 필드
         LocalDateTime defaultDate;
+
+        // Grid 필드
+        Boolean isCheckbox;
+        Boolean isChoiceMixed;
+        Boolean isChoiceDistinct;
+        List<GridOptionDto> gridOptions;
+
+        // Time 필드
+        Boolean isInterval;
     }
 
     public static UpsertInfo fromEntity(Question question) {
