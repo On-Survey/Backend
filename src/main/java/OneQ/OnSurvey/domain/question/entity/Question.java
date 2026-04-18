@@ -39,7 +39,7 @@ public abstract class Question extends BaseEntity {
     @Builder.Default
     protected Boolean isRequired = false;
 
-    @Column(name = "SECTION")
+    @Column(name = "SECTION", nullable = false)
     @ColumnDefault("1")
     @Builder.Default
     protected Integer section = 1;
