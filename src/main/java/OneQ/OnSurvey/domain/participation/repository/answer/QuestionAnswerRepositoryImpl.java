@@ -11,6 +11,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.EnumPath;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.StringPath;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.stereotype.Repository;
 
@@ -187,6 +188,29 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
     public void deleteAllByIds(Collection<Long> answerIds) {
         jpaQueryFactory.delete(questionAnswer)
             .where(questionAnswer.answerId.in(answerIds))
+            .execute();
+    }
+
+    @Override
+    public void deleteInvalidSectionQuestionAnswer(long surveyId, long memberId, Collection<Integer> visitedSectionList) {
+        if (visitedSectionList == null) {
+            visitedSectionList = List.of();
+        }
+
+        jpaQueryFactory.delete(questionAnswer)
+            .where(
+                questionAnswer.questionId.in(JPAExpressions
+                    .select(
+                        question.questionId
+                    )
+                    .from(question)
+                    .where(
+                        question.surveyId.eq(surveyId),
+                        question.section.notIn(visitedSectionList)
+                    )
+                ),
+                questionAnswer.memberId.eq(memberId)
+            )
             .execute();
     }
 
