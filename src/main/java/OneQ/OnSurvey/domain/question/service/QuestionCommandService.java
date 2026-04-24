@@ -60,9 +60,6 @@ public class QuestionCommandService implements QuestionCommand {
             .map(QuestionUpsertDto.UpsertInfo::getQuestionId)
             .collect(Collectors.toSet());
 
-        log.info("[QUESTION:COMMAND:upsertQuestionList] 수정되는 문항 IDs: {}", updateIdSet);
-        log.info("[QUESTION:COMMAND:upsertQuestionList] 생성되는 문항 개수: {}", newInfoList.size());
-
         // 4. Delete 대상 ID 추출 및 삭제
         if (newInfoList.isEmpty()) {
             Set<Long> deleteIdSet = prevQuestionList.stream()
@@ -71,8 +68,6 @@ public class QuestionCommandService implements QuestionCommand {
                 .collect(Collectors.toSet());
 
             if (!deleteIdSet.isEmpty()) {
-                log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 문항 IDs: {}", deleteIdSet);
-
                 // 문항 삭제 전에 해당 문항의 보기(ChoiceOption)도 삭제
                 List<ChoiceOption> optionsToDelete = choiceOptionRepository.getOptionsByQuestionIds(deleteIdSet);
                 List<GridOption> gridOptionsToDelete = gridOptionRepository.getGridOptionsByQuestionIds(deleteIdSet);
@@ -86,12 +81,10 @@ public class QuestionCommandService implements QuestionCommand {
                     Set<Long> gridOptionIdsToDelete = gridOptionsToDelete.stream()
                         .map(GridOption::getGridOptionId)
                         .collect(Collectors.toSet());
-                    log.info("[QUESTION:COMMAND:upsertQuestionList] 삭제되는 보기 IDs: {}", gridOptionIdsToDelete);
                     gridOptionRepository.deleteAll(gridOptionIdsToDelete);
                 }
 
                 questionRepository.deleteAll(deleteIdSet);
-                log.info("[QUESTION:COMMAND:upsertQuestionList] DELETE 진행");
             }
         }
 
@@ -134,6 +127,221 @@ public class QuestionCommandService implements QuestionCommand {
             .surveyId(surveyId)
             .upsertInfoList(upsertInfoList)
             .build();
+    }
+
+    @Override
+    public List<OptionUpsertDto> upsertChoiceOptionList(List<OptionUpsertDto> upsertDtoList) {
+        log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 보기 UPSERT");
+
+        List<ChoiceOption> finalList = new ArrayList<>();
+
+        for (OptionUpsertDto upsertDto : upsertDtoList) {
+            Long questionId = upsertDto.getQuestionId();
+            List<OptionDto> requestInfos = upsertDto.getOptionInfoList();
+
+            // 1. DB 저장 보기 전체 조회
+            List<ChoiceOption> prevOptionList = choiceOptionRepository.getOptionsByQuestionId(questionId);
+
+            // 2. Insert/Update 데이터 파티셔닝
+            Map<Boolean, List<OptionDto>> partitionUpsertInfoList = requestInfos.stream()
+                .collect(Collectors.partitioningBy(info -> info.getOptionId() != null));
+
+            List<OptionDto> newInfoList = partitionUpsertInfoList.get(false);
+            List<OptionDto> updateInfoList = partitionUpsertInfoList.get(true);
+
+            // 3. Update 대상 ID 추출
+            Set<Long> updateIdSet = updateInfoList.stream()
+                .map(OptionDto::getOptionId)
+                .collect(Collectors.toSet());
+
+            // 4. Delete 대상 ID 추출 및 삭제
+            Set<Long> deleteIdSet = prevOptionList.stream()
+                .map(ChoiceOption::getChoiceOptionId)
+                .filter(optionId -> !updateIdSet.contains(optionId))
+                .collect(Collectors.toSet());
+            if (!deleteIdSet.isEmpty()) {
+                choiceOptionRepository.deleteAll(deleteIdSet);
+            }
+
+            // 5. Update 대상 수정
+            Map<Long, OptionDto> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
+                OptionDto::getOptionId,
+                Function.identity(),
+                (existing, replace) -> existing
+            ));
+            List<ChoiceOption> updateList = prevOptionList.stream()
+                .filter(option -> updateIdSet.contains(option.getChoiceOptionId()))
+                .toList();
+
+            updateList.forEach(option -> {
+                Long id = option.getChoiceOptionId();
+                OptionDto optionInfo = updateInfoMap.get(id);
+                option.updateOption(
+                    optionInfo.getContent(),
+                    optionInfo.getNextSection(),
+                    optionInfo.getImageUrl()
+                );
+            });
+
+            // 6. Insert 대상 객체 생성
+            List<ChoiceOption> insertList = newInfoList.stream()
+                .map(upsertInfo -> ChoiceOption.of(
+                    questionId,
+                    upsertInfo.getContent(),
+                    upsertInfo.getNextSection(),
+                    upsertInfo.getImageUrl()
+                )).toList();
+
+            finalList.addAll(updateList);
+            finalList.addAll(insertList);
+        }
+
+        // 7. Update/Insert 진행
+        List<ChoiceOption> optionList = choiceOptionRepository.saveAll(finalList);
+
+        log.info("[QUESTION:COMMAND:upsertChoiceOptionList] UPSERT 완료");
+
+        // 8. 반환값 구성
+        Map<Long, List<ChoiceOption>> idOptionListMap = optionList.stream().collect(Collectors.groupingBy(ChoiceOption::getQuestionId));
+        return idOptionListMap.entrySet().stream().map(entry -> {
+            Long questionId = entry.getKey();
+            List<ChoiceOption> savedList = entry.getValue();
+
+            return OptionUpsertDto.builder()
+                .questionId(questionId)
+                .optionInfoList(savedList.stream().map(OptionDto::fromEntity).toList())
+                .build();
+            })
+            .toList();
+    }
+
+    @Override
+    public List<GridOptionUpsertDto> upsertGridOptionList(List<GridOptionUpsertDto> upsertDtoList) {
+        log.info("[QUESTION:COMMAND:upsertGridOptionList] 그리드 문항 행/열 UPSERT");
+
+        List<GridOption> finalList = new ArrayList<>();
+        for (GridOptionUpsertDto upsertDto : upsertDtoList) {
+            Long questionId = upsertDto.getQuestionId();
+            List<GridOptionDto> requestInfos = upsertDto.getGridOptionInfoList();
+
+            // 1. DB 저장 보기 전체 조회
+            List<GridOption> prevOptionList = gridOptionRepository.getGridOptionsByQuestionId(questionId);
+
+            // 2. Insert/Update 데이터 파티셔닝
+            Map<Boolean, List<GridOptionDto>> partitionUpsertInfoList = requestInfos.stream()
+                .collect(Collectors.partitioningBy(info -> info.getGridOptionId() != null));
+
+            List<GridOptionDto> newInfoList = partitionUpsertInfoList.get(false);
+            List<GridOptionDto> updateInfoList = partitionUpsertInfoList.get(true);
+
+            // 3. Update 대상 ID 추출
+            Set<Long> updateIdSet = updateInfoList.stream()
+                .map(GridOptionDto::getGridOptionId)
+                .collect(Collectors.toSet());
+
+            // 4. Delete 대상 ID 추출 및 삭제
+            Set<Long> deleteIdSet = prevOptionList.stream()
+                .map(GridOption::getGridOptionId)
+                .filter(optionId -> !updateIdSet.contains(optionId))
+                .collect(Collectors.toSet());
+            if (!deleteIdSet.isEmpty()) {
+                gridOptionRepository.deleteAll(deleteIdSet);
+            }
+
+            // 5. Update 대상 수정
+            Map<Long, GridOptionDto> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
+                GridOptionDto::getGridOptionId,
+                Function.identity(),
+                (existing, replace) -> existing
+            ));
+            List<GridOption> updateList = prevOptionList.stream()
+                .filter(option -> updateIdSet.contains(option.getGridOptionId()))
+                .toList();
+
+            updateList.forEach(option -> {
+                Long id = option.getGridOptionId();
+                GridOptionDto optionInfo = updateInfoMap.get(id);
+                option.updateGridOption(
+                    optionInfo.getContent(),
+                    optionInfo.getOrder()
+                );
+            });
+
+            // 6. Insert 대상 객체 생성
+            List<GridOption> insertList = newInfoList.stream()
+                .map(upsertInfo -> GridOption.of(
+                    questionId,
+                    upsertInfo.getIsRow(),
+                    upsertInfo.getContent(),
+                    upsertInfo.getOrder()
+                )).toList();
+
+            finalList.addAll(updateList);
+            finalList.addAll(insertList);
+        }
+
+        // 7. Update/Insert 진행
+        List<GridOption> optionList = gridOptionRepository.saveAll(finalList);
+        log.info("[QUESTION:COMMAND:upsertGridOptionList] UPSERT 완료");
+
+        // 8. 반환값 구성
+        Map<Long, List<GridOption>> idOptionListMap = optionList.stream().collect(Collectors.groupingBy(GridOption::getQuestionId));
+        return idOptionListMap.entrySet().stream().map(entry -> {
+                Long questionId = entry.getKey();
+                List<GridOption> savedList = entry.getValue();
+
+                return GridOptionUpsertDto.builder()
+                    .questionId(questionId)
+                    .gridOptionInfoList(savedList.stream().map(GridOptionDto::fromEntity).toList())
+                    .build();
+            })
+            .toList();
+    }
+
+    @Override
+    public List<SectionDto> upsertSections(Long surveyId, List<SectionDto> sectionDtoList) {
+        if (!sectionDtoList.stream().allMatch(SectionDto::isValid)) {
+            log.warn("[QUESTION:COMMAND:upsertSection] 섹션 정보가 유효하지 않습니다. surveyId: {}", surveyId);
+            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_SECTION);
+        }
+
+        Map<Integer, Section> orderSectionMap = sectionRepository.findAllSectionBySurveyId(surveyId).stream()
+            .collect(Collectors.toMap
+                (Section::getSectionOrder, Function.identity())
+            );
+        List<Section> sectionList = sectionDtoList.stream().map(sectionDto -> {
+            if (sectionDto.isNewSection()) {
+                return Section.builder()
+                    .surveyId(surveyId)
+                    .title(sectionDto.title())
+                    .description(sectionDto.description())
+                    .sectionOrder(sectionDto.order())
+                    .nextSection(sectionDto.nextSection())
+                    .build();
+            } else {
+                Section section = orderSectionMap.get(sectionDto.order());
+                section.updateSection(
+                    sectionDto.title(), sectionDto.description(), sectionDto.order(), sectionDto.nextSection()
+                );
+                orderSectionMap.remove(sectionDto.order());
+                return section;
+            }
+        }).toList();
+        List<Section> savedSectionList = List.of();
+        if (!orderSectionMap.isEmpty()) {
+            sectionRepository.deleteAll(orderSectionMap.values().stream().map(Section::getSectionId).toList());
+        }
+        if (!sectionDtoList.isEmpty()) {
+            savedSectionList = sectionRepository.saveAll(sectionList);
+        }
+        if (!savedSectionList.isEmpty()) {
+            Set<Integer> savedSections = savedSectionList.stream().map(Section::getSectionOrder).collect(Collectors.toSet());
+            choiceOptionRepository.deleteBySections(surveyId, savedSections);
+            gridOptionRepository.deleteBySections(surveyId, savedSections);
+            questionRepository.deleteBySurveyIdAndNotInOrder(surveyId, savedSections);
+        }
+
+        return savedSectionList.stream().map(SectionDto::fromEntity).toList();
     }
 
     private void updateQuestion(QuestionUpsertDto.UpsertInfo upsertInfo, Question question) {
@@ -384,228 +592,5 @@ public class QuestionCommandService implements QuestionCommand {
         } else {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
-    }
-
-    @Override
-    public List<OptionUpsertDto> upsertChoiceOptionList(List<OptionUpsertDto> upsertDtoList) {
-        log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 보기 UPSERT");
-
-        List<ChoiceOption> finalList = new ArrayList<>();
-
-        for (OptionUpsertDto upsertDto : upsertDtoList) {
-            Long questionId = upsertDto.getQuestionId();
-            List<OptionDto> requestInfos = upsertDto.getOptionInfoList();
-
-            // 1. DB 저장 보기 전체 조회
-            List<ChoiceOption> prevOptionList = choiceOptionRepository.getOptionsByQuestionId(questionId);
-
-            // 2. Insert/Update 데이터 파티셔닝
-            Map<Boolean, List<OptionDto>> partitionUpsertInfoList = requestInfos.stream()
-                .collect(Collectors.partitioningBy(info -> info.getOptionId() != null));
-
-            List<OptionDto> newInfoList = partitionUpsertInfoList.get(false);
-            List<OptionDto> updateInfoList = partitionUpsertInfoList.get(true);
-
-            // 3. Update 대상 ID 추출
-            Set<Long> updateIdSet = updateInfoList.stream()
-                .map(OptionDto::getOptionId)
-                .collect(Collectors.toSet());
-
-            log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 수정되는 문항: {}, 보기 IDs: {}", questionId, updateIdSet);
-            log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 생성되는 문항: {}, 보기 개수: {}", questionId, newInfoList.size());
-
-            // 4. Delete 대상 ID 추출 및 삭제
-            Set<Long> deleteIdSet = prevOptionList.stream()
-                .map(ChoiceOption::getChoiceOptionId)
-                .filter(optionId -> !updateIdSet.contains(optionId))
-                .collect(Collectors.toSet());
-            if (!deleteIdSet.isEmpty()) {
-                log.info("[QUESTION:COMMAND:upsertChoiceOptionList] 삭제되는 문항: {}, 보기 IDs: {}", questionId, deleteIdSet);
-                choiceOptionRepository.deleteAll(deleteIdSet);
-            }
-
-            // 5. Update 대상 수정
-            Map<Long, OptionDto> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
-                OptionDto::getOptionId,
-                Function.identity(),
-                (existing, replace) -> existing
-            ));
-            List<ChoiceOption> updateList = prevOptionList.stream()
-                .filter(option -> updateIdSet.contains(option.getChoiceOptionId()))
-                .toList();
-
-            updateList.forEach(option -> {
-                Long id = option.getChoiceOptionId();
-                OptionDto optionInfo = updateInfoMap.get(id);
-                option.updateOption(
-                    optionInfo.getContent(),
-                    optionInfo.getNextSection(),
-                    optionInfo.getImageUrl()
-                );
-            });
-
-            // 6. Insert 대상 객체 생성
-            List<ChoiceOption> insertList = newInfoList.stream()
-                .map(upsertInfo -> ChoiceOption.of(
-                    questionId,
-                    upsertInfo.getContent(),
-                    upsertInfo.getNextSection(),
-                    upsertInfo.getImageUrl()
-                )).toList();
-
-            finalList.addAll(updateList);
-            finalList.addAll(insertList);
-        }
-
-        // 7. Update/Insert 진행
-        List<ChoiceOption> optionList = choiceOptionRepository.saveAll(finalList);
-
-        log.info("[QUESTION:COMMAND:upsertChoiceOptionList] UPSERT 완료");
-
-        // 8. 반환값 구성
-        Map<Long, List<ChoiceOption>> idOptionListMap = optionList.stream().collect(Collectors.groupingBy(ChoiceOption::getQuestionId));
-        return idOptionListMap.entrySet().stream().map(entry -> {
-            Long questionId = entry.getKey();
-            List<ChoiceOption> savedList = entry.getValue();
-
-            return OptionUpsertDto.builder()
-                .questionId(questionId)
-                .optionInfoList(savedList.stream().map(OptionDto::fromEntity).toList())
-                .build();
-            })
-            .toList();
-    }
-
-    @Override
-    public List<GridOptionUpsertDto> upsertGridOptionList(List<GridOptionUpsertDto> upsertDtoList) {
-        log.info("[QUESTION:COMMAND:upsertGridOptionList] 그리드 문항 행/열 UPSERT");
-
-        List<GridOption> finalList = new ArrayList<>();
-        for (GridOptionUpsertDto upsertDto : upsertDtoList) {
-            Long questionId = upsertDto.getQuestionId();
-            List<GridOptionDto> requestInfos = upsertDto.getGridOptionInfoList();
-
-            // 1. DB 저장 보기 전체 조회
-            List<GridOption> prevOptionList = gridOptionRepository.getGridOptionsByQuestionId(questionId);
-
-            // 2. Insert/Update 데이터 파티셔닝
-            Map<Boolean, List<GridOptionDto>> partitionUpsertInfoList = requestInfos.stream()
-                .collect(Collectors.partitioningBy(info -> info.getGridOptionId() != null));
-
-            List<GridOptionDto> newInfoList = partitionUpsertInfoList.get(false);
-            List<GridOptionDto> updateInfoList = partitionUpsertInfoList.get(true);
-
-            // 3. Update 대상 ID 추출
-            Set<Long> updateIdSet = updateInfoList.stream()
-                .map(GridOptionDto::getGridOptionId)
-                .collect(Collectors.toSet());
-
-            log.info("[QUESTION:COMMAND:upsertGridOptionList] 수정되는 문항: {}, 보기 IDs: {}", questionId, updateIdSet);
-            log.info("[QUESTION:COMMAND:upsertGridOptionList] 생성되는 문항: {}, 보기 개수: {}", questionId, newInfoList.size());
-
-            // 4. Delete 대상 ID 추출 및 삭제
-            Set<Long> deleteIdSet = prevOptionList.stream()
-                .map(GridOption::getGridOptionId)
-                .filter(optionId -> !updateIdSet.contains(optionId))
-                .collect(Collectors.toSet());
-            if (!deleteIdSet.isEmpty()) {
-                log.info("[QUESTION:COMMAND:upsertGridOptionList] 삭제되는 문항: {}, 보기 IDs: {}", questionId, deleteIdSet);
-                gridOptionRepository.deleteAll(deleteIdSet);
-            }
-
-            // 5. Update 대상 수정
-            Map<Long, GridOptionDto> updateInfoMap = updateInfoList.stream().collect(Collectors.toMap(
-                GridOptionDto::getGridOptionId,
-                Function.identity(),
-                (existing, replace) -> existing
-            ));
-            List<GridOption> updateList = prevOptionList.stream()
-                .filter(option -> updateIdSet.contains(option.getGridOptionId()))
-                .toList();
-
-            updateList.forEach(option -> {
-                Long id = option.getGridOptionId();
-                GridOptionDto optionInfo = updateInfoMap.get(id);
-                option.updateGridOption(
-                    optionInfo.getContent(),
-                    optionInfo.getOrder()
-                );
-            });
-
-            // 6. Insert 대상 객체 생성
-            List<GridOption> insertList = newInfoList.stream()
-                .map(upsertInfo -> GridOption.of(
-                    questionId,
-                    upsertInfo.getIsRow(),
-                    upsertInfo.getContent(),
-                    upsertInfo.getOrder()
-                )).toList();
-
-            finalList.addAll(updateList);
-            finalList.addAll(insertList);
-        }
-
-        // 7. Update/Insert 진행
-        List<GridOption> optionList = gridOptionRepository.saveAll(finalList);
-        log.info("[QUESTION:COMMAND:upsertGridOptionList] UPSERT 완료");
-
-        // 8. 반환값 구성
-        Map<Long, List<GridOption>> idOptionListMap = optionList.stream().collect(Collectors.groupingBy(GridOption::getQuestionId));
-        return idOptionListMap.entrySet().stream().map(entry -> {
-                Long questionId = entry.getKey();
-                List<GridOption> savedList = entry.getValue();
-
-                return GridOptionUpsertDto.builder()
-                    .questionId(questionId)
-                    .gridOptionInfoList(savedList.stream().map(GridOptionDto::fromEntity).toList())
-                    .build();
-            })
-            .toList();
-    }
-
-    @Override
-    public List<SectionDto> upsertSections(Long surveyId, List<SectionDto> sectionDtoList) {
-        if (!sectionDtoList.stream().allMatch(SectionDto::isValid)) {
-            log.warn("[QUESTION:COMMAND:upsertSection] 섹션 정보가 유효하지 않습니다. surveyId: {}", surveyId);
-            throw new CustomException(SurveyErrorCode.SURVEY_FORM_INVALID_SECTION);
-        }
-
-        Map<Integer, Section> orderSectionMap = sectionRepository.findAllSectionBySurveyId(surveyId).stream()
-            .collect(Collectors.toMap
-                (Section::getSectionOrder, Function.identity())
-            );
-        List<Section> sectionList = sectionDtoList.stream().map(sectionDto -> {
-            if (sectionDto.isNewSection()) {
-                return Section.builder()
-                    .surveyId(surveyId)
-                    .title(sectionDto.title())
-                    .description(sectionDto.description())
-                    .sectionOrder(sectionDto.order())
-                    .nextSection(sectionDto.nextSection())
-                    .build();
-            } else {
-                Section section = orderSectionMap.get(sectionDto.order());
-                section.updateSection(
-                    sectionDto.title(), sectionDto.description(), sectionDto.order(), sectionDto.nextSection()
-                );
-                orderSectionMap.remove(sectionDto.order());
-                return section;
-            }
-        }).toList();
-        List<Section> savedSectionList = List.of();
-        if (!orderSectionMap.isEmpty()) {
-            sectionRepository.deleteAll(orderSectionMap.values().stream().map(Section::getSectionId).toList());
-        }
-        if (!sectionDtoList.isEmpty()) {
-            savedSectionList = sectionRepository.saveAll(sectionList);
-        }
-        if (!savedSectionList.isEmpty()) {
-            Set<Integer> savedSections = savedSectionList.stream().map(Section::getSectionOrder).collect(Collectors.toSet());
-            choiceOptionRepository.deleteBySections(surveyId, savedSections);
-            gridOptionRepository.deleteBySections(surveyId, savedSections);
-            questionRepository.deleteBySurveyIdAndNotInOrder(surveyId, savedSections);
-        }
-
-        return savedSectionList.stream().map(SectionDto::fromEntity).toList();
     }
 }
