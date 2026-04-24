@@ -35,4 +35,8 @@ public class GridDto extends DefaultQuestionDto {
             .imageUrl(grid.getImageUrl())
             .build();
     }
+
+    public void updateOptions(List<GridOptionDto> gridOptions) {
+        this.gridOptions = gridOptions;
+    }
 }

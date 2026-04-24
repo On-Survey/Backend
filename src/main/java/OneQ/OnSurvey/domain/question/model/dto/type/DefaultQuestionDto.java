@@ -25,6 +25,8 @@ import lombok.experimental.SuperBuilder;
     @JsonSubTypes.Type(value = ChoiceDto.class, name = "CHOICE"),
     @JsonSubTypes.Type(value = RatingDto.class, name = "RATING"),
     @JsonSubTypes.Type(value = DateDto.class, name = "DATE"),
+    @JsonSubTypes.Type(value = GridDto.class, name = "GRID"),
+    @JsonSubTypes.Type(value = TimeDto.class, name = "TIME")
 })
 public class DefaultQuestionDto {
     private Long questionId;
@@ -33,7 +35,7 @@ public class DefaultQuestionDto {
     @Schema(
         description = "문항 타입 유형",
         allowableValues = {
-            "CHOICE", "RATING", "NPS", "SHORT", "LONG", "NUMBER", "DATE"
+            "CHOICE", "RATING", "NPS", "SHORT", "LONG", "NUMBER", "DATE", "IMAGE", "TITLE", "GRID", "TIME"
         }
     )
     private String questionType;
@@ -60,6 +62,11 @@ public class DefaultQuestionDto {
 
     @JsonIgnore
     public boolean isChoice() {
-        return QuestionType.valueOf(this.questionType).isChoice();
+        return QuestionType.CHOICE.equals(QuestionType.valueOf(this.questionType));
+    }
+
+    @JsonIgnore
+    public boolean isGrid() {
+        return QuestionType.GRID.equals(QuestionType.valueOf(this.questionType));
     }
 }

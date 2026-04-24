@@ -70,4 +70,8 @@ public abstract class Question extends BaseEntity {
     public boolean isChoice() {
         return QuestionType.CHOICE.equals(QuestionType.valueOf(this.type));
     }
+
+    public QuestionType getQuestionType() {
+        return QuestionType.valueOf(this.type);
+    }
 }

@@ -10,7 +10,9 @@ import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DateDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.GridDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.RatingDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.TimeDto;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
@@ -113,6 +115,31 @@ public final class AdminSurveyMapper {
                 yield question.dateProperty(
                     new SurveyQuestion.DateProp(
                         date.getDate() != null ? date.getDate().toLocalDate() : null
+                    )
+                ).build();
+            }
+            case "GRID" -> {
+                GridDto grid = (GridDto) questionDto;
+                yield question.gridProperty(
+                    new SurveyQuestion.GridProp(
+                        grid.getIsCheckBox(),
+                        grid.getIsChoiceMixed(),
+                        grid.getIsChoiceDistinct(),
+                        grid.getGridOptions().stream()
+                            .map(gridOptionDto -> new SurveyQuestion.GridProp.GridOption(
+                                gridOptionDto.getIsRow(),
+                                gridOptionDto.getContent(),
+                                gridOptionDto.getOrder()
+                            ))
+                            .collect(Collectors.toSet())
+                    )
+                ).build();
+            }
+            case "TIME" -> {
+                TimeDto time = (TimeDto) questionDto;
+                yield question.timeProperty(
+                    new SurveyQuestion.TimeProp(
+                        time.getIsInterval()
                     )
                 ).build();
             }

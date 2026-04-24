@@ -34,6 +34,20 @@ public class GridOption {
     @Column
     private String content;
 
-    @Column
+    @Column(name = "GRID_ORDER")
     private Integer order;
+
+    public static GridOption of(Long questionId, Boolean isRow, String content, Integer order) {
+        return GridOption.builder()
+            .questionId(questionId)
+            .isRow(isRow)
+            .content(content)
+            .order(order)
+            .build();
+    }
+
+    public void updateGridOption(String content, Integer order) {
+        this.content = content;
+        this.order = order;
+    }
 }

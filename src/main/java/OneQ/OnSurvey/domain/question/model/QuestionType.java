@@ -35,10 +35,14 @@ public enum QuestionType {
     }
 
     public boolean isText() {
-        return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || NUMBER.equals(this);
+        return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || NUMBER.equals(this) || TIME.equals(this);
     }
 
     public boolean isChoice() {
         return CHOICE.equals(this);
+    }
+
+    public boolean isGrid() {
+        return GRID.equals(this);
     }
 }

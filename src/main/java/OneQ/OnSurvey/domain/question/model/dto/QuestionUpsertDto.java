@@ -3,11 +3,12 @@ package OneQ.OnSurvey.domain.question.model.dto;
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
 import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
+import OneQ.OnSurvey.domain.question.entity.question.Grid;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
+import OneQ.OnSurvey.domain.question.entity.question.Time;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
@@ -34,7 +35,6 @@ public class QuestionUpsertDto {
         Boolean hasNoneOption;
         Boolean hasCustomInput;
         Boolean isSectionDecidable;
-        @Setter
         List<OptionDto> options;
 
         // Rating 필드
@@ -53,6 +53,14 @@ public class QuestionUpsertDto {
 
         // Time 필드
         Boolean isInterval;
+
+        public void updateOptions(List<OptionDto> options) {
+            this.options = options;
+        }
+
+        public void updateGridOptions(List<GridOptionDto> gridOptions) {
+            this.gridOptions = gridOptions;
+        }
     }
 
     public static UpsertInfo fromEntity(Question question) {
@@ -87,6 +95,18 @@ public class QuestionUpsertDto {
             case DATE -> {
                 DateAnswer dateAnswer = (DateAnswer) question;
                 yield builder.defaultDate(dateAnswer.getDefaultDate()).build();
+            }
+            case GRID -> {
+                Grid grid = (Grid) question;
+                yield builder
+                    .isCheckbox(grid.getIsCheckbox())
+                    .isChoiceMixed(grid.getIsChoiceMixed())
+                    .isChoiceDistinct(grid.getIsChoiceDistinct())
+                    .build();
+            }
+            case TIME -> {
+                Time time = (Time) question;
+                yield builder.isInterval(time.getIsInterval()).build();
             }
             default -> builder.build();
         };
