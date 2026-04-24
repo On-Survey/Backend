@@ -40,14 +40,13 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
     ) {
         log.info("[QUESTION_ANSWER_SERVICE] 문항 별 응답결과 조회 - surveyId: {}, filter: {}", surveyId, filter);
 
-        Map<Boolean, List<SurveyManagementDetailResponse.DetailInfo>> typeInfoMap = detailInfoList.stream()
-                .collect(Collectors.partitioningBy(detailInfo -> detailInfo.getType().isText()));
-
-        List<Long> nonTextQuestionIdList = typeInfoMap.get(false).stream()
+        List<Long> textQuestionIdList = detailInfoList.stream()
+                .filter(detailInfo -> detailInfo.getType().isText())
                 .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
                 .toList();
 
-        List<Long> textQuestionIdList = typeInfoMap.get(true).stream()
+        List<Long> nonTextQuestionIdList = detailInfoList.stream()
+                .filter(detailInfo -> !detailInfo.getType().isText())
                 .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
                 .toList();
 
@@ -75,11 +74,25 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
                 : answerRepository.getAnswersByQuestionIds(textQuestionIdList, filter);
 
         Map<Long, Map<String, Long>> nonTextAnswerMap = nonTextAnswerStats.stream()
+                .filter(stats -> stats.getGridRowOrder() == null)
                 .collect(Collectors.groupingBy(
                         AnswerStats::getQuestionId,
                         Collectors.toMap(
                                 AnswerStats::getContent,
                                 AnswerStats::getCount
+                        )
+                ));
+
+        Map<Long, Map<Integer, Map<String, Long>>> gridAnswerMap = nonTextAnswerStats.stream()
+                .filter(stats -> stats.getGridRowOrder() != null)
+                .collect(Collectors.groupingBy(
+                        AnswerStats::getQuestionId,
+                        Collectors.groupingBy(
+                                AnswerStats::getGridRowOrder,
+                                Collectors.toMap(
+                                        AnswerStats::getContent,
+                                        AnswerStats::getCount
+                                )
                         )
                 ));
 
@@ -97,6 +110,25 @@ public class QuestionAnswerQueryService extends AnswerQueryService<QuestionAnswe
                 detailInfo.setAnswerList(
                         textAnswerMap.getOrDefault(questionId, List.of())
                 );
+
+            } else if (questionType.isGrid()) {
+                Map<String, Map<String, Long>> frame = detailInfo.getGridAnswerMap();
+                Map<Integer, Map<String, Long>> rowOrderAnswerMap = gridAnswerMap.getOrDefault(questionId, Map.of());
+
+                List<String> rowKeyList = new ArrayList<>(frame.keySet());
+                rowOrderAnswerMap.forEach((rowOrder, columnAnswerMap) -> {
+                    String rowKey = rowOrder < rowKeyList.size() ? rowKeyList.get(rowOrder) : null;
+                    if (rowKey == null || frame.get(rowKey) == null) {
+                        return;
+                    }
+
+                    Map<String, Long> rowFrame = frame.get(rowKey);
+                    rowFrame.keySet().forEach(col ->
+                        rowFrame.put(col, columnAnswerMap.getOrDefault(col, 0L))
+                    );
+                });
+
+                detailInfo.setGridAnswerMap(frame);
 
             } else if (questionType.isChoice()) {
                 Map<String, Long> frame = detailInfo.getAnswerMap();

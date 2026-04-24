@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.participation.entity.Response;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
 import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
+import OneQ.OnSurvey.domain.question.repository.question.QuestionRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
@@ -15,13 +16,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,14 +28,17 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
     private String surveyLockKeyPrefix;
 
     private final RedisAgent redisAgent;
+    private final QuestionRepository questionRepository;
 
     public QuestionAnswerCommandService(
         AnswerRepository<QuestionAnswer> answerRepository,
         ResponseRepository responseRepository,
-        RedisAgent redisAgent
+        RedisAgent redisAgent,
+        QuestionRepository questionRepository
     ) {
         super(answerRepository, responseRepository);
         this.redisAgent = redisAgent;
+        this.questionRepository = questionRepository;
     }
 
     @Override
@@ -50,70 +50,37 @@ public class QuestionAnswerCommandService extends AnswerCommandService<QuestionA
     @Override
     public Boolean upsertAnswers(AnswerInsertDto insertDto, Long surveyId, Long userKey, Long memberId) {
         log.info("[QUESTION_ANSWER:COMMAND] 문항 응답 생성 - memberId: {}", memberId);
-
-        // 새로운 응답을 questionId 기준으로 그룹화
-        Map<Long, Set<QuestionAnswer>> newQuestionAnswerMap = insertDto.getAnswerInfoList().stream()
-            .map(this::createAnswerFromDto)
-            .collect(Collectors.groupingBy(QuestionAnswer::getQuestionId, Collectors.toSet()));
-        List<Long> questionIdList = newQuestionAnswerMap.keySet().stream().toList();
-
-
         String lockKey = surveyLockKeyPrefix + surveyId + ":" + userKey;
         try {
-            return redisAgent.executeNewTransactionAfterLock(lockKey, 3, () -> {
-                /*
-                    새로운 응답의 questionId로부터 기존 응답 조회 및 그룹화
-                    Phantom Read 방지를 위해 조회 로직도 락 내부에서 실행
-                 */
-                Map<Long, Set<QuestionAnswer>> existingQuestionAnswerMap =
-                    answerRepository.getAnswerListByQuestionIdsAndMemberId(questionIdList, memberId)
-                        .stream()
-                        .collect(Collectors.groupingBy(QuestionAnswer::getQuestionId, Collectors.toSet()));
+            return redisAgent.executeNewTransactionAfterLock(lockKey, 0, () -> {
+                int section = insertDto.getSection();
+                Set<Long> questionIdSet = new HashSet<>(questionRepository.getQuestionIdListBySurveyIdAndSection(surveyId, section));
 
-                // 새로 저장할 응답 리스트
-                List<QuestionAnswer> finalAnswersToSave = new ArrayList<>();
-                // 삭제하지 않을 ID
-                Set<Long> idSetToKeep = new HashSet<>();
+                // 섹션에 해당하는 문항에 대한 응답 제출이 이루어졌는지 검증
+                List<AnswerInsertDto.AnswerInfo> answerInfoList = insertDto.getAnswerInfoList() != null ? insertDto.getAnswerInfoList() : List.of();
+                boolean hasInvalidQuestionId = answerInfoList.stream()
+                    .map(AnswerInsertDto.AnswerInfo::getId)
+                    .anyMatch(questionId -> questionId == null || !questionIdSet.contains(questionId));
+                if (hasInvalidQuestionId) {
+                    log.warn("[QUESTION_ANSWER:COMMAND] 섹션, 문항 ID 불일치 - section: {}", section);
+                    throw new CustomException(SurveyErrorCode.SURVEY_ANSWER_INVALID);
+                }
 
-                questionIdList.forEach(questionId -> {
-                    // questionId에 대한 새로운 응답과 기존 응답의 content 집합 생성
-                    Set<QuestionAnswer> newAnswerContentSet = newQuestionAnswerMap.getOrDefault(questionId, Set.of());
-                    Set<String> newContents = newAnswerContentSet.stream()
-                        .map(QuestionAnswer::getContent)
-                        .map(content -> content == null ? null : content.strip())
-                        .collect(Collectors.toSet());
-                    Set<QuestionAnswer> existingAnswerContentSet = existingQuestionAnswerMap.getOrDefault(questionId, Set.of());
-                    Set<String> existingContents = existingAnswerContentSet.stream()
-                        .map(QuestionAnswer::getContent)
-                        .collect(Collectors.toSet());
+                // 문항이 없는 빈 섹션
+                if (questionIdSet.isEmpty()) {
+                    return true;
+                }
 
-                    // 새로운 응답이 null을 포함한 경우(객관식) 혹은 빈 문자열인 경우(단답/장문), 해당 문항의 기존 응답은 모두 삭제 대상에 남겨둠
-                    if (!newContents.contains(null) && !newContents.contains("")) {
-                        // 새로운 응답 중 기존에 없는 content는 저장 대상에 추가
-                        newAnswerContentSet.stream()
-                            .filter(newAnswer -> !existingContents.contains(newAnswer.getContent()))
-                            .forEach(finalAnswersToSave::add);
-                        // 새로운 응답에 포함된 기존 응답은 삭제 대상에서 제외
-                        existingAnswerContentSet.stream()
-                            .filter(existingAnswer -> newContents.contains(existingAnswer.getContent()))
-                            .map(QuestionAnswer::getAnswerId)
-                            .forEach(idSetToKeep::add);
-                    }
-                });
-                // 삭제할 기존 응답 ID 리스트 (초기값: 기존 응답 전체)
-                List<Long> finalAnswerIdsToDelete = existingQuestionAnswerMap.values().stream()
-                    .flatMap(Collection::stream)
-                    .map(QuestionAnswer::getAnswerId)
-                    .collect(Collectors.toList());
-                finalAnswerIdsToDelete.removeAll(idSetToKeep);
+                List<QuestionAnswer> finalAnswersToSave = answerInfoList.stream()
+                    .filter(info -> info.getContent() != null && !info.getContent().isBlank())
+                    .map(this::createAnswerFromDto)
+                    .peek(answer -> answer.updateContent(answer.getContent().strip()))
+                    .toList();
 
+                answerRepository.deleteBySurveyIdAndSectionAndMemberId(surveyId, section, memberId);
                 if (!finalAnswersToSave.isEmpty()) {
                     answerRepository.saveAll(finalAnswersToSave);
                 }
-                if (!finalAnswerIdsToDelete.isEmpty()) {
-                    answerRepository.deleteAllByIds(finalAnswerIdsToDelete);
-                }
-
                 updateResponseAfterQuestionAnswers(surveyId, memberId);
 
                 return true;

@@ -15,6 +15,9 @@ public interface AnswerRepository<E> {
         return List.of();
     }
 
+    default void deleteBySurveyIdAndSectionAndMemberId(Long surveyId, Integer section, Long memberId) {
+    }
+
     List<AnswerStats> getAggregatedAnswersByQuestionIds(List<Long> questionIdList);
     default List<AnswerStats> getAnswersByQuestionIds(List<Long> questionIdList){
         return List.of();

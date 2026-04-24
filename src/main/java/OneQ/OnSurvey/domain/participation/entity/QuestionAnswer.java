@@ -18,13 +18,17 @@ public class QuestionAnswer extends AbstractAnswer {
     @Column(name = "question_id")
     private Long questionId;
 
+    @Column(name = "GRID_ROW_ORDER")
+    private Integer gridRowOrder;
+
     @Column(length = 512)
     private String content;
 
     @Builder
-    private QuestionAnswer(Long questionId, Long memberId, String content) {
+    private QuestionAnswer(Long questionId, Long memberId, Integer gridRowOrder, String content) {
         this.questionId = questionId;
         this.memberId = memberId;
+        this.gridRowOrder = gridRowOrder;
         this.content = content;
     }
 
@@ -32,6 +36,7 @@ public class QuestionAnswer extends AbstractAnswer {
         return QuestionAnswer.builder()
                 .questionId(info.getId())
                 .memberId(info.getMemberId())
+                .gridRowOrder(info.getGridRowOrder())
                 .content(info.getContent())
                 .build();
     }

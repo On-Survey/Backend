@@ -60,4 +60,17 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     public int countBySurveyId(Long surveyId) {
         return questionJpaRepository.countBySurveyId(surveyId);
     }
+
+    @Override
+    public List<Long> getQuestionIdListBySurveyIdAndSection(Long surveyId, Integer section) {
+        return jpaQueryFactory
+            .select(question.questionId)
+            .from(question)
+            .where(
+                question.surveyId.eq(surveyId),
+                question.section.eq(section)
+            )
+            .orderBy(question.section.asc())
+            .fetch();
+    }
 }

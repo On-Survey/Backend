@@ -21,6 +21,7 @@ import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -248,13 +249,13 @@ public class ParticipationController {
     public SuccessResponse<Boolean> createQuestionAnswer(
         @AuthenticationPrincipal CustomUserDetails principal,
         @PathVariable Long surveyId,
-        @RequestBody InsertQuestionAnswerRequest request
+        @RequestBody @Valid InsertQuestionAnswerRequest request
     ) {
         log.info("[PARTICIPATION] 설문 응답 생성 - surveyId: {}, userKey: {}, request: {}",
             surveyId, principal.getMemberId(), request.toString());
 
-        if (request.isEmpty()) {
-            log.warn("[PARTICIPATION] 빈 응답 생성 요청 - surveyId: {}, userKey: {}", surveyId, principal.getMemberId());
+        if (request.getSection() == null || request.getInfoList() == null) {
+            log.warn("[PARTICIPATION] 유효하지 않은 응답 생성 요청 - surveyId: {}, userKey: {}", surveyId, principal.getMemberId());
             throw new CustomException(SurveyErrorCode.SURVEY_ANSWER_INVALID);
         }
 
