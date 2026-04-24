@@ -262,6 +262,7 @@ public class QuestionCommandService implements QuestionCommand {
                 Long id = option.getGridOptionId();
                 GridOptionDto optionInfo = updateInfoMap.get(id);
                 option.updateGridOption(
+
                     optionInfo.getContent(),
                     optionInfo.getOrder()
                 );

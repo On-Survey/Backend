@@ -13,7 +13,7 @@ import java.util.List;
 @Getter @SuperBuilder @ToString(callSuper = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GridDto extends DefaultQuestionDto {
-    private Boolean isCheckBox;
+    private Boolean isCheckbox;
     private Boolean isChoiceMixed;
     private Boolean isChoiceDistinct;
 
@@ -21,7 +21,7 @@ public class GridDto extends DefaultQuestionDto {
 
     public static GridDto fromEntity(Grid grid) {
         return GridDto.builder()
-            .isCheckBox(grid.getIsCheckbox())
+            .isCheckbox(grid.getIsCheckbox())
             .isChoiceMixed(grid.getIsChoiceMixed())
             .isChoiceDistinct(grid.getIsChoiceDistinct())
             .questionId(grid.getQuestionId())
@@ -36,7 +36,7 @@ public class GridDto extends DefaultQuestionDto {
             .build();
     }
 
-    public void updateOptions(List<GridOptionDto> gridOptions) {
+    public void updateGridOptions(List<GridOptionDto> gridOptions) {
         this.gridOptions = gridOptions;
     }
 }

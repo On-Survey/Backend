@@ -62,11 +62,11 @@ public class DefaultQuestionDto {
 
     @JsonIgnore
     public boolean isChoice() {
-        return QuestionType.CHOICE.equals(QuestionType.valueOf(this.questionType));
+        return QuestionType.CHOICE.name().equals(this.questionType);
     }
 
     @JsonIgnore
     public boolean isGrid() {
-        return QuestionType.GRID.equals(QuestionType.valueOf(this.questionType));
+        return QuestionType.GRID.name().equals(this.questionType);
     }
 }

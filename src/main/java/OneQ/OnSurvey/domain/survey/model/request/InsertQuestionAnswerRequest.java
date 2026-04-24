@@ -28,6 +28,7 @@ public class InsertQuestionAnswerRequest {
             ]
             """
     )
+    @NotNull
     private List<QuestionAnswerInfo> infoList;
 
     @Getter @AllArgsConstructor

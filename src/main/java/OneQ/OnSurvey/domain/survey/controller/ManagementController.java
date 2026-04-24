@@ -106,72 +106,70 @@ public class ManagementController {
                 Collectors.mapping(SurveyManagementDetailResponse.DetailInfo::getQuestionId, Collectors.toList())
             ));
 
-        if (!typeIdMap.isEmpty()) {
-            List<Long> choiceIdList = typeIdMap.getOrDefault(QuestionType.CHOICE, List.of());
-            if (!choiceIdList.isEmpty()) {
-                List<OptionDto> optionInfoList = questionQuery.getOptionsByQuestionIdList(choiceIdList);
-                Map<Long, List<OptionDto>> questionIdOptionInfoMap = optionInfoList.stream()
-                    .collect(Collectors.groupingBy(OptionDto::getQuestionId));
+        List<Long> choiceIdList = typeIdMap.getOrDefault(QuestionType.CHOICE, List.of());
+        if (!choiceIdList.isEmpty()) {
+            List<OptionDto> optionInfoList = questionQuery.getOptionsByQuestionIdList(choiceIdList);
+            Map<Long, List<OptionDto>> questionIdOptionInfoMap = optionInfoList.stream()
+                .collect(Collectors.groupingBy(OptionDto::getQuestionId));
 
-                detailInfoList.stream()
-                    .filter(detailInfo -> detailInfo.getType().isChoice())
-                    .forEach(detailInfo -> {
-                        List<OptionDto> optionDtoList = questionIdOptionInfoMap.getOrDefault(detailInfo.getQuestionId(), List.of());
+            detailInfoList.stream()
+                .filter(detailInfo -> detailInfo.getType().isChoice())
+                .forEach(detailInfo -> {
+                    List<OptionDto> optionDtoList = questionIdOptionInfoMap.getOrDefault(detailInfo.getQuestionId(), List.of());
 
-                        Map<String, Long> contentMap = optionDtoList.stream()
-                            .sorted(Comparator.comparingLong(OptionDto::getOptionId))
-                            .collect(Collectors.toMap(
-                                OptionDto::getContent,
-                                dto -> 0L,
+                    Map<String, Long> contentMap = optionDtoList.stream()
+                        .sorted(Comparator.comparingLong(OptionDto::getOptionId))
+                        .collect(Collectors.toMap(
+                            OptionDto::getContent,
+                            dto -> 0L,
+                            (existing, replacement) -> existing,
+                            LinkedHashMap::new
+                        ));
+                    detailInfo.setAnswerMap(contentMap.isEmpty() ? Map.of() : contentMap);
+                });
+        }
+
+        List<Long> gridIdList = typeIdMap.getOrDefault(QuestionType.GRID, List.of());
+        if (!gridIdList.isEmpty()) {
+            List<GridOptionDto> gridOptionInfoList = questionQuery.getGridOptionsByQuestionIdList(gridIdList);
+            Map<Long, List<GridOptionDto>> questionIdGridOptionInfoMap = gridOptionInfoList.stream()
+                .collect(Collectors.groupingBy(GridOptionDto::getQuestionId));
+            detailInfoList.stream()
+                .filter(detailInfo -> detailInfo.getType().isGrid())
+                .forEach(detailInfo -> {
+                    List<GridOptionDto> optionDtoList = questionIdGridOptionInfoMap.getOrDefault(detailInfo.getQuestionId(), List.of());
+
+                    Comparator<GridOptionDto> comparator = Comparator.comparing(
+                        GridOptionDto::getOrder,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                    );
+                    List<String> rowList = optionDtoList.stream()
+                        .filter(dto -> Boolean.TRUE.equals(dto.getIsRow()))
+                        .sorted(comparator)
+                        .map(GridOptionDto::getContent)
+                        .toList();
+
+                    List<String> columnList = optionDtoList.stream()
+                        .filter(dto -> Boolean.FALSE.equals(dto.getIsRow()))
+                        .sorted(comparator)
+                        .map(GridOptionDto::getContent)
+                        .toList();
+
+                    Map<String, Map<String, Long>> gridMap = rowList.stream()
+                        .collect(Collectors.toMap(
+                            row -> row,
+                            row -> columnList.stream().collect(Collectors.toMap(
+                                column -> column,
+                                column -> 0L,
                                 (existing, replacement) -> existing,
                                 LinkedHashMap::new
-                            ));
-                        detailInfo.setAnswerMap(contentMap.isEmpty() ? Map.of() : contentMap);
-                    });
-            }
+                            )),
+                            (existing, replacement) -> existing,
+                            LinkedHashMap::new
+                        ));
 
-            List<Long> gridIdList = typeIdMap.getOrDefault(QuestionType.GRID, List.of());
-            if (!gridIdList.isEmpty()) {
-                List<GridOptionDto> gridOptionInfoList = questionQuery.getGridOptionsByQuestionIdList(gridIdList);
-                Map<Long, List<GridOptionDto>> questionIdGridOptionInfoMap = gridOptionInfoList.stream()
-                    .collect(Collectors.groupingBy(GridOptionDto::getQuestionId));
-                detailInfoList.stream()
-                    .filter(detailInfo -> detailInfo.getType().isGrid())
-                    .forEach(detailInfo -> {
-                        List<GridOptionDto> optionDtoList = questionIdGridOptionInfoMap.getOrDefault(detailInfo.getQuestionId(), List.of());
-
-                        Comparator<GridOptionDto> comparator = Comparator.comparing(
-                            GridOptionDto::getOrder,
-                            Comparator.nullsLast(Comparator.naturalOrder())
-                        );
-                        List<String> rowList = optionDtoList.stream()
-                            .filter(dto -> Boolean.TRUE.equals(dto.getIsRow()))
-                            .sorted(comparator)
-                            .map(GridOptionDto::getContent)
-                            .toList();
-
-                        List<String> columnList = optionDtoList.stream()
-                            .filter(dto -> Boolean.FALSE.equals(dto.getIsRow()))
-                            .sorted(comparator)
-                            .map(GridOptionDto::getContent)
-                            .toList();
-
-                        Map<String, Map<String, Long>> gridMap = rowList.stream()
-                            .collect(Collectors.toMap(
-                                row -> row,
-                                row -> columnList.stream().collect(Collectors.toMap(
-                                    column -> column,
-                                    column -> 0L,
-                                    (existing, replacement) -> existing,
-                                    LinkedHashMap::new
-                                )),
-                                (existing, replacement) -> existing,
-                                LinkedHashMap::new
-                            ));
-
-                        detailInfo.setGridAnswerMap(gridMap.isEmpty() ? Map.of() : gridMap);
-                    });
-            }
+                    detailInfo.setGridAnswerMap(gridMap.isEmpty() ? Map.of() : gridMap);
+                });
         }
 
         detailInfoList = answerQuery.getDetailInfo(surveyId, filter, detailInfoList);

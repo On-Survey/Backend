@@ -254,11 +254,6 @@ public class ParticipationController {
         log.info("[PARTICIPATION] 설문 응답 생성 - surveyId: {}, userKey: {}, request: {}",
             surveyId, principal.getMemberId(), request.toString());
 
-        if (request.getSection() == null || request.getInfoList() == null) {
-            log.warn("[PARTICIPATION] 유효하지 않은 응답 생성 요청 - surveyId: {}, userKey: {}", surveyId, principal.getMemberId());
-            throw new CustomException(SurveyErrorCode.SURVEY_ANSWER_INVALID);
-        }
-
         AnswerInsertDto answerInsertDto = request.toDto(principal.getMemberId());
 
         return SuccessResponse.ok(questionAnswerCommand.upsertAnswers(answerInsertDto, surveyId, principal.getUserKey(), principal.getMemberId()));

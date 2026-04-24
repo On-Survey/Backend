@@ -12,16 +12,16 @@ import lombok.ToString;
 
 @Getter @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity @Table(name = "question_answer")
+@Entity @Table(name = "QUESTION_ANSWER")
 public class QuestionAnswer extends AbstractAnswer {
 
-    @Column(name = "question_id")
+    @Column(name = "QUESTION_ID", nullable = false)
     private Long questionId;
 
     @Column(name = "GRID_ROW_ORDER")
     private Integer gridRowOrder;
 
-    @Column(length = 512)
+    @Column(length = 512, nullable = false)
     private String content;
 
     @Builder

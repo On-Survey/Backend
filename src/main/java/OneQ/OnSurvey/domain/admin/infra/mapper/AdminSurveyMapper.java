@@ -122,7 +122,7 @@ public final class AdminSurveyMapper {
                 GridDto grid = (GridDto) questionDto;
                 yield question.gridProperty(
                     new SurveyQuestion.GridProp(
-                        grid.getIsCheckBox(),
+                        grid.getIsCheckbox(),
                         grid.getIsChoiceMixed(),
                         grid.getIsChoiceDistinct(),
                         grid.getGridOptions().stream()

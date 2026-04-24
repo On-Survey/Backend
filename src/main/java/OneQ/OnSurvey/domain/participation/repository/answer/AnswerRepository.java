@@ -2,6 +2,8 @@ package OneQ.OnSurvey.domain.participation.repository.answer;
 
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerStats;
 import OneQ.OnSurvey.domain.survey.model.SurveyResponseFilterCondition;
+import OneQ.OnSurvey.global.common.exception.CustomException;
+import OneQ.OnSurvey.global.common.exception.ErrorCode;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,6 +18,7 @@ public interface AnswerRepository<E> {
     }
 
     default void deleteBySurveyIdAndSectionAndMemberId(Long surveyId, Integer section, Long memberId) {
+        throw new CustomException(ErrorCode.SERVER_UNTRACKED_ERROR);
     }
 
     List<AnswerStats> getAggregatedAnswersByQuestionIds(List<Long> questionIdList);

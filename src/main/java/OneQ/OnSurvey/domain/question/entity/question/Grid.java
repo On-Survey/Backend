@@ -76,8 +76,8 @@ public class Grid extends Question {
         Boolean isChoiceDistinct
     ) {
         super.updateQuestion(title, description, isRequired, order, section, imageUrl);
-        this.isCheckbox = isCheckbox;
-        this.isChoiceMixed = isChoiceMixed;
-        this.isChoiceDistinct = isChoiceDistinct;
+        this.isCheckbox = isCheckbox != null ? isCheckbox : false;
+        this.isChoiceMixed = isChoiceMixed != null ? isChoiceMixed : false;
+        this.isChoiceDistinct = isChoiceDistinct != null ? isChoiceDistinct : false;
     }
 }

@@ -81,7 +81,7 @@ public class FormConverter {
                     case GRID -> {
                         GridDto gridDto = (GridDto) q;
                         yield builder
-                            .isCheckbox(gridDto.getIsCheckBox())
+                            .isCheckbox(gridDto.getIsCheckbox())
                             .isChoiceMixed(gridDto.getIsChoiceMixed())
                             .isChoiceDistinct(gridDto.getIsChoiceDistinct())
                             .gridOptions(gridDto.getGridOptions())
@@ -110,6 +110,7 @@ public class FormConverter {
             List<QuestionUpsertDto.UpsertInfo> savedInfoList = savedQuestions.getUpsertInfoList();
             savedInfoList.stream()
                 .filter(info -> info.getQuestionType().isChoice() || info.getQuestionType().isGrid())
+                .filter(info -> upsertInfoList.get(info.getQuestionOrder()) != null)
                 .forEach(info -> {
                     QuestionUpsertDto.UpsertInfo originalInfo = upsertInfoList.get(info.getQuestionOrder());
                     if (originalInfo.getQuestionType().isChoice() && originalInfo.getOptions() != null) {

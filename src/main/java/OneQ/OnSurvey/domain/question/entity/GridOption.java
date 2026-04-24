@@ -31,10 +31,10 @@ public class GridOption {
     @Builder.Default
     private Boolean isRow = false;
 
-    @Column
+    @Column(nullable = false)
     private String content;
 
-    @Column(name = "GRID_ORDER")
+    @Column(name = "GRID_ORDER", nullable = false)
     private Integer order;
 
     public static GridOption of(Long questionId, Boolean isRow, String content, Integer order) {

@@ -96,7 +96,7 @@ public class QuestionQueryService implements QuestionQuery {
                 } else if (dto.isGrid()) {
                     GridDto gridDto = (GridDto) dto;
                     List<GridOption> gridOptionList = gridIdOptionMap.getOrDefault(dto.getQuestionId(), List.of());
-                    gridDto.updateOptions(gridOptionList.stream().map(GridOptionDto::fromEntity).toList());
+                    gridDto.updateGridOptions(gridOptionList.stream().map(GridOptionDto::fromEntity).toList());
                 }
             })
             .toList();

@@ -66,7 +66,7 @@ public class QuestionConverter {
                 .maxValue(ratingDto.getMaxValue())
                 .rate(ratingDto.getRate());
             case DateDto dateDto -> builder.defaultDate(dateDto.getDate());
-            case GridDto gridDto -> builder.isCheckbox(gridDto.getIsCheckBox())
+            case GridDto gridDto -> builder.isCheckbox(gridDto.getIsCheckbox())
                 .isChoiceMixed(gridDto.getIsChoiceMixed() != null ? gridDto.getIsChoiceMixed() : false)
                 .isChoiceDistinct(gridDto.getIsChoiceDistinct() != null ? gridDto.getIsChoiceDistinct() : false)
                 .gridOptions(gridDto.getGridOptions().stream().map(option ->

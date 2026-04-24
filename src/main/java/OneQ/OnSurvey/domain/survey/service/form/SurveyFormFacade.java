@@ -256,7 +256,7 @@ public class SurveyFormFacade implements SurveyFormUseCase {
                     if (optionInfoList != null) {
                         upsertInfo.updateOptions(optionInfoList.getOptionInfoList());
                     }
-                } else {
+                } else if (upsertInfo.getQuestionType().isGrid()){
                     GridOptionUpsertDto gridOptionUpsertDto = gridOptionDtoMap.get(questionId);
                     if (gridOptionUpsertDto != null) {
                         upsertInfo.updateGridOptions(gridOptionUpsertDto.getGridOptionInfoList());

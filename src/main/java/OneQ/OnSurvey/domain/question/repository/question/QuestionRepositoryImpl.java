@@ -70,7 +70,7 @@ public class QuestionRepositoryImpl implements QuestionRepository {
                 question.surveyId.eq(surveyId),
                 question.section.eq(section)
             )
-            .orderBy(question.section.asc())
+            .orderBy(question.order.asc())
             .fetch();
     }
 }
