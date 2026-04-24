@@ -1,7 +1,10 @@
 package OneQ.OnSurvey.domain.participation.service.response;
 
+import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.entity.Response;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationCompletionDto;
 import OneQ.OnSurvey.domain.participation.model.event.SurveyCompletedEvent;
+import OneQ.OnSurvey.domain.participation.repository.answer.AnswerRepository;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
@@ -29,6 +32,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ResponseCommandService implements ResponseCommand {
 
+    private final AnswerRepository<QuestionAnswer> answerRepository;
     private final ResponseRepository responseRepository;
     private final SurveyRepository surveyRepository;
     private final SurveyInfoRepository surveyInfoRepository;
@@ -51,7 +55,8 @@ public class ResponseCommandService implements ResponseCommand {
     private String creatorKey;
 
     @Override
-    public Boolean createResponse(Long surveyId, Long memberId, Long userKey) {
+    public Boolean createResponse(ParticipationCompletionDto dto) {
+        long surveyId = dto.surveyId(), memberId = dto.memberId(), userKey = dto.userKey();
         try {
             return redisAgent.executeNewTransactionAfterLock(surveyLockKeyPrefix + surveyId + ":" + userKey, 3, () -> {
                 Response response = responseRepository
@@ -62,9 +67,9 @@ public class ResponseCommandService implements ResponseCommand {
                     throw new CustomException(SurveyErrorCode.SURVEY_ALREADY_PARTICIPATED);
                 }
 
-
                 response.markResponded();
                 responseRepository.save(response);
+                answerRepository.deleteInvalidSectionQuestionAnswer(surveyId, memberId, dto.visitedSectionList());
                 surveyGlobalStatsService.addCompletedCount(1);
                 surveyInfoRepository.increaseCompletedCount(surveyId);
 

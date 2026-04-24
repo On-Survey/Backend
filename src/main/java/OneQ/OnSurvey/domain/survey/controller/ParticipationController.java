@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.survey.controller;
 import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationCompletionDto;
 import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseCommand;
@@ -13,6 +14,7 @@ import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
+import OneQ.OnSurvey.domain.survey.model.request.SurveyParticipationCompletionRequest;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
@@ -262,12 +264,20 @@ public class ParticipationController {
     @PostMapping("surveys/{surveyId}/complete")
     @Operation(summary = "설문 작성을 완료합니다.")
     public SuccessResponse<Boolean> completeSurvey(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @PathVariable Long surveyId
-    ) {
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @PathVariable Long surveyId,
+        @RequestBody SurveyParticipationCompletionRequest request
+        ) {
         log.info("[PARTICIPATION] 설문 완료 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
 
-        Boolean result = responseCommand.createResponse(surveyId, principal.getMemberId(), principal.getUserKey());
+        ParticipationCompletionDto dto = ParticipationCompletionDto.builder()
+            .surveyId(surveyId)
+            .memberId(principal.getMemberId())
+            .userKey(principal.getUserKey())
+            .visitedSectionList(request.visitedSections())
+            .build();
+
+        Boolean result = responseCommand.createResponse(dto);
         return SuccessResponse.ok(result);
     }
 

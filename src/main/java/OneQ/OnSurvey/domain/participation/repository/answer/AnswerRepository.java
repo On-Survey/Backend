@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.participation.repository.answer;
 
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerStats;
+import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.model.SurveyResponseFilterCondition;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.exception.ErrorCode;
@@ -45,5 +46,8 @@ public interface AnswerRepository<E> {
             SurveyResponseFilterCondition filter
     ) {
         return List.of();
+    }
+    default void deleteInvalidSectionQuestionAnswer(long surveyId, long memberId, Collection<Integer> visitedSectionList) {
+        throw new CustomException(SurveyErrorCode.SURVEY_PARTICIPATION_INVALID_SECTION_REMAIN);
     }
 }

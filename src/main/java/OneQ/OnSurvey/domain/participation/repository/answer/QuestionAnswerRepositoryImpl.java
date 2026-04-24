@@ -210,6 +210,29 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
             .execute();
     }
 
+    @Override
+    public void deleteInvalidSectionQuestionAnswer(long surveyId, long memberId, Collection<Integer> visitedSectionList) {
+        if (visitedSectionList == null) {
+            visitedSectionList = List.of();
+        }
+
+        jpaQueryFactory.delete(questionAnswer)
+            .where(
+                questionAnswer.questionId.in(JPAExpressions
+                    .select(
+                        question.questionId
+                    )
+                    .from(question)
+                    .where(
+                        question.surveyId.eq(surveyId),
+                        question.section.notIn(visitedSectionList)
+                    )
+                ),
+                questionAnswer.memberId.eq(memberId)
+            )
+            .execute();
+    }
+
     private BooleanExpression buildGenderCondition(EnumPath<Gender> genderPath, List<Gender> genders) {
         if (genders == null || genders.isEmpty()) return null;
         if (genders.contains(Gender.ALL)) return null;
