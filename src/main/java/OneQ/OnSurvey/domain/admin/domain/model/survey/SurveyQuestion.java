@@ -18,7 +18,9 @@ public record SurveyQuestion(
 
     ChoiceProp choiceProperty,
     RatingProp ratingProperty,
-    DateProp dateProperty
+    DateProp dateProperty,
+    GridProp gridProperty,
+    TimeProp timeProperty
 ) {
     public record ChoiceProp (
         Integer maxChoice,
@@ -43,5 +45,23 @@ public record SurveyQuestion(
 
     public record DateProp (
         LocalDate defaultDate
+    ) {}
+
+    public record GridProp (
+        Boolean isCheckbox,
+        Boolean isChoiceMixed,
+        Boolean isChoiceDistinct,
+
+        Set<GridOption> gridOptions
+    ) {
+        public record GridOption (
+            Boolean isRow,
+            String content,
+            Integer order
+        ) {}
+    }
+
+    public record TimeProp (
+        Boolean isInterval
     ) {}
 }

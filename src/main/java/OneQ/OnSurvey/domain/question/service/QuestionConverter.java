@@ -3,14 +3,19 @@ package OneQ.OnSurvey.domain.question.service;
 import OneQ.OnSurvey.domain.question.entity.Question;
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
 import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
+import OneQ.OnSurvey.domain.question.entity.question.Grid;
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
+import OneQ.OnSurvey.domain.question.entity.question.Time;
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.GridOptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DateDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.GridDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.RatingDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.TimeDto;
 
 import java.util.List;
 
@@ -61,6 +66,18 @@ public class QuestionConverter {
                 .maxValue(ratingDto.getMaxValue())
                 .rate(ratingDto.getRate());
             case DateDto dateDto -> builder.defaultDate(dateDto.getDate());
+            case GridDto gridDto -> builder.isCheckbox(gridDto.getIsCheckbox())
+                .isChoiceMixed(gridDto.getIsChoiceMixed() != null ? gridDto.getIsChoiceMixed() : false)
+                .isChoiceDistinct(gridDto.getIsChoiceDistinct() != null ? gridDto.getIsChoiceDistinct() : false)
+                .gridOptions(gridDto.getGridOptions().stream().map(option ->
+                    GridOptionDto.builder()
+                        .gridOptionId(option.getGridOptionId())
+                        .isRow(option.getIsRow())
+                        .content(option.getContent())
+                        .order(option.getOrder()).build()
+                    ).toList()
+                );
+            case TimeDto timeDto -> builder.isInterval(timeDto.getIsInterval() != null ? timeDto.getIsInterval() : false);
             default -> {
             }
         }
@@ -69,14 +86,13 @@ public class QuestionConverter {
     }
 
     public static DefaultQuestionDto toQuestionDto(Question question) {
-        if (question instanceof Choice choice) {
-            return ChoiceDto.fromEntity(choice);
-        } else if (question instanceof Rating rating) {
-            return RatingDto.fromEntity(rating);
-        } else if (question instanceof DateAnswer dateAnswer) {
-            return DateDto.fromEntity(dateAnswer);
-        } else {
-            return DefaultQuestionDto.fromEntity(question);
-        }
+        return switch (question) {
+            case Choice choice -> ChoiceDto.fromEntity(choice);
+            case Rating rating -> RatingDto.fromEntity(rating);
+            case DateAnswer dateAnswer -> DateDto.fromEntity(dateAnswer);
+            case Grid grid -> GridDto.fromEntity(grid);
+            case Time time -> TimeDto.fromEntity(time);
+            default -> DefaultQuestionDto.fromEntity(question);
+        };
     }
 }

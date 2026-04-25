@@ -46,9 +46,27 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
     }
 
     @Override
+    public void deleteBySurveyIdAndSectionAndMemberId(Long surveyId, Integer section, Long memberId) {
+        jpaQueryFactory.delete(questionAnswer)
+            .where(
+                questionAnswer.memberId.eq(memberId),
+                questionAnswer.questionId.in(
+                    JPAExpressions.select(question.questionId)
+                        .from(question)
+                        .where(
+                            question.surveyId.eq(surveyId),
+                            question.section.eq(section)
+                        )
+                )
+            )
+            .execute();
+    }
+
+    @Override
     public List<AnswerStats> getAggregatedAnswersByQuestionIds(List<Long> questionIdList) {
         return jpaQueryFactory.select(Projections.constructor(AnswerStats.class,
                 questionAnswer.questionId,
+                questionAnswer.gridRowOrder,
                 questionAnswer.content,
                 questionAnswer.answerId.count()
             ))
@@ -60,7 +78,7 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                 questionAnswer.questionId.in(questionIdList),
                 response.isResponded.isTrue()
             )
-            .groupBy(questionAnswer.questionId, questionAnswer.content)
+            .groupBy(questionAnswer.questionId, questionAnswer.gridRowOrder, questionAnswer.content)
             .orderBy(questionAnswer.questionId.asc())
             .fetch();
     }
@@ -95,6 +113,7 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                 .select(Projections.constructor(
                         AnswerStats.class,
                         questionAnswer.questionId,
+                        questionAnswer.gridRowOrder,
                         questionAnswer.content,
                         questionAnswer.answerId.count()
                 ))
@@ -110,7 +129,7 @@ public class QuestionAnswerRepositoryImpl extends AbstractAnswerRepository<Quest
                         buildGenderCondition(member.gender, effective.genders()),
                         buildResidenceCondition(member.residence, effective.residences())
                 )
-                .groupBy(questionAnswer.questionId, questionAnswer.content)
+                .groupBy(questionAnswer.questionId, questionAnswer.gridRowOrder, questionAnswer.content)
                 .orderBy(questionAnswer.questionId.asc())
                 .fetch();
     }

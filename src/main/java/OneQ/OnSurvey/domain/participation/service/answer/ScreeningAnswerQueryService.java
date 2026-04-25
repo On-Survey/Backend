@@ -32,8 +32,6 @@ public class ScreeningAnswerQueryService extends AnswerQueryService<ScreeningAns
             .map(SurveyManagementDetailResponse.DetailInfo::getQuestionId)
             .toList();
 
-        log.info("[SCREENING_ANSWER_SERVICE] 응답을 조회할 스크리닝 IDs - screeningIds: {}", screeningIdList);
-
         List<AnswerStats> screeningAnswerStats = answerRepository.getAggregatedAnswersByQuestionIds(screeningIdList);
 
         Map<Long, Map<String, Long>> screeningAnswerMap = screeningAnswerStats.stream()

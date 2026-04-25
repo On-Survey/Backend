@@ -47,7 +47,7 @@ public abstract class Question extends BaseEntity {
     @Column(name = "image_url", columnDefinition = "TEXT")
     protected String imageUrl;
 
-    public void updateQuestion(
+    protected void updateQuestion(
         String title,
         String description,
         Boolean isRequired,
@@ -63,11 +63,7 @@ public abstract class Question extends BaseEntity {
         this.imageUrl = imageUrl;
     }
 
-    public void updateOrder(Integer order) {
-        this.order = order;
-    }
-
-    public boolean isChoice() {
-        return QuestionType.CHOICE.equals(QuestionType.valueOf(this.type));
+    public QuestionType getQuestionType() {
+        return QuestionType.valueOf(this.type);
     }
 }

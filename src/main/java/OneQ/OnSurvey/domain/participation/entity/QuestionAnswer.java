@@ -12,19 +12,23 @@ import lombok.ToString;
 
 @Getter @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity @Table(name = "question_answer")
+@Entity @Table(name = "QUESTION_ANSWER")
 public class QuestionAnswer extends AbstractAnswer {
 
-    @Column(name = "question_id")
+    @Column(name = "QUESTION_ID", nullable = false)
     private Long questionId;
 
-    @Column(length = 512)
+    @Column(name = "GRID_ROW_ORDER")
+    private Integer gridRowOrder;
+
+    @Column(length = 512, nullable = false)
     private String content;
 
     @Builder
-    private QuestionAnswer(Long questionId, Long memberId, String content) {
+    private QuestionAnswer(Long questionId, Long memberId, Integer gridRowOrder, String content) {
         this.questionId = questionId;
         this.memberId = memberId;
+        this.gridRowOrder = gridRowOrder;
         this.content = content;
     }
 
@@ -32,6 +36,7 @@ public class QuestionAnswer extends AbstractAnswer {
         return QuestionAnswer.builder()
                 .questionId(info.getId())
                 .memberId(info.getMemberId())
+                .gridRowOrder(info.getGridRowOrder())
                 .content(info.getContent())
                 .build();
     }
