@@ -9,4 +9,6 @@ public class SurveyQuestionHeader {
     private final Long questionId;
     private final Integer orderNo;
     private final String title;
+    private final Integer rowOrder;
+    private final String rowContent;
 }
