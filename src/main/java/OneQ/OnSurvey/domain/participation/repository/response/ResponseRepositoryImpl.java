@@ -140,7 +140,7 @@ public class ResponseRepositoryImpl implements ResponseRepository {
         }
 
         return Expressions.booleanTemplate(
-                "(YEAR(CURDATE()) - CAST(SUBSTRING({0}, 1, 4) AS long)) BETWEEN {1} AND {2}",
+                "(YEAR(CURDATE()) - CAST(SUBSTRING({0}, 1, 4) AS long) + 1) BETWEEN {1} AND {2}",
                 birthDayPath, minAge, maxAge
         );
     }
