@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.*;
 
 import static OneQ.OnSurvey.domain.survey.SurveyErrorCode.SURVEY_FORBIDDEN;
@@ -165,16 +164,10 @@ public class SurveyExportService implements SurveyExport {
         if (digits.length() < 4) return null;
 
         int year;
-        int month = 1;
-        int day = 1;
 
         try {
             year = Integer.parseInt(digits.substring(0, 4));
-            if (digits.length() >= 6) month = Integer.parseInt(digits.substring(4, 6));
-            if (digits.length() >= 8) day = Integer.parseInt(digits.substring(6, 8));
-
-            LocalDate dob = LocalDate.of(year, month, day);
-            return Period.between(dob, LocalDate.now()).getYears();
+            return LocalDate.now().getYear() - year + 1;
         } catch (Exception e) {
             return null;
         }
