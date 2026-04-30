@@ -13,6 +13,7 @@ import java.util.List;
 import static OneQ.OnSurvey.domain.member.QMember.member;
 import static OneQ.OnSurvey.domain.participation.entity.QQuestionAnswer.questionAnswer;
 import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
+import static OneQ.OnSurvey.domain.question.entity.QGridOption.gridOption;
 import static OneQ.OnSurvey.domain.question.entity.QQuestion.question;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 
@@ -29,11 +30,17 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                         SurveyQuestionHeader.class,
                         question.questionId,
                         question.order,
-                        question.title
+                        question.title,
+                        gridOption.order.coalesce(0),
+                        gridOption.content
                 ))
                 .from(question)
+                .leftJoin(gridOption).on(
+                    question.questionId.eq(gridOption.questionId),
+                    gridOption.isRow.isTrue()
+                )
                 .where(question.surveyId.eq(surveyId))
-                .orderBy(question.order.asc())
+                .orderBy(question.order.asc(), gridOption.order.asc())
                 .fetch();
     }
 
@@ -64,12 +71,14 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                         SurveyAnswerProjection.class,
                         questionAnswer.memberId,
                         questionAnswer.questionId,
-                        questionAnswer.content
+                        questionAnswer.content,
+                        questionAnswer.gridRowOrder.coalesce(0)
                 ))
                 .from(questionAnswer)
                 .join(question).on(question.questionId.eq(questionAnswer.questionId))
                 .join(response).on(response.surveyId.eq(surveyId).and(response.memberId.eq(questionAnswer.memberId)))
                 .where(question.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
+                .orderBy(response.updatedAt.asc(), question.order.asc(), questionAnswer.gridRowOrder.asc())
                 .fetch();
     }
 

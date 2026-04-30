@@ -55,10 +55,11 @@ public class SurveyExportService implements SurveyExport {
             log.info("[SurveyExport] fetched. surveyId={}, questions={}, members={}, answers={}",
                     surveyId, headers.size(), members.size(), answers.size());
 
-            Map<Long, Map<Long, Set<String>>> answerMap = new HashMap<>();
+            Map<Long, Map<Long, Map<Integer, Set<String>>>> answerMap = new HashMap<>();
             for (SurveyAnswerProjection a : answers) {
                 answerMap.computeIfAbsent(a.getMemberId(), k -> new HashMap<>())
-                    .computeIfAbsent(a.getQuestionId(), k -> new TreeSet<>())
+                    .computeIfAbsent(a.getQuestionId(), k -> new HashMap<>())
+                    .computeIfAbsent(a.getGridRowOrder() , k -> new TreeSet<>())
                     .add(a.getContent());
             }
 
@@ -70,7 +71,7 @@ public class SurveyExportService implements SurveyExport {
             if (includeGender) headerCols.add("gender");
             headerCols.add("residence");
             for (SurveyQuestionHeader h : headers) {
-                headerCols.add("Q" + nvlInt(h.getOrderNo() + 1) + ". " + nvl(h.getTitle()));
+                headerCols.add("Q" + nvlInt(h.getOrderNo() + 1) + ". " + nvl(h.getTitle()) + gridNvl(h.getRowContent()));
             }
             sb.append(String.join(",", escapeCsv(headerCols))).append("\n");
 
@@ -89,9 +90,11 @@ public class SurveyExportService implements SurveyExport {
 
                 row.add(nvl(m.getResidence()));
 
-                Map<Long, Set<String>> memberAnswers = answerMap.getOrDefault(m.getMemberId(), Map.of());
+                Map<Long, Map<Integer, Set<String>>> memberAnswers = answerMap.getOrDefault(m.getMemberId(), Map.of());
                 for (SurveyQuestionHeader h : headers) {
-                    row.add(nvl(String.join(",", memberAnswers.getOrDefault(h.getQuestionId(), Set.of()))));
+                    row.add(nvl(String.join(",", memberAnswers.getOrDefault(
+                        h.getQuestionId(), Map.of()).getOrDefault(
+                            h.getRowOrder(), Set.of()))));
                 }
 
                 sb.append(String.join(",", escapeCsv(row))).append("\n");
@@ -138,6 +141,9 @@ public class SurveyExportService implements SurveyExport {
 
     private String nvl(String s) { return s == null ? "" : s; }
     private String nvlInt(Integer i) { return i == null ? "" : String.valueOf(i); }
+    private String gridNvl(String s) {
+        return s == null ? "" : " [" + s + "]";
+    }
 
     private List<String> escapeCsv(List<String> vals) {
         List<String> out = new ArrayList<>(vals.size());
