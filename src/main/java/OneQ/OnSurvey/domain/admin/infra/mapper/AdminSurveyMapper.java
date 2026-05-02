@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyQuestion;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyScreening;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySection;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySingleViewInfo;
+import OneQ.OnSurvey.domain.question.model.dto.GridOptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DateDto;
@@ -91,6 +92,7 @@ public final class AdminSurveyMapper {
                         choice.getIsSectionDecidable(),
                         choice.getOptions().stream()
                             .map(optionDto -> new SurveyQuestion.ChoiceProp.Option(
+                                optionDto.getOptionId(),
                                 optionDto.getContent(),
                                 optionDto.getNextSection(),
                                 optionDto.getImageUrl()
@@ -125,8 +127,10 @@ public final class AdminSurveyMapper {
                         grid.getIsCheckbox(),
                         grid.getIsChoiceMixed(),
                         grid.getIsChoiceDistinct(),
-                        grid.getGridOptions().stream()
+                        (grid.getGridOptions() != null ? grid.getGridOptions() : List.<GridOptionDto>of())
+                            .stream()
                             .map(gridOptionDto -> new SurveyQuestion.GridProp.GridOption(
+                                gridOptionDto.getGridOptionId(),
                                 gridOptionDto.getIsRow(),
                                 gridOptionDto.getContent(),
                                 gridOptionDto.getOrder()
