@@ -6,6 +6,7 @@ import OneQ.OnSurvey.domain.admin.api.dto.response.AdminSurveyIntroItem;
 import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
 import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.OngoingSurveyView;
+import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -24,4 +25,6 @@ public interface AdminUseCase {
     List<SurveyGrantStatsResponse> getSurveyGrantStats();
 
     List<OngoingSurveyView> getOngoingSurveys();
+
+    SurveyExportFile exportSurveyCsv(Long surveyId);
 }

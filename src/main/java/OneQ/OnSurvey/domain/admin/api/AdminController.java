@@ -9,15 +9,24 @@ import OneQ.OnSurvey.domain.admin.api.dto.response.OngoingSurveyResponse;
 import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
 import OneQ.OnSurvey.domain.admin.application.AdminFacade;
 import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
+import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
 import OneQ.OnSurvey.global.common.response.PageResponse;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Slf4j
@@ -75,6 +84,25 @@ public class AdminController {
                 .map(OngoingSurveyResponse::from)
                 .toList()
         );
+    }
+
+    @GetMapping("/surveys/{surveyId}/export")
+    @Operation(summary = "설문 응답 CSV 다운로드 (어드민)", description = "어드민 권한으로 특정 설문의 응답 데이터를 CSV 파일로 다운로드합니다.")
+    public ResponseEntity<ByteArrayResource> exportSurveyCsv(@PathVariable Long surveyId) {
+        log.info("[ADMIN] 설문 CSV 다운로드 - surveyId: {}", surveyId);
+        SurveyExportFile file = adminFacade.exportSurveyCsv(surveyId);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header(HttpHeaders.EXPIRES, "0")
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(file.filename(), StandardCharsets.UTF_8)
+                                .build()
+                                .toString())
+                .contentLength(file.bytes().length)
+                .body(new ByteArrayResource(file.bytes()));
     }
 
     @PatchMapping("/surveys/{surveyId}/owner")

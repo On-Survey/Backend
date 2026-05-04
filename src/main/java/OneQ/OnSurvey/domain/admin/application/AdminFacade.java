@@ -7,17 +7,14 @@ import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
 import OneQ.OnSurvey.domain.admin.domain.model.Admin;
 import OneQ.OnSurvey.domain.admin.domain.model.AdminRole;
 import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.AdminSurveyListView;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.OngoingSurveyView;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySingleViewInfo;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyQuestion;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyScreening;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySection;
+import OneQ.OnSurvey.domain.admin.domain.model.survey.*;
 import OneQ.OnSurvey.domain.admin.domain.port.in.AdminUseCase;
 import OneQ.OnSurvey.domain.admin.domain.port.in.AuthUseCase;
 import OneQ.OnSurvey.domain.admin.domain.port.out.MemberPort;
 import OneQ.OnSurvey.domain.admin.domain.port.out.SurveyPort;
 import OneQ.OnSurvey.domain.admin.domain.repository.AdminRepository;
+import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
+import OneQ.OnSurvey.domain.survey.service.export.SurveyExport;
 import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,6 +35,7 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     private final SurveyPort surveyPort;
     private final PasswordEncoder passwordEncoder;
     private final PromotionGrantRepository promotionGrantRepository;
+    private final SurveyExport surveyExport;
 
     @Override
     public String authenticate(String username, String rawPassword) {
@@ -115,5 +113,10 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     @Override
     public List<OngoingSurveyView> getOngoingSurveys() {
         return surveyPort.findOngoingSurveys();
+    }
+
+    @Override
+    public SurveyExportFile exportSurveyCsv(Long surveyId) {
+        return surveyExport.exportCsvForAdmin(surveyId);
     }
 }
