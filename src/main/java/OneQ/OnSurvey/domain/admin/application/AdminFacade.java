@@ -18,6 +18,8 @@ import OneQ.OnSurvey.domain.admin.domain.port.in.AuthUseCase;
 import OneQ.OnSurvey.domain.admin.domain.port.out.MemberPort;
 import OneQ.OnSurvey.domain.admin.domain.port.out.SurveyPort;
 import OneQ.OnSurvey.domain.admin.domain.repository.AdminRepository;
+import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
+import OneQ.OnSurvey.domain.survey.service.export.SurveyExport;
 import OneQ.OnSurvey.global.promotion.port.out.PromotionGrantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,6 +40,7 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     private final SurveyPort surveyPort;
     private final PasswordEncoder passwordEncoder;
     private final PromotionGrantRepository promotionGrantRepository;
+    private final SurveyExport surveyExport;
 
     @Override
     public String authenticate(String username, String rawPassword) {
@@ -115,5 +118,12 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
     @Override
     public List<OngoingSurveyView> getOngoingSurveys() {
         return surveyPort.findOngoingSurveys();
+    }
+
+    @Override
+    public SurveyExportFile exportSurveyCsv(Long surveyId) {
+        // BOSessionFilter sets ROLE_ADMIN in SecurityContext, so the ownership check inside
+        // SurveyExportService is bypassed via AuthorizationUtils.isAdmin().
+        return surveyExport.exportCsv(surveyId, 0L);
     }
 }
