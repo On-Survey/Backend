@@ -18,7 +18,7 @@ import org.hibernate.annotations.ColumnDefault;
 @DiscriminatorValue(value = QuestionType.Values.TIME)
 public class Time extends Question {
 
-    @Column(name = "IS_INTERVAL", nullable = false)
+    @Column(name = "IS_INTERVAL")
     @ColumnDefault("FALSE")
     @Builder.Default
     private Boolean isInterval = false;
