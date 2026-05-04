@@ -7,12 +7,7 @@ import OneQ.OnSurvey.domain.admin.api.dto.response.SurveyGrantStatsResponse;
 import OneQ.OnSurvey.domain.admin.domain.model.Admin;
 import OneQ.OnSurvey.domain.admin.domain.model.AdminRole;
 import OneQ.OnSurvey.domain.admin.domain.model.member.AdminMemberView;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.AdminSurveyListView;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.OngoingSurveyView;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySingleViewInfo;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyQuestion;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyScreening;
-import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySection;
+import OneQ.OnSurvey.domain.admin.domain.model.survey.*;
 import OneQ.OnSurvey.domain.admin.domain.port.in.AdminUseCase;
 import OneQ.OnSurvey.domain.admin.domain.port.in.AuthUseCase;
 import OneQ.OnSurvey.domain.admin.domain.port.out.MemberPort;
@@ -122,8 +117,6 @@ public class AdminFacade implements AuthUseCase, AdminUseCase {
 
     @Override
     public SurveyExportFile exportSurveyCsv(Long surveyId) {
-        // BOSessionFilter sets ROLE_ADMIN in SecurityContext, so the ownership check inside
-        // SurveyExportService is bypassed via AuthorizationUtils.isAdmin().
-        return surveyExport.exportCsv(surveyId, 0L);
+        return surveyExport.exportCsvForAdmin(surveyId);
     }
 }

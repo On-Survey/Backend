@@ -4,4 +4,5 @@ import OneQ.OnSurvey.domain.survey.model.export.SurveyExportFile;
 
 public interface SurveyExport {
     SurveyExportFile exportCsv(Long surveyId, Long requesterId);
+    SurveyExportFile exportCsvForAdmin(Long surveyId);
 }
