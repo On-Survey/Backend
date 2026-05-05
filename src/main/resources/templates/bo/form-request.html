@@ -25,12 +25,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div class="lg:col-span-2">
                 <label class="block text-xs font-bold text-slate-500 mb-1">폼 링크 <span class="text-red-500">*</span></label>
-                <input type="url" id="newFormLink" placeholder="https://docs.google.com/forms/d/e/..."
+                <input type="url" id="newFormLink" placeholder="https://docs.google.com/forms/d/.../edit" required
                        class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">신청자 이메일 <span class="text-red-500">*</span></label>
-                <input type="email" id="newRequesterEmail" placeholder="example@email.com"
+                <input type="email" id="newRequesterEmail" placeholder="example@email.com" required
                        class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
             </div>
         </div>
@@ -41,7 +41,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">마감일</label>
-                    <input type="date" id="newDeadline"
+                    <input type="date" id="newDeadline" required
                            class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                 </div>
                 <div>
@@ -54,19 +54,19 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">목표 응답 수</label>
-                    <input type="number" id="newDueCount" placeholder="예: 100" min="1"
+                    <input type="number" id="newDueCount" placeholder="예: 100" min="1" required
                            class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">총 코인</label>
-                    <input type="number" id="newTotalCoin" placeholder="예: 10000" min="0"
+                    <input type="number" id="newTotalCoin" placeholder="예: 10000" min="0" required
                            class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- 연령대 -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2">연령대</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-2">연령대 <span class="text-red-500">*</span></label>
                     <div class="flex flex-wrap gap-2">
                         <label class="flex items-center gap-1 text-xs cursor-pointer">
                             <input type="checkbox" value="ALL" class="new-age-checkbox" onchange="handleAgeAllToggle(this)"> 전체
@@ -82,7 +82,7 @@
                 </div>
                 <!-- 거주지 -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2">거주지</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-2">거주지 <span class="text-red-500">*</span></label>
                     <div class="flex flex-wrap gap-2">
                         <label class="flex items-center gap-1 text-xs cursor-pointer">
                             <input type="checkbox" value="ALL" class="new-residence-checkbox" onchange="handleResidenceAllToggle(this)"> 전체
@@ -127,11 +127,12 @@
                     </select>
                 </div>
             </div>
+            <p class="mt-2 text-xs text-slate-400">※ 마감일, 목표 응답 수, 총 코인, 연령대, 거주지는 필수 입력입니다.</p>
         </div>
 
         <!-- 관심사 -->
         <div class="border border-slate-100 rounded-lg p-3 mb-4">
-            <p class="text-xs font-bold text-slate-400 mb-3">관심사 (선택)</p>
+            <p class="text-xs font-bold text-slate-400 mb-3">관심사 <span class="text-red-500">*</span></p>
             <div class="flex flex-wrap gap-2">
                 <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="CAREER" class="new-interest-checkbox"> 직장/커리어</label>
                 <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="BUSINESS" class="new-interest-checkbox"> 창업/사업</label>
@@ -145,8 +146,34 @@
             </div>
         </div>
 
+        <!-- 유효성 검사 결과 -->
+        <div id="validationResultContainer" class="border border-green-200 bg-green-50 rounded-lg p-3 mb-4 hidden">
+            <div class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-xs font-bold text-green-700 mb-1">유효성 검사 완료</p>
+                    <p id="validationResultText" class="text-xs text-green-600"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 유효성 검사 결과 -->
+        <div id="validationFailureContainer" class="border border-red-200 bg-red-50 rounded-lg p-3 mb-4 hidden">
+            <div class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-red-600 mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-xs font-bold text-red-700 mb-1">유효성 검사 실패</p>
+                    <p id="validationFailureText" class="text-xs text-red-600"></p>
+                </div>
+            </div>
+        </div>
+
         <!-- 버튼 -->
-        <div class="flex justify-end">
+        <div class="flex justify-end gap-2">
+            <button id="validationButton" onclick="validateFormLink()" class="px-6 py-2 bg-indigo-600 text-white rounded text-sm font-bold hover:bg-indigo-700 transition inline-flex items-center justify-center">
+                <i id="validationButtonIcon" class="fas fa-check-circle mr-1"></i>
+                <span id="validationButtonText">유효성 검사</span>
+            </button>
             <button onclick="submitFormRequest()" class="px-6 py-2 bg-green-600 text-white rounded text-sm font-bold hover:bg-green-700 transition">
                 <i class="fas fa-paper-plane mr-1"></i>변환 요청
             </button>
@@ -201,9 +228,9 @@
                 <th class="px-6 py-4">ID</th>
                 <th class="px-6 py-4">폼 링크</th>
                 <th class="px-6 py-4">신청자 이메일</th>
+                <th class="px-6 py-4">설문 ID</th>
                 <th class="px-6 py-4">질문 수</th>
                 <th class="px-6 py-4">목표 응답</th>
-                <th class="px-6 py-4">마감일</th>
                 <th class="px-6 py-4">가격</th>
                 <th class="px-6 py-4">등록 상태</th>
                 <th class="px-6 py-4">등록일</th>
