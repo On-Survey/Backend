@@ -102,7 +102,7 @@ public class FormEventListener {
                         } else {
                             surveyCommand.upsertInterest(conversionSurveyId, Set.of(Interest.BUSINESS));
                         }
-                        surveyCommand.submitSurvey(event.userKey(), conversionSurveyId, event.surveyForm());
+                        surveyCommand.submitHomeFormSurvey(event.userKey(), conversionSurveyId, event.surveyForm());
 
                         successCount.incrementAndGet();
                         return SurveyConversionAlert.ConversionDetails.success(
