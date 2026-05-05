@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Pretendard', sans-serif; }
-        .logic-line { border-bottom: 2px dotted #cbd5e1; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         /* 드래그 앤 드롭 스타일 */
@@ -114,12 +113,16 @@
         <h3 class="text-sm font-bold text-indigo-800 mb-3"><i class="fas fa-pen-nib mr-2"></i>기본 정보 입력</h3>
         <div class="space-y-3">
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">설문 제목</label>
-                <input type="text" id="new-survey-title" class="w-full text-sm border border-slate-300 rounded px-3 py-2 focus:border-indigo-500 outline-none" placeholder="설문 제목을 입력하세요">
+                <label class="block text-xs font-bold text-slate-500 mb-1">
+                    설문 제목
+                    <input type="text" id="new-survey-title" class="w-full text-sm border border-slate-300 rounded px-3 py-2 focus:border-indigo-500 outline-none" placeholder="설문 제목을 입력하세요">
+                </label>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">설문 설명</label>
-                <textarea id="new-survey-description" class="w-full text-sm border border-slate-300 rounded px-3 py-2 focus:border-indigo-500 outline-none resize-none" rows="2" placeholder="설문 설명을 입력하세요"></textarea>
+                <label class="block text-xs font-bold text-slate-500 mb-1">
+                    설문 설명
+                    <textarea id="new-survey-description" class="w-full text-sm border border-slate-300 rounded px-3 py-2 focus:border-indigo-500 outline-none resize-none" rows="2" placeholder="설문 설명을 입력하세요"></textarea>
+                </label>
             </div>
             <div class="flex justify-end gap-2 mt-2">
                 <button onclick="toggleCreateForm()" class="px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100 rounded">취소</button>
@@ -166,7 +169,7 @@
                 <!-- 설문 제목 (contenteditable) -->
                 <input type="hidden" id="survey-title-value" value="">
                 <div id="survey-title" class="w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 transition-colors" contenteditable="true" data-placeholder="설문 제목을 입력하세요" oninput="syncSurveyTitleValue(this)"></div>
-                <div class="flex items-center gap-2 mt-1 mb-2">
+                <div class="editable-action-row hidden flex items-center gap-2 mt-1 mb-2">
                     <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(document.getElementById('survey-title'))">
                         <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
                     </button>
@@ -174,7 +177,7 @@
                 <!-- 설문 설명 (contenteditable) -->
                 <input type="hidden" id="survey-description-value" value="">
                 <div id="survey-description" class="w-full text-sm text-slate-600 border border-slate-200 rounded-lg p-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none min-h-[60px]" contenteditable="true" data-placeholder="설문 설명을 입력하세요" oninput="syncSurveyDescValue(this)"></div>
-                <div class="flex items-center gap-2 mt-1">
+                <div class="editable-action-row hidden flex items-center gap-2 mt-1">
                     <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(document.getElementById('survey-description'))">
                         <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
                     </button>
@@ -789,7 +792,9 @@
         'nps': 'NPS',
         'number': '숫자형',
         'date': '날짜형',
-        'image': '이미지'
+        'image': '이미지',
+        'grid': '그리드',
+        'time': '시간'
     };
 
     // 문항 타입 매핑 (프론트엔드 → 백엔드)
@@ -801,7 +806,9 @@
         'nps': 'NPS',
         'number': 'NUMBER',
         'date': 'DATE',
-        'image': 'IMAGE'
+        'image': 'IMAGE',
+        'grid': 'GRID',
+        'time': 'TIME'
     };
 
     // 문항 타입 역매핑 (백엔드 → 프론트엔드)
@@ -813,7 +820,9 @@
         'NPS': 'nps',
         'NUMBER': 'number',
         'DATE': 'date',
-        'IMAGE': 'image'
+        'IMAGE': 'image',
+        'GRID': 'grid',
+        'TIME': 'time'
     };
 
     // 생성 폼 토글
@@ -999,7 +1008,25 @@
                 if (questionType === 'DATE') {
                     const dateInput = item.querySelector('.default-date-input');
 
-                    questionData.date = dateInput ? dateInput.value + "T00:00:00" : null;
+                    questionData.date = dateInput.value ? dateInput.value + "T00:00:00" : new Date().toISOString().split('T')[0] + "T00:00:00";
+                }
+
+                // 그리드형인 경우
+                if (questionType === 'GRID') {
+                    const isCheckboxToggle = item.querySelector('.grid-checkbox-toggle');
+                    const isChoiceMixedToggle = item.querySelector('.grid-mixed-toggle');
+                    const isChoiceDistinctToggle = item.querySelector('.grid-distinct-toggle');
+
+                    questionData.isCheckbox = isCheckboxToggle ? isCheckboxToggle.checked : false;
+                    questionData.isChoiceMixed = isChoiceMixedToggle ? isChoiceMixedToggle.checked : false;
+                    questionData.isChoiceDistinct = isChoiceDistinctToggle ? isChoiceDistinctToggle.checked : false;
+                    questionData.gridOptions = collectGridOptionData(item);
+                }
+
+                // 시간형인 경우
+                if (questionType === 'TIME') {
+                    const intervalRadio = item.querySelector('.time-interval-radio:checked');
+                    questionData.isInterval = intervalRadio ? intervalRadio.value === 'true' : false;
                 }
 
                 questions.push(questionData);
@@ -1045,18 +1072,168 @@
             });
         });
 
-        // 기존 옵션(optionId 있음)을 먼저, 새 옵션(optionId 없음)을 나중에 정렬
-        // 백엔드에서 update 대상 먼저, insert 대상 나중에 처리하고
-        // choice_option_id ASC 정렬로 조회하므로, UI 순서와 일치시키기 위함
+        // optionId 기준 오름차순, 신규(null)는 마지막
         options.sort((a, b) => {
-            const aHasId = a.optionId !== null;
-            const bHasId = b.optionId !== null;
-            if (aHasId && !bHasId) return -1;
-            if (!aHasId && bHasId) return 1;
-            return 0; // 같은 그룹 내에서는 원래 순서 유지
+            if (a.optionId == null && b.optionId == null) return 0;
+            if (a.optionId == null) return 1;
+            if (b.optionId == null) return -1;
+            return a.optionId - b.optionId;
         });
 
         return options;
+    }
+
+    // 그리드 옵션 데이터 수집
+    function collectGridOptionData(questionItem) {
+        const gridOptions = [];
+        const rowItems = questionItem.querySelectorAll('.grid-option-list[data-is-row="true"] .grid-option-item');
+        const colItems = questionItem.querySelectorAll('.grid-option-list[data-is-row="false"] .grid-option-item');
+
+        rowItems.forEach((item, index) => {
+            const input = item.querySelector('.grid-option-input');
+            const storedId = item.getAttribute('data-grid-option-id');
+            gridOptions.push({
+                gridOptionId: storedId ? parseInt(storedId) : null,
+                isRow: true,
+                content: sanitizeHtmlForSave(input ? input.value : ''),
+                order: index
+            });
+        });
+
+        colItems.forEach((item, index) => {
+            const input = item.querySelector('.grid-option-input');
+            const storedId = item.getAttribute('data-grid-option-id');
+            gridOptions.push({
+                gridOptionId: storedId ? parseInt(storedId) : null,
+                isRow: false,
+                content: sanitizeHtmlForSave(input ? input.value : ''),
+                order: index
+            });
+        });
+
+        return gridOptions;
+    }
+
+    function addGridOption(target, isRow, content = '', gridOptionId = null) {
+        const questionItem = target.classList && target.classList.contains('question-item')
+            ? target
+            : target.closest('.question-item');
+        const list = questionItem.querySelector(`.grid-option-list[data-is-row="${isRow}"]`);
+        const optionItem = document.createElement('div');
+        optionItem.className = 'grid-option-item flex items-center gap-2';
+        optionItem.setAttribute('data-is-row', String(isRow));
+        if (gridOptionId) {
+            optionItem.setAttribute('data-grid-option-id', gridOptionId);
+        }
+
+        optionItem.innerHTML = `
+            <span class="grid-option-order text-xs text-slate-400 w-5 text-center">0</span>
+            <input type="text" value="${escapeHtml(content)}" class="grid-option-input flex-1 text-sm border border-slate-200 rounded px-2 py-1.5 focus:border-indigo-500 outline-none">
+            <div class="flex items-center gap-1 shrink-0">
+                <button type="button" class="text-slate-300 hover:text-slate-600" onclick="moveGridOption(this, -1)"><i class="fas fa-chevron-up text-[10px]"></i></button>
+                <button type="button" class="text-slate-300 hover:text-slate-600" onclick="moveGridOption(this, 1)"><i class="fas fa-chevron-down text-[10px]"></i></button>
+                <button type="button" class="text-slate-300 hover:text-red-500" onclick="removeGridOption(this)"><i class="fas fa-times text-[10px]"></i></button>
+            </div>
+        `;
+
+        list.appendChild(optionItem);
+        updateGridOptionOrder(questionItem, isRow);
+        return optionItem;
+    }
+
+    function removeGridOption(btn) {
+        const optionItem = btn.closest('.grid-option-item');
+        const questionItem = btn.closest('.question-item');
+        const isRow = optionItem.getAttribute('data-is-row') === 'true';
+        optionItem.remove();
+        updateGridOptionOrder(questionItem, isRow);
+    }
+
+    function moveGridOption(btn, direction) {
+        const optionItem = btn.closest('.grid-option-item');
+        const questionItem = btn.closest('.question-item');
+        const isRow = optionItem.getAttribute('data-is-row') === 'true';
+        const sibling = direction < 0 ? optionItem.previousElementSibling : optionItem.nextElementSibling;
+        if (!sibling) return;
+
+        const parent = optionItem.parentElement;
+        if (direction < 0) {
+            parent.insertBefore(optionItem, sibling);
+        } else {
+            parent.insertBefore(sibling, optionItem);
+        }
+
+        updateGridOptionOrder(questionItem, isRow);
+    }
+
+    function updateGridOptionOrder(questionItem, isRow) {
+        const items = questionItem.querySelectorAll(`.grid-option-list[data-is-row="${isRow}"] .grid-option-item`);
+        items.forEach((item, index) => {
+            item.setAttribute('data-order', String(index));
+            const orderLabel = item.querySelector('.grid-option-order');
+            if (orderLabel) orderLabel.textContent = String(index + 1);
+        });
+        updateGridDistinctWarning(questionItem);
+    }
+
+    function updateGridDistinctWarning(questionItem) {
+        const distinctToggle = questionItem.querySelector('.grid-distinct-toggle');
+        const warning = questionItem.querySelector('.grid-distinct-warning');
+        if (!distinctToggle || !warning) return;
+
+        const rowCount = questionItem.querySelectorAll('.grid-option-list[data-is-row="true"] .grid-option-item').length;
+        const colCount = questionItem.querySelectorAll('.grid-option-list[data-is-row="false"] .grid-option-item').length;
+        const isInvalid = distinctToggle.checked && rowCount > colCount;
+        warning.classList.toggle('hidden', !isInvalid);
+    }
+
+    function handleGridDistinctToggle(checkbox) {
+        const questionItem = checkbox.closest('.question-item');
+        updateGridDistinctWarning(questionItem);
+    }
+
+    function applyGridOptionIds(questionItem, savedGridOptions) {
+        const optionsArray = Array.isArray(savedGridOptions)
+            ? savedGridOptions
+            : Array.from(savedGridOptions || []);
+        const rowOptions = optionsArray.filter(opt => opt.isRow).sort((a, b) => a.order - b.order);
+        const colOptions = optionsArray.filter(opt => !opt.isRow).sort((a, b) => a.order - b.order);
+
+        const rowItems = questionItem.querySelectorAll('.grid-option-list[data-is-row="true"] .grid-option-item');
+        const colItems = questionItem.querySelectorAll('.grid-option-list[data-is-row="false"] .grid-option-item');
+
+        rowItems.forEach((item, index) => {
+            const saved = rowOptions[index];
+            if (saved && saved.gridOptionId) {
+                item.setAttribute('data-grid-option-id', saved.gridOptionId);
+            }
+        });
+        colItems.forEach((item, index) => {
+            const saved = colOptions[index];
+            if (saved && saved.gridOptionId) {
+                item.setAttribute('data-grid-option-id', saved.gridOptionId);
+            }
+        });
+    }
+
+    function sortOptionsById(optionsArray) {
+        return optionsArray.sort((a, b) => {
+            if (a.optionId == null && b.optionId == null) return 0;
+            if (a.optionId == null) return 1;
+            if (b.optionId == null) return -1;
+            return a.optionId - b.optionId;
+        });
+    }
+
+    function sortOptionItemsById(optionItems) {
+        return Array.from(optionItems).sort((a, b) => {
+            const aId = a.getAttribute('data-option-id');
+            const bId = b.getAttribute('data-option-id');
+            if (!aId && !bId) return 0;
+            if (!aId) return 1;
+            if (!bId) return -1;
+            return parseInt(aId) - parseInt(bId);
+        });
     }
 
     // 문항 일괄 저장 (임시저장)
@@ -1104,13 +1281,22 @@
                     // 2. 옵션 ID 업데이트 (객관식인 경우)
                     if (savedQuestion.questionType === 'CHOICE' && savedQuestion.options) {
                         const optionItems = qItem.querySelectorAll('.option-item[data-option-type="normal"]');
+                        const sortedItems = sortOptionItemsById(optionItems);
+                        const sortedOptions = sortOptionsById(Array.isArray(savedQuestion.options)
+                            ? savedQuestion.options
+                            : Array.from(savedQuestion.options || []));
 
-                        optionItems.forEach((optItem, optIndex) => {
-                            const savedOption = savedQuestion.options[optIndex];
+                        sortedItems.forEach((optItem, optIndex) => {
+                            const savedOption = sortedOptions[optIndex];
                             if (savedOption && savedOption.optionId) {
                                 optItem.setAttribute('data-option-id', savedOption.optionId);
                             }
                         });
+                    }
+
+                    // 3. 그리드 옵션 ID 업데이트
+                    if (savedQuestion.questionType === 'GRID' && savedQuestion.gridOptions) {
+                        applyGridOptionIds(qItem, savedQuestion.gridOptions);
                     }
                 });
             }
@@ -1203,6 +1389,50 @@
                 }
             }
 
+            // 4-1. 그리드 문항 검사
+            if (questionType === 'grid') {
+                const rowItems = question.querySelectorAll('.grid-option-list[data-is-row="true"] .grid-option-item');
+                const colItems = question.querySelectorAll('.grid-option-list[data-is-row="false"] .grid-option-item');
+                const distinctToggle = question.querySelector('.grid-distinct-toggle');
+                const gridContainer = question.querySelector('.grid-options');
+
+                if (rowItems.length === 0 || colItems.length === 0) {
+                    isValid = false;
+                    if (gridContainer) {
+                        gridContainer.classList.add('ring-1', 'ring-red-400');
+                        if (!firstInvalidElement) firstInvalidElement = gridContainer;
+                        setTimeout(() => {
+                            gridContainer.classList.remove('ring-1', 'ring-red-400');
+                        }, 3000);
+                    }
+                    showToast('그리드 문항에는 행과 열을 각각 1개 이상 추가해야 합니다.', 'error');
+                }
+
+                const gridInputs = question.querySelectorAll('.grid-option-input');
+                for (const input of gridInputs) {
+                    if (!input.value.trim()) {
+                        isValid = false;
+                        input.classList.add('border-red-400', 'ring-1', 'ring-red-400');
+                        if (!firstInvalidElement) firstInvalidElement = input;
+                        setTimeout(() => {
+                            input.classList.remove('border-red-400', 'ring-1', 'ring-red-400');
+                        }, 3000);
+                    }
+                }
+
+                if (distinctToggle && distinctToggle.checked && rowItems.length > colItems.length) {
+                    isValid = false;
+                    if (gridContainer) {
+                        gridContainer.classList.add('ring-1', 'ring-red-400');
+                        if (!firstInvalidElement) firstInvalidElement = gridContainer;
+                        setTimeout(() => {
+                            gridContainer.classList.remove('ring-1', 'ring-red-400');
+                        }, 3000);
+                    }
+                    showToast('열 중복 선택 금지 옵션이 켜져있으면 행 개수는 열 개수 이하만 가능합니다.', 'error');
+                }
+            }
+
             // 5. 이미지 문항인 경우 이미지가 필수인지 검사
             if (questionType === 'image') {
                 const imageTypeUrlInput = question.querySelector('.question-image-url-input-for-image-type');
@@ -1210,7 +1440,7 @@
 
                 if (!imageUrl) {
                     isValid = false;
-                    const imageUploadArea = question.querySelector('.image-upload-required');
+                    const imageUploadArea = question.querySelector('.image-options');
                     if (imageUploadArea) {
                         imageUploadArea.classList.add('ring-2', 'ring-red-400');
                         if (!firstInvalidElement) firstInvalidElement = imageUploadArea;
@@ -1340,13 +1570,15 @@
             const choiceProp = q.choiceProperty || {};
             const ratingProp = q.ratingProperty || {};
             const dateProp = q.dateProperty || {};
+            const gridProp = q.gridProperty || {};
+            const timeProp = q.timeProperty || {};
 
             const isSectionDecidable = choiceProp.isSectionDecidable || false;
             const hasCustomInput = choiceProp.hasCustomInput || false;
             const defaultDate = dateProp.defaultDate || null;
 
             // DOM 생성 (append는 아직)
-            const newQuestionEl = addNewQuestion(q.questionId, q.title, q.description, questionCounter, frontendType, isSectionDecidable, hasCustomInput, defaultDate, q.imageUrl || null);
+            const newQuestionEl = addNewQuestion(q.questionId, q.title, q.description, questionCounter, frontendType, isSectionDecidable, hasCustomInput, defaultDate, q.imageUrl || null, timeProp.isInterval || false);
 
             // 적절한 섹션 찾기 (q.section이 1이면 index 0)
             const targetSection = sectionItems[(q.section || 1) - 1];
@@ -1370,7 +1602,7 @@
 
                 // options는 Set이므로 Array로 변환
                 const optionsArray = Array.isArray(choiceProp.options) ? choiceProp.options : Array.from(choiceProp.options || []);
-                optionsArray.forEach(opt => {
+                sortOptionsById(optionsArray).forEach(opt => {
                     // 옵션 추가 (optionId 포함)
                     addOptionWithData(newQuestionEl, opt.content, opt.optionId || null, opt.nextSection, isSectionDecidable, opt.imageUrl || null);
                 });
@@ -1405,6 +1637,40 @@
 
                 if (leftLabel && ratingProp.minValue) leftLabel.value = ratingProp.minValue;
                 if (rightLabel && ratingProp.maxValue) rightLabel.value = ratingProp.maxValue;
+            }
+
+            // 그리드 설정
+            if (q.questionType === 'GRID') {
+                const checkboxToggle = newQuestionEl.querySelector('.grid-checkbox-toggle');
+                const mixedToggle = newQuestionEl.querySelector('.grid-mixed-toggle');
+                const distinctToggle = newQuestionEl.querySelector('.grid-distinct-toggle');
+
+                if (checkboxToggle) checkboxToggle.checked = gridProp.isCheckbox || false;
+                if (mixedToggle) mixedToggle.checked = gridProp.isChoiceMixed || false;
+                if (distinctToggle) distinctToggle.checked = gridProp.isChoiceDistinct || false;
+
+                const rowList = newQuestionEl.querySelector('.grid-option-list[data-is-row="true"]');
+                const colList = newQuestionEl.querySelector('.grid-option-list[data-is-row="false"]');
+                if (rowList) rowList.innerHTML = '';
+                if (colList) colList.innerHTML = '';
+
+                const gridOptions = Array.isArray(gridProp.gridOptions)
+                    ? gridProp.gridOptions
+                    : Array.from(gridProp.gridOptions || []);
+                const rowOptions = gridOptions.filter(opt => opt.isRow).sort((a, b) => a.order - b.order);
+                const colOptions = gridOptions.filter(opt => !opt.isRow).sort((a, b) => a.order - b.order);
+
+                rowOptions.forEach(opt => addGridOption(newQuestionEl, true, opt.content, opt.gridOptionId || null));
+                colOptions.forEach(opt => addGridOption(newQuestionEl, false, opt.content, opt.gridOptionId || null));
+
+                updateGridOptionOrder(newQuestionEl, true);
+                updateGridOptionOrder(newQuestionEl, false);
+            }
+
+            // 시간형 설정
+            if (q.questionType === 'TIME') {
+                const intervalRadio = newQuestionEl.querySelector(`.time-interval-radio[value="${timeProp.isInterval ? 'true' : 'false'}"]`);
+                if (intervalRadio) intervalRadio.checked = true;
             }
         }
 
@@ -1511,25 +1777,46 @@
         }
     }
 
+    // 이미지 업로드 (및 교체) 함수
     async function handleQuestionImageUpload(input) {
         const file = input.files[0];
         if (!file) return;
+
         showToast('이미지 업로드 중...', 'info');
         const url = await uploadImageFile(file);
         if (!url) return;
-        const questionItem = input.closest('.question-item');
-        questionItem.querySelector('.question-image-url-input').value = url;
-        const preview = questionItem.querySelector('.question-image-preview');
+
+        // 해당 문항의 이미지 컨테이너 찾기
+        const container = input.closest('.image-upload-container') || input.closest('.question-item');
+
+        // 숨겨진 input에 URL 값 저장
+        container.querySelector('.question-image-url-input').value = url;
+
+        // 이미지 태그에 src 적용
+        const preview = container.querySelector('.question-image-preview');
         preview.querySelector('.question-image-tag').src = url;
+
+        // UI 상태 전환: 프리뷰 영역 보이기, 기본 버튼 영역 숨기기
         preview.classList.remove('hidden');
-        input.value = '';
+        container.querySelector('.question-image-default').classList.add('hidden');
+
+        input.value = ''; // 동일한 파일을 다시 선택할 수 있도록 초기화
         showToast('이미지가 업로드되었습니다. 문항을 저장해주세요.', 'success');
     }
 
-    function removeQuestionImage(btn) {
-        const questionItem = btn.closest('.question-item');
-        questionItem.querySelector('.question-image-url-input').value = '';
-        btn.closest('.question-image-preview').classList.add('hidden');
+    // 이미지 삭제 함수
+    function handleQuestionImageDelete(button) {
+        const container = button.closest('.image-upload-container') || button.closest('.question-item');
+
+        // 숨겨진 URL 값 초기화
+        container.querySelector('.question-image-url-input').value = '';
+
+        // UI 상태 전환: 프리뷰 영역 숨기고 src 제거, 기본 버튼 영역 다시 보이기
+        const preview = container.querySelector('.question-image-preview');
+        preview.classList.add('hidden');
+        preview.querySelector('.question-image-tag').src = '';
+
+        container.querySelector('.question-image-default').classList.remove('hidden');
     }
 
     // 이미지 문항 전용 이미지 업로드
@@ -1547,7 +1834,7 @@
         const generalImageInput = questionItem.querySelector('.question-image-url-input');
         if (generalImageInput) generalImageInput.value = url;
 
-        const uploadArea = questionItem.querySelector('.image-upload-required');
+        const uploadArea = questionItem.querySelector('.image-options');
         const emptyArea = uploadArea.querySelector('.image-type-empty');
         const preview = uploadArea.querySelector('.image-type-preview');
         const container = preview.querySelector('.image-type-container');
@@ -1576,7 +1863,7 @@
         const generalImageInput = questionItem.querySelector('.question-image-url-input');
         if (generalImageInput) generalImageInput.value = '';
 
-        const uploadArea = questionItem.querySelector('.image-upload-required');
+        const uploadArea = questionItem.querySelector('.image-options');
         const emptyArea = uploadArea.querySelector('.image-type-empty');
         const preview = uploadArea.querySelector('.image-type-preview');
 
@@ -1866,6 +2153,62 @@
             });
         });
     }
+
+    // ==================== editable action row (하이퍼링크 버튼) 표시 로직 ====================
+    const EDITABLE_SELECTOR = '#survey-title, #survey-description, .section-title-input, .section-desc-input, .question-title-input, .question-desc-input';
+
+    function findActionRowForEditable(editable) {
+        if (!editable) return null;
+        // 1) 바로 다음 형제에 있는지 확인
+        let el = editable.nextElementSibling;
+        for (let i = 0; i < 4 && el; i++) {
+            if (el.classList && el.classList.contains('editable-action-row')) return el;
+            el = el.nextElementSibling;
+        }
+
+        // 2) 부모 내부에서 찾기
+        if (editable.parentElement) {
+            const found = editable.parentElement.querySelector('.editable-action-row');
+            if (found) return found;
+        }
+
+        // 3) 섹션/문항 블록 내에서 찾기
+        const containers = ['.section-item', '.question-item', '#view-builder', '.flex-1'];
+        for (const sel of containers) {
+            const c = editable.closest(sel);
+            if (c) {
+                const found = c.querySelector('.editable-action-row');
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    function hideAllEditableActionRows() {
+        document.querySelectorAll('.editable-action-row').forEach(el => el.classList.add('hidden'));
+    }
+
+    // 포커스가 들어온 editable만 버튼을 보이게 함
+    document.addEventListener('focusin', function(e) {
+        const target = e.target;
+        if (target && target.matches && target.matches(EDITABLE_SELECTOR)) {
+            hideAllEditableActionRows();
+            const action = findActionRowForEditable(target);
+            if (action) action.classList.remove('hidden');
+        }
+    });
+
+    // 외부 클릭 시 버튼 숨김 (단, 버튼 자체나 다이얼로그/팝오버 내부 클릭은 예외)
+    document.addEventListener('click', function(e) {
+        const t = e.target;
+        const hyperlinkDialog = document.getElementById('hyperlinkDialog');
+        const popover = document.getElementById('hyperlinkEditPopover');
+        // 클릭이 editable, 버튼 영역, 다이얼로그, 팝오버 내부면 숨기지 않음
+        if (t.closest && (t.closest(EDITABLE_SELECTOR) || t.closest('.editable-action-row') || (hyperlinkDialog && !hyperlinkDialog.classList.contains('hidden') && hyperlinkDialog.contains(t)) || (popover && !popover.classList.contains('hidden') && popover.contains(t)))) {
+            return;
+        }
+        hideAllEditableActionRows();
+    });
 
     // contenteditable용 하이퍼링크 삽입 다이얼로그
     let _hyperlinkTargetEditable = null;
@@ -2519,14 +2862,14 @@
                 <div class="flex flex-col gap-2 flex-1">
                     <input type="hidden" class="section-title-value" value="섹션 ${newSectionNumber}">
                     <div class="section-title-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 text-sm font-bold text-slate-700 w-full focus:outline-none focus:border-indigo-500 px-2 py-1 min-h-[28px]" contenteditable="true" data-placeholder="섹션 제목 입력 (필수)" oninput="syncSectionTitleValue(this); onSectionInfoChange(this);">섹션 ${newSectionNumber}</div>
-                    <div class="flex gap-2 mt-1">
+                    <div class="editable-action-row hidden flex gap-2 mt-1">
                         <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialogForEditable(this.closest('.section-item').querySelector('.section-title-input'))">
                             <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
                         </button>
                     </div>
                     <input type="hidden" class="section-desc-value" value="">
                     <div class="section-desc-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-400 text-sm text-slate-500 w-full focus:outline-none focus:border-indigo-400 px-2 py-1 min-h-[28px]" contenteditable="true" data-placeholder="섹션 설명 (선택사항)" oninput="syncSectionDescValue(this); onSectionInfoChange(this);"></div>
-                    <div class="flex gap-2 mt-1">
+                    <div class="editable-action-row hidden flex gap-2 mt-1">
                         <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialogForEditable(this.closest('.section-item').querySelector('.section-desc-input'))">
                             <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
                         </button>
@@ -2559,6 +2902,8 @@
                     </button>
                     <select class="new-question-type text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white" onchange="toggleImageUploadArea(this)">
                         <option value="choice" selected>객관식</option>
+                        <option value="grid">그리드</option>
+                        <option value="time">시간형</option>
                         <option value="text">단답형</option>
                         <option value="textarea">장문형</option>
                         <option value="rating">평가형</option>
@@ -2604,7 +2949,7 @@
         refreshAllJumpSelects();
 
         // 섹션 API 즉시 호출
-        const response = await saveSectionsToServer();
+        await saveSectionsToServer();
     }
 
     // 섹션 UI만 추가 (API 호출 없음 - 데이터 로드 시 사용)
@@ -2632,14 +2977,14 @@
                 <div class="flex flex-col gap-2 flex-1">
                     <input type="hidden" class="section-title-value" value="${escapeHtml(title)}">
                     <div class="section-title-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-500 text-sm font-bold text-slate-700 w-full focus:outline-none focus:border-indigo-500 px-2 py-1 min-h-[28px]" contenteditable="true" data-placeholder="섹션 제목 입력 (필수)" oninput="syncSectionTitleValue(this); onSectionInfoChange(this);">${title}</div>
-                    <div class="flex gap-2 mt-1">
+                    <div class="editable-action-row hidden flex gap-2 mt-1">
                         <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialogForEditable(this.closest('.section-item').querySelector('.section-title-input'))">
                             <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
                         </button>
                     </div>
                     <input type="hidden" class="section-desc-value" value="${escapeHtml(description)}">
                     <div class="section-desc-input bg-transparent border border-slate-200 rounded focus:ring-1 focus:ring-indigo-400 text-sm text-slate-500 w-full focus:outline-none focus:border-indigo-400 px-2 py-1 min-h-[28px]" contenteditable="true" data-placeholder="섹션 설명 (선택사항)" oninput="syncSectionDescValue(this); onSectionInfoChange(this);">${description}</div>
-                    <div class="flex gap-2 mt-1">
+                    <div class="editable-action-row hidden flex gap-2 mt-1">
                         <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400" onclick="openHyperlinkDialogForEditable(this.closest('.section-item').querySelector('.section-desc-input'))">
                             <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
                         </button>
@@ -2672,12 +3017,14 @@
                     </button>
                     <select class="new-question-type text-xs border border-slate-300 rounded px-2 py-1.5 text-slate-600 focus:border-indigo-500 outline-none bg-white" onchange="toggleImageUploadArea(this)">
                         <option value="choice" selected>객관식</option>
+                        <option value="grid">그리드</option>
                         <option value="text">단답형</option>
                         <option value="textarea">장문형</option>
                         <option value="rating">평가형</option>
                         <option value="nps">NPS</option>
                         <option value="number">숫자형</option>
                         <option value="date">날짜형</option>
+                        <option value="time">시간형</option>
                         <option value="image">이미지</option>
                     </select>
                 </div>
@@ -2807,7 +3154,6 @@
             const response = await apiCall(`/survey-form/surveys/${currentSurveyId}/sections`, 'PUT', {
                 sectionInfoList: sections
             });
-            console.log('섹션 저장 완료:', response);
 
             const savedSections = Array.isArray(response) ? response : (response.sectionInfoList || []);
 
@@ -3056,6 +3402,11 @@
                 section: section
             };
 
+            if (frontendType === 'time') {
+                const intervalRadio = formContainer.querySelector('.time-interval-radio:checked');
+                questionData.isInterval = intervalRadio ? intervalRadio.value === 'true' : false;
+            }
+
             // 이미지 URL이 있으면 추가
             if (preUploadedImageUrl) {
                 questionData.imageUrl = preUploadedImageUrl;
@@ -3080,7 +3431,8 @@
                 false, // isSectionDecidable
                 false, // hasCustomInput
                 null,  // defaultDate
-                preUploadedImageUrl || null // imageUrl
+                preUploadedImageUrl || null, // imageUrl
+                questionData.isInterval
             );
 
             // 비어있음 안내문구가 있다면 숨김 처리
@@ -3119,30 +3471,22 @@
     }
 
     // 새 문항 DOM 생성 (반환만 수행)
-    function addNewQuestion(questionId = null, title = '', description = '', order = 0, type = 'choice', isSectionDecidable = false, hasCustomInput = false, defaultDate = null, imageUrl = null) {
+    function addNewQuestion(questionId = null, title = '', description = '', order = 0, type = 'choice', isSectionDecidable = false, hasCustomInput = false, defaultDate = null, imageUrl = null, isInterval = false) {
         const newQuestion = document.createElement('div');
         newQuestion.className = 'question-item group flex bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden hover:border-indigo-300 transition-all mb-4';
         newQuestion.setAttribute('data-question-id', questionId);
         newQuestion.setAttribute('data-question-type', type);
-
-        // 드래그 이벤트
-        newQuestion.setAttribute('draggable', 'true');
-        newQuestion.addEventListener('dragstart', handleDragStart);
-        newQuestion.addEventListener('dragend', handleDragEnd);
+        newQuestion.setAttribute('draggable', 'false');
         // dragover/drop은 섹션 컨테이너에서 처리하므로 여기서 제거하거나 유지해도 무방
 
         // 타입별 표시 클래스
         const showChoice = type === 'choice' ? '' : 'hidden';
-        const showText = type === 'text' ? '' : 'hidden';
-        const showTextarea = type === 'textarea' ? '' : 'hidden';
         const showRating = type === 'rating' ? '' : 'hidden';
         const showNps = type === 'nps' ? '' : 'hidden';
-        const showNumber = type === 'number' ? '' : 'hidden';
         const showDate = type === 'date' ? '' : 'hidden';
         const showImage = type === 'image' ? '' : 'hidden';
-
-        // [신규] 섹션 분기 설정 체크박스 표시 여부 (객관식일 때만)
-        const showRouteConfig = type === 'choice' ? '' : 'hidden';
+        const showGrid = type === 'grid' ? '' : 'hidden';
+        const showTime = type === 'time' ? '' : 'hidden';
 
         // 객관식일 때만: 분기 설정, 직접 입력 설정 표시
         const directBtnDisabled = hasCustomInput ? 'disabled class="direct-input-btn text-xs text-slate-300 cursor-not-allowed px-2 py-1 rounded inline-block"' : 'class="direct-input-btn text-xs text-emerald-600 font-bold hover:bg-emerald-50 px-2 py-1 rounded inline-block"';
@@ -3157,7 +3501,7 @@
             <div class="w-64 bg-slate-50 border-r border-slate-200 p-4 flex flex-col gap-4 shrink-0">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-2">
-                        <div class="drag-handle cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 mr-1">
+                        <div class="drag-handle cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 mr-1" draggable="true">
                             <i class="fas fa-grip-vertical"></i>
                         </div>
                         <span class="question-number bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded font-bold">Q${order}</span>
@@ -3180,16 +3524,67 @@
                 </div>
 
                 <div class="space-y-2">
-                    <div class="flex items-center justify-between">
+                    <label class="flex items-center justify-between">
                         <span class="text-xs text-slate-600 font-medium">필수 응답</span>
                         <input type="checkbox" class="required-checkbox w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                    </label>
+
+                    <label class="flex items-center justify-between ${showGrid}">
+                        <span class="text-xs text-slate-600 font-medium">체크박스 그리드</span>
+                        <input type="checkbox" class="grid-checkbox-toggle w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                    </label>
+                    <label class="flex items-center justify-between ${showGrid}">
+                        <span class="text-xs text-slate-600 font-medium">행 순서 무작위로 섞기</span>
+                        <input type="checkbox" class="grid-mixed-toggle w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                    </label>
+                    <label class="flex items-center justify-between ${showGrid}">
+                        <span class="text-xs text-slate-600 font-medium">1열당 응답을 1개로 제한</span>
+                        <input type="checkbox" class="grid-distinct-toggle w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                    </label>
+
+                    <label class="flex items-center justify-between ${showChoice}">
+                        <span class="text-xs text-slate-600 font-medium">섹션 분기 설정</span>
+                        <input type="checkbox" class="route-checkbox w-4 h-4 rounded focus:ring-indigo-500"
+                            ${isSectionDecidable ? 'checked' : ''}
+                            onchange="toggleSectionBranching(this)">
+                    </label>
+                </div>
+                <div class="image-upload-container mt-auto flex flex-col gap-2 items-start w-full ${type === 'image' ? 'hidden' : ''}">
+                    <!-- 이미지 URL 저장용 숨김 필드 -->
+                    <input type="hidden" class="question-image-url-input" value="${escapeHtml(imageUrl || '')}">
+
+                    <!-- 상태 1: 업로드된 이미지가 있을 때 (이미지 + 교체/삭제 버튼) -->
+                    <div class="question-image-preview flex flex-col gap-2 w-full ${imageUrl ? '' : 'hidden'}">
+                        <!-- 상단에 렌더링되는 이미지 -->
+                        <img src="${escapeHtml(imageUrl || '')}" class="question-image-tag max-w-full h-auto rounded border border-slate-200" alt="Question Image">
+                        <!-- 이미지 로드 실패 시 표시될 fallback -->
+                        <div class="image-type-fallback hidden flex-1">
+                            <div class="bg-amber-50 border border-amber-200 rounded p-2">
+                                <div class="flex items-center gap-1 text-amber-600 text-xs mb-1">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>이미지 로드 실패</span>
+                                </div>
+                                <p class="text-xs text-slate-500 break-all image-type-fallback-url">${escapeHtml(imageUrl || '')}</p>
+                            </div>
+                        </div>
+                        <!-- 하단 교체 및 삭제 버튼 -->
+                        <div class="flex gap-1">
+                            <label class="cursor-pointer px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded hover:bg-slate-200 transition-colors inline-flex items-center gap-1">
+                                <i class="fas fa-sync-alt text-xs"></i> 변경
+                                <input type="file" class="hidden question-image-file-input" accept="image/*" onchange="handleQuestionImageUpload(this)">
+                            </label>
+                            <button type="button" class="cursor-pointer px-2 py-1 bg-red-50 text-red-600 text-xs rounded hover:bg-red-100 transition-colors inline-flex items-center gap-1" onclick="handleQuestionImageDelete(this)">
+                                <i class="fas fa-trash-alt text-xs"></i> 삭제
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="route-config-container flex items-center justify-between ${showRouteConfig}">
-                        <span class="text-xs text-slate-600 font-medium text-orange-600">섹션 분기 설정</span>
-                        <input type="checkbox" class="route-checkbox w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
-                               ${isSectionDecidable ? 'checked' : ''}
-                               onchange="toggleSectionBranching(this)">
+                    <!-- 상태 2: 기본 상태 (이미지 추가 버튼, 이미지가 없을 때만 표시) -->
+                    <div class="question-image-default ${imageUrl ? 'hidden' : ''}">
+                        <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
+                            <i class="fas fa-image text-xs"></i> 이미지
+                            <input type="file" class="hidden question-image-file-input" accept="image/*" onchange="handleQuestionImageUpload(this)">
+                        </label>
                     </div>
                 </div>
             </div>
@@ -3197,36 +3592,21 @@
             <div class="flex-1 p-6">
                 <input type="hidden" class="question-title-value" value="${escapeHtml(title)}">
                 <div class="question-title-input w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 mb-2 transition-colors" contenteditable="true" data-placeholder="질문을 입력하세요" oninput="syncTitleValue(this)">${title || ''}</div>
-                <div class="flex items-center gap-2 mt-1 mb-2">
+                <div class="editable-action-row hidden flex items-center gap-2 mt-1 mb-2">
                     <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(this.closest('.question-item').querySelector('.question-title-input'))">
                         <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
                     </button>
                 </div>
                 <input type="hidden" class="question-desc-value" value="${escapeHtml(description)}">
                 <div class="question-desc-input ${showDescription} w-full text-sm text-slate-500 border-b border-slate-100 focus:border-indigo-400 outline-none pb-2 transition-all min-h-[28px]" contenteditable="true" data-placeholder="문항에 대한 설명을 입력하세요 (선택사항)" oninput="syncDescValue(this)">${description || ''}</div>
-                <div class="flex items-center gap-2 mt-2 mb-3 ${showDescription}">
+                <div class="editable-action-row hidden flex items-center gap-2 mt-2 mb-3 ${showDescription}">
                     <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(this.closest('.question-item').querySelector('.question-desc-input'))">
                         <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
                     </button>
                 </div>
-                <div class="flex gap-2 mt-2 mb-3 ${type === 'image' ? 'hidden' : ''}">
-                    <input type="hidden" class="question-image-url-input" value="${escapeHtml(imageUrl || '')}">
-                    <label class="cursor-pointer text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 inline-flex items-center gap-1">
-                        <i class="fas fa-image text-xs"></i> 이미지
-                        <input type="file" class="hidden question-image-file-input" accept="image/*" onchange="handleQuestionImageUpload(this)">
-                    </label>
-                </div>
-                <div class="question-image-preview ${imageUrl ? '' : 'hidden'} mb-3 ${type === 'image' ? 'hidden' : ''}">
-                    <div class="relative inline-block">
-                        <img class="question-image-tag max-h-32 rounded border border-slate-200" src="${escapeHtml(imageUrl || '')}" alt="문항 이미지" referrerpolicy="no-referrer">
-                        <button type="button" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600" onclick="removeQuestionImage(this)">
-                            <i class="fas fa-times text-[8px]"></i>
-                        </button>
-                    </div>
-                </div>
 
                 <!-- 이미지 문항 전용 이미지 업로드 영역 (단순화) -->
-                <div class="image-upload-required ${type === 'image' ? '' : 'hidden'} mb-3">
+                <div class="image-options ${showImage} mb-3">
                     <input type="hidden" class="question-image-url-input-for-image-type" value="${escapeHtml(imageUrl || '')}">
 
                     <!-- 이미지가 없을 때: 업로드 버튼만 표시 -->
@@ -3268,7 +3648,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="choice-options space-y-3 pl-2 ${showChoice}">
                     <div class="options-container" data-question-id="${questionId}">
                         ${type === 'choice' ? getInitialOptionHTML(questionId, jumpSelectClass) : ''}
@@ -3278,9 +3657,6 @@
                         <button ${directBtnDisabled} onclick="addDirectInputOption('${questionId}')">+ 직접 입력 추가</button>
                     </div>
                 </div>
-
-                <div class="text-options ${showText}"><div class="bg-slate-50 border border-dashed border-slate-300 rounded p-4 text-slate-400 text-sm">단답형 입력 영역</div></div>
-                <div class="textarea-options ${showTextarea}"><div class="bg-slate-50 border border-dashed border-slate-300 rounded p-4 text-slate-400 text-sm h-24">장문형 입력 영역</div></div>
                 <div class="rating-options ${showRating}">
                     <div class="flex flex-col gap-4">
                         <div class="flex items-center gap-3">
@@ -3294,7 +3670,7 @@
                                 </button>
                             </div>
                             <!-- 왼쪽 라벨 -->
-                            <input type="text" class="rating-label-left text-xs border border-slate-200 rounded px-2 py-1 w-16 text-center focus:border-indigo-500 outline-none" value="낮음" maxlength="6" placeholder="낮음">
+                            <input type="text" class="rating-label-left text-xs border border-slate-200 rounded px-2 py-1 w-25 text-center focus:border-indigo-500 outline-none" value="낮음" maxlength="6" placeholder="낮음">
                             <!-- 동그라미들 -->
                             <div class="rating-circles flex items-center gap-2" data-count="5">
                                 <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">1</span>
@@ -3304,7 +3680,7 @@
                                 <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">5</span>
                             </div>
                             <!-- 오른쪽 라벨 -->
-                            <input type="text" class="rating-label-right text-xs border border-slate-200 rounded px-2 py-1 w-16 text-center focus:border-indigo-500 outline-none" value="높음" maxlength="6" placeholder="높음">
+                            <input type="text" class="rating-label-right text-xs border border-slate-200 rounded px-2 py-1 w-25 text-center focus:border-indigo-500 outline-none" value="높음" maxlength="6" placeholder="높음">
                         </div>
                         <div class="text-xs text-slate-400 pl-6">
                             <i class="fas fa-info-circle mr-1"></i> +/- 버튼으로 선택 항목 수를 2~10개로 조절할 수 있습니다. 라벨을 클릭하여 수정하세요.
@@ -3314,8 +3690,6 @@
                 <div class="nps-options ${showNps}">
                     <div class="flex flex-col gap-4">
                         <div class="flex items-center gap-3">
-                            <!-- 왼쪽 표시 -->
-                            <span class="text-xs text-slate-500 font-medium">1</span>
                             <!-- 10개의 동그라미 -->
                             <div class="nps-circles flex items-center gap-2">
                                 <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">1</span>
@@ -3329,32 +3703,66 @@
                                 <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">9</span>
                                 <span class="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs text-slate-400">10</span>
                             </div>
-                            <!-- 오른쪽 표시 -->
-                            <span class="text-xs text-slate-500 font-medium">10</span>
                         </div>
                         <div class="text-xs text-slate-400">
                             <i class="fas fa-info-circle mr-1"></i> NPS(Net Promoter Score)는 1~10점으로 고정됩니다.
                         </div>
                     </div>
                 </div>
-                <div class="number-options ${showNumber}">
-                    <div class="bg-slate-50 border border-dashed border-slate-300 rounded p-4 text-slate-400 text-sm flex items-center gap-2">
-                        <i class="fas fa-hashtag"></i> 사용자가 숫자를 입력하는 영역입니다.
-                    </div>
-                </div>
                 <div class="date-options ${showDate}">
                      <div class="flex flex-col gap-3">
-                        <div class="bg-slate-50 border border-dashed border-slate-300 rounded p-4 text-slate-400 text-sm flex items-center gap-2"><i class="fas fa-calendar-alt"></i> 사용자가 날짜를 선택하는 영역입니다.</div>
                         <div class="flex items-center gap-3">
                             <span class="text-xs text-slate-500 font-medium">기본 날짜 설정:</span>
                             <input type="date" class="default-date-input text-sm border border-slate-200 rounded px-2 py-1.5 focus:border-indigo-500 outline-none" value="${defaultDate || ''}">
                         </div>
                     </div>
                 </div>
-                <div class="image-options ${showImage}">
+                <div class="grid-options space-y-3 pl-2 ${showGrid}">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600">행</span>
+                                <button type="button" class="text-xs text-indigo-600 font-bold hover:bg-indigo-50 px-2 py-1 rounded" onclick="addGridOption(this, true)">+ 행 추가</button>
+                            </div>
+                            <div class="grid-option-list mt-2 space-y-2" data-is-row="true"></div>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600">열</span>
+                                <button type="button" class="text-xs text-indigo-600 font-bold hover:bg-indigo-50 px-2 py-1 rounded" onclick="addGridOption(this, false)">+ 열 추가</button>
+                            </div>
+                            <div class="grid-option-list mt-2 space-y-2" data-is-row="false"></div>
+                        </div>
+                    </div>
+                    <div class="grid-distinct-warning hidden text-xs text-red-500">
+                        열 중복 선택 금지 옵션이 켜져있으면 행 개수가 열 개수보다 많을 수 없습니다.
+                    </div>
+                </div>
+                <div class="time-options ${showTime}">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center gap-4 text-xs text-slate-600">
+                            <label class="flex items-center gap-2">
+                                <input type="radio" class="time-interval-radio w-4 h-4 text-indigo-600 focus:ring-indigo-500" name="time-mode-${questionId || 'new'}-${order}" value="false" ${!isInterval ? 'checked' : ''}>
+                                시간
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="radio" class="time-interval-radio w-4 h-4 text-indigo-600 focus:ring-indigo-500" name="time-mode-${questionId || 'new'}-${order}" value="true" ${isInterval ? 'checked' : ''}>
+                                기간
+                            </label>
+                        </div>
+                        <div class="text-xs text-slate-400">
+                            <i class="fas fa-info-circle mr-1"></i> 기간 선택 시 '시:분:초'를 입력하는 방식으로 응답합니다.
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
+
+        const dragHandle = newQuestion.querySelector('.drag-handle');
+        if (dragHandle) {
+            dragHandle.addEventListener('dragstart', handleDragStart);
+            dragHandle.addEventListener('dragend', handleDragEnd);
+        }
 
         // 주의: 이 함수는 appendChild를 하지 않고 요소를 반환만 합니다.
         // 호출자가 적절한 위치에 append 해야 합니다.
@@ -3550,13 +3958,32 @@
 
     // 드래그 앤 드롭 관련 변수
     let draggedQuestion = null;
+    const DRAG_SCROLL_THRESHOLD = 60;
+    const DRAG_SCROLL_STEP = 14;
+
+    function autoScrollOnDrag(clientY) {
+        const builder = document.getElementById('view-builder');
+        if (!builder) return;
+
+        const rect = builder.getBoundingClientRect();
+        const distanceTop = clientY - rect.top;
+        const distanceBottom = rect.bottom - clientY;
+
+        if (distanceTop < DRAG_SCROLL_THRESHOLD) {
+            builder.scrollTop -= DRAG_SCROLL_STEP;
+        } else if (distanceBottom < DRAG_SCROLL_THRESHOLD) {
+            builder.scrollTop += DRAG_SCROLL_STEP;
+        }
+    }
 
     // 드래그 시작
     function handleDragStart(e) {
-        draggedQuestion = this;
-        this.classList.add('opacity-50');
+        const questionItem = this.closest('.question-item');
+        if (!questionItem) return;
+        draggedQuestion = questionItem;
+        questionItem.classList.add('opacity-50');
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', this.getAttribute('data-question-id'));
+        e.dataTransfer.setData('text/plain', questionItem.getAttribute('data-question-id'));
 
         // 약간의 딜레이 후 스타일 적용 (드래그 이미지가 제대로 생성되도록)
         setTimeout(() => {
@@ -3566,7 +3993,9 @@
 
     // 드래그 종료
     function handleDragEnd(e) {
-        this.classList.remove('opacity-50', 'border-indigo-500', 'border-2');
+        if (draggedQuestion) {
+            draggedQuestion.classList.remove('opacity-50', 'border-indigo-500', 'border-2');
+        }
         document.querySelectorAll('.question-item').forEach(item => {
             item.classList.remove('drag-over-top', 'drag-over-bottom');
         });
@@ -3575,35 +4004,30 @@
 
     // 드래그 오버 (드롭 허용)
     function handleDragOver(e) {
-        if (e.preventDefault) {
-            e.preventDefault();
+        autoScrollOnDrag(e.clientY);
+        const targetQuestionItem = e.target.closest('.question-item');
+        if (!targetQuestionItem) {
+            return;
         }
 
-        // 문항 위로 드래그하는지, 섹션 빈 공간으로 드래그하는지 확인
-        const targetSection = e.target.closest('.section-questions');
-        if (targetSection) {
-            e.dataTransfer.dropEffect = 'move';
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        if (targetQuestionItem === draggedQuestion) {
+            return;
         }
 
-        // 드래그 위치에 따라 상단/하단 표시
-        const rect = this.getBoundingClientRect();
+        const rect = targetQuestionItem.getBoundingClientRect();
         const midY = rect.top + rect.height / 2;
 
-        this.classList.remove('drag-over-top', 'drag-over-bottom');
+        document.querySelectorAll('.question-item').forEach(item => {
+            item.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
 
         if (e.clientY < midY) {
-            this.classList.add('drag-over-top');
+            targetQuestionItem.classList.add('drag-over-top');
         } else {
-            this.classList.add('drag-over-bottom');
-        }
-
-        return false;
-    }
-
-    // 드래그 진입
-    function handleDragEnter(e) {
-        if (e.preventDefault) {
-            e.preventDefault();
+            targetQuestionItem.classList.add('drag-over-bottom');
         }
     }
 
@@ -3611,7 +4035,6 @@
     function handleDrop(e) {
         e.stopPropagation();
 
-        const draggedId = e.dataTransfer.getData('text/plain'); // dragStart에서 id 저장했다고 가정
         if (!draggedQuestion) return; // 전역 변수 draggedQuestion 사용 시
 
         // 원래 섹션 저장
@@ -3620,92 +4043,34 @@
 
         // 드롭된 위치 찾기
         const dropTarget = e.target;
-        const targetSectionList = dropTarget.closest('.section-questions');
         const targetQuestionItem = dropTarget.closest('.question-item');
+        if (!targetQuestionItem || targetQuestionItem === draggedQuestion) return;
 
-        if (targetSectionList) {
-            // 드롭 대상 섹션
-            const targetSection = targetSectionList.closest('.section-item');
-            const targetSectionOrder = targetSection ? targetSection.getAttribute('data-section-order') : null;
+        const targetSectionList = targetQuestionItem.closest('.section-questions');
+        if (!targetSectionList) return;
 
-            if (targetQuestionItem && targetQuestionItem !== draggedQuestion) {
-                // 다른 문항 위/아래로 드롭
-                const rect = targetQuestionItem.getBoundingClientRect();
-                if (e.clientY < rect.top + rect.height / 2) {
-                    targetSectionList.insertBefore(draggedQuestion, targetQuestionItem);
-                } else {
-                    targetSectionList.insertBefore(draggedQuestion, targetQuestionItem.nextSibling);
-                }
-            } else {
-                // 섹션의 빈 공간(맨 끝)으로 드롭
-                targetSectionList.appendChild(draggedQuestion);
-            }
+        const targetSection = targetSectionList.closest('.section-item');
+        const targetSectionOrder = targetSection ? targetSection.getAttribute('data-section-order') : null;
 
-            // 다른 섹션으로 이동한 경우 분기 드롭다운 기본값으로 리셋
-            if (originalSectionOrder && targetSectionOrder && originalSectionOrder !== targetSectionOrder) {
-                const routeCheckbox = draggedQuestion.querySelector('.route-checkbox');
-                if (routeCheckbox && routeCheckbox.checked) {
-                    // 분기 설정이 켜져 있는 경우 모든 드롭다운을 기본값으로 세팅
-                    updateSectionJumpOptions(draggedQuestion, true, true); // resetToDefault = true
-                }
-            }
-
-            // 이동 후 전체 재정렬
-            updateQuestionNumbers();
-            refreshAllJumpSelects(); // 섹션 기반 드롭다운 갱신
+        const rect = targetQuestionItem.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) {
+            targetSectionList.insertBefore(draggedQuestion, targetQuestionItem);
+        } else {
+            targetSectionList.insertBefore(draggedQuestion, targetQuestionItem.nextSibling);
         }
+
+        if (originalSectionOrder && targetSectionOrder && originalSectionOrder !== targetSectionOrder) {
+            const routeCheckbox = draggedQuestion.querySelector('.route-checkbox');
+            if (routeCheckbox && routeCheckbox.checked) {
+                updateSectionJumpOptions(draggedQuestion, true, true); // resetToDefault = true
+            }
+        }
+
+        updateQuestionNumbers();
+        refreshAllJumpSelects();
 
         draggedQuestion.classList.remove('opacity-50', 'border-indigo-500', 'border-2');
         draggedQuestion = null;
-    }
-
-    // 문항 타입 토글
-    function toggleQuestionType(questionId) {
-        const question = document.querySelector(`.question-item[data-question-id="${questionId}"]`);
-        const select = question.querySelector('.question-type');
-        const choiceOptions = question.querySelector('.choice-options');
-        const textOptions = question.querySelector('.text-options');
-        const textareaOptions = question.querySelector('.textarea-options');
-        const ratingOptions = question.querySelector('.rating-options');
-        const npsOptions = question.querySelector('.nps-options');
-        const numberOptions = question.querySelector('.number-options');
-        const dateOptions = question.querySelector('.date-options');
-        const maxSelectContainer = question.querySelector('.max-select-container');
-
-        // 모든 옵션 숨기기
-        const allOptions = [choiceOptions, textOptions, textareaOptions, ratingOptions, npsOptions, numberOptions, dateOptions];
-        allOptions.forEach(opt => {
-            if (opt) opt.classList.add('hidden');
-        });
-
-        // 최대 선택 개수는 기본적으로 숨기기
-        if (maxSelectContainer) maxSelectContainer.classList.add('hidden');
-
-        // 선택된 타입에 따라 표시
-        switch (select.value) {
-            case 'choice':
-                if (choiceOptions) choiceOptions.classList.remove('hidden');
-                if (maxSelectContainer) maxSelectContainer.classList.remove('hidden');
-                break;
-            case 'text':
-                if (textOptions) textOptions.classList.remove('hidden');
-                break;
-            case 'textarea':
-                if (textareaOptions) textareaOptions.classList.remove('hidden');
-                break;
-            case 'rating':
-                if (ratingOptions) ratingOptions.classList.remove('hidden');
-                break;
-            case 'nps':
-                if (npsOptions) npsOptions.classList.remove('hidden');
-                break;
-            case 'number':
-                if (numberOptions) numberOptions.classList.remove('hidden');
-                break;
-            case 'date':
-                if (dateOptions) dateOptions.classList.remove('hidden');
-                break;
-        }
     }
 
     // 평가형 동그라미 개수 조절
@@ -3762,70 +4127,6 @@
         if (currentValue > optionCount && optionCount > 0) {
             maxSelectDropdown.value = optionCount;
         }
-    }
-
-    // 문항 제목 15자 제한 함수
-    function truncateTitle(title, maxLength = 15) {
-        if (!title || title.trim() === '') return '제목 없음';
-        return title.length > maxLength ? title.substring(0, maxLength) + '...' : title;
-    }
-
-    // 모든 이동 문항 드롭다운 업데이트
-    function updateAllJumpSelects() {
-        const questions = document.querySelectorAll('.question-item');
-        const jumpSelects = document.querySelectorAll('.jump-select');
-
-        jumpSelects.forEach(select => {
-            const currentValue = select.value;
-            const currentQuestionItem = select.closest('.question-item');
-            const currentQuestionId = currentQuestionItem ? currentQuestionItem.getAttribute('data-question-id') : null;
-
-            // 현재 문항의 순서(인덱스) 찾기
-            let currentQuestionIndex = -1;
-            questions.forEach((q, idx) => {
-                if (q.getAttribute('data-question-id') === currentQuestionId) {
-                    currentQuestionIndex = idx;
-                }
-            });
-
-            select.innerHTML = `
-                <option value="next">다음 섹션으로 이동 (기본)</option>
-            `;
-
-            questions.forEach((q, index) => {
-                const qId = q.getAttribute('data-question-id');
-                // 자기 자신 문항은 제외
-                if (qId === currentQuestionId) return;
-
-                // 현재 문항보다 이전 문항은 제외 (이전 문항으로 이동 불가)
-                if (index <= currentQuestionIndex) return;
-
-                const titleInput = q.querySelector('.question-title-input');
-                const title = titleInput ? titleInput.value : '';
-                const truncatedTitle = truncateTitle(title);
-                const questionNum = index + 1;
-
-                const option = document.createElement('option');
-                option.value = `q${qId}`;
-                option.textContent = `Q${questionNum}. ${truncatedTitle} 로 이동`;
-                select.appendChild(option);
-            });
-
-            // 설문 종료 옵션 추가 (비활성화)
-            const endOption = document.createElement('option');
-            endOption.value = 'end';
-            endOption.textContent = '설문 종료 (Screen Out)';
-            endOption.disabled = true;
-            endOption.className = 'text-slate-300';
-            select.appendChild(endOption);
-
-            // 기존 선택값 복원 (이전 문항으로 가는 값이었다면 기본값으로 리셋)
-            if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
-                select.value = currentValue;
-            } else {
-                select.value = 'next';
-            }
-        });
     }
 
     // 옵션 추가
@@ -3950,29 +4251,6 @@
         directInputBtn.classList.add('text-emerald-600', 'hover:bg-emerald-50');
 
         updateMaxSelectOptions(questionId);
-    }
-
-    // 날짜 입력 동기화 함수
-    function syncDateInputs(inputElement, source) {
-        const dateOptions = inputElement.closest('.date-options');
-        const dateInput = dateOptions.querySelector('.default-date-input');
-        const textInput = dateOptions.querySelector('.default-date-text');
-
-        if (source === 'calendar') {
-            // 캘린더에서 선택한 경우 텍스트 입력란에 동기화
-            textInput.value = dateInput.value;
-        } else if (source === 'text') {
-            // 텍스트로 입력한 경우 캘린더에 동기화
-            const dateValue = textInput.value;
-            // YYYY-MM-DD 형식 검증
-            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-            if (dateRegex.test(dateValue)) {
-                const date = new Date(dateValue);
-                if (!isNaN(date.getTime())) {
-                    dateInput.value = dateValue;
-                }
-            }
-        }
     }
 
     // 페이지 로드 시 초기화
