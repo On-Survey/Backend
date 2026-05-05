@@ -161,6 +161,42 @@ public class SurveyCommandService implements SurveyCommand {
 
 
     @Override
+    public SurveyFormResponse submitHomeFormSurvey(Long userKey, Long surveyId, SurveyFormRequest request) {
+        Survey survey = getSurvey(surveyId);
+        validateMember(userKey);
+
+        Set<AgeRange> ages = (request.ages() == null) ? Set.of() : new HashSet<>(request.ages());
+
+        Long discountCodeId = null;
+        if (request.discountCode() != null && !request.discountCode().isBlank()) {
+            DiscountCode discountCode = discountCodeQueryService.getByCode(request.discountCode());
+            discountCodeId = discountCode.getId();
+            log.info("[HomeFormSubmit] 할인 코드 저장 - surveyId={}, org={}", surveyId, discountCode.getOrganizationName());
+        }
+
+        survey.updateSurvey(survey.getTitle(), survey.getDescription(), request.deadline(), request.totalCoin());
+
+        int questionCount = questionQueryService.countQuestionsBySurveyId(surveyId);
+        int resolvedPromotionAmount = promotionTierResolver.resolveAmountByQuestionCount(questionCount);
+
+        Set<Residence> residences = (request.residences() == null) ? Set.of() : new HashSet<>(request.residences());
+
+        SurveyInfo info = upsertSurveyInfo(
+                surveyId,
+                request.dueCount(),
+                request.gender(),
+                ages,
+                residences,
+                resolvedPromotionAmount,
+                discountCodeId,
+                true
+        );
+
+        log.info("[HomeFormSubmit] 홈결제 설문 제출 완료 (코인 차감 없음) - surveyId={}", surveyId);
+        return finalizeSubmit(userKey, surveyId, survey, info, request.dueCount(), request.deadline(), request.totalCoin());
+    }
+
+    @Override
     public SurveyFormResponse submitFreeSurvey(Long userKey, Long surveyId, FreeSurveyFormRequest request) {
         Survey survey = getSurvey(surveyId);
         validateMember(userKey);
