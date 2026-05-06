@@ -60,7 +60,7 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                 .join(response).on(response.surveyId.eq(surveyId).and(response.memberId.eq(questionAnswer.memberId)))
                 .where(question.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
                 .distinct()
-                .orderBy(member.id.asc())
+                .orderBy(response.createdAt.asc())
                 .fetch();
     }
 
@@ -78,7 +78,7 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                 .join(question).on(question.questionId.eq(questionAnswer.questionId))
                 .join(response).on(response.surveyId.eq(surveyId).and(response.memberId.eq(questionAnswer.memberId)))
                 .where(question.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
-                .orderBy(response.updatedAt.asc(), question.order.asc(), questionAnswer.gridRowOrder.asc())
+                .orderBy(response.createdAt.asc(), question.order.asc(), questionAnswer.gridRowOrder.asc())
                 .fetch();
     }
 
