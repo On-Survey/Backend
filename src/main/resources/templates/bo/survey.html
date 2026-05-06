@@ -237,7 +237,7 @@
 
                 <div id="screeningForm" class="space-y-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">스크리닝 질문</label>
+                        <label class="block text-xs font-medium text-slate-600 mb-1" for="screeningContent">스크리닝 질문</label>
                         <input type="text" id="screeningContent" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="예: 본 설문의 대상인 20대 여성이 맞습니까?">
                     </div>
                     <div>
@@ -319,7 +319,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <!-- 성별 -->
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">타겟 성별</label>
+                        <label class="block text-xs font-medium text-slate-600 mb-1" for="targetGender">타겟 성별</label>
                         <select id="targetGender" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                             <option value="ALL">전체</option>
                             <option value="MALE">남성</option>
@@ -453,7 +453,7 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">목표 응답 수</label>
+                        <label class="block text-xs font-medium text-slate-600 mb-1" for="targetDueCount">목표 응답 수</label>
                         <select id="targetDueCount" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                             <option value="50">50명</option>
                             <option value="100">100명</option>
@@ -462,7 +462,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">마감일</label>
+                        <label class="block text-xs font-medium text-slate-600 mb-1" for="targetDeadline">마감일</label>
                         <input type="date" id="targetDeadline" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                     </div>
                 </div>
@@ -667,6 +667,7 @@
                 <h3 class="text-sm font-bold text-orange-600 mb-2">선택된 새 소유자</h3>
                 <div id="selectedOwnerInfo" class="text-sm text-slate-700"></div>
                 <input type="hidden" id="selectedNewMemberId">
+                <input type="hidden" id="selectedNewUserKey">
             </div>
         </div>
 
@@ -689,11 +690,11 @@
         <h3 class="font-bold text-slate-700 mb-4"><i class="fas fa-link mr-2 text-indigo-600"></i>하이퍼링크 삽입</h3>
         <div class="space-y-3 mb-4">
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">표시 텍스트</label>
+                <label class="block text-xs font-medium text-slate-600 mb-1" for="hyperlinkText">표시 텍스트</label>
                 <input type="text" id="hyperlinkText" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="링크에 표시할 텍스트">
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">URL</label>
+                <label class="block text-xs font-medium text-slate-600 mb-1" for="hyperlinkUrl">URL</label>
                 <input type="text" id="hyperlinkUrl" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="https://...">
             </div>
         </div>
@@ -708,11 +709,11 @@
 <div id="hyperlinkEditPopover" class="hidden absolute z-[70] bg-white border border-slate-200 rounded-lg shadow-lg p-3 w-72">
     <div class="space-y-2 mb-3">
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">표시 텍스트</label>
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="editLinkText">표시 텍스트</label>
             <input type="text" id="editLinkText" class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:border-indigo-500 outline-none">
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">URL</label>
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="editLinkUrl">URL</label>
             <input type="text" id="editLinkUrl" class="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:border-indigo-500 outline-none">
         </div>
     </div>
@@ -3591,14 +3592,14 @@
 
             <div class="flex-1 p-6">
                 <input type="hidden" class="question-title-value" value="${escapeHtml(title)}">
-                <div class="question-title-input w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 mb-2 transition-colors" contenteditable="true" data-placeholder="질문을 입력하세요" oninput="syncTitleValue(this)">${title || ''}</div>
+                <div class="question-title-input w-full text-lg font-bold border-b-2 border-slate-100 focus:border-indigo-500 outline-none pb-2 mb-2 transition-colors" contenteditable="true" data-placeholder="질문을 입력하세요" oninput="syncTitleValue(this)">${sanitizeDescHtml(title) || ''}</div>
                 <div class="editable-action-row hidden flex items-center gap-2 mt-1 mb-2">
                     <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(this.closest('.question-item').querySelector('.question-title-input'))">
                         <i class="fas fa-link text-xs"></i> 제목 하이퍼링크
                     </button>
                 </div>
                 <input type="hidden" class="question-desc-value" value="${escapeHtml(description)}">
-                <div class="question-desc-input ${showDescription} w-full text-sm text-slate-500 border-b border-slate-100 focus:border-indigo-400 outline-none pb-2 transition-all min-h-[28px]" contenteditable="true" data-placeholder="문항에 대한 설명을 입력하세요 (선택사항)" oninput="syncDescValue(this)">${description || ''}</div>
+                <div class="question-desc-input ${showDescription} w-full text-sm text-slate-500 border-b border-slate-100 focus:border-indigo-400 outline-none pb-2 transition-all min-h-[28px]" contenteditable="true" data-placeholder="문항에 대한 설명을 입력하세요 (선택사항)" oninput="syncDescValue(this)">${sanitizeDescHtml(description) || ''}</div>
                 <div class="editable-action-row hidden flex items-center gap-2 mt-2 mb-3 ${showDescription}">
                     <button type="button" class="text-xs text-slate-500 hover:text-indigo-600 px-2 py-1 rounded border border-slate-200 hover:border-indigo-400 shrink-0" onclick="openHyperlinkDialogForEditable(this.closest('.question-item').querySelector('.question-desc-input'))">
                         <i class="fas fa-link text-xs"></i> 설명 하이퍼링크
@@ -3984,11 +3985,6 @@
         questionItem.classList.add('opacity-50');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', questionItem.getAttribute('data-question-id'));
-
-        // 약간의 딜레이 후 스타일 적용 (드래그 이미지가 제대로 생성되도록)
-        setTimeout(() => {
-            this.classList.add('border-indigo-500', 'border-2');
-        }, 0);
     }
 
     // 드래그 종료
@@ -4005,13 +4001,18 @@
     // 드래그 오버 (드롭 허용)
     function handleDragOver(e) {
         autoScrollOnDrag(e.clientY);
-        const targetQuestionItem = e.target.closest('.question-item');
-        if (!targetQuestionItem) {
+        const targetSectionList = e.target.closest('.section-questions');
+        if (!targetSectionList) {
             return;
         }
 
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
+
+        const targetQuestionItem = e.target.closest('.question-item');
+        if (!targetQuestionItem) {
+            return;
+        }
 
         if (targetQuestionItem === draggedQuestion) {
             return;
@@ -4033,30 +4034,59 @@
 
     // 드롭
     function handleDrop(e) {
+        e.preventDefault();
         e.stopPropagation();
 
         if (!draggedQuestion) return; // 전역 변수 draggedQuestion 사용 시
 
+        const clearDragIndicators = () => {
+            document.querySelectorAll('.question-item').forEach(item => {
+                item.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+        };
+
         // 원래 섹션 저장
+        const originalSectionList = draggedQuestion.closest('.section-questions');
         const originalSection = draggedQuestion.closest('.section-item');
         const originalSectionOrder = originalSection ? originalSection.getAttribute('data-section-order') : null;
 
-        // 드롭된 위치 찾기
-        const dropTarget = e.target;
-        const targetQuestionItem = dropTarget.closest('.question-item');
-        if (!targetQuestionItem || targetQuestionItem === draggedQuestion) return;
-
-        const targetSectionList = targetQuestionItem.closest('.section-questions');
+        // 드롭된 위치 찾기 (빈 섹션/문항 외 영역 드롭도 허용)
+        const targetSectionList = e.target.closest('.section-questions');
         if (!targetSectionList) return;
+
+        const targetQuestionItem = e.target.closest('.question-item');
 
         const targetSection = targetSectionList.closest('.section-item');
         const targetSectionOrder = targetSection ? targetSection.getAttribute('data-section-order') : null;
 
-        const rect = targetQuestionItem.getBoundingClientRect();
-        if (e.clientY < rect.top + rect.height / 2) {
-            targetSectionList.insertBefore(draggedQuestion, targetQuestionItem);
+        // 같은 문항 위에 그대로 드롭한 경우는 위치 변경 없이 종료
+        if (targetQuestionItem === draggedQuestion) {
+            clearDragIndicators();
+            draggedQuestion.classList.remove('opacity-50', 'border-indigo-500', 'border-2');
+            draggedQuestion = null;
+            return;
+        }
+
+        if (targetQuestionItem && targetQuestionItem !== draggedQuestion) {
+            const rect = targetQuestionItem.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+                targetSectionList.insertBefore(draggedQuestion, targetQuestionItem);
+            } else {
+                targetSectionList.insertBefore(draggedQuestion, targetQuestionItem.nextSibling);
+            }
         } else {
-            targetSectionList.insertBefore(draggedQuestion, targetQuestionItem.nextSibling);
+            const isSameSection = originalSectionList === targetSectionList;
+            const hasOtherQuestions = targetSectionList.querySelector('.question-item') !== null;
+
+            // 같은 섹션에서 타깃 문항 없이 드롭한 경우(미세 드래그)는 위치 유지
+            if (isSameSection && hasOtherQuestions) {
+                clearDragIndicators();
+                draggedQuestion.classList.remove('opacity-50', 'border-indigo-500', 'border-2');
+                draggedQuestion = null;
+                return;
+            }
+
+            targetSectionList.appendChild(draggedQuestion);
         }
 
         if (originalSectionOrder && targetSectionOrder && originalSectionOrder !== targetSectionOrder) {
@@ -4068,6 +4098,8 @@
 
         updateQuestionNumbers();
         refreshAllJumpSelects();
+
+        clearDragIndicators();
 
         draggedQuestion.classList.remove('opacity-50', 'border-indigo-500', 'border-2');
         draggedQuestion = null;

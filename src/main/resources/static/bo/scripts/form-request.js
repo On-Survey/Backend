@@ -120,16 +120,15 @@ async function validateFormLink() {
 
         if (response) {
             validatedFormLink = formLink;
-            validationData = response;
-
+            validationData = response.results[0];
             // 유효성 검사 결과 표시
             const resultContainer = document.getElementById('validationResultContainer');
             const resultText = document.getElementById('validationResultText');
 
-            if (response.convertableCount !== undefined) {
+            if (validationData.convertible !== undefined) {
                 resultText.innerHTML = `
-                    변환 가능한 문항: <strong>${response.convertableCount}</strong>개 / 
-                    전체 문항: <strong>${response.totalCount || 'N/A'}</strong>개
+                    변환 가능한 문항: <strong>${validationData.convertible}</strong>개 / 
+                    전체 문항: <strong>${validationData.totalCount ?? 'N/A'}</strong>개
                 `;
             } else {
                 resultText.textContent = '유효성 검사가 완료되었습니다.';
@@ -143,6 +142,7 @@ async function validateFormLink() {
         console.error('유효성 검사 실패:', error);
         validatedFormLink = null;
         validationData = null;
+        document.getElementById('validationResultContainer').classList.add('hidden');
         document.getElementById('validationFailureText').textContent = '유효성 검사에 실패했습니다. 다시 시도해주세요.';
         document.getElementById('validationFailureContainer').classList.remove('hidden');
         showToast('유효성 검사에 실패했습니다.', 'error');
@@ -342,7 +342,7 @@ function renderFormRequests(requests) {
             <td id="form-request-survey-${req.id}" class="px-6 py-4 text-slate-600">${req.registeredSurveyId || '-'}</td>
             <td class="px-6 py-4 text-slate-600">${req.questionCount || '-'}</td>
             <td class="px-6 py-4 text-slate-600">${req.targetResponseCount || '-'}</td>
-            <td class="px-6 py-4 text-slate-600">${req.price ? req.price.toLocaleString() + '원' : '-'}</td>
+            <td class="px-6 py-4 text-slate-600">${req.price ? req.price.toLocaleString() : '0'}</td>
             <td id="form-request-status-${req.id}" class="px-6 py-4">
                 ${req.isRegistered
                     ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">등록완료</span>`
