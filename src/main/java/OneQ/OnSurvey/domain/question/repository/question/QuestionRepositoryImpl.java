@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.question.repository.question;
 
 import OneQ.OnSurvey.domain.question.entity.Question;
+import OneQ.OnSurvey.domain.question.model.QuestionType;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -58,7 +59,16 @@ public class QuestionRepositoryImpl implements QuestionRepository {
 
     @Override
     public int countBySurveyId(Long surveyId) {
-        return questionJpaRepository.countBySurveyId(surveyId);
+        Long result = jpaQueryFactory
+            .select(question.questionId.count())
+            .from(question)
+            .where(
+                question.surveyId.eq(surveyId),
+                question.type.ne(QuestionType.TITLE.name()),
+                question.type.ne(QuestionType.IMAGE.name())
+            )
+            .fetchOne();
+        return result != null ? Math.toIntExact(result) : 0;
     }
 
     @Override
