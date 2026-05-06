@@ -4946,6 +4946,7 @@
         document.getElementById('ownerSearchResults').classList.add('hidden');
         document.getElementById('selectedNewOwner').classList.add('hidden');
         document.getElementById('selectedNewMemberId').value = '';
+        document.getElementById('selectedNewUserKey').value = '';
         document.getElementById('confirmOwnerChangeBtn').disabled = true;
 
         // 현재 소유자 정보 표시
@@ -5020,11 +5021,11 @@
                 return `
                     <div class="flex items-center justify-between px-4 py-3 bg-slate-100 border-b border-slate-100 last:border-b-0 cursor-not-allowed opacity-60">
                         <div class="flex-1">
-                            <p class="font-medium text-slate-700">${member.name || '이름 없음'} <span class="text-orange-500 text-xs">(현재 소유자)</span></p>
+                            <p class="font-medium text-slate-700">${member.name || '이름 없음'}</p>
                             <p class="text-xs text-slate-500">ID: ${member.id} | ${member.email || '이메일 없음'}</p>
                         </div>
                         <span class="px-3 py-1 bg-slate-200 text-slate-500 rounded text-xs font-bold">
-                            선택 불가
+                            현재 소유자
                         </span>
                     </div>
                 `;
@@ -5032,7 +5033,7 @@
 
             return `
                 <div class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 cursor-pointer"
-                     onclick="selectNewOwner(${member.id}, '${member.name || ''}', '${member.email || ''}')">
+                     onclick="selectNewOwner(${member.id}, ${member.userKey}, '${member.name || ''}', '${member.email || ''}')">
                     <div class="flex-1">
                         <p class="font-medium text-slate-700">${member.name || '이름 없음'}</p>
                         <p class="text-xs text-slate-500">ID: ${member.id} | ${member.email || '이메일 없음'}</p>
@@ -5048,7 +5049,7 @@
     }
 
     // 새 소유자 선택
-    function selectNewOwner(memberId, name, email) {
+    function selectNewOwner(memberId, userKey, name, email) {
         // 현재 소유자와 동일한지 확인
         const survey = globalSurveyList.find(s => s.surveyId === currentSurveyId);
         const currentOwnerId = survey?.memberId;
@@ -5059,6 +5060,7 @@
         }
 
         document.getElementById('selectedNewMemberId').value = memberId;
+        document.getElementById('selectedNewUserKey').value = userKey;
         document.getElementById('selectedOwnerInfo').innerHTML = `
             <p><strong>회원 ID:</strong> ${memberId}</p>
             <p><strong>이름:</strong> ${name || '-'}</p>
@@ -5077,19 +5079,21 @@
     // 소유자 변경 확인
     async function confirmOwnerChange() {
         const newMemberId = document.getElementById('selectedNewMemberId').value;
+        const newUserKey = document.getElementById('selectedNewUserKey').value;
 
-        if (!newMemberId) {
+        if (!newMemberId && !newUserKey) {
             showToast('새 소유자를 선택해주세요.', 'warning');
             return;
         }
 
-        if (!confirm('정말 설문 소유자를 변경하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
+        if (!confirm('정말 설문 소유자를 변경하시겠습니까?')) {
             return;
         }
 
         try {
             await apiCall(`/admin/surveys/${currentSurveyId}/owner`, 'PATCH', {
-                newMemberId: parseInt(newMemberId)
+                newMemberId: parseInt(newMemberId),
+                newUserKey: parseInt(newUserKey)
             });
 
             showToast('설문 소유자가 변경되었습니다.', 'success');
