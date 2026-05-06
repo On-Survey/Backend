@@ -54,13 +54,10 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                         member.gender.stringValue(),
                         member.residence.stringValue()
                 ))
-                .from(questionAnswer)
-                .join(question).on(question.questionId.eq(questionAnswer.questionId))
-                .join(member).on(member.id.eq(questionAnswer.memberId))
-                .join(response).on(response.surveyId.eq(surveyId).and(response.memberId.eq(questionAnswer.memberId)))
-                .where(question.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
-                .distinct()
-                .orderBy(response.createdAt.asc())
+                .from(response)
+                .join(member).on(member.id.eq(response.memberId))
+                .where(response.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
+                .orderBy(member.id.asc())
                 .fetch();
     }
 
@@ -78,7 +75,6 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                 .join(question).on(question.questionId.eq(questionAnswer.questionId))
                 .join(response).on(response.surveyId.eq(surveyId).and(response.memberId.eq(questionAnswer.memberId)))
                 .where(question.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
-                .orderBy(response.createdAt.asc(), question.order.asc(), questionAnswer.gridRowOrder.asc())
                 .fetch();
     }
 
