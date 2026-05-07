@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.question.Choice;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,5 +41,11 @@ public class ChoiceDto extends DefaultQuestionDto {
 
     public void updateOptions(List<OptionDto> optionInfoList) {
         this.options = optionInfoList;
+    }
+
+    @Schema(description = "문항 타입 유형", example = "CHOICE")
+    @Override
+    public String getQuestionType() {
+        return super.getQuestionType();
     }
 }

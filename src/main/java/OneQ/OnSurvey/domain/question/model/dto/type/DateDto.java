@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.question.DateAnswer;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,5 +28,11 @@ public class DateDto extends DefaultQuestionDto {
             .section(date.getSection() != null ? date.getSection() : 1)
             .imageUrl(date.getImageUrl())
             .build();
+    }
+
+    @Schema(description = "문항 타입 유형", example = "DATE")
+    @Override
+    public String getQuestionType() {
+        return super.getQuestionType();
     }
 }

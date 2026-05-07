@@ -31,6 +31,7 @@ public record SurveyQuestion(
         Set<Option> options
     ) {
         public record Option (
+            Long optionId,
             String content,
             Integer nextSection,
             String imageUrl
@@ -55,6 +56,7 @@ public record SurveyQuestion(
         Set<GridOption> gridOptions
     ) {
         public record GridOption (
+            Long gridOptionId,
             Boolean isRow,
             String content,
             Integer order

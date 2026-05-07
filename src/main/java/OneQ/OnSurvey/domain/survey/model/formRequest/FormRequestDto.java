@@ -39,6 +39,6 @@ public record FormRequestDto(
     Set<Interest> interests
 ) {
     public FormRequest toEntity(long userKey) {
-        return FormRequest.createRequest(formLink, requesterEmail, userKey);
+        return FormRequest.createRequest(formLink, requesterEmail,surveyForm().dueCount(), surveyForm().totalCoin(), userKey);
     }
 }

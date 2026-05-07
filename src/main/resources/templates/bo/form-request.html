@@ -24,13 +24,13 @@
         <!-- 기본 정보 -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div class="lg:col-span-2">
-                <label class="block text-xs font-bold text-slate-500 mb-1">폼 링크 <span class="text-red-500">*</span></label>
-                <input type="url" id="newFormLink" placeholder="https://docs.google.com/forms/d/e/..."
+                <label class="block text-xs font-bold text-slate-500 mb-1" for="newFormLink">폼 링크 <span class="text-red-500">*</span></label>
+                <input type="url" id="newFormLink" placeholder="https://docs.google.com/forms/d/.../edit" required
                        class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-500 mb-1">신청자 이메일 <span class="text-red-500">*</span></label>
-                <input type="email" id="newRequesterEmail" placeholder="example@email.com"
+                <label class="block text-xs font-bold text-slate-500 mb-1" for="newRequesterEmail">신청자 이메일 <span class="text-red-500">*</span></label>
+                <input type="email" id="newRequesterEmail" placeholder="example@email.com" required
                        class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
             </div>
         </div>
@@ -40,12 +40,12 @@
             <p class="text-xs font-bold text-slate-400 mb-3">세그먼트 및 가격</p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">마감일</label>
-                    <input type="date" id="newDeadline"
+                    <label class="block text-xs font-bold text-slate-500 mb-1" for="newDeadline">마감일</label>
+                    <input type="date" id="newDeadline" required
                            class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">성별</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1" for="newGender">성별</label>
                     <select id="newGender" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                         <option value="ALL">전체</option>
                         <option value="MALE">남성</option>
@@ -53,20 +53,20 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">목표 응답 수</label>
-                    <input type="number" id="newDueCount" placeholder="예: 100" min="1"
+                    <label class="block text-xs font-bold text-slate-500 mb-1" for="newDueCount">목표 응답 수</label>
+                    <input type="number" id="newDueCount" placeholder="예: 100" min="1" required
                            class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">총 코인</label>
-                    <input type="number" id="newTotalCoin" placeholder="예: 10000" min="0"
+                    <label class="block text-xs font-bold text-slate-500 mb-1" for="newTotalCoin">총 코인</label>
+                    <input type="number" id="newTotalCoin" placeholder="예: 10000" min="0" required
                            class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- 연령대 -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2">연령대</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-2">연령대 <span class="text-red-500">*</span></label>
                     <div class="flex flex-wrap gap-2">
                         <label class="flex items-center gap-1 text-xs cursor-pointer">
                             <input type="checkbox" value="ALL" class="new-age-checkbox" onchange="handleAgeAllToggle(this)"> 전체
@@ -82,7 +82,7 @@
                 </div>
                 <!-- 거주지 -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2">거주지</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-2">거주지 <span class="text-red-500">*</span></label>
                     <div class="flex flex-wrap gap-2">
                         <label class="flex items-center gap-1 text-xs cursor-pointer">
                             <input type="checkbox" value="ALL" class="new-residence-checkbox" onchange="handleResidenceAllToggle(this)"> 전체
@@ -114,12 +114,12 @@
             <p class="text-xs font-bold text-slate-400 mb-3">스크리닝 (선택)</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 mb-1">스크리닝 문항 내용</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1" for="newScreeningContent">스크리닝 문항 내용</label>
                     <input type="text" id="newScreeningContent" placeholder="예: 최근 6개월 내 온라인 쇼핑 경험이 있으신가요?"
                            class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">정답</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1" for="newScreeningAnswer">정답</label>
                     <select id="newScreeningAnswer" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none">
                         <option value="">없음</option>
                         <option value="true">예 (true)</option>
@@ -127,11 +127,12 @@
                     </select>
                 </div>
             </div>
+            <p class="mt-2 text-xs text-slate-400">※ 마감일, 목표 응답 수, 총 코인, 연령대, 거주지는 필수 입력입니다.</p>
         </div>
 
         <!-- 관심사 -->
         <div class="border border-slate-100 rounded-lg p-3 mb-4">
-            <p class="text-xs font-bold text-slate-400 mb-3">관심사 (선택)</p>
+            <p class="text-xs font-bold text-slate-400 mb-3">관심사 <span class="text-red-500">*</span></p>
             <div class="flex flex-wrap gap-2">
                 <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="CAREER" class="new-interest-checkbox"> 직장/커리어</label>
                 <label class="flex items-center gap-1 text-xs cursor-pointer"><input type="checkbox" value="BUSINESS" class="new-interest-checkbox"> 창업/사업</label>
@@ -145,8 +146,34 @@
             </div>
         </div>
 
+        <!-- 유효성 검사 결과 -->
+        <div id="validationResultContainer" class="border border-green-200 bg-green-50 rounded-lg p-3 mb-4 hidden">
+            <div class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-xs font-bold text-green-700 mb-1">유효성 검사 완료</p>
+                    <p id="validationResultText" class="text-xs text-green-600"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 유효성 검사 결과 -->
+        <div id="validationFailureContainer" class="border border-red-200 bg-red-50 rounded-lg p-3 mb-4 hidden">
+            <div class="flex items-start gap-2">
+                <i class="fas fa-check-circle text-red-600 mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-xs font-bold text-red-700 mb-1">유효성 검사 실패</p>
+                    <p id="validationFailureText" class="text-xs text-red-600"></p>
+                </div>
+            </div>
+        </div>
+
         <!-- 버튼 -->
-        <div class="flex justify-end">
+        <div class="flex justify-end gap-2">
+            <button id="validationButton" onclick="validateFormLink()" class="px-6 py-2 bg-indigo-600 text-white rounded text-sm font-bold hover:bg-indigo-700 transition inline-flex items-center justify-center">
+                <i id="validationButtonIcon" class="fas fa-check-circle mr-1"></i>
+                <span id="validationButtonText">유효성 검사</span>
+            </button>
             <button onclick="submitFormRequest()" class="px-6 py-2 bg-green-600 text-white rounded text-sm font-bold hover:bg-green-700 transition">
                 <i class="fas fa-paper-plane mr-1"></i>변환 요청
             </button>
@@ -158,14 +185,14 @@
         <div class="flex flex-wrap gap-4 items-end">
             <!-- 이메일 검색 -->
             <div class="flex-1 min-w-[200px]">
-                <label class="block text-xs font-bold text-slate-500 mb-1">신청자 이메일 검색</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1" for="searchEmail">신청자 이메일 검색</label>
                 <input type="text" id="searchEmail" placeholder="이메일 입력..."
                        class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none"
                        onkeyup="if(event.key === 'Enter') loadFormRequests()">
             </div>
             <!-- 등록 상태 필터 -->
             <div class="min-w-[150px]">
-                <label class="block text-xs font-bold text-slate-500 mb-1">등록 상태</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1" for="filterStatus">등록 상태</label>
                 <select id="filterStatus" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none" onchange="loadFormRequests()">
                     <option value="">전체</option>
                     <option value="false">미등록</option>
@@ -174,7 +201,7 @@
             </div>
             <!-- 페이지 크기 -->
             <div class="min-w-[100px]">
-                <label class="block text-xs font-bold text-slate-500 mb-1">표시 개수</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1" for="pageSize">표시 개수</label>
                 <select id="pageSize" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none" onchange="loadFormRequests()">
                     <option value="10">10개</option>
                     <option value="20">20개</option>
@@ -201,9 +228,9 @@
                 <th class="px-6 py-4">ID</th>
                 <th class="px-6 py-4">폼 링크</th>
                 <th class="px-6 py-4">신청자 이메일</th>
+                <th class="px-6 py-4">설문 ID</th>
                 <th class="px-6 py-4">질문 수</th>
                 <th class="px-6 py-4">목표 응답</th>
-                <th class="px-6 py-4">마감일</th>
                 <th class="px-6 py-4">가격</th>
                 <th class="px-6 py-4">등록 상태</th>
                 <th class="px-6 py-4">등록일</th>
@@ -238,11 +265,11 @@
                 <a id="modalFormLink" href="#" target="_blank" class="text-indigo-600 hover:underline break-all"></a>
             </div>
             <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">설문 제목 <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-bold text-slate-700 mb-2" for="modalSurveyTitle">설문 제목 <span class="text-red-500">*</span></label>
                 <input type="text" id="modalSurveyTitle" class="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition" placeholder="설문 제목을 입력하세요">
             </div>
             <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">설문 설명</label>
+                <label class="block text-sm font-bold text-slate-700 mb-2" for="modalSurveyDescription">설문 설명</label>
                 <textarea id="modalSurveyDescription" class="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition resize-none" rows="3" placeholder="설문 설명을 입력하세요 (선택사항)"></textarea>
             </div>
             <input type="hidden" id="modalFormRequestId">

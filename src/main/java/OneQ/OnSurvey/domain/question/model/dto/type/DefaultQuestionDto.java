@@ -35,7 +35,7 @@ public class DefaultQuestionDto {
     @Schema(
         description = "문항 타입 유형",
         allowableValues = {
-            "CHOICE", "RATING", "NPS", "SHORT", "LONG", "NUMBER", "DATE", "IMAGE", "TITLE", "GRID", "TIME"
+            "SHORT", "LONG", "NUMBER", "IMAGE", "TITLE", "NPS", "CHOICE", "RATING", "DATE", "GRID", "TIME"
         }
     )
     private String questionType;

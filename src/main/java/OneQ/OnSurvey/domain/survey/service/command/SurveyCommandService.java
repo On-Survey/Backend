@@ -7,6 +7,7 @@ import OneQ.OnSurvey.domain.member.value.Interest;
 import OneQ.OnSurvey.domain.question.service.QuestionQueryService;
 import OneQ.OnSurvey.domain.discount.entity.DiscountCode;
 import OneQ.OnSurvey.domain.discount.service.DiscountCodeQueryService;
+import OneQ.OnSurvey.global.infra.transaction.TransactionHandler;
 import OneQ.OnSurvey.global.promotion.application.PromotionTierResolver;
 import OneQ.OnSurvey.domain.survey.SurveyErrorCode;
 import OneQ.OnSurvey.domain.survey.entity.Screening;
@@ -62,13 +63,14 @@ public class SurveyCommandService implements SurveyCommand {
     private final MemberRepository memberRepository;
     private final SurveyRefundPolicy surveyRefundPolicy;
     private final SurveyGlobalStatsService surveyGlobalStatsService;
-    private final RedisAgent redisAgent;
     private final QuestionQueryService questionQueryService;
     private final PromotionTierResolver promotionTierResolver;
     private final DiscountCodeQueryService discountCodeQueryService;
 
     private final AlertNotifier alertNotifier;
     private final AfterCommitExecutor afterCommitExecutor;
+    private final RedisAgent redisAgent;
+    private final TransactionHandler transactionHandler;
 
     @Value("${redis.survey-key-prefix.potential-count}")
     private String potentialKey;
@@ -309,12 +311,24 @@ public class SurveyCommandService implements SurveyCommand {
     public void updateSurveyOwner(SurveyOwnerChangeDto changeDto) {
         Survey survey = surveyRepository.getSurveyById(changeDto.surveyId())
                 .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+        String prevKey = redisAgent.getAndSetValue(this.creatorKey + changeDto.surveyId(), String.valueOf(changeDto.newUserKey()));
 
-        survey.changeOwner(changeDto.newMemberId());
-        surveyRepository.save(survey);
+        try {
+            transactionHandler.runInTransaction(() -> {
 
-        log.info("[SURVEY:COMMAND:updateSurveyOwner] 설문 소유자 변경 완료 - surveyId: {}, newMemberId: {}",
-            changeDto.surveyId(), changeDto.newMemberId());
+                survey.changeOwner(changeDto.newMemberId());
+                surveyRepository.save(survey);
+
+                log.info("[SURVEY:COMMAND:updateSurveyOwner] 설문 소유자 변경 완료 - surveyId: {}, memberId: {}, userKey: {}",
+                    changeDto.surveyId(), changeDto.newMemberId(), changeDto.newUserKey());
+                return null;
+            });
+        }  catch (Exception e) {
+            log.error("[SURVEY:COMMAND:updateSurveyOwner] 설문 소유자 변경 실패 - surveyId: {}, memberId: {}, userKey: {}",
+                changeDto.surveyId(), changeDto.newMemberId(), changeDto.newUserKey(), e
+            );
+            redisAgent.getAndSetValue(this.creatorKey + changeDto.surveyId(), prevKey);
+        }
     }
 
     @Override

@@ -20,7 +20,7 @@ public interface AdminUseCase {
 
     AdminSurveyDetailResponse getSurveyDetail(Long surveyId);
 
-    void changeSurveyOwner(Long surveyId, Long newMemberId);
+    void changeSurveyOwner(Long surveyId, Long newMemberId, Long newUserKey);
 
     List<SurveyGrantStatsResponse> getSurveyGrantStats();
 

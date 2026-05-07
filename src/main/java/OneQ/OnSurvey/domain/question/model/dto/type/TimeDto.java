@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.question.Time;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,5 +26,11 @@ public class TimeDto extends DefaultQuestionDto {
             .section(time.getSection() != null ? time.getSection() : 1)
             .imageUrl(time.getImageUrl())
             .build();
+    }
+
+    @Schema(description = "문항 타입 유형", example = "TIME")
+    @Override
+    public String getQuestionType() {
+        return super.getQuestionType();
     }
 }

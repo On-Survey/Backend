@@ -43,11 +43,13 @@ public class FormRequest extends BaseEntity {
     @Column(name = "registered_survey_id")
     private Long registeredSurveyId;
 
-    public static FormRequest createRequest(String formLink, String requesterEmail, Long userKey) {
+    public static FormRequest createRequest(String formLink, String requesterEmail, int dueCount, int totalCoin, Long userKey) {
         return FormRequest.builder()
             .formLink(formLink)
             .userKey(userKey)
             .requesterEmail(requesterEmail)
+            .targetResponseCount(dueCount)
+            .price(totalCoin)
             .isRegistered(false)
             .build();
     }

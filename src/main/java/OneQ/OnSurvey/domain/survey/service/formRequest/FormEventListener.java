@@ -110,7 +110,9 @@ public class FormEventListener {
                         );
                     });
                 } catch (Exception e) {
-                    log.error("[FormEventListener] 구글폼 변환 및 게시 트랜잭션 커밋 실패 - requestId: {}, formUrl: {}", event.requestId(), formUrl, e);
+                    log.error("[FormEventListener] 구글폼 변환 및 게시 트랜잭션 커밋 실패 - requestId: {}, formUrl: {}, screening: {}, metadata: {}",
+                        event.requestId(), formUrl, event.screening(), event.surveyForm(), e
+                    );
                     return SurveyConversionAlert.ConversionDetails.fail(formUrl, "변환된 설문 저장 및 게시 트랜잭션 수행 중 문제가 발생했습니다.");
                 }
             })

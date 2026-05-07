@@ -2,6 +2,7 @@ package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.question.Grid;
 import OneQ.OnSurvey.domain.question.model.dto.GridOptionDto;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,5 +39,11 @@ public class GridDto extends DefaultQuestionDto {
 
     public void updateGridOptions(List<GridOptionDto> gridOptions) {
         this.gridOptions = gridOptions;
+    }
+
+    @Schema(description = "문항 타입 유형", example = "GRID")
+    @Override
+    public String getQuestionType() {
+        return super.getQuestionType();
     }
 }

@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.question.model.dto.type;
 
 import OneQ.OnSurvey.domain.question.entity.question.Rating;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,5 +30,11 @@ public class RatingDto extends DefaultQuestionDto {
             .section(rating.getSection() != null ? rating.getSection() : 1)
             .imageUrl(rating.getImageUrl())
             .build();
+    }
+
+    @Schema(description = "문항 타입 유형", example = "RATING")
+    @Override
+    public String getQuestionType() {
+        return super.getQuestionType();
     }
 }

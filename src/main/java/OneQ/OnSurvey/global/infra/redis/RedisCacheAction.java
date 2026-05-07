@@ -11,6 +11,8 @@ public interface RedisCacheAction {
 
     long getLongValue(String key);
 
+    String getAndSetValue(String key, String newValue);
+
     void setValue(String key, String value, Duration ttl);
 
     Boolean setValueIfAbsent(String key, String value, Duration ttl);
