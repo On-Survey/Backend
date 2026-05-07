@@ -57,7 +57,7 @@ public class SurveyExportRepositoryImpl implements SurveyExportRepository {
                 .from(response)
                 .join(member).on(member.id.eq(response.memberId))
                 .where(response.surveyId.eq(surveyId).and(response.isResponded.isTrue()))
-                .orderBy(member.id.asc())
+                .orderBy(response.createdAt.asc())
                 .fetch();
     }
 
