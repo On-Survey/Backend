@@ -78,7 +78,7 @@ class SurveyCommandServiceTest {
         Member member = Member.createMember(
                 userKey, "홍길동", "010-1234-5678",
                 "19900101", "test@test.com",
-                OneQ.OnSurvey.domain.survey.model.Gender.MALE, Role.ROLE_MEMBER, MemberStatus.ACTIVE
+                Gender.MALE, Role.ROLE_MEMBER, MemberStatus.ACTIVE
         );
         member.increaseCoin(1000L);
         return member;

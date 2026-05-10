@@ -104,14 +104,14 @@ class DiscountCodeQueryServiceTest {
     }
 
     @Test
-    @DisplayName("findAll - 활성 코드가 만료 코드보다 먼저, 각 그룹 내 만료일 오름차순")
+    @DisplayName("findAll - 활성 코드 우선, 만료 코드 후순; 각 그룹 내 만료일 오름차순(가까운 날짜 먼저)")
     void findAll_sortedActiveFirst() {
         LocalDate today = LocalDate.now();
-        DiscountCode expired1 = buildCode("EXP001", today.minusDays(5));
-        DiscountCode expired2 = buildCode("EXP002", today.minusDays(1));
-        DiscountCode active1  = buildCode("ACT001", today.plusDays(10));
-        DiscountCode active2  = buildCode("ACT002", today.plusDays(3));
-        given(discountCodeRepository.findAll()).willReturn(List.of(expired1, active1, expired2, active2));
+        DiscountCode expiredEarlier = buildCode("EXP001", today.minusDays(5));
+        DiscountCode expiredLater   = buildCode("EXP002", today.minusDays(1));
+        DiscountCode activeNear     = buildCode("ACT002", today.plusDays(3));
+        DiscountCode activeFar      = buildCode("ACT001", today.plusDays(10));
+        given(discountCodeRepository.findAll()).willReturn(List.of(expiredEarlier, activeFar, expiredLater, activeNear));
 
         List<DiscountCodeResponse> results = discountCodeQueryService.findAll();
 

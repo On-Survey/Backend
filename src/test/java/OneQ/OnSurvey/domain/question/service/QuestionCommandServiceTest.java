@@ -114,7 +114,7 @@ class QuestionCommandServiceTest {
     }
 
     @Test
-    @DisplayName("upsertSections - DB에만 있는 섹션은 삭제")
+    @DisplayName("upsertSections - DB에만 있는 섹션은 삭제, saveAll은 호출되지 않음")
     void upsertSections_extraDbSections_deletesOldSections() {
         Section extra = buildSection(50L, 1L, "삭제될 섹션", 1, 2);
         given(sectionRepository.findAllSectionBySurveyId(1L)).willReturn(List.of(extra));
@@ -122,5 +122,6 @@ class QuestionCommandServiceTest {
         questionCommandService.upsertSections(1L, List.of());
 
         verify(sectionRepository).deleteAll(List.of(50L));
+        verify(sectionRepository, never()).saveAll(any());
     }
 }
