@@ -2,7 +2,6 @@ package OneQ.OnSurvey.domain.survey.repository;
 
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.value.Interest;
-import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.AgeRange;
 import OneQ.OnSurvey.domain.survey.model.Gender;
@@ -10,6 +9,7 @@ import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.OpenSurveyStats;
+import OneQ.OnSurvey.domain.survey.model.dto.ParticipationInfoVO;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
@@ -40,6 +40,7 @@ import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
+import static OneQ.OnSurvey.domain.question.entity.QSection.section;
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
 
@@ -199,36 +200,6 @@ public class SurveyRepositoryImpl implements SurveyRepository {
     }
 
     @Override
-    public ParticipationStatus getParticipationStatus(Long surveyId, Long memberId) {
-        Tuple statusResult = jpaQueryFactory
-            .select(
-                screening.id,           // 스크리닝 존재 여부
-                response.isScreened,    // 스크리닝 응답 여부
-                response.isResponded    // 설문 응답 여부
-            )
-            .from(survey)
-            .leftJoin(screening).on(
-                survey.id.eq(screening.surveyId)
-            )
-            .leftJoin(response).on(
-                survey.id.eq(response.surveyId),
-                response.memberId.eq(memberId)
-            )
-            .where(survey.id.eq(surveyId))
-            .fetchOne();
-
-        if (statusResult == null) {
-            return ParticipationStatus.defaultStatus(false);
-        }
-
-        Long screeningId = statusResult.get(screening.id);
-        Boolean isScreened =  statusResult.get(response.isScreened);
-        Boolean isResponded = statusResult.get(response.isResponded);
-
-        return ParticipationStatus.generateStatus(screeningId, isScreened, isResponded);
-    }
-
-    @Override
     public List<Long> getSurveyIdListByFilters(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
         SurveyStatus status, Long memberId, Collection<Long> excludedIds
@@ -336,5 +307,42 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         Long count = result.get(survey.count());
         Integer maxCoin = result.get(surveyInfo.promotionAmount.max());
         return OpenSurveyStats.of(count, maxCoin);
+    }
+
+    @Override
+    public ParticipationInfoVO getParticipationInfoVO(Long surveyId, Long memberId) {
+        EnumPath<Interest> interestAlias = Expressions.enumPath(Interest.class, "interestAlias");
+
+        return jpaQueryFactory
+            .from(survey)
+            .leftJoin(section).on(survey.id.eq(section.surveyId))
+            .leftJoin(survey.interests, interestAlias)
+            .leftJoin(screening).on(
+                survey.id.eq(screening.surveyId)
+            )
+            .leftJoin(response).on(
+                survey.id.eq(response.surveyId),
+                response.memberId.eq(memberId)
+            )
+            .where(
+                survey.id.eq(surveyId),
+                survey.status.eq(SurveyStatus.ONGOING)
+            )
+            .groupBy(survey.id, survey.title, survey.description, survey.deadline, interestAlias,
+                screening.id, response.isScreened, response.isResponded, survey.isFree
+            )
+            .transform(
+                groupBy(survey.id).as(Projections.constructor(ParticipationInfoVO.class,
+                    survey.id,
+                    survey.title,
+                    survey.description,
+                    section.sectionId.coalesce(1L).countDistinct().intValue(), // 최소 하나의 섹션 개수를 가지도록 coalesce 처리
+                    survey.deadline,
+                    set(interestAlias),
+                    screening.id,           // 스크리닝 존재 여부
+                    response.isScreened,    // 스크리닝 응답 여부
+                    response.isResponded,   // 설문 응답 여부
+                    survey.isFree
+        ))).get(surveyId);
     }
 }

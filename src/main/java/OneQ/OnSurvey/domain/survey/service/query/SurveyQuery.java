@@ -13,7 +13,6 @@ import OneQ.OnSurvey.domain.survey.model.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SurveyQuery {
@@ -21,13 +20,6 @@ public interface SurveyQuery {
     List<SurveyManagementResponse.SurveyInformation> getSurveyListByMemberId(Long memberId);
     SurveyParticipationResponse getParticipationSurveySlice(
         Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
-    );
-
-    SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
-    );
-    SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
     );
     ParticipationScreeningListResponse getScreeningList(
         Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
