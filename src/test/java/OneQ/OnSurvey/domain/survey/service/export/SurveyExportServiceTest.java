@@ -64,8 +64,6 @@ class SurveyExportServiceTest {
                 .build();
     }
 
-    // ── exportCsv 권한 체크 ────────────────────────────────────────────────────
-
     @Test
     @DisplayName("소유자가 아니면 SURVEY_FORBIDDEN 예외 발생")
     void exportCsv_notOwner_throwsForbidden() {
@@ -88,8 +86,6 @@ class SurveyExportServiceTest {
                 .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
                         .isEqualTo(SurveyErrorCode.SURVEY_INFO_NOT_FOUND));
     }
-
-    // ── CSV 내용 검증 ─────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("gender=ALL이면 gender 컬럼 미포함")

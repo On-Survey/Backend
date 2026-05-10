@@ -16,8 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class QuestionConverterTest {
 
-    // ── toQuestionDto ─────────────────────────────────────────────────────────
-
     @Test
     @DisplayName("Choice 엔티티 → ChoiceDto 변환")
     void toQuestionDto_choice() {
@@ -121,8 +119,6 @@ class QuestionConverterTest {
         assertThat(dto.getQuestionType()).isEqualTo(QuestionType.Values.SHORT);
         assertThat(dto.getTitle()).isEqualTo("단답형");
     }
-
-    // ── toQuestionUpsertDto ───────────────────────────────────────────────────
 
     @Test
     @DisplayName("ChoiceDto 리스트 → QuestionUpsertDto 변환 (기본 필드)")
