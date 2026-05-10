@@ -47,7 +47,8 @@ public class SecurityConfig {
             "/auth/toss/login",
             "/auth/reissue",
             "/connect-out",
-            "/toss/promotion/recheck-pending"
+            "/toss/promotion/recheck-pending",
+            "/v1/surveys/open-stats"
     };
 
     @Bean
