@@ -5,6 +5,7 @@ import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
+import OneQ.OnSurvey.domain.survey.model.dto.OpenSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
@@ -37,4 +38,5 @@ public interface SurveyRepository {
     List<Long> closeDueSurveys();
 
     List<OngoingSurveyStats> findOngoingSurveys();
+    OpenSurveyStats findOpenSurveyStats();
 }

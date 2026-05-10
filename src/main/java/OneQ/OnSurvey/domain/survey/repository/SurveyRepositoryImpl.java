@@ -9,6 +9,7 @@ import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
+import OneQ.OnSurvey.domain.survey.model.dto.OpenSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
@@ -318,5 +319,22 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .where(survey.status.eq(SurveyStatus.ONGOING))
             .orderBy(survey.id.desc())
             .fetch();
+    }
+
+    @Override
+    public OpenSurveyStats findOpenSurveyStats() {
+        Tuple result = jpaQueryFactory
+            .select(survey.count(), surveyInfo.promotionAmount.max())
+            .from(survey)
+            .leftJoin(surveyInfo).on(survey.id.eq(surveyInfo.surveyId))
+            .where(survey.status.eq(SurveyStatus.ONGOING))
+            .fetchOne();
+
+        if (result == null) {
+            return OpenSurveyStats.of(0L, null);
+        }
+        Long count = result.get(survey.count());
+        Integer maxCoin = result.get(surveyInfo.promotionAmount.max());
+        return OpenSurveyStats.of(count, maxCoin);
     }
 }
