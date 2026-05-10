@@ -45,6 +45,7 @@ public class AuthFilter extends OncePerRequestFilter {
             || path.startsWith("/swagger-ui/")
             || path.startsWith("/v3/api-docs")
             || path.equals("/toss/promotion/recheck-pending")
+            || path.equals("/v1/surveys/open-stats")
             || path.startsWith("/v1/bo");
     }
 
