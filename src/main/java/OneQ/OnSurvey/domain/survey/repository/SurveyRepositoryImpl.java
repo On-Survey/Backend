@@ -16,6 +16,7 @@ import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyWithEligibility;
 import OneQ.OnSurvey.global.common.util.QuerydslUtils;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -314,7 +315,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
 
         return jpaQueryFactory
             .from(survey)
-            .join(section).on(survey.id.eq(section.surveyId))
+            .leftJoin(section).on(survey.id.eq(section.surveyId))
             .leftJoin(survey.interests, interestAlias)
             .leftJoin(screening).on(
                 survey.id.eq(screening.surveyId)
@@ -335,7 +336,7 @@ public class SurveyRepositoryImpl implements SurveyRepository {
                     survey.id,
                     survey.title,
                     survey.description,
-                    section.sectionId.countDistinct().intValue(),
+                    section.sectionId.coalesce(1L).countDistinct().intValue(), // 최소 하나의 섹션 개수를 가지도록 coalesce 처리
                     survey.deadline,
                     set(interestAlias),
                     screening.id,           // 스크리닝 존재 여부
