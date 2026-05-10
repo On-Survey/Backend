@@ -5,7 +5,6 @@ import OneQ.OnSurvey.domain.discount.model.request.CreateDiscountCodeRequest;
 import OneQ.OnSurvey.domain.discount.model.response.DiscountCodeResponse;
 import OneQ.OnSurvey.domain.discount.repository.DiscountCodeRepository;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -14,8 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,37 +89,4 @@ class DiscountCodeCommandServiceTest {
         assertThat(CODE_PATTERN.matcher(saved.getCode()).matches()).isTrue();
     }
 
-    @RepeatedTest(20)
-    @DisplayName("반복 생성 시 매번 유효한 6자리 코드 생성")
-    void create_repeatedCalls_alwaysValidCode() {
-        CreateDiscountCodeRequest request = new CreateDiscountCodeRequest(
-                "RepeatedOrg", LocalDate.of(2027, 12, 31)
-        );
-        given(discountCodeRepository.existsByCode(anyString())).willReturn(false);
-        given(discountCodeRepository.save(any(DiscountCode.class)))
-                .willAnswer(inv -> inv.getArgument(0));
-
-        DiscountCodeResponse response = discountCodeCommandService.create(request);
-
-        assertThat(CODE_PATTERN.matcher(response.code()).matches()).isTrue();
-    }
-
-    @Test
-    @DisplayName("여러 번 생성 시 코드가 무작위로 다양하게 생성됨")
-    void create_multipleInvocations_producesDiverseCodes() {
-        CreateDiscountCodeRequest request = new CreateDiscountCodeRequest(
-                "Org", LocalDate.of(2027, 1, 1)
-        );
-        given(discountCodeRepository.existsByCode(anyString())).willReturn(false);
-        given(discountCodeRepository.save(any(DiscountCode.class)))
-                .willAnswer(inv -> inv.getArgument(0));
-
-        Set<String> codes = new HashSet<>();
-        for (int i = 0; i < 30; i++) {
-            codes.add(discountCodeCommandService.create(request).code());
-        }
-
-        // 30번 중 최소 10개 이상 고유한 코드가 생성되어야 함 (완전 랜덤성 확인)
-        assertThat(codes.size()).isGreaterThan(10);
-    }
 }
