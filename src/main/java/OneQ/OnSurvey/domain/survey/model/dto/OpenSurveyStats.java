@@ -5,6 +5,9 @@ public record OpenSurveyStats(
     Integer maxRewardCoin
 ) {
     public static OpenSurveyStats of(Long openSurveyCount, Integer maxRewardCoin) {
-        return new OpenSurveyStats(openSurveyCount, maxRewardCoin != null ? maxRewardCoin : 0);
+        return new OpenSurveyStats(
+            openSurveyCount != null ? openSurveyCount : 0L,
+            maxRewardCoin != null ? maxRewardCoin : 0
+        );
     }
 }

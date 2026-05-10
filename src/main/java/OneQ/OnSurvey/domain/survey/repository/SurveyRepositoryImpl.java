@@ -330,8 +330,11 @@ public class SurveyRepositoryImpl implements SurveyRepository {
             .where(survey.status.eq(SurveyStatus.ONGOING))
             .fetchOne();
 
-        Long count = result != null ? result.get(survey.count()) : 0L;
-        Integer maxCoin = result != null ? result.get(surveyInfo.promotionAmount.max()) : null;
-        return OpenSurveyStats.of(count != null ? count : 0L, maxCoin);
+        if (result == null) {
+            return OpenSurveyStats.of(0L, null);
+        }
+        Long count = result.get(survey.count());
+        Integer maxCoin = result.get(surveyInfo.promotionAmount.max());
+        return OpenSurveyStats.of(count, maxCoin);
     }
 }
