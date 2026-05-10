@@ -228,27 +228,26 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
 
-        Survey survey = surveyRepository.getSurveyById(surveyId)
-            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+        ParticipationInfoVO vo = surveyRepository.getParticipationInfoVO(surveyId, memberId);
 
-        if (!isSurveyAccessible(survey.getStatus())) {
-            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
+        // surveyId에 해당하는 설문이 없거나 상태가 ONGOING이 아닌 경우
+        if (vo == null) {
+            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}", surveyId);
             throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
         }
-
         int completedCount = redisAgent.getIntValue(this.completedKey + surveyId);
-        ParticipationStatus participationStatus = surveyRepository.getParticipationStatus(surveyId, memberId);
-        if (participationStatus.isScreenRequired()) {
+
+        if (vo.participationStatus().isScreenRequired()) {
             log.warn("[SURVEY:QUERY] 스크리닝 퀴즈 응답이 필요합니다. - surveyId: {}, memberId: {}", surveyId, memberId);
         }
-        if (participationStatus.isScreened()) {
+        if (vo.participationStatus().isScreened()) {
             log.warn("[SURVEY:QUERY] 스크리닝 퀴즈에 의해 필터링되었습니다. - surveyId: {}, memberId: {}", surveyId, memberId);
         }
-        if (participationStatus.isSurveyResponded()) {
+        if (vo.participationStatus().isSurveyResponded()) {
             log.warn("[SURVEY:QUERY] 이미 참여한 설문입니다. - surveyId: {}, memberId: {}", surveyId, memberId);
         }
 
-        return ParticipationInfoResponse.from(survey, completedCount, participationStatus);
+        return ParticipationInfoResponse.from(vo, completedCount);
     }
 
     @Override

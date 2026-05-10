@@ -10,6 +10,7 @@ import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.OpenSurveyStats;
+import OneQ.OnSurvey.domain.survey.model.dto.ParticipationInfoVO;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyListView;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveySearchQuery;
@@ -40,6 +41,7 @@ import static OneQ.OnSurvey.domain.participation.entity.QResponse.response;
 import static OneQ.OnSurvey.domain.survey.entity.QScreening.screening;
 import static OneQ.OnSurvey.domain.survey.entity.QSurvey.survey;
 import static OneQ.OnSurvey.domain.survey.entity.QSurveyInfo.surveyInfo;
+import static OneQ.OnSurvey.domain.question.entity.QSection.section;
 import static com.querydsl.core.group.GroupBy.groupBy;
 import static com.querydsl.core.group.GroupBy.set;
 
@@ -336,5 +338,42 @@ public class SurveyRepositoryImpl implements SurveyRepository {
         Long count = result.get(survey.count());
         Integer maxCoin = result.get(surveyInfo.promotionAmount.max());
         return OpenSurveyStats.of(count, maxCoin);
+    }
+
+    @Override
+    public ParticipationInfoVO getParticipationInfoVO(Long surveyId, Long memberId) {
+        EnumPath<Interest> interestAlias = Expressions.enumPath(Interest.class, "interestAlias");
+
+        return jpaQueryFactory
+            .from(survey)
+            .join(section).on(survey.id.eq(section.surveyId))
+            .leftJoin(survey.interests, interestAlias)
+            .leftJoin(screening).on(
+                survey.id.eq(screening.surveyId)
+            )
+            .leftJoin(response).on(
+                survey.id.eq(response.surveyId),
+                response.memberId.eq(memberId)
+            )
+            .where(
+                survey.id.eq(surveyId),
+                survey.status.eq(SurveyStatus.ONGOING)
+            )
+            .groupBy(survey.id, survey.title, survey.description, survey.deadline, interestAlias,
+                screening.id, response.isScreened, response.isResponded, survey.isFree
+            )
+            .transform(
+                groupBy(survey.id).as(Projections.constructor(ParticipationInfoVO.class,
+                    survey.id,
+                    survey.title,
+                    survey.description,
+                    section.sectionId.countDistinct().intValue(),
+                    survey.deadline,
+                    set(interestAlias),
+                    screening.id,           // 스크리닝 존재 여부
+                    response.isScreened,    // 스크리닝 응답 여부
+                    response.isResponded,   // 설문 응답 여부
+                    survey.isFree
+        ))).get(surveyId);
     }
 }
