@@ -6,11 +6,14 @@ import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyQuestion;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveyScreening;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySection;
 import OneQ.OnSurvey.domain.admin.domain.model.survey.SurveySingleViewInfo;
+import OneQ.OnSurvey.domain.question.model.dto.GridOptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DateDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.GridDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.RatingDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.TimeDto;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
@@ -89,6 +92,7 @@ public final class AdminSurveyMapper {
                         choice.getIsSectionDecidable(),
                         choice.getOptions().stream()
                             .map(optionDto -> new SurveyQuestion.ChoiceProp.Option(
+                                optionDto.getOptionId(),
                                 optionDto.getContent(),
                                 optionDto.getNextSection(),
                                 optionDto.getImageUrl()
@@ -113,6 +117,33 @@ public final class AdminSurveyMapper {
                 yield question.dateProperty(
                     new SurveyQuestion.DateProp(
                         date.getDate() != null ? date.getDate().toLocalDate() : null
+                    )
+                ).build();
+            }
+            case "GRID" -> {
+                GridDto grid = (GridDto) questionDto;
+                yield question.gridProperty(
+                    new SurveyQuestion.GridProp(
+                        grid.getIsCheckbox(),
+                        grid.getIsChoiceMixed(),
+                        grid.getIsChoiceDistinct(),
+                        (grid.getGridOptions() != null ? grid.getGridOptions() : List.<GridOptionDto>of())
+                            .stream()
+                            .map(gridOptionDto -> new SurveyQuestion.GridProp.GridOption(
+                                gridOptionDto.getGridOptionId(),
+                                gridOptionDto.getIsRow(),
+                                gridOptionDto.getContent(),
+                                gridOptionDto.getOrder()
+                            ))
+                            .collect(Collectors.toSet())
+                    )
+                ).build();
+            }
+            case "TIME" -> {
+                TimeDto time = (TimeDto) questionDto;
+                yield question.timeProperty(
+                    new SurveyQuestion.TimeProp(
+                        time.getIsInterval()
                     )
                 ).build();
             }

@@ -76,7 +76,9 @@ public record AdminSurveyDetailResponse(
         String imageUrl,
         ChoicePropDto choiceProperty,
         RatingPropDto ratingProperty,
-        DatePropDto dateProperty
+        DatePropDto dateProperty,
+        GridPropDto gridProperty,
+        TimePropDto timeProperty
     ) {
         public static QuestionDto from(SurveyQuestion vo) {
             if (vo == null) return null;
@@ -91,7 +93,9 @@ public record AdminSurveyDetailResponse(
                 vo.imageUrl(),
                 ChoicePropDto.from(vo.choiceProperty()),
                 RatingPropDto.from(vo.ratingProperty()),
-                DatePropDto.from(vo.dateProperty())
+                DatePropDto.from(vo.dateProperty()),
+                GridPropDto.from(vo.gridProperty()),
+                TimePropDto.from(vo.timeProperty())
             );
         }
 
@@ -110,10 +114,10 @@ public record AdminSurveyDetailResponse(
                 return new ChoicePropDto(vo.maxChoice(), vo.hasCustomInput(), vo.hasNoneOption(), vo.isSectionDecidable(), optionDtos);
             }
 
-            public record OptionDto(String content, Integer nextSection, String imageUrl) {
+            public record OptionDto(Long optionId, String content, Integer nextSection, String imageUrl) {
                 public static OptionDto from(SurveyQuestion.ChoiceProp.Option vo) {
                     if (vo == null) return null;
-                    return new OptionDto(vo.content(), vo.nextSection(), vo.imageUrl());
+                    return new OptionDto(vo.optionId(), vo.content(), vo.nextSection(), vo.imageUrl());
                 }
             }
         }
@@ -129,6 +133,35 @@ public record AdminSurveyDetailResponse(
             public static DatePropDto from(SurveyQuestion.DateProp vo) {
                 if (vo == null) return null;
                 return new DatePropDto(vo.defaultDate());
+            }
+        }
+
+        public record TimePropDto(Boolean isInterval) {
+            public static TimePropDto from(SurveyQuestion.TimeProp vo) {
+                if (vo == null) return null;
+                return new TimePropDto(vo.isInterval());
+            }
+        }
+
+        public record GridPropDto(
+            Boolean isCheckbox,
+            Boolean isChoiceMixed,
+            Boolean isChoiceDistinct,
+            Set<GridOptionDto> gridOptions
+        ) {
+            public static GridPropDto from(SurveyQuestion.GridProp vo) {
+                if (vo == null) return null;
+                Set<GridOptionDto> optionDtos = vo.gridOptions() != null
+                    ? vo.gridOptions().stream().map(GridOptionDto::from).collect(Collectors.toSet())
+                    : Set.of();
+                return new GridPropDto(vo.isCheckbox(), vo.isChoiceMixed(), vo.isChoiceDistinct(), optionDtos);
+            }
+
+            public record GridOptionDto(Long gridOptionId, Boolean isRow, String content, Integer order) {
+                public static GridOptionDto from(SurveyQuestion.GridProp.GridOption vo) {
+                    if (vo == null) return null;
+                    return new GridOptionDto(vo.gridOptionId(), vo.isRow(), vo.content(), vo.order());
+                }
             }
         }
     }

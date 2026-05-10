@@ -16,4 +16,5 @@ public interface QuestionRepository {
     void deleteAll(Set<Long> idList);
     void deleteBySurveyIdAndNotInOrder(Long surveyId, Collection<Integer> order);
     int countBySurveyId(Long surveyId);
+    List<Long> getQuestionIdListBySurveyIdAndSection(Long surveyId, Integer section);
 }

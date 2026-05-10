@@ -68,8 +68,30 @@ public class SurveyManagementDetailResponse {
                 ]
             """
         )
-        // 주관식 (SHORT, LONG, DATE, NUMBER) 설문 필드
+        // 주관식 (SHORT, LONG, DATE, NUMBER, TIME) 설문 필드
         private List<String> answerList;
+
+        @Setter
+        @Schema(
+            description = "(그리드) 응답값",
+            example = """
+                {
+                    "row1": {
+                        "col1": 5,
+                        "col2": 15,
+                        "col3": 10
+                    },
+                    "row2": {
+                        "col1": 5,
+                        "col2": 15,
+                        "col3": 10,
+                        "col4": 10
+                    }
+                }
+            """
+        )
+        // 그리드 (GRID) 설문 필드, [ 행: (열: 응답 수) ]
+        private Map<String, Map<String, Long>> gridAnswerMap;
     }
 
     public void updateCurrentCount(Integer currentCount) {

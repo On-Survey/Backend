@@ -144,6 +144,21 @@ public class RedisAgent implements RedisLockAction, RedisCacheAction {
     }
 
     /**
+     *
+     *
+     * @param key       조회할 키 (keyPrefix + id 형태로 사용)
+     * @param newValue  새로 저장할 값
+     * @return 덮어씌워진 이전 값, 존재하지 않으면 null 반환
+     */
+    @Override
+    public String getAndSetValue(String key, String newValue) {
+        Long exp = redisTemplate.getExpire(key);
+        Duration ttl = Duration.ofSeconds(exp);
+
+        return redisTemplate.opsForValue().setGet(key, newValue, ttl);
+    }
+
+    /**
      * 값을 저장
      *
      * @param key   저장할 키 (keyPrefix + id 형태로 사용)

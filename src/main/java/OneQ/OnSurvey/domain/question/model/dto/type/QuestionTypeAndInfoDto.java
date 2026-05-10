@@ -12,7 +12,7 @@ public class QuestionTypeAndInfoDto {
     @Schema(
         description = "문항 타입 유형",
         allowableValues = {
-            "CHOICE", "RATING", "NPS", "SHORT", "LONG", "NUMBER", "DATE"
+            "CHOICE", "RATING", "NPS", "SHORT", "LONG", "NUMBER", "DATE", "IMAGE", "TITLE", "GRID", "TIME"
         }
     )
     private QuestionType questionType;

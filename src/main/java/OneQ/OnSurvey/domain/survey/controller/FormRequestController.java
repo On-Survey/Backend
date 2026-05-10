@@ -43,6 +43,7 @@ public class FormRequestController implements FormRequestControllerDoc {
         @AuthenticationPrincipal Authenticatable principal,
         @RequestBody @Valid FormRequestDto request
     ) {
+        log.info("[FormRequest] 폼 등록 요청 - userKey: {}", principal.getUserKey());
         return SuccessResponse.ok(formCreator.createFormRequest(principal.getUserKey(), principal.getMemberId(), request));
     }
 

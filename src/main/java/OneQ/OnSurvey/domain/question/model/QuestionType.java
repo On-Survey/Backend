@@ -15,7 +15,8 @@ public enum QuestionType {
     DATE("날짜형", Values.DATE),
     IMAGE("이미지형", Values.IMAGE),
     TITLE("제목형", Values.TITLE),
-    TEXT("주관식", Values.TEXT);
+    GRID("그리드형", Values.GRID),
+    TIME("시간형", Values.TIME);
     private final String description;
     private final String value;
 
@@ -27,16 +28,21 @@ public enum QuestionType {
         public static final String LONG = "LONG";
         public static final String NUMBER = "NUMBER";
         public static final String DATE = "DATE";
-        public static final String TEXT = "TEXT";
         public static final String IMAGE = "IMAGE";
         public static final String TITLE = "TITLE";
+        public static final String GRID = "GRID";
+        public static final String TIME = "TIME";
     }
 
     public boolean isText() {
-        return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || TEXT.equals(this) || NUMBER.equals(this);
+        return SHORT.equals(this) || LONG.equals(this) || DATE.equals(this) || NUMBER.equals(this) || TIME.equals(this);
     }
 
     public boolean isChoice() {
         return CHOICE.equals(this);
+    }
+
+    public boolean isGrid() {
+        return GRID.equals(this);
     }
 }

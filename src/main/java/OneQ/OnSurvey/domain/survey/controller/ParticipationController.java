@@ -3,6 +3,7 @@ package OneQ.OnSurvey.domain.survey.controller;
 import OneQ.OnSurvey.domain.participation.entity.QuestionAnswer;
 import OneQ.OnSurvey.domain.participation.entity.ScreeningAnswer;
 import OneQ.OnSurvey.domain.participation.model.dto.AnswerInsertDto;
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationCompletionDto;
 import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.participation.service.answer.AnswerCommand;
 import OneQ.OnSurvey.domain.participation.service.response.ResponseCommand;
@@ -13,6 +14,7 @@ import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.request.InsertQuestionAnswerRequest;
 import OneQ.OnSurvey.domain.survey.model.request.InsertScreeningAnswerRequest;
+import OneQ.OnSurvey.domain.survey.model.request.SurveyParticipationCompletionRequest;
 import OneQ.OnSurvey.domain.survey.model.response.*;
 import OneQ.OnSurvey.domain.survey.repository.SurveyRepository;
 import OneQ.OnSurvey.domain.survey.service.command.SurveyCommandService;
@@ -21,6 +23,7 @@ import OneQ.OnSurvey.global.auth.custom.CustomUserDetails;
 import OneQ.OnSurvey.global.common.exception.CustomException;
 import OneQ.OnSurvey.global.common.response.SuccessResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -188,7 +191,7 @@ public class ParticipationController {
         Survey survey = surveyQueryService.getSurveyById(surveyId);
 
         if (surveyQueryService.checkValidSegmentation(surveyId, principal.getUserKey())) {
-            log.info("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
+            log.warn("[PARTICIPATION] 세그먼트 불일치로 인한 설문 응답 불가 - surveyId: {}, userKey: {}", surveyId, principal.getUserKey());
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
 
@@ -248,15 +251,10 @@ public class ParticipationController {
     public SuccessResponse<Boolean> createQuestionAnswer(
         @AuthenticationPrincipal CustomUserDetails principal,
         @PathVariable Long surveyId,
-        @RequestBody InsertQuestionAnswerRequest request
+        @RequestBody @Valid InsertQuestionAnswerRequest request
     ) {
         log.info("[PARTICIPATION] 설문 응답 생성 - surveyId: {}, userKey: {}, request: {}",
             surveyId, principal.getMemberId(), request.toString());
-
-        if (request.isEmpty()) {
-            log.warn("[PARTICIPATION] 빈 응답 생성 요청 - surveyId: {}, userKey: {}", surveyId, principal.getMemberId());
-            throw new CustomException(SurveyErrorCode.SURVEY_ANSWER_INVALID);
-        }
 
         AnswerInsertDto answerInsertDto = request.toDto(principal.getMemberId());
 
@@ -266,12 +264,20 @@ public class ParticipationController {
     @PostMapping("surveys/{surveyId}/complete")
     @Operation(summary = "설문 작성을 완료합니다.")
     public SuccessResponse<Boolean> completeSurvey(
-            @AuthenticationPrincipal CustomUserDetails principal,
-            @PathVariable Long surveyId
-    ) {
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @PathVariable Long surveyId,
+        @RequestBody SurveyParticipationCompletionRequest request
+        ) {
         log.info("[PARTICIPATION] 설문 완료 - surveyId: {}, memberId: {}", surveyId, principal.getMemberId());
 
-        Boolean result = responseCommand.createResponse(surveyId, principal.getMemberId(), principal.getUserKey());
+        ParticipationCompletionDto dto = ParticipationCompletionDto.builder()
+            .surveyId(surveyId)
+            .memberId(principal.getMemberId())
+            .userKey(principal.getUserKey())
+            .visitedSectionList(request.visitedSections())
+            .build();
+
+        Boolean result = responseCommand.createResponse(dto);
         return SuccessResponse.ok(result);
     }
 

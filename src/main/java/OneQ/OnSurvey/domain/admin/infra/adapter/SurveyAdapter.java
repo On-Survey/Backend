@@ -97,10 +97,11 @@ public class SurveyAdapter implements SurveyPort {
     }
 
     @Override
-    public void updateSurveyOwner(Long surveyId, Long memberId) {
+    public void updateSurveyOwner(Long surveyId, Long memberId, Long userKey) {
         SurveyOwnerChangeDto changeDto = SurveyOwnerChangeDto.builder()
             .surveyId(surveyId)
             .newMemberId(memberId)
+            .newUserKey(userKey)
             .build();
 
         surveyCommandService.updateSurveyOwner(changeDto);

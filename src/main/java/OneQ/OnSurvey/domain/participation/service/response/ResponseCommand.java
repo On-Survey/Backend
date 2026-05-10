@@ -1,5 +1,7 @@
 package OneQ.OnSurvey.domain.participation.service.response;
 
+import OneQ.OnSurvey.domain.participation.model.dto.ParticipationCompletionDto;
+
 public interface ResponseCommand {
-    Boolean createResponse(Long surveyId, Long memberId, Long userKey);
+    Boolean createResponse(ParticipationCompletionDto dto);
 }

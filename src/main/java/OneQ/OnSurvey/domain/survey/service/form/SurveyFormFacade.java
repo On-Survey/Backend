@@ -1,6 +1,7 @@
 package OneQ.OnSurvey.domain.survey.service.form;
 
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.GridOptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
@@ -17,10 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -71,19 +71,23 @@ public class SurveyFormFacade implements SurveyFormUseCase {
 
         validateUpsertQuestionsRequest(request);
 
-        QuestionUpsertDto requestQuestionUpsertDto =
-                QuestionConverter.toQuestionUpsertDto(surveyId, request.getQuestions());
+        QuestionUpsertDto requestQuestionUpsertDto = QuestionConverter.toQuestionUpsertDto(surveyId, request.getQuestions());
+        QuestionUpsertDto savedQuestionUpsertDto = questionCommand.upsertQuestionList(requestQuestionUpsertDto);
 
-        QuestionUpsertDto savedQuestionUpsertDto =
-                questionCommand.upsertQuestionList(requestQuestionUpsertDto);
+        OptionUpsertBundle optionUpsertBundle = buildOptionUpsertDtos(savedQuestionUpsertDto, requestQuestionUpsertDto);
+        List<OptionUpsertDto> optionUpsertDtoList = optionUpsertBundle.choiceOptionUpsertDtos();
+        List<GridOptionUpsertDto> gridOptionUpsertDtoList = optionUpsertBundle.gridOptionUpsertDtos();
 
-        List<OptionUpsertDto> optionUpsertDtoList =
-                buildOptionUpsertDtosFromSavedQuestions(savedQuestionUpsertDto, requestQuestionUpsertDto);
-
-        optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
+        if (!optionUpsertDtoList.isEmpty()) {
+            optionUpsertDtoList = questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
+        }
+        if (!gridOptionUpsertDtoList.isEmpty()) {
+            gridOptionUpsertDtoList = questionCommand.upsertGridOptionList(gridOptionUpsertDtoList);
+        }
         Map<Long, OptionUpsertDto> optionDtoMap = mapOptionsByQuestionId(optionUpsertDtoList);
+        Map<Long, GridOptionUpsertDto> gridOptionDtoMap = mapGridOptionsByQuestionId(gridOptionUpsertDtoList);
 
-        applyOptionsToQuestionUpsertDto(savedQuestionUpsertDto, optionDtoMap);
+        applyOptionsToQuestionUpsertDto(savedQuestionUpsertDto, optionDtoMap, gridOptionDtoMap);
 
         return new UpdateQuestionResponse(
                 savedQuestionUpsertDto.getSurveyId(),
@@ -178,67 +182,91 @@ public class SurveyFormFacade implements SurveyFormUseCase {
         }
     }
 
-    /** UPSERT 이후 CHOICE 타입 문항에 대해 questionId -> UpsertInfo 맵 생성 */
-    private Map<Long, QuestionUpsertDto.UpsertInfo> buildChoiceQuestionMap(QuestionUpsertDto questionUpsertDto) {
-        return questionUpsertDto.getUpsertInfoList().stream()
-                .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
-                .filter(info -> info.getQuestionId() != null) // 🔹 null key 방지
-                .collect(Collectors.toMap(
-                        QuestionUpsertDto.UpsertInfo::getQuestionId,
-                        Function.identity()
-                ));
-    }
-
-    /** UPSERT된 QuestionUpsertDto에서 CHOICE 문항별 OptionUpsertDto 리스트 생성 */
-    private List<OptionUpsertDto> buildOptionUpsertDtosFromSavedQuestions(
+    /** CHOICE/GRID 옵션 UPSERT DTO를 동시에 구성 */
+    private OptionUpsertBundle buildOptionUpsertDtos(
         QuestionUpsertDto savedQuestionUpsertDto,
         QuestionUpsertDto requestedQuestionUpsertDto
     ) {
-        Set<Long> choiceQuestionIdSet = getChoiceQuestionIds(savedQuestionUpsertDto);
-        Map<Long, QuestionUpsertDto.UpsertInfo> requestChoiceQuestionMap = buildChoiceQuestionMap(requestedQuestionUpsertDto);
+        Map<Integer, QuestionUpsertDto.UpsertInfo> requestedByOrder = requestedQuestionUpsertDto.getUpsertInfoList().stream()
+            .filter(info -> info.getQuestionOrder() != null)
+            .collect(Collectors.toMap(
+                QuestionUpsertDto.UpsertInfo::getQuestionOrder,
+                Function.identity(),
+                (existing, replace) -> existing
+            ));
 
-        return choiceQuestionIdSet.stream()
-            .map(qId -> OptionUpsertDto.builder()
-                .questionId(qId)
-                .optionInfoList(
-                    (requestChoiceQuestionMap.get(qId) != null
-                    && requestChoiceQuestionMap.get(qId).getOptions() != null)
-                        ? requestChoiceQuestionMap.get(qId).getOptions()
-                        : List.of()
-                )
-                .build())
-            .toList();
-    }
+        List<OptionUpsertDto> choiceOptionUpsertDtos = new ArrayList<>();
+        List<GridOptionUpsertDto> gridOptionUpsertDtos = new ArrayList<>();
 
-    private Set<Long> getChoiceQuestionIds(QuestionUpsertDto questionUpsertDto) {
-        return questionUpsertDto.getUpsertInfoList().stream()
-            .filter(info -> QuestionType.CHOICE.equals(info.getQuestionType()))
-            .map(QuestionUpsertDto.UpsertInfo::getQuestionId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
+        savedQuestionUpsertDto.getUpsertInfoList().stream()
+            .filter(savedInfo -> savedInfo.getQuestionType().isChoice() || savedInfo.getQuestionType().isGrid())
+            .filter(savedInfo -> savedInfo.getQuestionId() != null && requestedByOrder.get(savedInfo.getQuestionOrder()) != null)
+            .forEach(savedInfo -> {
+                QuestionUpsertDto.UpsertInfo requestInfo = requestedByOrder.get(savedInfo.getQuestionOrder());
+
+                if (savedInfo.getQuestionType().isChoice()) {
+                    choiceOptionUpsertDtos.add(OptionUpsertDto.builder()
+                        .questionId(savedInfo.getQuestionId())
+                        .optionInfoList(requestInfo.getOptions() != null ? requestInfo.getOptions() : List.of())
+                        .build()
+                    );
+                } else if (savedInfo.getQuestionType().isGrid()) {
+                    gridOptionUpsertDtos.add(GridOptionUpsertDto.builder()
+                        .questionId(savedInfo.getQuestionId())
+                        .gridOptionInfoList(requestInfo.getGridOptions() != null ? requestInfo.getGridOptions() : List.of())
+                        .build()
+                    );
+                }
+            });
+
+        return new OptionUpsertBundle(choiceOptionUpsertDtos, gridOptionUpsertDtos);
     }
 
     /** questionId 기준 OptionUpsertDto 맵핑 */
     private Map<Long, OptionUpsertDto> mapOptionsByQuestionId(List<OptionUpsertDto> optionUpsertDtoList) {
         return optionUpsertDtoList.stream()
-                .collect(Collectors.toMap(
-                        OptionUpsertDto::getQuestionId,
-                        Function.identity()
-                ));
+            .collect(Collectors.toMap(
+                OptionUpsertDto::getQuestionId,
+                Function.identity()
+            ));
+    }
+
+    /** questionId 기준 GridOptionUpsertDto 맵핑 */
+    private Map<Long, GridOptionUpsertDto> mapGridOptionsByQuestionId(List<GridOptionUpsertDto> gridOptionUpsertDtoList) {
+        return gridOptionUpsertDtoList.stream()
+            .collect(Collectors.toMap(
+                GridOptionUpsertDto::getQuestionId,
+                Function.identity()
+            ));
     }
 
     /** UPSERT된 보기 정보를 questionUpsertDto에 다시 반영 */
     private void applyOptionsToQuestionUpsertDto(
             QuestionUpsertDto questionUpsertDto,
-            Map<Long, OptionUpsertDto> optionDtoMap
+            Map<Long, OptionUpsertDto> optionDtoMap,
+            Map<Long, GridOptionUpsertDto> gridOptionDtoMap
     ) {
-        questionUpsertDto.getUpsertInfoList().forEach(upsertInfo -> {
-            Long questionId = upsertInfo.getQuestionId();
-            OptionUpsertDto optionInfoList = optionDtoMap.get(questionId);
+        questionUpsertDto.getUpsertInfoList().stream()
+            .filter(upsertInfo -> upsertInfo.getQuestionType().isChoice() || upsertInfo.getQuestionType().isGrid())
+            .forEach(upsertInfo -> {
+                Long questionId = upsertInfo.getQuestionId();
 
-            if (optionInfoList != null) {
-                upsertInfo.setOptions(optionInfoList.getOptionInfoList());
-            }
+                if (upsertInfo.getQuestionType().isChoice()) {
+                    OptionUpsertDto optionInfoList = optionDtoMap.get(questionId);
+                    if (optionInfoList != null) {
+                        upsertInfo.updateOptions(optionInfoList.getOptionInfoList());
+                    }
+                } else if (upsertInfo.getQuestionType().isGrid()){
+                    GridOptionUpsertDto gridOptionUpsertDto = gridOptionDtoMap.get(questionId);
+                    if (gridOptionUpsertDto != null) {
+                        upsertInfo.updateGridOptions(gridOptionUpsertDto.getGridOptionInfoList());
+                    }
+                }
         });
     }
+
+    private record OptionUpsertBundle(
+        List<OptionUpsertDto> choiceOptionUpsertDtos,
+        List<GridOptionUpsertDto> gridOptionUpsertDtos
+    ) { }
 }

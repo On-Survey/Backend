@@ -111,9 +111,9 @@ public class AdminController {
         @PathVariable Long surveyId,
         @RequestBody ChangeSurveyOwnerRequest request
     ) {
-        log.info("[ADMIN] 설문 소유자 변경 요청 - surveyId: {}, newMemberId: {}", surveyId, request.newMemberId());
+        log.info("[ADMIN] 설문 소유자 변경 요청 - surveyId: {}, memberId: {}, userKey: {}", surveyId, request.newMemberId(), request.newUserKey());
 
-        adminFacade.changeSurveyOwner(surveyId, request.newMemberId());
+        adminFacade.changeSurveyOwner(surveyId, request.newMemberId(), request.newUserKey());
 
         return SuccessResponse.ok("설문 소유자가 변경되었습니다.");
     }

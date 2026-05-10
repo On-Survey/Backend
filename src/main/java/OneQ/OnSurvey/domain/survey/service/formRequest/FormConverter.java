@@ -1,12 +1,16 @@
 package OneQ.OnSurvey.domain.survey.service.formRequest;
 
 import OneQ.OnSurvey.domain.question.model.QuestionType;
+import OneQ.OnSurvey.domain.question.model.dto.GridOptionDto;
+import OneQ.OnSurvey.domain.question.model.dto.GridOptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionDto;
 import OneQ.OnSurvey.domain.question.model.dto.OptionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.QuestionUpsertDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.ChoiceDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.GridDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.RatingDto;
+import OneQ.OnSurvey.domain.question.model.dto.type.TimeDto;
 import OneQ.OnSurvey.domain.question.service.QuestionCommand;
 import OneQ.OnSurvey.domain.survey.model.formRequest.ConversionDto;
 import OneQ.OnSurvey.domain.survey.model.formRequest.FormValidationPostResponse;
@@ -42,7 +46,7 @@ public class FormConverter {
         }
 
         // 3. 문항 생성
-        List<QuestionUpsertDto.UpsertInfo> upsertInfoList = dto.questions().stream()
+        Map<Integer, QuestionUpsertDto.UpsertInfo> upsertInfoList = dto.questions().stream()
             .map(q -> {
                 QuestionType type = QuestionType.valueOf(q.getQuestionType());
                 QuestionUpsertDto.UpsertInfo.UpsertInfoBuilder builder = QuestionUpsertDto.UpsertInfo.builder()
@@ -74,47 +78,74 @@ public class FormConverter {
                             .rate(ratingDto.getRate())
                             .build();
                     }
+                    case GRID -> {
+                        GridDto gridDto = (GridDto) q;
+                        yield builder
+                            .isCheckbox(gridDto.getIsCheckbox())
+                            .isChoiceMixed(gridDto.getIsChoiceMixed())
+                            .isChoiceDistinct(gridDto.getIsChoiceDistinct())
+                            .gridOptions(gridDto.getGridOptions())
+                            .build();
+                    }
+                    case TIME -> {
+                        TimeDto timeDto = (TimeDto) q;
+                        yield builder.isInterval(timeDto.getIsInterval()).build();
+                    }
                     default -> builder.build();
                 };
             })
-            .toList();
+            .collect(Collectors.toMap(QuestionUpsertDto.UpsertInfo::getQuestionOrder, Function.identity()));
 
         if (!upsertInfoList.isEmpty()) {
             QuestionUpsertDto upsertDto = QuestionUpsertDto.builder()
                 .surveyId(surveyId)
-                .upsertInfoList(upsertInfoList)
+                .upsertInfoList(upsertInfoList.values().stream().toList())
                 .build();
             // 4. 전체 문항 저장
             QuestionUpsertDto savedQuestions = questionCommand.upsertQuestionList(upsertDto);
 
-            // 5. CHOICE 문항 옵션 저장
+            // 5. CHOICE, GRID 문항 옵션 저장
             List<OptionUpsertDto> optionUpsertDtoList = new ArrayList<>();
+            List<GridOptionUpsertDto> gridOptionUpsertDtoList = new ArrayList<>();
             List<QuestionUpsertDto.UpsertInfo> savedInfoList = savedQuestions.getUpsertInfoList();
-            Map<Integer, QuestionUpsertDto.UpsertInfo> originalInfoMap = upsertInfoList.stream()
-                .collect(java.util.stream.Collectors.toMap(QuestionUpsertDto.UpsertInfo::getQuestionOrder, Function.identity()));
-
-            for (QuestionUpsertDto.UpsertInfo savedInfo : savedInfoList) {
-                QuestionUpsertDto.UpsertInfo originalInfo = originalInfoMap.get(savedInfo.getQuestionOrder());
-
-                if (savedInfo.getQuestionType().isChoice() && originalInfo.getOptions() != null) {
-                    List<OptionDto> options = originalInfo.getOptions().stream()
-                        .map(opt -> OptionDto.builder()
-                            .questionId(savedInfo.getQuestionId())
-                            .content(opt.getContent())
-                            .nextSection(opt.getNextSection())
-                            .imageUrl(opt.getImageUrl())
-                            .build())
-                        .toList();
-
-                    optionUpsertDtoList.add(OptionUpsertDto.builder()
-                        .questionId(savedInfo.getQuestionId())
-                        .optionInfoList(options)
-                        .build());
-                }
-            }
-
+            savedInfoList.stream()
+                .filter(info -> info.getQuestionType().isChoice() || info.getQuestionType().isGrid())
+                .filter(info -> upsertInfoList.get(info.getQuestionOrder()) != null)
+                .forEach(info -> {
+                    QuestionUpsertDto.UpsertInfo originalInfo = upsertInfoList.get(info.getQuestionOrder());
+                    if (originalInfo.getQuestionType().isChoice() && originalInfo.getOptions() != null) {
+                        optionUpsertDtoList.add(OptionUpsertDto.builder()
+                            .questionId(info.getQuestionId())
+                            .optionInfoList(originalInfo.getOptions().stream()
+                                .map(opt -> OptionDto.builder()
+                                    .questionId(info.getQuestionId())
+                                    .content(opt.getContent())
+                                    .nextSection(opt.getNextSection())
+                                    .imageUrl(opt.getImageUrl())
+                                    .build()
+                                )
+                                .toList())
+                            .build());
+                    } else if (originalInfo.getQuestionType().isGrid() && originalInfo.getGridOptions() != null) {
+                        gridOptionUpsertDtoList.add(GridOptionUpsertDto.builder()
+                            .questionId(info.getQuestionId())
+                            .gridOptionInfoList(originalInfo.getGridOptions().stream()
+                                .map(opt -> GridOptionDto.builder()
+                                    .questionId(info.getQuestionId())
+                                    .isRow(opt.getIsRow())
+                                    .content(opt.getContent())
+                                    .order(opt.getOrder())
+                                    .build()
+                                )
+                                .toList())
+                            .build());
+                    }
+                });
             if (!optionUpsertDtoList.isEmpty()) {
                 questionCommand.upsertChoiceOptionList(optionUpsertDtoList);
+            }
+            if (!gridOptionUpsertDtoList.isEmpty()) {
+                questionCommand.upsertGridOptionList(gridOptionUpsertDtoList);
             }
         }
         return surveyId;

@@ -24,7 +24,7 @@ public interface SurveyPort {
 
     List<SurveySection> findSurveySectionsById(Long surveyId);
 
-    void updateSurveyOwner(Long surveyId, Long newMemberId);
+    void updateSurveyOwner(Long surveyId, Long newMemberId, Long newUserKey);
 
     List<OngoingSurveyView> findOngoingSurveys();
 }
