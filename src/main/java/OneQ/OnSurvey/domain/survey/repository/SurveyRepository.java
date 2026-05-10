@@ -1,7 +1,6 @@
 package OneQ.OnSurvey.domain.survey.repository;
 
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
-import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.survey.entity.Survey;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
@@ -31,13 +30,9 @@ public interface SurveyRepository {
     Slice<SurveyWithEligibility> getSurveyListWithEligibility(
         Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable,
         SurveyStatus status, Long creatorId, Collection<Long> excludedIds, MemberSegmentation memberSegmentation);
-
     Survey save(Survey survey);
-
     SurveyStatus getSurveyStatusById(Long surveyId);
-    ParticipationStatus getParticipationStatus(Long surveyId, Long memberId);
     List<Long> closeDueSurveys();
-
     List<OngoingSurveyStats> findOngoingSurveys();
     OpenSurveyStats findOpenSurveyStats();
     ParticipationInfoVO getParticipationInfoVO(Long surveyId, Long memberId);

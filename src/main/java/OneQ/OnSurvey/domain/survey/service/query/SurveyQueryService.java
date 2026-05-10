@@ -3,7 +3,6 @@ package OneQ.OnSurvey.domain.survey.service.query;
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
-import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
@@ -141,54 +140,6 @@ public class SurveyQueryService implements SurveyQuery {
             .surveys(surveySlice.stream().map(SurveyParticipationResponse::from).toList())
             .hasNext(surveySlice.hasNext())
             .build();
-    }
-
-    @Override
-    public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
-    ) {
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 설문 조회 - "
-            + "lastSurveyId: {}, size: {}, status: {}, userKey: {}",
-            lastSurveyId, pageable.getPageSize(), status.name(), userKey
-        );
-
-        List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
-        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
-            userKey, memberSegmentation, excludedIdList);
-
-        Slice<SurveyWithEligibility> recommendedList = surveyRepository.getSurveyListWithEligibility(
-            lastSurveyId, null, pageable, status, memberId, excludedIdList, memberSegmentation
-        );
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 추천 설문 조회 결과 - recommended: {}", recommendedList);
-
-        return new SurveyParticipationResponse.SliceSurveyData(
-            recommendedList.stream().map(SurveyParticipationResponse::from).toList(), recommendedList.hasNext()
-        );
-    }
-
-    @Override
-    public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
-    ) {
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 마감기한 기반 설문 조회 - "
-            + "lastSurveyId: {}, lastDateTime: {}, size: {}, status: {}, userKey: {}",
-            lastSurveyId, lastDeadline, pageable.getPageSize(), status.name(), userKey
-        );
-
-        List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
-        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
-            userKey, memberSegmentation, excludedIdList);
-
-        Slice<SurveyWithEligibility> impendingList = surveyRepository.getSurveyListWithEligibility(
-            lastSurveyId, lastDeadline, pageable, status, memberId, excludedIdList, memberSegmentation
-        );
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 마감임박 설문 조회 결과 - impending: {}", impendingList);
-
-        return new SurveyParticipationResponse.SliceSurveyData(
-            impendingList.stream().map(SurveyParticipationResponse::from).toList(), impendingList.hasNext()
-        );
     }
 
     @Override
