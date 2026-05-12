@@ -92,6 +92,17 @@ class MemberTest {
     }
 
     @Test
+    @DisplayName("decreaseCoin - 음수이면 COIN_NOT_POSITIVE 예외")
+    void decreaseCoin_negative_throwsException() {
+        Member member = buildMember();
+
+        assertThatThrownBy(() -> member.decreaseCoin(-1L))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(CoinErrorCode.COIN_NOT_POSITIVE));
+    }
+
+    @Test
     @DisplayName("increasePromotionPoint - 양수 금액이면 포인트 증가")
     void increasePromotionPoint_positiveAmount_increasesPoint() {
         Member member = buildMember();
@@ -107,6 +118,17 @@ class MemberTest {
         Member member = buildMember();
 
         assertThatThrownBy(() -> member.increasePromotionPoint(0L))
+                .isInstanceOf(CustomException.class)
+                .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
+                        .isEqualTo(CoinErrorCode.COIN_NOT_POSITIVE));
+    }
+
+    @Test
+    @DisplayName("increasePromotionPoint - 음수이면 COIN_NOT_POSITIVE 예외")
+    void increasePromotionPoint_negative_throwsException() {
+        Member member = buildMember();
+
+        assertThatThrownBy(() -> member.increasePromotionPoint(-1L))
                 .isInstanceOf(CustomException.class)
                 .satisfies(ex -> assertThat(((CustomException) ex).getErrorCode())
                         .isEqualTo(CoinErrorCode.COIN_NOT_POSITIVE));

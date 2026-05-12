@@ -91,7 +91,7 @@ class MemberModifyServiceTest {
         given(memberRepository.save(any(Member.class))).willAnswer(inv -> inv.getArgument(0));
 
         DecryptedLoginMeResponse loginResponse = new DecryptedLoginMeResponse(
-                3000L, "scope", List.of("serviceAgreed", "marketingAgreed"),
+                3000L, "scope", List.of("serviceAgreed"),
                 "policy", "certTxId", "이름", "010-1111-1111",
                 "20000101", Gender.MALE, "KR", "email@test.com"
         );
@@ -99,7 +99,7 @@ class MemberModifyServiceTest {
         Member result = memberModifyService.upsertMember(loginResponse);
 
         assertThat(result.isServiceAgreed()).isTrue();
-        assertThat(result.isMarketingAgreed()).isTrue();
+        assertThat(result.isMarketingAgreed()).isFalse();
     }
 
     @Test
