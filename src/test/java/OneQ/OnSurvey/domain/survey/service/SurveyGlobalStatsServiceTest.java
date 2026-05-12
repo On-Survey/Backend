@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,13 +63,13 @@ class SurveyGlobalStatsServiceTest {
     @Test
     @DisplayName("addDueCount - stats 없으면 init 후 증가")
     void addDueCount_noStats_initAndIncreases() {
-        SurveyGlobalStats newStats = SurveyGlobalStats.init();
         given(statsRepository.findById(1L)).willReturn(Optional.empty());
-        given(statsRepository.save(any(SurveyGlobalStats.class))).willReturn(newStats);
+        ArgumentCaptor<SurveyGlobalStats> captor = ArgumentCaptor.forClass(SurveyGlobalStats.class);
+        given(statsRepository.save(captor.capture())).willAnswer(inv -> inv.getArgument(0));
 
         surveyGlobalStatsService.addDueCount(50L);
 
-        assertThat(newStats.getTotalDueCount()).isEqualTo(1050L);
+        assertThat(captor.getValue().getTotalDueCount()).isEqualTo(1050L);
     }
 
     @Test
@@ -82,6 +84,18 @@ class SurveyGlobalStatsServiceTest {
     }
 
     @Test
+    @DisplayName("addCompletedCount - stats 없으면 init 후 증가")
+    void addCompletedCount_noStats_initAndIncreases() {
+        given(statsRepository.findById(1L)).willReturn(Optional.empty());
+        ArgumentCaptor<SurveyGlobalStats> captor = ArgumentCaptor.forClass(SurveyGlobalStats.class);
+        given(statsRepository.save(captor.capture())).willAnswer(inv -> inv.getArgument(0));
+
+        surveyGlobalStatsService.addCompletedCount(30L);
+
+        assertThat(captor.getValue().getTotalCompletedCount()).isEqualTo(1030L);
+    }
+
+    @Test
     @DisplayName("addPromotionCount - 기존 stats에 delta만큼 증가")
     void addPromotionCount_increasesExistingStats() {
         SurveyGlobalStats stats = buildStats(1000L, 500L, 200L);
@@ -90,6 +104,18 @@ class SurveyGlobalStatsServiceTest {
         surveyGlobalStatsService.addPromotionCount(10L);
 
         assertThat(stats.getTotalPromotionCount()).isEqualTo(210L);
+    }
+
+    @Test
+    @DisplayName("addPromotionCount - stats 없으면 init 후 증가")
+    void addPromotionCount_noStats_initAndIncreases() {
+        given(statsRepository.findById(1L)).willReturn(Optional.empty());
+        ArgumentCaptor<SurveyGlobalStats> captor = ArgumentCaptor.forClass(SurveyGlobalStats.class);
+        given(statsRepository.save(captor.capture())).willAnswer(inv -> inv.getArgument(0));
+
+        surveyGlobalStatsService.addPromotionCount(10L);
+
+        assertThat(captor.getValue().getTotalPromotionCount()).isEqualTo(1010L);
     }
 
     @Test

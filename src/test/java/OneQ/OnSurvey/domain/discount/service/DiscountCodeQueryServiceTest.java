@@ -123,6 +123,21 @@ class DiscountCodeQueryServiceTest {
     }
 
     @Test
+    @DisplayName("findAll - 만료일이 오늘인 코드는 활성으로 분류(isBefore 기준)")
+    void findAll_todayExpiry_treatedAsActive() {
+        LocalDate today = LocalDate.now();
+        DiscountCode todayCode  = buildCode("TODAY1", today);
+        DiscountCode expiredCode = buildCode("EXP001", today.minusDays(1));
+        given(discountCodeRepository.findAll()).willReturn(List.of(expiredCode, todayCode));
+
+        List<DiscountCodeResponse> results = discountCodeQueryService.findAll();
+
+        assertThat(results).hasSize(2);
+        assertThat(results.get(0).code()).isEqualTo("TODAY1");
+        assertThat(results.get(1).code()).isEqualTo("EXP001");
+    }
+
+    @Test
     @DisplayName("findAll - 빈 목록이면 빈 리스트 반환")
     void findAll_empty_returnsEmptyList() {
         given(discountCodeRepository.findAll()).willReturn(List.of());

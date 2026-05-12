@@ -15,9 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class ResponseQueryServiceTest {
@@ -48,7 +50,7 @@ class ResponseQueryServiceTest {
 
         assertThat(result).isEqualTo(30);
         verify(responseRepository).getResponseCountBySurveyId(1L);
-        verify(responseRepository, never()).getResponseCountBySurveyId(1L, null);
+        verify(responseRepository, never()).getResponseCountBySurveyId(anyLong(), any());
     }
 
     @Test
