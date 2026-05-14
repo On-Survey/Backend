@@ -3,7 +3,6 @@ package OneQ.OnSurvey.domain.survey.service.query;
 import OneQ.OnSurvey.domain.member.dto.MemberSegmentation;
 import OneQ.OnSurvey.domain.member.repository.MemberRepository;
 import OneQ.OnSurvey.domain.member.value.Interest;
-import OneQ.OnSurvey.domain.participation.model.dto.ParticipationStatus;
 import OneQ.OnSurvey.domain.participation.repository.response.ResponseRepository;
 import OneQ.OnSurvey.domain.question.model.dto.SectionDto;
 import OneQ.OnSurvey.domain.question.model.dto.type.DefaultQuestionDto;
@@ -17,6 +16,7 @@ import OneQ.OnSurvey.domain.survey.model.Gender;
 import OneQ.OnSurvey.domain.survey.model.Residence;
 import OneQ.OnSurvey.domain.survey.model.SurveyStatus;
 import OneQ.OnSurvey.domain.survey.model.dto.OngoingSurveyStats;
+import OneQ.OnSurvey.domain.survey.model.dto.OpenSurveyStats;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningIntroData;
 import OneQ.OnSurvey.domain.survey.model.dto.ScreeningViewData;
 import OneQ.OnSurvey.domain.survey.model.dto.SurveyDetailData;
@@ -143,54 +143,6 @@ public class SurveyQueryService implements SurveyQuery {
     }
 
     @Override
-    public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
-    ) {
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 설문 조회 - "
-            + "lastSurveyId: {}, size: {}, status: {}, userKey: {}",
-            lastSurveyId, pageable.getPageSize(), status.name(), userKey
-        );
-
-        List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
-        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
-            userKey, memberSegmentation, excludedIdList);
-
-        Slice<SurveyWithEligibility> recommendedList = surveyRepository.getSurveyListWithEligibility(
-            lastSurveyId, null, pageable, status, memberId, excludedIdList, memberSegmentation
-        );
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 추천 설문 조회 결과 - recommended: {}", recommendedList);
-
-        return new SurveyParticipationResponse.SliceSurveyData(
-            recommendedList.stream().map(SurveyParticipationResponse::from).toList(), recommendedList.hasNext()
-        );
-    }
-
-    @Override
-    public SurveyParticipationResponse.SliceSurveyData getParticipationSurveyList(
-        Long lastSurveyId, LocalDateTime lastDeadline, Pageable pageable, SurveyStatus status, Long memberId, Long userKey
-    ) {
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 본인 제작 제외 마감기한 기반 설문 조회 - "
-            + "lastSurveyId: {}, lastDateTime: {}, size: {}, status: {}, userKey: {}",
-            lastSurveyId, lastDeadline, pageable.getPageSize(), status.name(), userKey
-        );
-
-        List<Long> excludedIdList = responseRepository.getExcludedSurveyIdList(memberId, true);
-        MemberSegmentation memberSegmentation = memberRepository.findMemberSegmentByUserKey(userKey);
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 사용자 세그멘테이션 - userKey: {}, memberSegmentation: {}, excludedIdList: {}",
-            userKey, memberSegmentation, excludedIdList);
-
-        Slice<SurveyWithEligibility> impendingList = surveyRepository.getSurveyListWithEligibility(
-            lastSurveyId, lastDeadline, pageable, status, memberId, excludedIdList, memberSegmentation
-        );
-        log.info("[SURVEY:QUERY:getParticipationSurveyList] 마감임박 설문 조회 결과 - impending: {}", impendingList);
-
-        return new SurveyParticipationResponse.SliceSurveyData(
-            impendingList.stream().map(SurveyParticipationResponse::from).toList(), impendingList.hasNext()
-        );
-    }
-
-    @Override
     public ParticipationScreeningListResponse getScreeningList(
         Long lastSurveyId, Pageable pageable, Long memberId, Long userKey
     ) {
@@ -227,27 +179,26 @@ public class SurveyQueryService implements SurveyQuery {
             throw new CustomException(SurveyErrorCode.SURVEY_WRONG_SEGMENTATION);
         }
 
-        Survey survey = surveyRepository.getSurveyById(surveyId)
-            .orElseThrow(() -> new CustomException(SurveyErrorCode.SURVEY_NOT_FOUND));
+        ParticipationInfoVO vo = surveyRepository.getParticipationInfoVO(surveyId, memberId);
 
-        if (!isSurveyAccessible(survey.getStatus())) {
-            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}, status: {}", surveyId, survey.getStatus());
+        // surveyId에 해당하는 설문이 없거나 상태가 ONGOING이 아닌 경우
+        if (vo == null) {
+            log.warn("[SURVEY:QUERY] 마감된 설문 참여 불가 - surveyId: {}", surveyId);
             throw new CustomException(SurveyErrorCode.SURVEY_INCORRECT_STATUS);
         }
-
         int completedCount = redisAgent.getIntValue(this.completedKey + surveyId);
-        ParticipationStatus participationStatus = surveyRepository.getParticipationStatus(surveyId, memberId);
-        if (participationStatus.isScreenRequired()) {
+
+        if (vo.participationStatus().isScreenRequired()) {
             log.warn("[SURVEY:QUERY] 스크리닝 퀴즈 응답이 필요합니다. - surveyId: {}, memberId: {}", surveyId, memberId);
         }
-        if (participationStatus.isScreened()) {
+        if (vo.participationStatus().isScreened()) {
             log.warn("[SURVEY:QUERY] 스크리닝 퀴즈에 의해 필터링되었습니다. - surveyId: {}, memberId: {}", surveyId, memberId);
         }
-        if (participationStatus.isSurveyResponded()) {
+        if (vo.participationStatus().isSurveyResponded()) {
             log.warn("[SURVEY:QUERY] 이미 참여한 설문입니다. - surveyId: {}, memberId: {}", surveyId, memberId);
         }
 
-        return ParticipationInfoResponse.from(survey, completedCount, participationStatus);
+        return ParticipationInfoResponse.from(vo, completedCount);
     }
 
     @Override
@@ -530,5 +481,10 @@ public class SurveyQueryService implements SurveyQuery {
     @Override
     public List<OngoingSurveyStats> getOngoingSurveyStats() {
         return surveyRepository.findOngoingSurveys();
+    }
+
+    @Override
+    public OpenSurveyStats getOpenSurveyStats() {
+        return surveyRepository.findOpenSurveyStats();
     }
 }
